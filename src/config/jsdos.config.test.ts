@@ -6,8 +6,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   defaultJsDosConfig,
   mobileJsDosConfig,
-  kioskJsDosConfig,
-  devJsDosConfig,
   isMobileDevice,
   getDefaultConfig,
 } from './jsdos.config';
@@ -54,34 +52,6 @@ describe('jsdos.config', () => {
     it('should have keyboard symbols defined', () => {
       expect(mobileJsDosConfig.softKeyboardSymbols).toBeDefined();
       expect(Array.isArray(mobileJsDosConfig.softKeyboardSymbols)).toBe(true);
-    });
-  });
-
-  describe('kioskJsDosConfig', () => {
-    it('should have kiosk mode enabled', () => {
-      expect(kioskJsDosConfig.kiosk).toBe(true);
-    });
-
-    it('should have fullscreen enabled', () => {
-      expect(kioskJsDosConfig.fullScreen).toBe(true);
-    });
-
-    it('should have mouse capture enabled', () => {
-      expect(kioskJsDosConfig.mouseCapture).toBe(true);
-    });
-  });
-
-  describe('devJsDosConfig', () => {
-    it('should have worker thread disabled for debugging', () => {
-      expect(devJsDosConfig.workerThread).toBe(false);
-    });
-
-    it('should have autoStart disabled', () => {
-      expect(devJsDosConfig.autoStart).toBe(false);
-    });
-
-    it('should use light theme', () => {
-      expect(devJsDosConfig.theme).toBe('light');
     });
   });
 

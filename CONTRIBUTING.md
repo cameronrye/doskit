@@ -2,10 +2,6 @@
 
 Thank you for your interest in contributing to DosKit! This document provides guidelines and instructions for contributing to the project.
 
-## Code of Conduct
-
-This project adheres to a Code of Conduct that all contributors are expected to follow. Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before contributing.
-
 ## Getting Started
 
 ### Prerequisites

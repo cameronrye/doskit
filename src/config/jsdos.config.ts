@@ -51,7 +51,7 @@ export const defaultJsDosConfig: Partial<DosOptions> = {
   noCloud: true, // Disable cloud features by default
 
   // Advanced Settings
-  pathPrefix: 'https://v8.js-dos.com/latest/emulators/', // CDN for WASM files
+  pathPrefix: '/emulators/', // Local WASM files (copied from node_modules/js-dos/dist/emulators)
 };
 
 /**
@@ -78,27 +78,6 @@ export const mobileJsDosConfig: Partial<DosOptions> = {
       '→': 'ArrowRight',
     },
   ],
-};
-
-/**
- * Kiosk mode configuration (minimal UI)
- */
-export const kioskJsDosConfig: Partial<DosOptions> = {
-  ...defaultJsDosConfig,
-  kiosk: true,
-  autoStart: true,
-  fullScreen: true,
-  mouseCapture: true,
-};
-
-/**
- * Development configuration (easier debugging)
- */
-export const devJsDosConfig: Partial<DosOptions> = {
-  ...defaultJsDosConfig,
-  workerThread: false, // Easier debugging in main thread
-  autoStart: false, // Manual start for testing
-  theme: 'light',
 };
 
 /**

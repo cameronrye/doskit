@@ -5,8 +5,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   defaultDosboxConfig,
-  gameOptimizedConfig,
-  compatibilityConfig,
 } from './dosbox.conf';
 
 describe('dosbox.conf', () => {
@@ -52,72 +50,17 @@ describe('dosbox.conf', () => {
     });
   });
 
-  describe('gameOptimizedConfig', () => {
-    it('should be a non-empty string', () => {
-      expect(typeof gameOptimizedConfig).toBe('string');
-      expect(gameOptimizedConfig.length).toBeGreaterThan(0);
-    });
-
-    it('should use Pentium CPU type', () => {
-      expect(gameOptimizedConfig).toContain('cputype=pentium');
-    });
-
-    it('should have more video memory', () => {
-      expect(gameOptimizedConfig).toContain('vmemsize=16');
-    });
-
-    it('should mount C drive in autoexec', () => {
-      expect(gameOptimizedConfig).toContain('mount c .');
-      expect(gameOptimizedConfig).toContain('c:');
-    });
-  });
-
-  describe('compatibilityConfig', () => {
-    it('should be a non-empty string', () => {
-      expect(typeof compatibilityConfig).toBe('string');
-      expect(compatibilityConfig.length).toBeGreaterThan(0);
-    });
-
-    it('should use normal CPU core for compatibility', () => {
-      expect(compatibilityConfig).toContain('core=normal');
-    });
-
-    it('should use 486 CPU type', () => {
-      expect(compatibilityConfig).toContain('cputype=486');
-    });
-
-    it('should have fixed cycle count', () => {
-      expect(compatibilityConfig).toContain('cycles=10000');
-    });
-
-    it('should use DOS 5.0 for compatibility', () => {
-      expect(compatibilityConfig).toContain('ver=5.0');
-    });
-
-    it('should have less video memory', () => {
-      expect(compatibilityConfig).toContain('vmemsize=4');
-    });
-  });
-
   describe('Configuration validity', () => {
-    it('all configs should have required sections', () => {
-      const configs = [defaultDosboxConfig, gameOptimizedConfig, compatibilityConfig];
-      
-      configs.forEach((config) => {
-        expect(config).toContain('[cpu]');
-        expect(config).toContain('[autoexec]');
-      });
+    it('should have required sections', () => {
+      expect(defaultDosboxConfig).toContain('[cpu]');
+      expect(defaultDosboxConfig).toContain('[autoexec]');
     });
 
-    it('all configs should be properly formatted', () => {
-      const configs = [defaultDosboxConfig, gameOptimizedConfig, compatibilityConfig];
-      
-      configs.forEach((config) => {
-        // Should have section headers
-        expect(config.match(/\[.*\]/g)).toBeTruthy();
-        // Should have key=value pairs
-        expect(config.match(/\w+=\w+/g)).toBeTruthy();
-      });
+    it('should be properly formatted', () => {
+      // Should have section headers
+      expect(defaultDosboxConfig.match(/\[.*\]/g)).toBeTruthy();
+      // Should have key=value pairs
+      expect(defaultDosboxConfig.match(/\w+=\w+/g)).toBeTruthy();
     });
   });
 });
