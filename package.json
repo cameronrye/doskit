@@ -1,0 +1,70 @@
+{
+  "name": "doskit",
+  "version": "1.0.0",
+  "description": "A robust, cross-platform foundation for running DOS applications using js-dos WebAssembly technology",
+  "type": "module",
+  "author": "Cameron Rye <cameron@rye.dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cameronrye/doskit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cameronrye/doskit/issues"
+  },
+  "homepage": "https://github.com/cameronrye/doskit#readme",
+  "keywords": [
+    "dos",
+    "emulator",
+    "dosbox",
+    "webassembly",
+    "wasm",
+    "js-dos",
+    "retro",
+    "gaming",
+    "cross-platform",
+    "react",
+    "typescript"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "js-dos": "^8.3.20",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^24.6.0",
+    "@types/react": "^19.1.16",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.4",
+    "@vitest/ui": "^3.2.4",
+    "eslint": "^9.36.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.22",
+    "globals": "^16.4.0",
+    "jsdom": "^27.0.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.45.0",
+    "vite": "npm:rolldown-vite@7.1.14",
+    "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "vite": "npm:rolldown-vite@7.1.14"
+  },
+  "comments": {
+    "vite": "Using experimental Rolldown variant for improved build performance. For production, consider switching to stable Vite: 'vite': '^7.1.14'"
+  }
+}

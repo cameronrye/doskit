@@ -1,0 +1,212 @@
+/**
+ * DosPlayer Component Styles
+ * Responsive and cross-platform compatible styles
+ */
+
+.dos-player-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dos-player-container {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading indicator */
+.dos-player-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  z-index: 1000;
+  gap: 1rem;
+}
+
+.dos-player-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: dos-spinner-rotate 1s linear infinite;
+}
+
+@keyframes dos-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dos-player-loading p {
+  margin: 0;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* Error message */
+.dos-player-error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(139, 0, 0, 0.9);
+  color: #fff;
+  z-index: 1000;
+  padding: 2rem;
+  text-align: center;
+}
+
+.dos-player-error h3 {
+  margin: 0 0 1rem 0;
+  font-family: 'Courier New', monospace;
+  font-size: 24px;
+  text-transform: uppercase;
+}
+
+.dos-player-error p {
+  margin: 0 0 1.5rem 0;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  max-width: 500px;
+}
+
+.dos-player-error button {
+  padding: 0.75rem 1.5rem;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  background-color: #fff;
+  color: #8b0000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.dos-player-error button:hover {
+  background-color: #f0f0f0;
+}
+
+/* Status indicator */
+.dos-player-status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 8px 12px;
+  border-radius: 4px;
+  z-index: 100;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #fff;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #666;
+}
+
+.status-indicator.ready {
+  background-color: #0f0;
+  box-shadow: 0 0 8px #0f0;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.status-text {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .dos-player-status {
+    top: 5px;
+    right: 5px;
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+
+  .status-indicator {
+    width: 8px;
+    height: 8px;
+  }
+
+  .dos-player-loading p {
+    font-size: 12px;
+  }
+
+  .dos-player-error h3 {
+    font-size: 18px;
+  }
+
+  .dos-player-error p {
+    font-size: 12px;
+  }
+}
+
+/* Ensure proper sizing on mobile */
+@media (max-width: 480px) {
+  .dos-player-wrapper {
+    /* Prevent address bar from covering content on mobile */
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .dos-player-wrapper {
+    background-color: #000;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .dos-player-status {
+    background-color: rgba(0, 0, 0, 0.9);
+    border: 1px solid #fff;
+  }
+
+  .status-indicator.ready {
+    border: 1px solid #0f0;
+  }
+}
+
