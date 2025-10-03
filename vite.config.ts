@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [react()],
 
   // GitHub Pages deployment configuration
-  base: '/doskit/',
+  // Use '/' for local development, '/doskit/' for GitHub Pages
+  base: process.env.GITHUB_PAGES === 'true' ? '/doskit/' : '/',
 
   // Optimize for cross-platform compatibility
   server: {

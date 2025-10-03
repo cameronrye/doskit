@@ -14,7 +14,7 @@ describe('DosPlayer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockStop.mockClear();
-    
+
     // Setup window.Dos mock
     global.window.Dos = mockDos.mockReturnValue({
       stop: mockStop,
@@ -59,7 +59,7 @@ describe('DosPlayer', () => {
     it('should show error when Dos is not available', () => {
       global.window.Dos = undefined;
       render(<DosPlayer />);
-      
+
       expect(screen.getByText(/Error/i)).toBeInTheDocument();
       expect(screen.getByText(/DOS emulator library not loaded/i)).toBeInTheDocument();
     });
@@ -67,7 +67,7 @@ describe('DosPlayer', () => {
     it('should show reload button on error', () => {
       global.window.Dos = undefined;
       render(<DosPlayer />);
-      
+
       expect(screen.getByRole('button', { name: /Reload Page/i })).toBeInTheDocument();
     });
 
@@ -77,10 +77,50 @@ describe('DosPlayer', () => {
       });
 
       render(<DosPlayer />);
-      
+
       waitFor(() => {
         expect(screen.getByText(/Failed to initialize DOS emulator/i)).toBeInTheDocument();
       });
+    });
+
+    it('should suppress fullscreen errors from unhandled promise rejections', () => {
+      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      render(<DosPlayer />);
+
+      // Simulate a fullscreen error from js-dos
+      const fullscreenError = new TypeError("Failed to execute 'exitFullscreen' on 'Document': Document not active");
+      const event = new PromiseRejectionEvent('unhandledrejection', {
+        promise: Promise.reject(fullscreenError),
+        reason: fullscreenError,
+        cancelable: true,
+      });
+
+      // Dispatch the event
+      window.dispatchEvent(event);
+
+      // The error should be prevented from propagating
+      expect(event.defaultPrevented).toBe(true);
+
+      consoleWarn.mockRestore();
+    });
+
+    it('should not suppress non-fullscreen errors', () => {
+      render(<DosPlayer />);
+
+      // Simulate a different error
+      const otherError = new Error('Some other error');
+      const event = new PromiseRejectionEvent('unhandledrejection', {
+        promise: Promise.reject(otherError),
+        reason: otherError,
+        cancelable: true,
+      });
+
+      // Dispatch the event
+      window.dispatchEvent(event);
+
+      // The error should NOT be prevented (should propagate normally)
+      expect(event.defaultPrevented).toBe(false);
     });
   });
 
@@ -93,7 +133,7 @@ describe('DosPlayer', () => {
     it('should pass dosboxConf to Dos', () => {
       const customConfig = '[cpu]\ncore=auto';
       render(<DosPlayer dosboxConf={customConfig} />);
-      
+
       expect(mockDos).toHaveBeenCalledWith(
         expect.any(HTMLDivElement),
         expect.objectContaining({
@@ -105,7 +145,7 @@ describe('DosPlayer', () => {
     it('should merge custom options with defaults', () => {
       const customOptions = { volume: 0.5, theme: 'light' };
       render(<DosPlayer options={customOptions} />);
-      
+
       expect(mockDos).toHaveBeenCalledWith(
         expect.any(HTMLDivElement),
         expect.objectContaining(customOptions)
@@ -115,7 +155,7 @@ describe('DosPlayer', () => {
     it('should not initialize twice', () => {
       const { rerender } = render(<DosPlayer />);
       rerender(<DosPlayer />);
-      
+
       // Should only be called once despite rerender
       expect(mockDos).toHaveBeenCalledTimes(1);
     });

@@ -6,10 +6,12 @@
 
 import { useState } from 'react';
 import { DosPlayer } from './components/DosPlayer';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import './App.css';
 
 function App() {
   const [isReady, setIsReady] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const handleDosReady = () => {
     if (import.meta.env.DEV) {
@@ -25,15 +27,22 @@ function App() {
     setIsReady(false);
   };
 
+  const handleNetworkStatusChange = (online: boolean) => {
+    if (import.meta.env.DEV) {
+      console.log('[App] Network status changed:', online ? 'online' : 'offline');
+    }
+    setIsOnline(online);
+  };
+
   return (
     <div className="app">
+      {/* PWA Offline Indicator and Install Prompt */}
+      <OfflineIndicator onNetworkStatusChange={handleNetworkStatusChange} />
+
       <header className="app-header">
         <div className="header-content">
           <img src="/logo.svg" alt="DosKit Logo" className="header-logo" />
-          <div className="header-text">
-            <h1>DosKit</h1>
-            <p className="subtitle">Cross-Platform DOS Emulator</p>
-          </div>
+          <h1>DosKit</h1>
         </div>
       </header>
 
@@ -47,19 +56,29 @@ function App() {
 
       <footer className="app-footer">
         <div className="info">
-          {isReady ? (
-            <>
-              <span className="status-badge ready">● Ready</span>
-              <span className="info-text">
-                DOS prompt is active. Type commands to interact.
+          <div className="status-indicators">
+            {/* DOS Status */}
+            {isReady ? (
+              <span className="status-badge ready" title="DOS emulator is ready">
+                <span className="status-dot"></span>
+                <span>Ready</span>
               </span>
-            </>
-          ) : (
-            <>
-              <span className="status-badge loading">○ Loading</span>
-              <span className="info-text">Initializing DOS environment...</span>
-            </>
-          )}
+            ) : (
+              <span className="status-badge loading" title="Loading DOS emulator">
+                <span className="status-dot"></span>
+                <span>Loading</span>
+              </span>
+            )}
+
+            {/* Network Status */}
+            <span
+              className={`status-badge ${isOnline ? 'online' : 'offline'}`}
+              title={isOnline ? 'Connected to internet' : 'No internet connection'}
+            >
+              <span className="status-dot"></span>
+              <span>{isOnline ? 'Online' : 'Offline'}</span>
+            </span>
+          </div>
         </div>
         <div className="made-with">
           Made with <span className="heart">❤️</span> by{' '}

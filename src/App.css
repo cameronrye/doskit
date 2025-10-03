@@ -15,7 +15,7 @@
 
 .app-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 1rem 2rem;
+  padding: 0.5rem 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   z-index: 10;
 }
@@ -27,29 +27,17 @@
 }
 
 .header-logo {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
-}
-
-.header-text {
-  display: flex;
-  flex-direction: column;
 }
 
 .app-header h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: 1px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.app-header .subtitle {
-  margin: 0.25rem 0 0 0;
-  font-size: 0.9rem;
-  opacity: 0.9;
-  font-weight: 300;
 }
 
 .app-main {
@@ -80,9 +68,16 @@
   gap: 1rem;
 }
 
+.status-indicators {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .status-badge {
   display: inline-flex;
   align-items: center;
+  gap: 0.4rem;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-family: 'Courier New', monospace;
@@ -90,19 +85,40 @@
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  transition: all 0.2s;
 }
 
-.status-badge.ready {
-  background-color: rgba(0, 255, 0, 0.2);
-  color: #0f0;
-  border: 1px solid #0f0;
+.status-badge:hover {
+  transform: translateY(-1px);
+}
+
+.status-badge.ready,
+.status-badge.loading,
+.status-badge.online,
+.status-badge.offline {
+  background-color: rgba(39, 174, 96, 0.2);
+  color: #27ae60;
+  border: 1px solid #27ae60;
 }
 
 .status-badge.loading {
-  background-color: rgba(255, 165, 0, 0.2);
-  color: #ffa500;
-  border: 1px solid #ffa500;
   animation: pulse-loading 1.5s ease-in-out infinite;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-dot 2s infinite;
+}
+
+.status-badge.loading .status-dot {
+  animation: pulse-loading 1.5s ease-in-out infinite;
+}
+
+.status-badge.offline .status-dot {
+  animation: none;
 }
 
 @keyframes pulse-loading {
@@ -115,9 +131,14 @@
   }
 }
 
-.info-text {
-  color: #ccc;
-  font-size: 0.85rem;
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .app-footer .credits {
@@ -177,20 +198,16 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .app-header {
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 1rem;
   }
 
   .header-logo {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
   }
 
   .app-header h1 {
     font-size: 1.5rem;
-  }
-
-  .app-header .subtitle {
-    font-size: 0.8rem;
   }
 
   .app-footer {
@@ -201,17 +218,18 @@
   }
 
   .app-footer .info {
-    flex-direction: column;
-    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .status-indicators {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    justify-content: center;
   }
 
   .status-badge {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.6rem;
-  }
-
-  .info-text {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
   }
 }
 
@@ -223,16 +241,12 @@
   }
 
   .header-logo {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
   }
 
   .app-header h1 {
     font-size: 1.25rem;
-  }
-
-  .app-header .subtitle {
-    font-size: 0.75rem;
   }
 
   .app-footer {

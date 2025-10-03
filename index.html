@@ -4,22 +4,57 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Primary Meta Tags -->
     <title>DosKit - Cross-Platform DOS Emulator</title>
+    <meta name="title" content="DosKit - Cross-Platform DOS Emulator" />
+    <meta name="description" content="A robust, cross-platform DOS emulator powered by js-dos WebAssembly technology. Run classic DOS applications and games directly in your browser." />
+    <meta name="keywords" content="DOS, emulator, DOSBox, WebAssembly, WASM, js-dos, retro gaming, cross-platform" />
+    <meta name="author" content="Cameron Rye" />
 
-    <!-- js-dos CSS -->
-    <link
-      rel="stylesheet"
-      href="https://v8.js-dos.com/latest/js-dos.css"
-      integrity="sha384-eUApgK/XWoXvh0ENLurRTIx/chSQ6AMU6aosfLS7kzhdP60eL/CiHNp5SydGB2XR"
-      crossorigin="anonymous">
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="DosKit" />
 
-    <!-- js-dos JavaScript (loaded before React app) -->
-    <script
-      src="https://v8.js-dos.com/latest/js-dos.js"
-      integrity="sha384-/ie1P9ewsTC4SeFFTzdyaVpDvpvJ6Z2ALz/jhjyKlL9K/kwxLIOsIhdnlhdyFPag"
-      crossorigin="anonymous"></script>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-128x128.png" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://cameronrye.github.io/doskit/" />
+    <meta property="og:title" content="DosKit - Cross-Platform DOS Emulator" />
+    <meta property="og:description" content="Run classic DOS applications and games directly in your browser with WebAssembly technology." />
+    <meta property="og:image" content="https://cameronrye.github.io/doskit/logo.svg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://cameronrye.github.io/doskit/" />
+    <meta property="twitter:title" content="DosKit - Cross-Platform DOS Emulator" />
+    <meta property="twitter:description" content="Run classic DOS applications and games directly in your browser with WebAssembly technology." />
+    <meta property="twitter:image" content="https://cameronrye.github.io/doskit/logo.svg" />
+
+    <!-- js-dos CSS (local copy) -->
+    <link rel="stylesheet" href="/js-dos.css">
+
+    <!-- js-dos JavaScript (local copy, loaded before React app) -->
+    <script src="/js-dos.js"></script>
   </head>
   <body>
+    <noscript>
+      <div style="padding: 2rem; text-align: center; font-family: sans-serif;">
+        <h1>JavaScript Required</h1>
+        <p>DosKit requires JavaScript to run. Please enable JavaScript in your browser settings.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

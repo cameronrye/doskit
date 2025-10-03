@@ -13,7 +13,7 @@ import { getDefaultConfig } from '../config/jsdos.config';
 import { defaultDosboxConfig } from '../config/dosbox.conf';
 import './DosPlayer.css';
 
-// js-dos is loaded via CDN and available globally
+// js-dos is loaded via local script and available globally
 declare global {
   interface Window {
     Dos?: (element: HTMLDivElement, options?: Partial<DosOptions>) => DosProps;
@@ -50,7 +50,6 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false);
 
   // Store callbacks in refs to avoid recreating the event handler
   const onReadyRef = useRef(onReady);
@@ -80,7 +79,6 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
           console.log('[DosPlayer] Command Interface ready');
         }
         ciRef.current = arg as CommandInterface;
-        setIsReady(true);
 
         // Set up exit handler
         if (ciRef.current) {
@@ -124,6 +122,35 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
     }
   }, []); // Stable reference - uses only refs which don't change
 
+  // Handle unhandled promise rejections from js-dos (e.g., fullscreen errors)
+  useEffect(() => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      // Check if this is a fullscreen-related error from js-dos
+      const error = event.reason;
+      const isFullscreenError =
+        error instanceof TypeError &&
+        error.message &&
+        (error.message.includes('exitFullscreen') ||
+         error.message.includes('requestFullscreen'));
+
+      if (isFullscreenError) {
+        // Prevent the error from appearing in console
+        event.preventDefault();
+
+        // Log in development mode for debugging
+        if (import.meta.env.DEV) {
+          console.warn('[DosPlayer] Suppressed fullscreen error (non-critical):', error.message);
+        }
+      }
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
   // Initialize js-dos (only once)
   useEffect(() => {
     // Prevent double initialization (React Strict Mode in dev)
@@ -141,7 +168,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
 
     // Check if Dos is available
     if (!window.Dos) {
-      console.error('[DosPlayer] Dos function not available. Make sure js-dos is loaded from CDN.');
+      console.error('[DosPlayer] Dos function not available. Make sure js-dos is loaded.');
       setError('DOS emulator library not loaded. Please refresh the page.');
       setIsLoading(false);
       return;
@@ -194,7 +221,6 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
       }
       ciRef.current = null;
       isInitializedRef.current = false;
-      setIsReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Intentionally empty - initialize only once on mount
@@ -215,14 +241,6 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
           <h3>Error</h3>
           <p>{error}</p>
           <button onClick={() => window.location.reload()}>Reload Page</button>
-        </div>
-      )}
-
-      {/* Status indicator */}
-      {isReady && (
-        <div className="dos-player-status">
-          <span className="status-indicator ready"></span>
-          <span className="status-text">DOS Ready</span>
         </div>
       )}
 

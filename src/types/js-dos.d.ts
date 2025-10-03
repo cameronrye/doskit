@@ -214,8 +214,3 @@ export function Dos(
   options?: Partial<DosOptions>
 ): DosProps;
 
-// Also declare the module for js-dos imports
-declare module 'js-dos' {
-  export * from '../types/js-dos';
-}
-

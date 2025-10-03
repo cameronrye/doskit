@@ -30,11 +30,6 @@ describe('App', () => {
       expect(logo).toHaveAttribute('src', '/logo.svg');
     });
 
-    it('should render subtitle', () => {
-      render(<App />);
-      expect(screen.getByText('Cross-Platform DOS Emulator')).toBeInTheDocument();
-    });
-
     it('should render DosPlayer component', () => {
       render(<App />);
       expect(screen.getByTestId('dos-player-mock')).toBeInTheDocument();

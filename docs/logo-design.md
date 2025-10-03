@@ -141,10 +141,3 @@ Potential additions for future versions:
 ## License
 
 The DosKit logo follows the same MIT license as the project itself. You're free to use, modify, and distribute it as part of the DosKit project.
-
----
-
-**Created**: 2025-10-03  
-**Designer**: AI-assisted design based on project requirements  
-**Version**: 1.0
-

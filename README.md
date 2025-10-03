@@ -15,6 +15,8 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 
 - **Interactive DOS Prompt**: Boots directly to a fully functional DOS command prompt
 - **Cross-Platform**: Works on Windows, macOS, Linux, iOS, and Android
+- **Progressive Web App (PWA)**: Install as a native app with offline support
+- **Offline Functionality**: Works completely offline after first visit
 - **Modern Tech Stack**: Built with React 19, TypeScript, and Vite
 - **WebAssembly Performance**: Leverages js-dos v8.3.20 for near-native DOS emulation
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
@@ -22,11 +24,13 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
 - **Touch Controls**: Mobile-friendly on-screen keyboard for touch devices
 - **Type-Safe**: Full TypeScript support with comprehensive type definitions
+- **Service Worker Caching**: Fast loading with intelligent cache management
 
 ## 📋 Table of Contents
 
 - [Quick Start](#quick-start)
 - [Live Demo](#live-demo)
+- [PWA Features](#pwa-features)
 - [Technology Stack](#technology-stack)
 - [Project Structure](#project-structure)
 - [Development](#development)
@@ -71,6 +75,42 @@ The DOS emulator will automatically load and present an interactive DOS prompt!
 **Try it now**: [https://cameronrye.github.io/doskit/](https://cameronrye.github.io/doskit/)
 
 The live demo is automatically deployed from the `main` branch using GitHub Actions. Every push to `main` triggers a new deployment.
+
+## 📱 PWA Features
+
+DosKit is a fully-featured **Progressive Web App** that can be installed on your device and works offline!
+
+### ✨ Key PWA Features
+
+- **📥 Installable**: Install DosKit as a native app on desktop and mobile
+- **🔌 Offline Support**: Works completely offline after first visit
+- **⚡ Fast Loading**: Service worker caches assets for instant loading
+- **🎨 Native Experience**: Standalone mode without browser UI
+- **🔄 Auto-Updates**: Automatic updates when new versions are available
+- **📊 Connection Status**: Real-time online/offline indicator
+
+### 🚀 Quick Install
+
+**Desktop (Chrome/Edge/Brave):**
+1. Visit the live demo
+2. Click the install icon (⊕) in the address bar
+3. Click "Install" to add to your desktop
+
+**Mobile (Android):**
+1. Visit the live demo in Chrome
+2. Tap "Add to Home screen" from the menu
+3. Launch from your home screen
+
+**Mobile (iOS):**
+1. Visit the live demo in Safari
+2. Tap Share → "Add to Home Screen"
+3. Launch from your home screen
+
+### 📚 PWA Documentation
+
+- **[PWA Quick Start Guide](docs/PWA-QUICK-START.md)** - Get started in 5 minutes
+- **[Full PWA Documentation](docs/PWA.md)** - Comprehensive guide
+- **[PWA Testing Guide](docs/PWA-TESTING.md)** - Testing checklist
 
 ## 🛠️ Technology Stack
 
