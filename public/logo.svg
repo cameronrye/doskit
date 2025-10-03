@@ -1,0 +1,41 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background rounded rectangle with gradient -->
+  <defs>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Cursor blink animation -->
+    <style>
+      @keyframes blink {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0; }
+      }
+      .cursor {
+        animation: blink 1.2s infinite;
+      }
+    </style>
+  </defs>
+  
+  <!-- Terminal window background -->
+  <rect x="32" y="32" width="448" height="448" rx="48" fill="url(#terminalGradient)"/>
+  
+  <!-- Inner terminal screen (darker area) -->
+  <rect x="64" y="96" width="384" height="352" rx="16" fill="#1a1a1a" opacity="0.9"/>
+  
+  <!-- Window controls (top bar) -->
+  <circle cx="96" cy="72" r="10" fill="#ff5f56"/>
+  <circle cx="128" cy="72" r="10" fill="#ffbd2e"/>
+  <circle cx="160" cy="72" r="10" fill="#27c93f"/>
+  
+  <!-- DOS Prompt text "C:\>" -->
+  <text x="96" y="200" font-family="'Courier New', monospace" font-size="72" font-weight="bold" fill="#00ff00">C:\&gt;</text>
+  
+  <!-- Blinking cursor -->
+  <rect x="280" y="168" width="32" height="8" fill="#00ff00" class="cursor"/>
+  
+  <!-- Subtle "DosKit" text at bottom -->
+  <text x="256" y="400" font-family="'Courier New', monospace" font-size="32" font-weight="bold" fill="rgba(255,255,255,0.6)" text-anchor="middle">DosKit</text>
+</svg>
+
