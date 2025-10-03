@@ -90,8 +90,10 @@ describe('DosPlayer', () => {
 
       // Simulate a fullscreen error from js-dos
       const fullscreenError = new TypeError("Failed to execute 'exitFullscreen' on 'Document': Document not active");
+      // Create a promise and catch it to prevent unhandled rejection
+      const rejectedPromise = Promise.reject(fullscreenError).catch(() => {});
       const event = new PromiseRejectionEvent('unhandledrejection', {
-        promise: Promise.reject(fullscreenError),
+        promise: rejectedPromise,
         reason: fullscreenError,
         cancelable: true,
       });
@@ -110,8 +112,10 @@ describe('DosPlayer', () => {
 
       // Simulate a different error
       const otherError = new Error('Some other error');
+      // Create a promise and catch it to prevent unhandled rejection
+      const rejectedPromise = Promise.reject(otherError).catch(() => {});
       const event = new PromiseRejectionEvent('unhandledrejection', {
-        promise: Promise.reject(otherError),
+        promise: rejectedPromise,
         reason: otherError,
         cancelable: true,
       });
