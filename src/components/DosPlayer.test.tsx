@@ -131,12 +131,46 @@ describe('DosPlayer', () => {
         }),
       };
 
-      global.window.Dos = vi.fn((element, options) => {
+      const mockDosProps = {
+        stop: mockStop,
+        getVersion: vi.fn(),
+        getToken: vi.fn(),
+        setTheme: vi.fn(),
+        setLang: vi.fn(),
+        setBackend: vi.fn(),
+        setBackendLocked: vi.fn(),
+        setWorkerThread: vi.fn(),
+        setOffscreenCanvas: vi.fn(),
+        setBackground: vi.fn(),
+        setFullScreen: vi.fn(),
+        setImageRendering: vi.fn(),
+        setRenderBackend: vi.fn(),
+        setRenderAspect: vi.fn(),
+        setSoftFullscreen: vi.fn(),
+        setThinSidebar: vi.fn(),
+        setMouseCapture: vi.fn(),
+        setMouseSensitivity: vi.fn(),
+        setNoCursor: vi.fn(),
+        setSoftKeyboardLayout: vi.fn(),
+        setSoftKeyboardSymbols: vi.fn(),
+        setVolume: vi.fn(),
+        setAutoStart: vi.fn(),
+        setCountDownStart: vi.fn(),
+        setAutoSave: vi.fn(),
+        setKiosk: vi.fn(),
+        setPaused: vi.fn(),
+        setScaleControls: vi.fn(),
+        setNoCloud: vi.fn(),
+        setKey: vi.fn(),
+        save: vi.fn(),
+      };
+
+      global.window.Dos = vi.fn((_element, options) => {
         // Simulate ci-ready event
         setTimeout(() => {
           options?.onEvent?.('ci-ready', mockCi);
         }, 0);
-        return { stop: mockStop };
+        return mockDosProps;
       });
 
       render(<DosPlayer onReady={onReady} />);
@@ -159,11 +193,45 @@ describe('DosPlayer', () => {
         }),
       };
 
-      global.window.Dos = vi.fn((element, options) => {
+      const mockDosProps = {
+        stop: mockStop,
+        getVersion: vi.fn(),
+        getToken: vi.fn(),
+        setTheme: vi.fn(),
+        setLang: vi.fn(),
+        setBackend: vi.fn(),
+        setBackendLocked: vi.fn(),
+        setWorkerThread: vi.fn(),
+        setOffscreenCanvas: vi.fn(),
+        setBackground: vi.fn(),
+        setFullScreen: vi.fn(),
+        setImageRendering: vi.fn(),
+        setRenderBackend: vi.fn(),
+        setRenderAspect: vi.fn(),
+        setSoftFullscreen: vi.fn(),
+        setThinSidebar: vi.fn(),
+        setMouseCapture: vi.fn(),
+        setMouseSensitivity: vi.fn(),
+        setNoCursor: vi.fn(),
+        setSoftKeyboardLayout: vi.fn(),
+        setSoftKeyboardSymbols: vi.fn(),
+        setVolume: vi.fn(),
+        setAutoStart: vi.fn(),
+        setCountDownStart: vi.fn(),
+        setAutoSave: vi.fn(),
+        setKiosk: vi.fn(),
+        setPaused: vi.fn(),
+        setScaleControls: vi.fn(),
+        setNoCloud: vi.fn(),
+        setKey: vi.fn(),
+        save: vi.fn(),
+      };
+
+      global.window.Dos = vi.fn((_element, options) => {
         setTimeout(() => {
           options?.onEvent?.('ci-ready', mockCi);
         }, 0);
-        return { stop: mockStop };
+        return mockDosProps;
       });
 
       render(<DosPlayer onExit={onExit} />);

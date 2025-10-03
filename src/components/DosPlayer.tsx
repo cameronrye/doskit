@@ -93,7 +93,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
 
           // Set up stdout logging for debugging (only in development)
           if (import.meta.env.DEV) {
-            ciRef.current.events().onStdout((message) => {
+            ciRef.current.events().onStdout((message: string) => {
               console.log('[DOS]', message);
             });
           }
@@ -187,7 +187,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
         console.log('[DosPlayer] Component unmounting, cleaning up...');
       }
       if (dosPlayerRef.current) {
-        dosPlayerRef.current.stop().catch((err) => {
+        dosPlayerRef.current.stop().catch((err: unknown) => {
           console.error('[DosPlayer] Error stopping player:', err);
         });
         dosPlayerRef.current = null;

@@ -5,6 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
 
+  // GitHub Pages deployment configuration
+  base: '/doskit/',
+
   // Optimize for cross-platform compatibility
   server: {
     host: true, // Listen on all addresses
@@ -23,8 +26,12 @@ export default defineConfig({
     // Optimize chunk splitting
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+          }
         },
       },
     },

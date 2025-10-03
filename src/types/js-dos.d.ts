@@ -7,8 +7,7 @@
  * Based on the official js-dos API reference
  */
 
-declare module 'js-dos' {
-  export interface DosOptions {
+export interface DosOptions {
     // Bundle/Configuration
     url?: string;
     dosboxConf?: string;
@@ -34,7 +33,7 @@ declare module 'js-dos' {
     mouseCapture?: boolean;
     mouseSensitivity?: number;
     noCursor?: boolean;
-    softKeyboardLayout?: string[] | string[][][];
+    softKeyboardLayout?: string[][] | string[][][];
     softKeyboardSymbols?: { [key: string]: string }[];
 
     // Audio Settings
@@ -63,20 +62,20 @@ declare module 'js-dos' {
     pathSuffix?: string;
     backendHardware?: (backend: string) => Promise<string | null>;
     onEvent?: (event: DosEvent, arg?: unknown) => void;
-  }
+}
 
-  export type DosEvent =
-    | 'emu-ready'
-    | 'ci-ready'
-    | 'bnd-play'
-    | 'open-key'
-    | 'fullscreen-change';
+export type DosEvent =
+  | 'emu-ready'
+  | 'ci-ready'
+  | 'bnd-play'
+  | 'open-key'
+  | 'fullscreen-change';
 
-  export type InitFs =
-    | Array<{ path: string; contents: Uint8Array }>
-    | Uint8Array;
+export type InitFs =
+  | Array<{ path: string; contents: Uint8Array }>
+  | Uint8Array;
 
-  export interface DosProps {
+export interface DosProps {
     // Version Information
     getVersion(): [string, string];
     getToken(): string | null;
@@ -102,7 +101,7 @@ declare module 'js-dos' {
     setMouseCapture(capture: boolean): void;
     setMouseSensitivity(sensitivity: number): void;
     setNoCursor(noCursor: boolean): void;
-    setSoftKeyboardLayout(layout: string[] | string[][][]): void;
+    setSoftKeyboardLayout(layout: string[][] | string[][][]): void;
     setSoftKeyboardSymbols(symbols: { [key: string]: string }[]): void;
 
     // Audio Methods
@@ -125,9 +124,9 @@ declare module 'js-dos' {
     // Lifecycle Methods
     save(): Promise<boolean>;
     stop(): Promise<void>;
-  }
+}
 
-  export interface CommandInterface {
+export interface CommandInterface {
     // Configuration
     config(): Promise<DosConfig>;
 
@@ -176,43 +175,47 @@ declare module 'js-dos' {
 
     // Performance
     asyncifyStats(): Promise<AsyncifyStats>;
-  }
+}
 
-  export interface CommandInterfaceEvents {
-    onStdout(consumer: (message: string) => void): void;
-    onFrameSize(consumer: (width: number, height: number) => void): void;
-    onFrame(
-      consumer: (rgb: Uint8Array | null, rgba: Uint8Array | null) => void
-    ): void;
-    onSoundPush(consumer: (samples: Float32Array) => void): void;
-    onExit(consumer: () => void): void;
-    onMessage(consumer: (msgType: MessageType, ...args: unknown[]) => void): void;
-    onNetworkConnected(
-      consumer: (networkType: NetworkType, address: string) => void
-    ): void;
-    onNetworkDisconnected(consumer: (networkType: NetworkType) => void): void;
-  }
+export interface CommandInterfaceEvents {
+  onStdout(consumer: (message: string) => void): void;
+  onFrameSize(consumer: (width: number, height: number) => void): void;
+  onFrame(
+    consumer: (rgb: Uint8Array | null, rgba: Uint8Array | null) => void
+  ): void;
+  onSoundPush(consumer: (samples: Float32Array) => void): void;
+  onExit(consumer: () => void): void;
+  onMessage(consumer: (msgType: MessageType, ...args: unknown[]) => void): void;
+  onNetworkConnected(
+    consumer: (networkType: NetworkType, address: string) => void
+  ): void;
+  onNetworkDisconnected(consumer: (networkType: NetworkType) => void): void;
+}
 
-  export interface DosConfig {
-    [key: string]: unknown;
-  }
+export interface DosConfig {
+  [key: string]: unknown;
+}
 
-  export interface FsNode {
-    name: string;
-    size: number;
-    nodes?: FsNode[];
-  }
+export interface FsNode {
+  name: string;
+  size: number;
+  nodes?: FsNode[];
+}
 
-  export type NetworkType = 'ipx';
-  export type MessageType = string;
+export type NetworkType = 'ipx';
+export type MessageType = string;
 
-  export interface AsyncifyStats {
-    [key: string]: number | string | boolean;
-  }
+export interface AsyncifyStats {
+  [key: string]: number | string | boolean;
+}
 
-  export function Dos(
-    element: HTMLDivElement,
-    options?: Partial<DosOptions>
-  ): DosProps;
+export function Dos(
+  element: HTMLDivElement,
+  options?: Partial<DosOptions>
+): DosProps;
+
+// Also declare the module for js-dos imports
+declare module 'js-dos' {
+  export * from '../types/js-dos';
 }
 

@@ -26,9 +26,11 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 ## 📋 Table of Contents
 
 - [Quick Start](#quick-start)
+- [Live Demo](#live-demo)
 - [Technology Stack](#technology-stack)
 - [Project Structure](#project-structure)
 - [Development](#development)
+- [Deployment](#deployment)
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Browser Compatibility](#browser-compatibility)
@@ -63,6 +65,12 @@ npm run dev
 4. Open your browser and navigate to `http://localhost:5173`
 
 The DOS emulator will automatically load and present an interactive DOS prompt!
+
+## 🌐 Live Demo
+
+**Try it now**: [https://cameronrye.github.io/doskit/](https://cameronrye.github.io/doskit/)
+
+The live demo is automatically deployed from the `main` branch using GitHub Actions. Every push to `main` triggers a new deployment.
 
 ## 🛠️ Technology Stack
 
@@ -150,6 +158,19 @@ npm run lint
 3. **See changes instantly**: Vite HMR updates the browser automatically
 4. **Test**: Interact with the DOS prompt to verify functionality
 5. **Build**: Run `npm run build` to create production bundle
+
+## 🚀 Deployment
+
+DosKit is configured for automatic deployment to GitHub Pages. See the [Deployment Guide](docs/DEPLOYMENT.md) for detailed instructions.
+
+### Quick Deployment
+
+1. **Enable GitHub Pages** in repository settings (Settings → Pages → Source: GitHub Actions)
+2. **Push to main branch**: `git push origin main`
+3. **Monitor deployment**: Check the Actions tab
+4. **Visit your site**: `https://cameronrye.github.io/doskit/`
+
+The site automatically rebuilds and deploys on every push to `main`.
 
 ## ⚙️ Configuration
 
