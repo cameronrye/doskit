@@ -179,7 +179,7 @@ export function update(): void {
 export function isStandalone(): boolean {
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
-    (window.navigator as any).standalone === true
+    ('standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true)
   );
 }
 
@@ -203,7 +203,7 @@ export async function getRegistration(): Promise<ServiceWorkerRegistration | und
 /**
  * Send a message to the service worker
  */
-export async function sendMessage(message: any): Promise<void> {
+export async function sendMessage(message: unknown): Promise<void> {
   const registration = await getRegistration();
   if (registration && registration.active) {
     registration.active.postMessage(message);

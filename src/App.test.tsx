@@ -40,7 +40,10 @@ describe('App', () => {
     it('should show loading status initially', () => {
       render(<App />);
       expect(screen.getByText(/Loading/i)).toBeInTheDocument();
-      expect(screen.getByText(/Initializing DOS environment/i)).toBeInTheDocument();
+      // Check for network status in the footer status indicators
+      const statusIndicators = document.querySelector('.status-indicators');
+      expect(statusIndicators).toBeInTheDocument();
+      expect(statusIndicators).toHaveTextContent(/Online/i);
     });
 
     it('should have status display elements', () => {
@@ -49,7 +52,7 @@ describe('App', () => {
       // Check that status elements exist
       const statusBadge = screen.getByText(/Loading/i);
       expect(statusBadge).toBeInTheDocument();
-      expect(statusBadge).toHaveClass('status-badge');
+      expect(statusBadge.parentElement).toHaveClass('status-badge');
     });
   });
 

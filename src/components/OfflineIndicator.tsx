@@ -32,7 +32,8 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
     const checkInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isIOSStandalone = (window.navigator as any).standalone === true;
+      // iOS Safari has a non-standard 'standalone' property
+      const isIOSStandalone = 'standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true;
 
       setIsInstalled(isStandalone || (isIOS && isIOSStandalone));
     };
