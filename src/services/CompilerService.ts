@@ -11,7 +11,8 @@
 import type { CommandInterface } from '../types/js-dos';
 import type { CompileResult, CompilerOptions, BuildMessage } from '../types/compiler';
 import { FileSystemService } from './FileSystemService';
-import { mockCompilerEnabled, mockCompilationDelay, compilerConfig } from '../config/compiler.config';
+import { mockCompilerEnabled, mockCompilationDelay, compilerConfig, realDosCompilerEnabled } from '../config/compiler.config';
+import { DosExecutableGenerator } from './DosExecutableGenerator';
 
 /**
  * Service for compiling DOS programs
@@ -28,8 +29,7 @@ export class CompilerService {
 
   /**
    * Compile a C source file
-   * Currently uses mock compiler
-   * Future: Will support WebAssembly GCC
+   * Supports both mock compiler and real DOS compilation
    */
   async compile(
     sourceFile: string,
@@ -42,8 +42,14 @@ export class CompilerService {
     this.addBuildMessage('info', `Starting compilation of ${sourceFile}...`);
 
     try {
-      // Currently only mock compiler is supported
-      // TODO: Add WebAssembly GCC support when mockCompilerEnabled = false
+      // Use real DOS compiler if enabled (Phase 3 POC)
+      if (realDosCompilerEnabled) {
+        this.addBuildMessage('info', 'Using real DOS executable generator (Phase 3 POC)');
+        return await this.realCompile(sourceFile, outputFile, options);
+      }
+
+      // Otherwise use mock compiler (Phase 2)
+      this.addBuildMessage('info', 'Using mock compiler (Phase 2)');
       return await this.mockCompile(sourceFile, outputFile, options);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -175,6 +181,108 @@ export class CompilerService {
   }
 
 
+
+  /**
+   * Real DOS compilation using DOS Executable Generator
+   * This is the proof-of-concept implementation for Phase 3
+   */
+  private async realCompile(
+    sourceFile: string,
+    outputFile: string,
+    _options?: Partial<CompilerOptions>
+  ): Promise<CompileResult> {
+    const startTime = Date.now();
+
+    // Read source file from filesystem
+    let sourceCode: string;
+    try {
+      sourceCode = await this.fs.readTextFile(`/C/PROJECT/${sourceFile}`);
+    } catch (error) {
+      this.addBuildMessage('error', `Source file not found: ${sourceFile}`);
+      return {
+        success: false,
+        errors: [`Source file not found: ${sourceFile}`],
+        warnings: [],
+        outputFile,
+        rawOutput: `Error: Source file not found: ${sourceFile}`,
+        compilationTime: Date.now() - startTime,
+      };
+    }
+
+    this.addBuildMessage('info', `Compiling ${sourceFile} with DOS Executable Generator...`);
+
+    // Basic syntax validation
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Check for common C syntax errors
+    if (!sourceCode.includes('int main')) {
+      errors.push(`${sourceFile}:1: error: 'main' function not found`);
+    }
+
+    // Check for missing includes
+    if (sourceCode.includes('printf') && !sourceCode.includes('#include <stdio.h>')) {
+      warnings.push(`${sourceFile}:1: warning: implicit declaration of function 'printf'`);
+    }
+
+    // Add warnings to build messages
+    warnings.forEach(warning => {
+      this.addBuildMessage('warning', warning);
+    });
+
+    // If there are errors, fail compilation
+    if (errors.length > 0) {
+      errors.forEach(error => {
+        this.addBuildMessage('error', error);
+      });
+
+      return {
+        success: false,
+        errors,
+        warnings,
+        outputFile,
+        rawOutput: errors.join('\n'),
+        compilationTime: Date.now() - startTime,
+      };
+    }
+
+    // Generate real DOS executable (COM format for simplicity)
+    this.addBuildMessage('info', 'Generating DOS COM executable...');
+    const executable = DosExecutableGenerator.generateFromSimpleC(sourceCode);
+
+    // Validate generated executable (COM files are just raw code, so just check size)
+    if (executable.length === 0 || executable.length > 65535) {
+      this.addBuildMessage('error', 'Failed to generate valid DOS executable');
+      return {
+        success: false,
+        errors: ['Failed to generate valid DOS executable'],
+        warnings,
+        outputFile,
+        rawOutput: 'Error: Invalid DOS executable generated',
+        compilationTime: Date.now() - startTime,
+      };
+    }
+
+    // Write executable to filesystem
+    // Note: Create a copy because fsWriteFile may transfer the ArrayBuffer
+    const executableCopy = new Uint8Array(executable);
+    const filePath = `/C/PROJECT/${outputFile}`;
+    await this.fs.writeBinaryFile(filePath, executableCopy);
+
+    this.addBuildMessage('success', `Real DOS compilation successful: ${outputFile}`);
+    this.addBuildMessage('info', `Executable size: ${executable.length} bytes`);
+    this.addBuildMessage('info', `Build completed in ${Date.now() - startTime}ms`);
+
+    return {
+      success: true,
+      errors: [],
+      warnings,
+      outputFile,
+      executable,
+      rawOutput: warnings.join('\n') || 'Compilation successful',
+      compilationTime: Date.now() - startTime,
+    };
+  }
 
   /**
    * Create a mock DOS executable

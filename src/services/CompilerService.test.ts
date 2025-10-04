@@ -12,6 +12,16 @@ import type { CommandInterface } from '../types/js-dos';
 vi.mock('../config/compiler.config', () => ({
   mockCompilerEnabled: true,
   mockCompilationDelay: 100, // Shorter delay for tests
+  realDosCompilerEnabled: false, // Use mock compiler for tests
+  compilerConfig: {
+    defaultOptimizationLevel: 2,
+    defaultWarningLevel: 'all',
+    defaultDebugInfo: false,
+    maxSourceFileSize: 1024 * 1024,
+    maxOutputFileSize: 10 * 1024 * 1024,
+    allowedExtensions: ['.c', '.h'],
+    outputExtension: '.exe',
+  },
 }));
 
 describe('CompilerService', () => {

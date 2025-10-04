@@ -59,14 +59,14 @@ export function useDosCompiler(ci: CommandInterface | null): UseDosCompilerResul
 
     try {
       const result = await compilerServiceRef.current.compile(sourceFile, outputFile);
-      
+
       // Get build messages from compiler service
       const messages = compilerServiceRef.current.getBuildMessages();
       setBuildMessages(messages);
-      
+
       setLastResult(result);
       setBuildStatus(result.success ? 'success' : 'error');
-      
+
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Compilation failed';

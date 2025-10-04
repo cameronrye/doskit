@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { DosOptions, DosProps, CommandInterface, DosEvent } from '../types/js-dos';
+import type { DosOptions, DosProps, CommandInterface, DosEvent, InitFs } from '../types/js-dos';
 import { getDefaultConfig } from '../config/jsdos.config';
 import { defaultDosboxConfig } from '../config/dosbox.conf';
 import './DosPlayer.css';
@@ -23,6 +23,8 @@ declare global {
 export interface DosPlayerProps {
   /** Custom DOSBox configuration (overrides default) */
   dosboxConf?: string;
+  /** Initial filesystem (files to load before starting) */
+  initFs?: InitFs;
   /** Custom js-dos options (merged with defaults) */
   options?: Partial<DosOptions>;
   /** Callback when the emulator is ready */
@@ -37,6 +39,7 @@ export interface DosPlayerProps {
 
 export const DosPlayer: React.FC<DosPlayerProps> = ({
   dosboxConf = defaultDosboxConfig,
+  initFs,
   options = {},
   onReady,
   onExit,
@@ -189,35 +192,12 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
           ...config,
           ...options,
           dosboxConf,
+          initFs, // Add initFs from props
           onEvent: handleDosEvent,
         };
 
-        // Debug: Log initFs
-        if (mergedOptions.initFs) {
-          if (import.meta.env.DEV) {
-            console.log('[DosPlayer] initFs provided with',
-              Array.isArray(mergedOptions.initFs) ? mergedOptions.initFs.length : 'unknown',
-              'files');
-            if (Array.isArray(mergedOptions.initFs) && mergedOptions.initFs.length > 0) {
-              console.log('[DosPlayer] First file:', mergedOptions.initFs[0].path);
-            }
-          }
-        } else {
-          if (import.meta.env.DEV) {
-            console.log('[DosPlayer] No initFs provided');
-          }
-        }
-
-        if (import.meta.env.DEV) {
-          console.log('[DosPlayer] Configuration:', mergedOptions);
-        }
-
         // Initialize js-dos
         dosPlayerRef.current = window.Dos(dosContainerRef.current, mergedOptions);
-
-        if (import.meta.env.DEV) {
-          console.log('[DosPlayer] js-dos initialized successfully');
-        }
       } catch (err) {
         console.error('[DosPlayer] Failed to initialize js-dos:', err);
         setError(err instanceof Error ? err.message : 'Failed to initialize DOS emulator');
@@ -231,7 +211,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
     // Cleanup function
     return () => {
       if (import.meta.env.DEV) {
-        console.log('[DosPlayer] Component unmounting, cleaning up...');
+        console.log('[DosPlayer] Component unmounting or reinitializing, cleaning up...');
       }
       if (dosPlayerRef.current) {
         dosPlayerRef.current.stop().catch((err: unknown) => {
@@ -243,7 +223,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
       isInitializedRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Intentionally empty - initialize only once on mount
+  }, [dosboxConf]); // Only reinitialize when dosboxConf changes (handleDosEvent is stable via useCallback)
 
   return (
     <div className={`dos-player-wrapper ${className}`} style={style}>

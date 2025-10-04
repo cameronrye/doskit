@@ -16,11 +16,17 @@ import { useDosCompiler } from '../../hooks/useDosCompiler';
 import { projectTemplates } from '../../config/compiler.config';
 import './DeveloperMode.css';
 
+export interface ProgramRunConfig {
+  dosboxConf: string;
+  executable?: Uint8Array;
+  executableName?: string;
+}
+
 export interface CodeModeProps {
   /** Command Interface from js-dos */
   ci: CommandInterface | null;
   /** Callback when user wants to run the compiled program */
-  onRunProgram?: (dosboxConf: string) => void;
+  onRunProgram?: (config: ProgramRunConfig) => void;
   /** Custom CSS class */
   className?: string;
 }
@@ -116,15 +122,17 @@ export const CodeMode: React.FC<CodeModeProps> = ({
   }, [ci, currentFile, handleSave, compile, clearBuildMessages]);
 
   const handleRun = useCallback(() => {
-    if (!lastResult || !lastResult.success) {
-      console.error('[CodeMode] Cannot run: No successful build');
+    if (!lastResult || !lastResult.success || !lastResult.executable) {
+      console.error('[CodeMode] Cannot run: No successful build or no executable');
       return;
     }
 
-    const outputFile = lastResult.outputFile;
-    console.log('[CodeMode] Running:', outputFile);
+    // Use .COM extension instead of .EXE for simpler format
+    const outputFile = lastResult.outputFile.replace(/\.exe$/i, '.com');
 
     // Create DOSBox configuration to run the program
+    // Note: We must restart DOSBox with the executable in initFs
+    // because js-dos doesn't support dynamic command execution
     const dosboxConf = `
 [cpu]
 core=auto
@@ -135,7 +143,6 @@ cycles=max
 @echo off
 mount c .
 c:
-cd \\PROJECT
 ${outputFile}
 echo.
 echo Program finished. Press any key to return to editor...
@@ -143,7 +150,11 @@ pause > nul
 `;
 
     if (onRunProgram) {
-      onRunProgram(dosboxConf);
+      onRunProgram({
+        dosboxConf,
+        executable: lastResult.executable,
+        executableName: outputFile,
+      });
     }
   }, [lastResult, onRunProgram]);
 

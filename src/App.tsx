@@ -4,10 +4,10 @@
  * Licensed under the MIT License
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DosPlayer } from './components/DosPlayer';
 import { OfflineIndicator } from './components/OfflineIndicator';
-import { DeveloperMode } from './components/dev/DeveloperMode';
+import { DeveloperMode, type ProgramRunConfig } from './components/dev/DeveloperMode';
 import type { CommandInterface } from './types/js-dos';
 import './App.css';
 
@@ -19,7 +19,17 @@ function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [ci, setCi] = useState<CommandInterface | null>(null);
   const [customDosboxConf, setCustomDosboxConf] = useState<string | undefined>(undefined);
+  const [programExecutable, setProgramExecutable] = useState<{ name: string; data: Uint8Array } | null>(null);
   const [isProgramRunning, setIsProgramRunning] = useState(false);
+
+  // Memoize initFs to prevent recreation on every render
+  const initFs = useMemo(() => {
+    if (!programExecutable) return undefined;
+    return [{
+      path: `/${programExecutable.name}`,
+      contents: programExecutable.data,
+    }];
+  }, [programExecutable]);
 
   const handleDosReady = (commandInterface: CommandInterface) => {
     if (import.meta.env.DEV) {
@@ -47,14 +57,24 @@ function App() {
   const handleModeSwitch = (newMode: AppMode) => {
     setMode(newMode);
     setCustomDosboxConf(undefined); // Reset custom config when switching modes
+    setProgramExecutable(null); // Reset program executable
     setIsProgramRunning(false); // Reset program running state
   };
 
-  const handleRunProgram = (dosboxConf: string) => {
+  const handleRunProgram = (config: ProgramRunConfig) => {
     if (import.meta.env.DEV) {
-      console.log('[App] Running program with custom DOSBox config');
+      console.log('[App] Running program with executable:', config.executableName, 'size:', config.executable?.length || 0);
     }
-    setCustomDosboxConf(dosboxConf);
+
+    // Set up program executable
+    if (config.executable && config.executableName) {
+      setProgramExecutable({
+        name: config.executableName,
+        data: config.executable,
+      });
+    }
+
+    setCustomDosboxConf(config.dosboxConf);
     setMode('terminal'); // Switch to terminal mode to show the DOS window
     setIsProgramRunning(true); // Mark that a program is running
   };
@@ -66,6 +86,7 @@ function App() {
     setMode('code'); // Switch back to code mode
     setIsProgramRunning(false); // Clear program running state
     setCustomDosboxConf(undefined); // Reset custom config
+    setProgramExecutable(null); // Reset program executable
   };
 
   // Monitor online status
@@ -155,6 +176,7 @@ function App() {
             onReady={handleDosReady}
             onExit={handleDosExit}
             dosboxConf={customDosboxConf}
+            initFs={initFs}
             className="dos-player"
           />
         </div>

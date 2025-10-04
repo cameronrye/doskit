@@ -201,10 +201,18 @@ export function getTemplatesByCategory(category: ProjectTemplate['category']): P
 
 /**
  * Mock compiler toggle
- * Set to false to use real compilation (WebAssembly GCC - coming soon)
- * Set to true to use mock compiler (current implementation)
+ * Set to false to use real DOS compilation (Phase 3 POC)
+ * Set to true to use mock compiler (Phase 2 implementation)
  */
 export const mockCompilerEnabled = true;
+
+/**
+ * Real DOS compiler toggle (Phase 3 Proof of Concept)
+ * Set to true to use real DOS executable generation
+ * Set to false to use mock compiler
+ * Note: This overrides mockCompilerEnabled when true
+ */
+export const realDosCompilerEnabled = true;
 
 /**
  * Mock compilation delay (ms) - simulates compilation time
