@@ -16,6 +16,19 @@ vi.mock('../config/compiler.config', () => ({
   mockCompilerEnabled: false,
   mockCompilationDelay: 0,
   realDosCompilerEnabled: true, // Enable real DOS compiler for these tests
+  wasmCompilerConfig: {
+    wasmModuleUrl: '/test/gcc.wasm',
+    maxCompilationTime: 10000,
+    verbose: true,
+    defaultOptimization: 'O2',
+    defaultWarnings: true,
+    defaultDebug: false,
+  },
+  compilerFeatureFlags: {
+    enableWasmCompiler: true, // Enable WASM for integration tests
+    enableMockCompiler: false,
+    preferWasmCompiler: true,
+  },
   compilerConfig: {
     defaultOptimizationLevel: 2,
     defaultWarningLevel: 'all',
@@ -288,8 +301,8 @@ int main() {
       const messages = compiler.getBuildMessages();
       const messageTexts = messages.map(m => m.message);
       
-      expect(messageTexts.some(m => m.includes('DOS Executable Generator'))).toBe(true);
-      expect(messageTexts.some(m => m.includes('Generating DOS MZ executable'))).toBe(true);
+      expect(messageTexts.some(m => m.includes('WASM compilation'))).toBe(true);
+      expect(messageTexts.some(m => m.includes('Generating DOS executable'))).toBe(true);
     });
 
     it('should include executable size in build messages', async () => {

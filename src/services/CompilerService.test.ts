@@ -13,6 +13,19 @@ vi.mock('../config/compiler.config', () => ({
   mockCompilerEnabled: true,
   mockCompilationDelay: 100, // Shorter delay for tests
   realDosCompilerEnabled: false, // Use mock compiler for tests
+  wasmCompilerConfig: {
+    wasmModuleUrl: '/test/gcc.wasm',
+    maxCompilationTime: 10000,
+    verbose: false,
+    defaultOptimization: 'O2',
+    defaultWarnings: true,
+    defaultDebug: false,
+  },
+  compilerFeatureFlags: {
+    enableWasmCompiler: false, // Disable WASM for mock tests
+    enableMockCompiler: true,
+    preferWasmCompiler: false,
+  },
   compilerConfig: {
     defaultOptimizationLevel: 2,
     defaultWarningLevel: 'all',

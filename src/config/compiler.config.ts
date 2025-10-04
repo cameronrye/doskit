@@ -7,6 +7,7 @@
  */
 
 import type { CompilerConfig, ProjectTemplate } from '../types/compiler';
+import type { WasmCompilerConfig } from '../services/WasmCompilerService';
 
 /**
  * Compiler configuration
@@ -218,4 +219,29 @@ export const realDosCompilerEnabled = true;
  * Mock compilation delay (ms) - simulates compilation time
  */
 export const mockCompilationDelay = 1500;
+
+/**
+ * WebAssembly Compiler Configuration
+ * Used for WASM-based GCC compilation
+ */
+export const wasmCompilerConfig: WasmCompilerConfig = {
+  wasmModuleUrl: '/wasm/gcc.wasm', // Future: URL to WASM GCC module
+  maxCompilationTime: 30000, // 30 seconds max compilation time
+  verbose: true, // Enable detailed logging
+  defaultOptimization: 'O2', // Default optimization level
+  defaultWarnings: true, // Enable warnings by default
+  defaultDebug: false, // Disable debug info by default
+};
+
+/**
+ * Feature flags for compiler selection
+ */
+export const compilerFeatureFlags = {
+  /** Enable WASM compiler (Phase 3) */
+  enableWasmCompiler: true,
+  /** Enable mock compiler fallback */
+  enableMockCompiler: true,
+  /** Prefer WASM compiler over mock when both are enabled */
+  preferWasmCompiler: true,
+} as const;
 

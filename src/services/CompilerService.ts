@@ -11,8 +11,14 @@
 import type { CommandInterface } from '../types/js-dos';
 import type { CompileResult, CompilerOptions, BuildMessage } from '../types/compiler';
 import { FileSystemService } from './FileSystemService';
-import { mockCompilationDelay, realDosCompilerEnabled } from '../config/compiler.config';
+import {
+  mockCompilationDelay,
+  realDosCompilerEnabled,
+  wasmCompilerConfig,
+  compilerFeatureFlags
+} from '../config/compiler.config';
 import { DosExecutableGenerator } from './DosExecutableGenerator';
+import { WasmCompilerService } from './WasmCompilerService';
 
 /**
  * Service for compiling DOS programs
@@ -20,14 +26,16 @@ import { DosExecutableGenerator } from './DosExecutableGenerator';
 export class CompilerService {
   private fs: FileSystemService;
   private buildMessages: BuildMessage[] = [];
+  private wasmCompiler: WasmCompilerService;
 
   constructor(commandInterface: CommandInterface) {
     this.fs = new FileSystemService(commandInterface);
+    this.wasmCompiler = new WasmCompilerService(wasmCompilerConfig);
   }
 
   /**
    * Compile a C source file
-   * Supports both mock compiler and real DOS compilation
+   * Supports mock compiler, WASM compiler, and legacy DOS compilation
    */
   async compile(
     sourceFile: string,
@@ -40,15 +48,22 @@ export class CompilerService {
     this.addBuildMessage('info', `Starting compilation of ${sourceFile}...`);
 
     try {
-      // Use real DOS compiler if enabled (Phase 3 POC)
-      if (realDosCompilerEnabled) {
-        this.addBuildMessage('info', 'Using real DOS executable generator (Phase 3 POC)');
-        return await this.realCompile(sourceFile, outputFile, options);
+      // Determine which compiler to use based on feature flags and configuration
+      if (compilerFeatureFlags.enableWasmCompiler &&
+          (compilerFeatureFlags.preferWasmCompiler || realDosCompilerEnabled)) {
+        this.addBuildMessage('info', 'Using WebAssembly compiler (Phase 3)');
+        return await this.wasmCompile(sourceFile, outputFile, options);
       }
 
-      // Otherwise use mock compiler (Phase 2)
-      this.addBuildMessage('info', 'Using mock compiler (Phase 2)');
-      return await this.mockCompile(sourceFile, outputFile, options);
+      // Fall back to mock compiler if enabled
+      if (compilerFeatureFlags.enableMockCompiler) {
+        this.addBuildMessage('info', 'Using mock compiler (Phase 2)');
+        return await this.mockCompile(sourceFile, outputFile, options);
+      }
+
+      // No compiler available
+      throw new Error('No compiler available - both WASM and mock compilers are disabled');
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.addBuildMessage('error', `Compilation failed: ${errorMessage}`);
@@ -62,6 +77,64 @@ export class CompilerService {
         compilationTime: Date.now() - startTime,
       };
     }
+  }
+
+  /**
+   * WebAssembly compiler - uses WasmCompilerService for real compilation
+   * This is the main compilation path for Phase 3
+   */
+  private async wasmCompile(
+    sourceFile: string,
+    outputFile: string,
+    options?: Partial<CompilerOptions>
+  ): Promise<CompileResult> {
+    const startTime = Date.now();
+
+    // Read source file from filesystem
+    let sourceCode: string;
+    try {
+      sourceCode = await this.fs.readTextFile(`/C/PROJECT/${sourceFile}`);
+    } catch {
+      this.addBuildMessage('error', `Source file not found: ${sourceFile}`);
+      return {
+        success: false,
+        errors: [`Source file not found: ${sourceFile}`],
+        warnings: [],
+        outputFile,
+        rawOutput: `Error: Source file not found: ${sourceFile}`,
+        compilationTime: Date.now() - startTime,
+      };
+    }
+
+    // Use WASM compiler service
+    const result = await this.wasmCompiler.compile(sourceCode, sourceFile, outputFile, options);
+
+    // Merge build messages from WASM compiler
+    const wasmMessages = this.wasmCompiler.getBuildMessages();
+    this.buildMessages.push(...wasmMessages);
+
+    // Write executable to filesystem if compilation was successful
+    if (result.success && result.executable) {
+      try {
+        // Create a copy because fsWriteFile may transfer the ArrayBuffer
+        const executableCopy = new Uint8Array(result.executable);
+        const filePath = `/C/PROJECT/${outputFile}`;
+        await this.fs.writeBinaryFile(filePath, executableCopy);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to write executable';
+        this.addBuildMessage('error', `Failed to write executable: ${errorMessage}`);
+        return {
+          success: false,
+          errors: [errorMessage],
+          warnings: result.warnings,
+          outputFile,
+          rawOutput: errorMessage,
+          compilationTime: Date.now() - startTime,
+        };
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -344,6 +417,48 @@ export class CompilerService {
    */
   clearBuildMessages(): void {
     this.buildMessages = [];
+    this.wasmCompiler.clearBuildMessages();
+  }
+
+  /**
+   * Get compiler status and configuration
+   */
+  getCompilerStatus(): {
+    activeCompiler: 'wasm' | 'mock' | 'none';
+    wasmEnabled: boolean;
+    mockEnabled: boolean;
+    preferWasm: boolean;
+    realDosEnabled: boolean;
+  } {
+    return {
+      activeCompiler: compilerFeatureFlags.enableWasmCompiler &&
+                     (compilerFeatureFlags.preferWasmCompiler || realDosCompilerEnabled)
+                     ? 'wasm'
+                     : compilerFeatureFlags.enableMockCompiler
+                     ? 'mock'
+                     : 'none',
+      wasmEnabled: compilerFeatureFlags.enableWasmCompiler,
+      mockEnabled: compilerFeatureFlags.enableMockCompiler,
+      preferWasm: compilerFeatureFlags.preferWasmCompiler,
+      realDosEnabled: realDosCompilerEnabled,
+    };
+  }
+
+  /**
+   * Get WASM compiler configuration
+   */
+  getWasmCompilerConfig() {
+    return wasmCompilerConfig;
+  }
+
+  /**
+   * Update compiler options for future compilations
+   * This allows runtime configuration changes
+   */
+  updateCompilerOptions(options: Partial<CompilerOptions>): void {
+    // For now, this is a placeholder for future dynamic configuration
+    // The options would be stored and used in subsequent compilations
+    this.addBuildMessage('info', `Compiler options updated: ${JSON.stringify(options)}`);
   }
 }
 
