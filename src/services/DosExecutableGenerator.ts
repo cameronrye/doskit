@@ -168,7 +168,7 @@ export class DosExecutableGenerator {
   /**
    * Generate a DOS executable from C-like pseudo-code
    * This is a simplified version for proof-of-concept
-   * 
+   *
    * @param sourceCode - Simple C-like code (very limited subset)
    * @returns DOS MZ executable
    */
@@ -176,7 +176,7 @@ export class DosExecutableGenerator {
     // For POC, we'll support a very limited subset:
     // - printf("message");
     // - return 0;
-    // Generate a COM file (simpler than EXE, no header needed)
+    // Generate an MZ executable (more compatible and testable than COM)
 
     const printfMatches = sourceCode.matchAll(/printf\s*\(\s*"([^"]*)"\s*\)/g);
     const messages: string[] = [];
@@ -195,7 +195,7 @@ export class DosExecutableGenerator {
 
     // Calculate sizes first
     const printCodeSize = 7; // Each printf is 7 bytes (MOV AH, MOV DX, INT)
-    const exitCodeSize = 4;  // Exit is 4 bytes
+    const exitCodeSize = 6;  // Exit is 6 bytes (MOV AH, MOV AL, INT)
     const totalPrintCode = messages.length * printCodeSize;
     const totalCodeBeforeData = totalPrintCode + exitCodeSize;
 
@@ -206,12 +206,13 @@ export class DosExecutableGenerator {
     let dataOffset = totalCodeBeforeData;
     for (const dosMessage of dosMessages) {
       const messageBytes = new TextEncoder().encode(dosMessage + '$');
-      const absoluteOffset = 0x100 + dataOffset; // 0x100 = PSP size for COM files
+      // For MZ executables, use relative offset from start of code segment (no PSP offset)
+      const relativeOffset = dataOffset;
 
       const printCode = new Uint8Array([
         0xB4, 0x09,                           // MOV AH, 09h
-        0xBA, absoluteOffset & 0xFF,          // MOV DX, offset (low byte)
-              (absoluteOffset >> 8) & 0xFF,   // (high byte)
+        0xBA, relativeOffset & 0xFF,          // MOV DX, offset (low byte)
+              (relativeOffset >> 8) & 0xFF,   // (high byte)
         0xCD, 0x21,                           // INT 21h
       ]);
 
@@ -232,15 +233,21 @@ export class DosExecutableGenerator {
     // Calculate total code size
     const totalCodeSize = codeSegments.reduce((sum, seg) => sum + seg.length, 0);
 
-    // COM files have NO header - just raw code
-    // Combine everything into a single binary
-    const executable = new Uint8Array(totalCodeSize);
-
+    // Create MZ executable with header
+    const code = new Uint8Array(totalCodeSize);
     let offset = 0;
     for (const segment of codeSegments) {
-      executable.set(segment, offset);
+      code.set(segment, offset);
       offset += segment.length;
     }
+
+    // Create MZ header
+    const header = this.createMZHeader(code.length);
+
+    // Combine header and code
+    const executable = new Uint8Array(header.length + code.length);
+    executable.set(header, 0);
+    executable.set(code, header.length);
 
     return executable;
   }

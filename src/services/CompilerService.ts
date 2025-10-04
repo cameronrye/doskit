@@ -246,11 +246,11 @@ export class CompilerService {
       };
     }
 
-    // Generate real DOS executable (COM format for simplicity)
-    this.addBuildMessage('info', 'Generating DOS COM executable...');
+    // Generate real DOS executable (MZ format)
+    this.addBuildMessage('info', 'Generating DOS MZ executable...');
     const executable = DosExecutableGenerator.generateFromSimpleC(sourceCode);
 
-    // Validate generated executable (COM files are just raw code, so just check size)
+    // Validate generated executable
     if (executable.length === 0 || executable.length > 65535) {
       this.addBuildMessage('error', 'Failed to generate valid DOS executable');
       return {
