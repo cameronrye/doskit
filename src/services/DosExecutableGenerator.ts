@@ -79,6 +79,38 @@ interface MZConfig {
 }
 
 /**
+ * Segment information for multi-segment executables
+ */
+interface SegmentInfo {
+  /** Segment data */
+  data: Uint8Array;
+  /** Segment type */
+  type: 'code' | 'data' | 'stack';
+  /** Paragraph alignment (default: 1 = 16 bytes) */
+  alignment?: number;
+}
+
+/**
+ * Configuration for creating executables with separate segments
+ */
+interface SegmentedExecutableConfig {
+  /** Code segment data */
+  code: Uint8Array;
+  /** Data segment data (optional) */
+  data?: Uint8Array;
+  /** Size of stack in bytes (default: 512) */
+  stackSize?: number;
+  /** Relocation entries (default: []) */
+  relocations?: RelocationEntry[];
+  /** Entry point offset within code segment (default: 0) */
+  entryPoint?: number;
+  /** Calculate checksum (default: false) */
+  calculateChecksum?: boolean;
+  /** Initial data segment register value (default: 0 = same as CS) */
+  initialDS?: number;
+}
+
+/**
  * DOS System Call Interface
  * Maps C standard library functions to DOS INT 21h calls
  */
@@ -304,6 +336,132 @@ export class DosExecutableGenerator {
     }
 
     return executable;
+  }
+
+  /**
+   * Create an executable with separate code and data segments
+   *
+   * This method creates a DOS MZ executable with properly separated segments:
+   * - Code segment: Contains executable instructions
+   * - Data segment: Contains initialized data (optional)
+   * - Stack segment: Allocated but not stored in file (configured via header)
+   *
+   * The segments are laid out in the file as:
+   * [Header][Relocation Table][Code Segment][Data Segment]
+   *
+   * The stack segment is allocated at runtime by DOS after the data segment.
+   *
+   * @param config - Configuration with separate code and data buffers
+   * @returns Complete MZ executable with proper segment configuration
+   */
+  static createExecutableWithSegments(config: SegmentedExecutableConfig): Uint8Array {
+    const {
+      code,
+      data = new Uint8Array(0),
+      stackSize = 512,
+      relocations = [],
+      entryPoint = 0,
+      calculateChecksum = false,
+      initialDS = 0,
+    } = config;
+
+    // Create MZ config from segmented config
+    const mzConfig: MZConfig = {
+      codeSize: code.length,
+      dataSize: data.length,
+      stackSize,
+      relocations,
+      entryPoint,
+      calculateChecksum,
+    };
+
+    // Generate header
+    const header = this.createEnhancedMZHeader(mzConfig);
+
+    // Generate relocation table (if any relocations exist)
+    const relocationTable = relocations.length > 0
+      ? this.generateRelocationTable(relocations)
+      : new Uint8Array(0);
+
+    // Calculate total size: header + relocation table + code + data
+    const totalSize = header.length + relocationTable.length + code.length + data.length;
+
+    // Combine all parts
+    const executable = new Uint8Array(totalSize);
+    let offset = 0;
+
+    // Copy header
+    executable.set(header, offset);
+    offset += header.length;
+
+    // Copy relocation table (if present)
+    if (relocationTable.length > 0) {
+      executable.set(relocationTable, offset);
+      offset += relocationTable.length;
+    }
+
+    // Copy code segment
+    executable.set(code, offset);
+    offset += code.length;
+
+    // Copy data segment (if present)
+    if (data.length > 0) {
+      executable.set(data, offset);
+      offset += data.length;
+    }
+
+    // If initialDS is specified and different from 0, we need to update the header
+    // to set up DS register properly. For now, we assume DS = CS (initialDS = 0)
+    // which is handled by the code itself (MOV AX, CS; MOV DS, AX)
+
+    // Apply checksum if requested
+    if (calculateChecksum) {
+      this.applyChecksum(executable);
+    }
+
+    return executable;
+  }
+
+  /**
+   * Get segment information from an executable
+   *
+   * This method extracts information about the segments in a DOS MZ executable
+   * based on the header information.
+   *
+   * @param executable - Complete executable buffer
+   * @returns Segment information or null if invalid
+   */
+  static getSegmentInfo(executable: Uint8Array): {
+    codeSegment: { offset: number; size: number };
+    dataSegment: { offset: number; size: number };
+    stackSegment: { paragraphs: number; size: number };
+  } | null {
+    const info = this.getMZInfo(executable);
+    if (!info) return null;
+
+    // Calculate where code starts (after header and relocation table)
+    const headerSize = info.headerParagraphs * 16;
+    const relocationTableSize = info.relocations * 4;
+    const codeOffset = headerSize + relocationTableSize;
+
+    // Calculate total image size from file size
+    const totalFileSize = (info.pagesInFile - 1) * 512 + info.bytesOnLastPage;
+    const imageSize = totalFileSize - headerSize - relocationTableSize;
+
+    // For now, we assume all image data is code (no separate data segment)
+    // In the future, we could add metadata to track segment boundaries
+    const codeSize = imageSize;
+    const dataSize = 0;
+
+    // Stack information from header
+    const stackParagraphs = info.initialSS;
+    const stackSize = info.initialSP;
+
+    return {
+      codeSegment: { offset: codeOffset, size: codeSize },
+      dataSegment: { offset: codeOffset + codeSize, size: dataSize },
+      stackSegment: { paragraphs: stackParagraphs, size: stackSize },
+    };
   }
 
   /**
