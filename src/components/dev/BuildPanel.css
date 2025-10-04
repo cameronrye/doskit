@@ -1,0 +1,251 @@
+/**
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ *
+ * BuildPanel Component Styles
+ */
+
+.build-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.build-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #252526;
+  border-bottom: 1px solid #3e3e42;
+}
+
+.build-panel-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.build-panel-status-icon {
+  font-size: 18px;
+}
+
+.build-panel-status-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #cccccc;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.build-panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.build-panel-button {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.build-panel-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.build-button {
+  background-color: #007acc;
+  color: white;
+}
+
+.build-button:hover:not(:disabled) {
+  background-color: #005a9e;
+}
+
+.run-button {
+  background-color: #16825d;
+  color: white;
+}
+
+.run-button:hover:not(:disabled) {
+  background-color: #0e6245;
+}
+
+.clear-button {
+  background-color: #3e3e42;
+  color: #cccccc;
+}
+
+.clear-button:hover:not(:disabled) {
+  background-color: #505050;
+}
+
+.build-panel-output {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #1e1e1e;
+  padding: 12px;
+}
+
+.build-panel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #858585;
+  text-align: center;
+}
+
+.build-panel-empty p {
+  margin: 4px 0;
+  font-size: 14px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.build-panel-hint {
+  font-size: 12px !important;
+  color: #6a6a6a;
+}
+
+.build-panel-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.build-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.build-message-info {
+  background-color: rgba(0, 122, 204, 0.1);
+  color: #4fc3f7;
+}
+
+.build-message-warning {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.build-message-error {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+}
+
+.build-message-success {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+}
+
+.build-message-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.build-message-time {
+  flex-shrink: 0;
+  color: #858585;
+  font-size: 11px;
+}
+
+.build-message-text {
+  flex: 1;
+  word-break: break-word;
+}
+
+.build-message-location {
+  flex-shrink: 0;
+  color: #858585;
+  font-size: 11px;
+  font-style: italic;
+}
+
+.build-panel-footer {
+  padding: 8px 16px;
+  background-color: #252526;
+  border-top: 1px solid #3e3e42;
+}
+
+.build-panel-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #858585;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.build-panel-stat {
+  display: flex;
+  align-items: center;
+}
+
+/* Scrollbar styling */
+.build-panel-output::-webkit-scrollbar {
+  width: 10px;
+}
+
+.build-panel-output::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.build-panel-output::-webkit-scrollbar-thumb {
+  background: #424242;
+  border-radius: 5px;
+}
+
+.build-panel-output::-webkit-scrollbar-thumb:hover {
+  background: #4e4e4e;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .build-panel-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .build-panel-actions {
+    justify-content: stretch;
+  }
+
+  .build-panel-button {
+    flex: 1;
+    padding: 8px 12px;
+  }
+
+  .build-panel-stats {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .build-message {
+    flex-wrap: wrap;
+    font-size: 12px;
+  }
+
+  .build-message-time {
+    order: -1;
+    width: 100%;
+    margin-bottom: 4px;
+  }
+}
+

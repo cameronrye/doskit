@@ -181,32 +181,52 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
     setIsLoading(true);
     setError(null);
 
-    try {
-      // Merge default config with custom options
-      const config = getDefaultConfig();
-      const mergedOptions: Partial<DosOptions> = {
-        ...config,
-        ...options,
-        dosboxConf,
-        onEvent: handleDosEvent,
-      };
+    const initializeDos = async () => {
+      try {
+        // Merge default config with custom options
+        const config = getDefaultConfig();
+        const mergedOptions: Partial<DosOptions> = {
+          ...config,
+          ...options,
+          dosboxConf,
+          onEvent: handleDosEvent,
+        };
 
-      if (import.meta.env.DEV) {
-        console.log('[DosPlayer] Configuration:', mergedOptions);
+        // Debug: Log initFs
+        if (mergedOptions.initFs) {
+          if (import.meta.env.DEV) {
+            console.log('[DosPlayer] initFs provided with',
+              Array.isArray(mergedOptions.initFs) ? mergedOptions.initFs.length : 'unknown',
+              'files');
+            if (Array.isArray(mergedOptions.initFs) && mergedOptions.initFs.length > 0) {
+              console.log('[DosPlayer] First file:', mergedOptions.initFs[0].path);
+            }
+          }
+        } else {
+          if (import.meta.env.DEV) {
+            console.log('[DosPlayer] No initFs provided');
+          }
+        }
+
+        if (import.meta.env.DEV) {
+          console.log('[DosPlayer] Configuration:', mergedOptions);
+        }
+
+        // Initialize js-dos
+        dosPlayerRef.current = window.Dos(dosContainerRef.current, mergedOptions);
+
+        if (import.meta.env.DEV) {
+          console.log('[DosPlayer] js-dos initialized successfully');
+        }
+      } catch (err) {
+        console.error('[DosPlayer] Failed to initialize js-dos:', err);
+        setError(err instanceof Error ? err.message : 'Failed to initialize DOS emulator');
+        setIsLoading(false);
+        isInitializedRef.current = false; // Allow retry on error
       }
+    };
 
-      // Initialize js-dos
-      dosPlayerRef.current = window.Dos(dosContainerRef.current, mergedOptions);
-
-      if (import.meta.env.DEV) {
-        console.log('[DosPlayer] js-dos initialized successfully');
-      }
-    } catch (err) {
-      console.error('[DosPlayer] Failed to initialize js-dos:', err);
-      setError(err instanceof Error ? err.message : 'Failed to initialize DOS emulator');
-      setIsLoading(false);
-      isInitializedRef.current = false; // Allow retry on error
-    }
+    initializeDos();
 
     // Cleanup function
     return () => {

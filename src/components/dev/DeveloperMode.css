@@ -1,0 +1,160 @@
+/**
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ *
+ * CodeMode Component Styles
+ */
+
+.code-mode {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #1a1a1a;
+}
+
+.code-mode-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.code-mode-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.code-mode-icon {
+  font-size: 28px;
+}
+
+.code-mode-title h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.code-mode-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.code-mode-status {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.code-mode-warning {
+  padding: 4px 12px;
+  background-color: rgba(255, 193, 7, 0.2);
+  border: 1px solid rgba(255, 193, 7, 0.5);
+  border-radius: 4px;
+  font-size: 13px;
+  color: #ffc107;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.code-mode-content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.code-mode-editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.code-mode-build {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.code-mode-footer {
+  padding: 12px 24px;
+  background-color: #252526;
+  border-top: 1px solid #3e3e42;
+}
+
+.code-mode-tips {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.code-mode-tip {
+  font-size: 13px;
+  color: #858585;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.code-mode-tip strong {
+  color: #cccccc;
+}
+
+/* Responsive layout */
+@media (max-width: 1024px) {
+  .code-mode-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .code-mode-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 16px;
+  }
+
+  .code-mode-title h2 {
+    font-size: 18px;
+  }
+
+  .code-mode-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .code-mode-content {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .code-mode-footer {
+    padding: 8px 16px;
+  }
+
+  .code-mode-tip {
+    font-size: 12px;
+  }
+}
+
+/* Animation for status changes */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.code-mode-status {
+  animation: pulse 2s ease-in-out infinite;
+}
+

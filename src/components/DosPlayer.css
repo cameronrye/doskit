@@ -182,15 +182,6 @@
   }
 }
 
-/* Ensure proper sizing on mobile */
-@media (max-width: 480px) {
-  .dos-player-wrapper {
-    /* Prevent address bar from covering content on mobile */
-    height: 100vh;
-    height: -webkit-fill-available;
-  }
-}
-
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .dos-player-wrapper {

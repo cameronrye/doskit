@@ -55,6 +55,8 @@ serial4=disabled
 
 [autoexec]
 @echo off
+mount c .
+c:
 echo.
 echo ========================================
 echo   DosKit - DOS Environment

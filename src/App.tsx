@@ -4,20 +4,29 @@
  * Licensed under the MIT License
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DosPlayer } from './components/DosPlayer';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { DeveloperMode } from './components/dev/DeveloperMode';
+import type { CommandInterface } from './types/js-dos';
 import './App.css';
 
+type AppMode = 'terminal' | 'code';
+
 function App() {
+  const [mode, setMode] = useState<AppMode>('code'); // Start in code mode for MVP
   const [isReady, setIsReady] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [ci, setCi] = useState<CommandInterface | null>(null);
+  const [customDosboxConf, setCustomDosboxConf] = useState<string | undefined>(undefined);
+  const [isProgramRunning, setIsProgramRunning] = useState(false);
 
-  const handleDosReady = () => {
+  const handleDosReady = (commandInterface: CommandInterface) => {
     if (import.meta.env.DEV) {
       console.log('[App] DOS is ready!');
     }
     setIsReady(true);
+    setCi(commandInterface);
   };
 
   const handleDosExit = () => {
@@ -25,6 +34,7 @@ function App() {
       console.log('[App] DOS exited');
     }
     setIsReady(false);
+    setCi(null);
   };
 
   const handleNetworkStatusChange = (online: boolean) => {
@@ -33,6 +43,44 @@ function App() {
     }
     setIsOnline(online);
   };
+
+  const handleModeSwitch = (newMode: AppMode) => {
+    setMode(newMode);
+    setCustomDosboxConf(undefined); // Reset custom config when switching modes
+    setIsProgramRunning(false); // Reset program running state
+  };
+
+  const handleRunProgram = (dosboxConf: string) => {
+    if (import.meta.env.DEV) {
+      console.log('[App] Running program with custom DOSBox config');
+    }
+    setCustomDosboxConf(dosboxConf);
+    setMode('terminal'); // Switch to terminal mode to show the DOS window
+    setIsProgramRunning(true); // Mark that a program is running
+  };
+
+  const handleReturnToEditor = () => {
+    if (import.meta.env.DEV) {
+      console.log('[App] Returning to editor');
+    }
+    setMode('code'); // Switch back to code mode
+    setIsProgramRunning(false); // Clear program running state
+    setCustomDosboxConf(undefined); // Reset custom config
+  };
+
+  // Monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   return (
     <div className="app">
@@ -44,14 +92,72 @@ function App() {
           <img src="/logo.svg" alt="DosKit Logo" className="header-logo" />
           <h1>DosKit</h1>
         </div>
+        <div className="header-actions">
+          <div className="mode-switcher">
+            <button
+              className={`mode-button ${mode === 'terminal' ? 'active' : ''}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleModeSwitch('terminal');
+              }}
+              title="Terminal Mode - Run DOS applications"
+              disabled={isProgramRunning}
+            >
+              <img src="/logo.svg" alt="" style={{ width: '16px', height: '16px', display: 'inline-block', marginRight: '4px' }} />
+              Terminal
+            </button>
+            <button
+              className={`mode-button ${mode === 'code' ? 'active' : ''}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleModeSwitch('code');
+              }}
+              title="Code Mode - Create DOS applications"
+              disabled={isProgramRunning}
+            >
+              💻 Code
+            </button>
+          </div>
+        </div>
       </header>
 
       <main className="app-main">
-        <DosPlayer
-          onReady={handleDosReady}
-          onExit={handleDosExit}
-          className="dos-player"
-        />
+        {mode === 'code' && (
+          <div className="code-container">
+            <DeveloperMode
+              ci={ci}
+              onRunProgram={handleRunProgram}
+            />
+          </div>
+        )}
+        <div className={mode === 'terminal' ? 'dos-player-visible' : 'dos-player-hidden'}>
+          {/* Return to Editor button - shown when a program is running */}
+          {isProgramRunning && (
+            <div className="program-running-overlay">
+              <button
+                className="return-to-editor-button"
+                onClick={handleReturnToEditor}
+                title="Return to code editor"
+              >
+                ← Back to Editor
+              </button>
+              <div className="program-running-info">
+                <span className="program-running-indicator">
+                  <span className="running-dot"></span>
+                  Program Running
+                </span>
+              </div>
+            </div>
+          )}
+          <DosPlayer
+            onReady={handleDosReady}
+            onExit={handleDosExit}
+            dosboxConf={customDosboxConf}
+            className="dos-player"
+          />
+        </div>
       </main>
 
       <footer className="app-footer">

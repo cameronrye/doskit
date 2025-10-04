@@ -2,11 +2,12 @@
  * DosKit - Offline Indicator Component
  * Copyright (c) 2025 Cameron Rye
  * Licensed under the MIT License
- * 
+ *
  * Displays online/offline status and PWA installation prompt
  */
 
 import { useState, useEffect } from 'react';
+import { getCookie, setCookie } from '../utils/cookies';
 import './OfflineIndicator.css';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -17,6 +18,9 @@ interface BeforeInstallPromptEvent extends Event {
 export interface OfflineIndicatorProps {
   onNetworkStatusChange?: (isOnline: boolean) => void;
 }
+
+// Cookie name for storing install prompt dismissal
+const INSTALL_DISMISSED_COOKIE = 'pwa-install-dismissed';
 
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
   onNetworkStatusChange
@@ -57,10 +61,14 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      
+
+      // Check if user has previously dismissed the install prompt
+      const isDismissed = getCookie(INSTALL_DISMISSED_COOKIE) === 'true';
+
       // Show install prompt after a delay (don't be too aggressive)
+      // Only show if not already installed and not previously dismissed
       setTimeout(() => {
-        if (!isInstalled) {
+        if (!isInstalled && !isDismissed) {
           setShowInstallPrompt(true);
         }
       }, 5000);
@@ -110,14 +118,14 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
 
   const handleDismissInstall = () => {
     setShowInstallPrompt(false);
-    // Don't show again for this session
-    sessionStorage.setItem('pwa-install-dismissed', 'true');
+    // Store dismissal preference in a cookie for 30 days
+    setCookie(INSTALL_DISMISSED_COOKIE, 'true', { days: 30 });
   };
 
-  // Don't show install prompt if dismissed in this session
+  // Don't show install prompt if previously dismissed (check cookie on mount)
   useEffect(() => {
-    const dismissed = sessionStorage.getItem('pwa-install-dismissed');
-    if (dismissed) {
+    const isDismissed = getCookie(INSTALL_DISMISSED_COOKIE) === 'true';
+    if (isDismissed) {
       setShowInstallPrompt(false);
     }
   }, []);
