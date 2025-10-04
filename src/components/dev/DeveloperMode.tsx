@@ -13,7 +13,7 @@ import { CodeEditor } from './CodeEditor';
 import { BuildPanel } from './BuildPanel';
 import { useDosFileSystem } from '../../hooks/useDosFileSystem';
 import { useDosCompiler } from '../../hooks/useDosCompiler';
-import { projectTemplates } from '../../config/compiler.config';
+import { projectTemplates, compilerFeatureFlags } from '../../config/compiler.config';
 import './DeveloperMode.css';
 
 export interface ProgramRunConfig {
@@ -169,6 +169,16 @@ pause
     return 'c';
   };
 
+  const getCompilerType = (): 'wasm' | 'mock' | 'none' => {
+    if (compilerFeatureFlags.enableWasmCompiler && compilerFeatureFlags.preferWasmCompiler) {
+      return 'wasm';
+    }
+    if (compilerFeatureFlags.enableMockCompiler) {
+      return 'mock';
+    }
+    return 'none';
+  };
+
   return (
     <div className={`code-mode ${className}`}>
       <div className="code-mode-header">
@@ -207,6 +217,8 @@ pause
           <BuildPanel
             messages={buildMessages}
             status={buildStatus}
+            lastResult={lastResult}
+            compilerType={getCompilerType()}
             onBuild={handleBuild}
             onRun={handleRun}
             onClear={handleClear}
