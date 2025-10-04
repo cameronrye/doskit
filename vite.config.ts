@@ -5,9 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
 
-  // GitHub Pages deployment configuration
-  // Use '/' for local development, '/doskit/' for GitHub Pages
-  base: process.env.GITHUB_PAGES === 'true' ? '/doskit/' : '/',
+  // Custom domain deployment configuration
+  // Using custom domain doskit.net, so base path is '/'
+  base: '/',
 
   // Optimize for cross-platform compatibility
   server: {
