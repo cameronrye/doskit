@@ -11,7 +11,7 @@
 import type { CommandInterface } from '../types/js-dos';
 import type { CompileResult, CompilerOptions, BuildMessage } from '../types/compiler';
 import { FileSystemService } from './FileSystemService';
-import { mockCompilerEnabled, mockCompilationDelay, compilerConfig, realDosCompilerEnabled } from '../config/compiler.config';
+import { mockCompilationDelay, realDosCompilerEnabled } from '../config/compiler.config';
 import { DosExecutableGenerator } from './DosExecutableGenerator';
 
 /**
@@ -19,11 +19,9 @@ import { DosExecutableGenerator } from './DosExecutableGenerator';
  */
 export class CompilerService {
   private fs: FileSystemService;
-  private ci: CommandInterface;
   private buildMessages: BuildMessage[] = [];
 
   constructor(commandInterface: CommandInterface) {
-    this.ci = commandInterface;
     this.fs = new FileSystemService(commandInterface);
   }
 
@@ -81,7 +79,7 @@ export class CompilerService {
     let sourceCode: string;
     try {
       sourceCode = await this.fs.readTextFile(`/C/PROJECT/${sourceFile}`);
-    } catch (error) {
+    } catch {
       this.addBuildMessage('error', `Source file not found: ${sourceFile}`);
       return {
         success: false,
@@ -197,7 +195,7 @@ export class CompilerService {
     let sourceCode: string;
     try {
       sourceCode = await this.fs.readTextFile(`/C/PROJECT/${sourceFile}`);
-    } catch (error) {
+    } catch {
       this.addBuildMessage('error', `Source file not found: ${sourceFile}`);
       return {
         success: false,

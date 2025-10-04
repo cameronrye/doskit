@@ -7,7 +7,7 @@
  * Abstracts js-dos filesystem operations for easier use
  */
 
-import type { CommandInterface } from '../types/js-dos';
+import type { CommandInterface, FsNode } from '../types/js-dos';
 
 /**
  * Service for managing DOS filesystem operations
@@ -104,7 +104,7 @@ export class FileSystemService {
   /**
    * Get the filesystem tree
    */
-  async getFileTree(): Promise<any> {
+  async getFileTree(): Promise<FsNode> {
     try {
       return await this.ci.fsTree();
     } catch (error) {

@@ -77,7 +77,7 @@ describe('useDosCompiler', () => {
 
   describe('compile', () => {
     it('should compile successfully', async () => {
-      const { result } = renderHook(() => useDosCompiler(mockCI));
+      renderHook(() => useDosCompiler(mockCI));
 
       const mockResult: CompileResult = {
         success: true,
@@ -117,7 +117,7 @@ describe('useDosCompiler', () => {
     });
 
     it('should handle compilation errors', async () => {
-      const { result } = renderHook(() => useDosCompiler(mockCI));
+      renderHook(() => useDosCompiler(mockCI));
 
       const mockResult: CompileResult = {
         success: false,
@@ -155,7 +155,7 @@ describe('useDosCompiler', () => {
     });
 
     it('should set building status during compilation', async () => {
-      const { result } = renderHook(() => useDosCompiler(mockCI));
+      renderHook(() => useDosCompiler(mockCI));
 
       const mockResult: CompileResult = {
         success: true,

@@ -157,7 +157,7 @@ int main(void) { return 0; }`;
 
       // First compilation
       await compiler.compile('test1.c', 'test1.exe');
-      const firstMessages = compiler.getBuildMessages();
+      compiler.getBuildMessages();
 
       // Second compilation
       await compiler.compile('test2.c', 'test2.exe');

@@ -31,9 +31,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "generate-icons": "node scripts/generate-icons.js",
     "create-icon-generator": "node scripts/create-placeholder-icons.js"

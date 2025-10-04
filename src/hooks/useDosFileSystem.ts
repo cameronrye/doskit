@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { CommandInterface } from '../types/js-dos';
+import type { CommandInterface, FsNode } from '../types/js-dos';
 import { FileSystemService } from '../services/FileSystemService';
 
 export interface UseDosFileSystemResult {
@@ -21,7 +21,7 @@ export interface UseDosFileSystemResult {
   /** Check if file exists */
   fileExists: (path: string) => Promise<boolean>;
   /** Get file tree */
-  getFileTree: () => Promise<any>;
+  getFileTree: () => Promise<FsNode>;
   /** Loading state */
   isLoading: boolean;
   /** Error state */
@@ -125,7 +125,7 @@ export function useDosFileSystem(ci: CommandInterface | null): UseDosFileSystemR
     }
   }, []);
 
-  const getFileTree = useCallback(async (): Promise<any> => {
+  const getFileTree = useCallback(async (): Promise<FsNode> => {
     if (!fsServiceRef.current) {
       throw new Error('FileSystemService not initialized');
     }

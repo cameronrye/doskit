@@ -25,6 +25,8 @@ function App() {
   // Memoize initFs to prevent recreation on every render
   const initFs = useMemo(() => {
     if (!programExecutable) return undefined;
+    // Place file in root directory so it's accessible when mounting
+    // DOSBox will mount the root as C:, so /hello.exe becomes C:\hello.exe
     return [{
       path: `/${programExecutable.name}`,
       contents: programExecutable.data,

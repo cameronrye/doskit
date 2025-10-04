@@ -53,14 +53,7 @@ export const CodeMode: React.FC<CodeModeProps> = ({
     }
   }, []);
 
-  // Initialize project directory when CI is ready
-  useEffect(() => {
-    if (ci) {
-      initializeProject();
-    }
-  }, [ci]);
-
-  const initializeProject = async () => {
+  const initializeProject = useCallback(async () => {
     if (!ci) return;
 
     try {
@@ -73,7 +66,14 @@ export const CodeMode: React.FC<CodeModeProps> = ({
     } catch (error) {
       console.error('[CodeMode] Failed to initialize project:', error);
     }
-  };
+  }, [ci, writeTextFile]);
+
+  // Initialize project directory when CI is ready
+  useEffect(() => {
+    if (ci) {
+      initializeProject();
+    }
+  }, [ci, initializeProject]);
 
   const handleCodeChange = useCallback((newCode: string) => {
     setCode(newCode);
@@ -127,8 +127,8 @@ export const CodeMode: React.FC<CodeModeProps> = ({
       return;
     }
 
-    // Use .COM extension instead of .EXE for simpler format
-    const outputFile = lastResult.outputFile.replace(/\.exe$/i, '.com');
+    // Use .EXE extension for MZ executable format
+    const outputFile = lastResult.outputFile;
 
     // Create DOSBox configuration to run the program
     // Note: We must restart DOSBox with the executable in initFs
@@ -140,13 +140,13 @@ cputype=auto
 cycles=max
 
 [autoexec]
-@echo off
 mount c .
 c:
+echo Running ${outputFile}...
 ${outputFile}
 echo.
-echo Program finished. Press any key to return to editor...
-pause > nul
+echo Done.
+pause
 `;
 
     if (onRunProgram) {

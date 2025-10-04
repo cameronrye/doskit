@@ -197,6 +197,12 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
         };
 
         // Initialize js-dos
+        if (!window.Dos) {
+          throw new Error('Dos function not available. Make sure js-dos is loaded.');
+        }
+        if (!dosContainerRef.current) {
+          throw new Error('DOS container ref is null');
+        }
         dosPlayerRef.current = window.Dos(dosContainerRef.current, mergedOptions);
       } catch (err) {
         console.error('[DosPlayer] Failed to initialize js-dos:', err);
