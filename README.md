@@ -13,12 +13,23 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 
 ## 🎯 Features
 
+### Core Features
 - **Interactive DOS Prompt**: Boots directly to a fully functional DOS command prompt
 - **Cross-Platform**: Works on Windows, macOS, Linux, iOS, and Android
 - **Progressive Web App (PWA)**: Install as a native app with offline support
 - **Offline Functionality**: Works completely offline after first visit
 - **Modern Tech Stack**: Built with React 19, TypeScript, and Vite
 - **WebAssembly Performance**: Leverages js-dos v8.3.20 for near-native DOS emulation
+
+### Development Features
+- **💻 Code Mode**: Built-in C development environment with Monaco editor
+- **🔧 Real Compilation**: WebAssembly-based C compiler generates actual DOS executables
+- **📦 DOS Executable Generation**: Creates valid MZ format executables that run in DOS
+- **⚡ Fast Compilation**: Browser-based compilation with no server required
+- **🎯 Compiler Options**: Support for optimization levels, warnings, and debug info
+- **📊 Build Statistics**: Real-time compilation time and executable size metrics
+
+### User Experience
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
 - **Audio Support**: Sound Blaster and AdLib emulation with proper audio output
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
@@ -30,6 +41,7 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 
 - [Quick Start](#quick-start)
 - [Live Demo](#live-demo)
+- [Code Mode - C Development](#code-mode---c-development)
 - [PWA Features](#pwa-features)
 - [Technology Stack](#technology-stack)
 - [Project Structure](#project-structure)
@@ -75,6 +87,56 @@ The DOS emulator will automatically load and present an interactive DOS prompt!
 **Try it now**: [https://cameronrye.github.io/doskit/](https://cameronrye.github.io/doskit/)
 
 The live demo is automatically deployed from the `main` branch using GitHub Actions. Every push to `main` triggers a new deployment.
+
+## 💻 Code Mode - C Development
+
+DosKit includes a powerful **Code Mode** that transforms it into a complete C development environment for DOS applications!
+
+### ✨ What is Code Mode?
+
+Code Mode provides a browser-based IDE for writing, compiling, and running C programs that execute in the DOS emulator. It features:
+
+- **Monaco Editor**: The same editor that powers VS Code, with syntax highlighting and IntelliSense
+- **Real C Compilation**: WebAssembly-based compiler generates actual DOS executables
+- **Instant Execution**: Compiled programs run immediately in the integrated DOS emulator
+- **Build Panel**: Real-time compilation feedback with errors, warnings, and statistics
+- **Project Templates**: Quick-start templates for common DOS programming patterns
+
+### 🚀 Quick Start with Code Mode
+
+1. **Switch to Code Mode**: Click the **"💻 Code"** button in the header
+2. **Choose a Template**: Select "Hello World" or another template to get started
+3. **Edit Your Code**: Use the Monaco editor to write your C program
+4. **Build**: Click the **"Build"** button (or press Ctrl+B)
+5. **Run**: Your compiled program executes automatically in the DOS emulator!
+
+### 📚 Example: Hello World
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    printf("Hello, DOS!\n");
+    printf("Welcome to DosKit Development Environment\n");
+    return 0;
+}
+```
+
+Click **Build** → See compilation output → Program runs in DOS!
+
+### 🔧 Compiler Features
+
+- **Optimization Levels**: O0, O1, O2, O3, Os
+- **Warning Control**: Enable/disable compiler warnings
+- **Debug Info**: Include debugging symbols
+- **Build Statistics**: Compilation time and executable size
+- **Error Highlighting**: Clear error messages with file and line numbers
+
+### 📖 Documentation
+
+- **[Quick Start Guide](docs/QUICK-START-DEVELOPER-MODE.md)** - Get started in 5 minutes
+- **[Technical Documentation](docs/WASM-GCC-INTEGRATION.md)** - Architecture and API reference
+- **[Developer Guide](CONTRIBUTING.md)** - Contributing and development guide
 
 ## 📱 PWA Features
 

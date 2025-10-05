@@ -212,6 +212,241 @@ npm run test:ui
 - Update **type definitions** in `src/types/` as needed
 - Include **code examples** for new features
 
+## WASM Compiler Development
+
+### Architecture Overview
+
+DosKit's compilation system consists of three main layers:
+
+```
+CompilerService (Orchestration)
+    ↓
+WasmCompilerService (Validation & Options)
+    ↓
+DosExecutableGenerator (Code Generation)
+```
+
+### Testing the WASM Compiler
+
+#### Running Compiler Tests
+
+```bash
+# Run all compiler tests
+npm test -- src/services/WasmCompilerService.test.ts --run
+
+# Run integration tests
+npm test -- src/services/CompilerService.integration.test.ts --run
+
+# Run performance tests
+npm test -- src/services/CompilerService.performance.test.ts --run
+
+# Run all tests with coverage
+npm run test:coverage
+```
+
+#### Test Coverage Requirements
+
+- **Unit Tests**: Minimum 85% coverage for new compiler code
+- **Integration Tests**: Test end-to-end compilation workflow
+- **Performance Tests**: Verify compilation times meet benchmarks
+- **Regression Tests**: Ensure existing functionality still works
+
+### Updating the WASM Compiler
+
+#### Adding New C Language Features
+
+1. **Update DosExecutableGenerator** (`src/services/DosExecutableGenerator.ts`):
+   - Add parsing logic for new C constructs
+   - Generate corresponding x86 assembly code
+   - Update DOS system call interface if needed
+
+2. **Add Tests**:
+   ```typescript
+   it('should compile programs with new feature', async () => {
+     const sourceCode = `/* Test code using new feature */`;
+     const result = await wasmCompiler.compile(sourceCode, 'test.c', 'test.exe');
+     expect(result.success).toBe(true);
+   });
+   ```
+
+3. **Update Documentation**:
+   - Add examples to `docs/WASM-GCC-INTEGRATION.md`
+   - Update user guides with new capabilities
+
+#### Adding Compiler Options
+
+1. **Update CompilerOptions** interface in `src/types/compiler.d.ts`:
+   ```typescript
+   export interface CompilerOptions {
+     // ... existing options
+     newOption: boolean;  // Add new option
+   }
+   ```
+
+2. **Update WasmCompilerService** to handle the new option:
+   ```typescript
+   private mergeOptions(options?: Partial<CompilerOptions>): CompilerOptions {
+     return {
+       // ... existing options
+       newOption: options?.newOption ?? this.config.defaultNewOption,
+     };
+   }
+   ```
+
+3. **Add configuration** in `src/config/compiler.config.ts`:
+   ```typescript
+   export const wasmCompilerConfig: WasmCompilerConfig = {
+     // ... existing config
+     defaultNewOption: false,
+   };
+   ```
+
+### Performance Considerations
+
+#### Compilation Performance
+
+**Target Benchmarks**:
+- Simple programs (<50 lines): <100ms
+- Medium programs (50-200 lines): <500ms
+- Complex programs (200-500 lines): <2000ms
+
+**Optimization Tips**:
+1. **Minimize Validation Overhead**: Cache validation results when possible
+2. **Efficient Code Generation**: Use typed arrays for binary data
+3. **Avoid Unnecessary Copies**: Reuse buffers where possible
+4. **Profile Regularly**: Use performance tests to catch regressions
+
+#### Memory Usage
+
+**Guidelines**:
+- Keep executable size minimal (target <5KB for simple programs)
+- Avoid memory leaks in compilation pipeline
+- Clean up temporary buffers after compilation
+- Use streaming for large files (future enhancement)
+
+### Architecture Diagrams
+
+#### Compilation Flow
+
+```
+┌─────────────┐
+│ User clicks │
+│   "Build"   │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────────────┐
+│   CompilerService.compile()     │
+│   • Determine active compiler   │
+│   • Read source file            │
+└──────┬──────────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────┐
+│  WasmCompilerService.compile()  │
+│  • Validate source code         │
+│  • Merge compiler options       │
+│  • Handle timeout               │
+└──────┬──────────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────┐
+│ DosExecutableGenerator          │
+│  • Parse C source               │
+│  • Generate x86 assembly        │
+│  • Create MZ executable         │
+└──────┬──────────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────┐
+│   Write to DOS filesystem       │
+│   Return CompileResult          │
+└─────────────────────────────────┘
+```
+
+#### Component Responsibilities
+
+**CompilerService**:
+- Route compilation requests
+- Manage build messages
+- Coordinate filesystem operations
+- Provide compiler status
+
+**WasmCompilerService**:
+- Validate C source code
+- Manage compiler options
+- Generate DOS executables
+- Parse compiler messages
+- Handle timeouts
+
+**DosExecutableGenerator**:
+- Parse simple C code
+- Generate 16-bit x86 assembly
+- Create DOS MZ executable format
+- Implement DOS system calls
+
+**FileSystemService**:
+- Read/write DOS filesystem
+- File existence checks
+- Binary file operations
+
+### Common Development Tasks
+
+#### Adding a New DOS System Call
+
+1. **Add to DosSystemCalls class**:
+   ```typescript
+   static generateNewSyscall(params: any): Uint8Array {
+     return new Uint8Array([
+       0xB4, 0xXX,  // MOV AH, XXh (DOS function)
+       // ... more assembly
+       0xCD, 0x21,  // INT 21h
+     ]);
+   }
+   ```
+
+2. **Update generateFromSimpleC()** to recognize the new call
+3. **Add tests** for the new system call
+4. **Document** in technical documentation
+
+#### Debugging Compilation Issues
+
+1. **Enable Verbose Logging**:
+   ```typescript
+   export const wasmCompilerConfig = {
+     verbose: true,  // Enable detailed logs
+   };
+   ```
+
+2. **Check Build Messages**:
+   ```typescript
+   const messages = compilerService.getBuildMessages();
+   console.log('Build messages:', messages);
+   ```
+
+3. **Inspect Generated Executable**:
+   ```typescript
+   const result = await compile(...);
+   console.log('Executable size:', result.executable?.length);
+   console.log('Executable bytes:', Array.from(result.executable || []));
+   ```
+
+4. **Test in DOSBox**: Compare with real DOS executables
+
+### Code Review Checklist
+
+When reviewing compiler-related PRs:
+
+- [ ] All tests pass (unit, integration, performance)
+- [ ] Code coverage meets minimum requirements (85%)
+- [ ] Performance benchmarks are met
+- [ ] Documentation is updated
+- [ ] Type definitions are complete
+- [ ] Error messages are clear and helpful
+- [ ] No memory leaks or performance regressions
+- [ ] Code follows TypeScript best practices
+- [ ] JSDoc comments for public APIs
+
 ## Reporting Issues
 
 ### Bug Reports
