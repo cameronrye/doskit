@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Vite
+.vite
+
+# TypeScript
+*.tsbuildinfo
+
 # Coverage reports
 coverage
 .nyc_output
@@ -26,3 +32,43 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# Open Watcom compiler artifacts
+# Object files
+*.obj
+*.OBJ
+!public/watcom/**/*.obj
+!public/watcom/**/*.OBJ
+
+# Error files
+*.err
+*.ERR
+
+# Map files
+*.map
+*.MAP
+
+# Library files (with exceptions for public/watcom)
+*.lib
+*.LIB
+!public/watcom/**/*.lib
+!public/watcom/**/*.LIB
+
+# Executables (with exceptions for public/watcom)
+*.exe
+*.EXE
+*.com
+*.COM
+!public/watcom/**/*.exe
+!public/watcom/**/*.EXE
+!public/watcom/**/*.com
+!public/watcom/**/*.COM
+
+# Temporary directories
+/downloads/extracted/
+C/TEMP/
+C/OUTPUT/
+
+# Build logs
+/downloads/*.log
+/downloads/*.bat
