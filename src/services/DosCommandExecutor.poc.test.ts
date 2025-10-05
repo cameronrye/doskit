@@ -13,7 +13,7 @@
  * Status: PROOF OF CONCEPT - Not for production use
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import type { CommandInterface, CommandInterfaceEvents } from '../types/js-dos';
 
 /**

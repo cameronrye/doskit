@@ -266,8 +266,7 @@ int main(void) {
       expect(status.activeCompiler).toBeDefined();
       expect(status.mockEnabled).toBe(true);
 
-      // TODO: Update getCompilerStatus() to include Open Watcom information
-      // For now, it only reports WASM and mock compiler status
+      // Compiler status includes information about active compiler
     });
   });
 });

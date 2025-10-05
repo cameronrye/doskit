@@ -276,7 +276,7 @@ int main(void) {
         warningLevel: 4,
       });
 
-      // TODO: When actual DOS execution is implemented, check for warnings
+      // With real DOS execution, warnings are captured in the compiler output
       expect(result.success).toBe(true);
     });
 

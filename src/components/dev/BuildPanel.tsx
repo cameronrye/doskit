@@ -152,7 +152,8 @@ export const BuildPanel: React.FC<BuildPanelProps> = ({
     }
 
     // Try to parse as Open Watcom error/warning
-    const parsed = OpenWatcomErrorParser.parseLine(message);
+    const parseResult = OpenWatcomErrorParser.parse(message);
+    const parsed = parseResult.errors[0] || parseResult.warnings[0];
     if (parsed) {
       const displayText = `Line ${parsed.line}: ${parsed.message} (${parsed.code})`;
       return {

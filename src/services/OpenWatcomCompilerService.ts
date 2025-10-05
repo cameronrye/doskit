@@ -382,8 +382,7 @@ export class OpenWatcomCompilerService {
       }
     }
 
-    // Verify Open Watcom compiler exists
-    // Note: This is a placeholder check - actual implementation would verify files exist
+    // Log Open Watcom configuration
     if (this.config.verbose) {
       this.addBuildMessage('info', `Using Open Watcom at: ${this.config.watcomPath}`);
       this.addBuildMessage('info', `Compiler: ${this.config.compilerBin}`);
@@ -450,7 +449,7 @@ export class OpenWatcomCompilerService {
         await this.fs.readBinaryFile(objPath);
         this.addBuildMessage('info', `Object file created: ${objPath}`);
         return true;
-      } catch (error) {
+      } catch {
         this.addBuildMessage('error', `Object file not found: ${objPath}`);
         return false;
       }
@@ -518,7 +517,7 @@ export class OpenWatcomCompilerService {
         await this.fs.readBinaryFile(exePath);
         this.addBuildMessage('info', `Executable created: ${exePath}`);
         return true;
-      } catch (error) {
+      } catch {
         this.addBuildMessage('error', `Executable not found: ${exePath}`);
         return false;
       }
@@ -881,7 +880,7 @@ export class OpenWatcomCompilerService {
         await this.fs.readBinaryFile(exePath);
         this.addBuildMessage('info', `Executable created: ${exePath}`);
         return true;
-      } catch (error) {
+      } catch {
         this.addBuildMessage('error', `Executable not found: ${exePath}`);
         return false;
       }

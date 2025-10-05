@@ -45,7 +45,6 @@ export const CodeMode: React.FC<CodeModeProps> = ({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [compilationProgress, setCompilationProgress] = useState<CompilationProgress | null>(null);
   const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
-  const [compilationStartTime, setCompilationStartTime] = useState<number | null>(null);
   const [compilerOptions, setCompilerOptions] = useState<CompilerOptions>({
     memoryModel: 'small',
     optimization: 'balanced',
@@ -124,7 +123,6 @@ export const CodeMode: React.FC<CodeModeProps> = ({
     clearBuildMessages();
     setCompilationProgress(null);
     setEstimatedTimeRemaining(null);
-    setCompilationStartTime(Date.now());
 
     // Compile
     const outputFile = currentFile.replace(/\.(c|cpp)$/, '.exe');
@@ -137,31 +135,14 @@ export const CodeMode: React.FC<CodeModeProps> = ({
       // Clear progress when done
       setCompilationProgress(null);
       setEstimatedTimeRemaining(null);
-      setCompilationStartTime(null);
     } catch (error) {
       console.error('[CodeMode] Build failed:', error);
 
       // Clear progress on error
       setCompilationProgress(null);
       setEstimatedTimeRemaining(null);
-      setCompilationStartTime(null);
     }
   }, [ci, currentFile, handleSave, compile, clearBuildMessages]);
-
-  // Handle compilation progress updates
-  const handleProgressUpdate = useCallback((progress: CompilationProgress) => {
-    setCompilationProgress(progress);
-
-    // Estimate time remaining based on progress
-    if (compilationStartTime && progress.progress > 0 && progress.progress < 100) {
-      const elapsed = Date.now() - compilationStartTime;
-      const estimatedTotal = (elapsed / progress.progress) * 100;
-      const remaining = estimatedTotal - elapsed;
-      setEstimatedTimeRemaining(Math.max(0, remaining));
-    } else {
-      setEstimatedTimeRemaining(null);
-    }
-  }, [compilationStartTime]);
 
   const handleRun = useCallback(() => {
     if (!lastResult || !lastResult.success || !lastResult.executable) {

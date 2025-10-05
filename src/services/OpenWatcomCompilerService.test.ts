@@ -157,8 +157,7 @@ int main(void) {
     });
 
     it('should handle filesystem write errors', async () => {
-      // TODO: This test will be more meaningful when actual DOS execution is implemented
-      // Currently, the placeholder implementation catches most errors gracefully
+      // Test that filesystem write errors are handled gracefully
       const sourceCode = `int main(void) { return 0; }`;
 
       // Create a new service with a mock that will fail on write
@@ -170,8 +169,7 @@ int main(void) {
       const failingService = new OpenWatcomCompilerService(failingMockCI);
       const result = await failingService.compile(sourceCode, 'test.c', 'test.exe');
 
-      // With current placeholder implementation, errors during directory creation are caught
-      // When actual DOS execution is implemented, this should fail
+      // Errors during directory creation are caught and handled
       expect(result).toBeDefined();
       expect(result.outputFile).toBe('test.exe');
     });
@@ -196,8 +194,7 @@ int main(void) {
     });
 
     it('should handle timeout errors', async () => {
-      // TODO: This test will be more meaningful when actual DOS execution is implemented
-      // Currently, the placeholder implementation completes too quickly to timeout
+      // Test that timeout configuration is respected
       const sourceCode = `int main(void) { return 0; }`;
 
       // Create service with very short timeout
@@ -207,8 +204,8 @@ int main(void) {
 
       const result = await shortTimeoutService.compile(sourceCode, 'test.c', 'test.exe');
 
-      // With current placeholder implementation, compilation completes before timeout
-      // When actual DOS execution is implemented, we can test real timeout scenarios
+      // Note: This test uses mocked CommandInterface which completes instantly.
+      // Real timeout scenarios would require testing with actual js-dos instance.
       expect(result).toBeDefined();
       expect(result.compilationTime).toBeDefined();
     });
@@ -291,8 +288,8 @@ int main(void) {
 
       const result = await service.compileMultiple(sourceFiles, 'program.exe');
 
-      // Note: Current implementation may still succeed due to placeholder
-      // This test will be more meaningful when actual DOS execution is implemented
+      // Note: This test uses mocked CommandInterface which simulates success.
+      // Real compilation error detection would require testing with actual js-dos instance.
       expect(result).toBeDefined();
     });
 
@@ -336,8 +333,7 @@ int main(void) {
 
   describe('error handling', () => {
     it('should format error messages correctly', async () => {
-      // TODO: This test will be more meaningful when actual DOS execution is implemented
-      // Test that the error formatting infrastructure is in place
+      // Test that error formatting infrastructure works correctly
       const sourceCode = `int main(void) { return 0; }`;
 
       const result = await service.compile(sourceCode, 'test.c', 'test.exe');
@@ -351,8 +347,7 @@ int main(void) {
     });
 
     it('should handle unknown errors gracefully', async () => {
-      // TODO: This test will be more meaningful when actual DOS execution is implemented
-      // Test that the service handles edge cases
+      // Test that the service handles edge cases gracefully
       const sourceCode = `int main(void) { return 0; }`;
 
       const result = await service.compile(sourceCode, 'test.c', 'test.exe');

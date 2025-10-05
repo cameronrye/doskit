@@ -6,7 +6,7 @@
  * DOS Command Executor Tests
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import type { CommandInterface, CommandInterfaceEvents } from '../types/js-dos';
 import { DosCommandExecutor } from './DosCommandExecutor';
 

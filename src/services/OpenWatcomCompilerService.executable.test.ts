@@ -533,7 +533,6 @@ int main(void) {
       expect(info!.pagesInFile).toBeGreaterThan(0);
 
       // Check 6: File size (allow mock data to be smaller)
-      const headerSize = info!.headerParagraphs * 16;
       // For mock data, just check it's not zero
       expect(exe.length).toBeGreaterThan(0);
 

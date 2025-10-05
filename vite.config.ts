@@ -25,7 +25,7 @@ export default defineConfig({
       threshold: 10240, // Only compress files > 10KB
       deleteOriginFile: false,
       // Include Open Watcom binaries for compression
-      include: /\.(js|css|html|svg|wasm|exe|lib)$/,
+      filter: /\.(js|css|html|svg|wasm|exe|lib)$/,
     }),
     viteCompression({
       algorithm: 'gzip',
@@ -33,7 +33,7 @@ export default defineConfig({
       threshold: 10240,
       deleteOriginFile: false,
       // Include Open Watcom binaries for compression
-      include: /\.(js|css|html|svg|wasm|exe|lib)$/,
+      filter: /\.(js|css|html|svg|wasm|exe|lib)$/,
     }),
   ],
 

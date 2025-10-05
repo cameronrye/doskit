@@ -53,6 +53,14 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     // Register Open Watcom-specific code snippets
     monaco.languages.registerCompletionItemProvider('c', {
       provideCompletionItems: (model, position) => {
+        const word = model.getWordUntilPosition(position);
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        };
+
         const suggestions = [
           // Open Watcom pragmas
           {
@@ -61,6 +69,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             insertText: '#pragma pack(${1:1})',
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             documentation: 'Set structure packing alignment (Open Watcom)',
+            range,
           },
           {
             label: '#pragma aux',
@@ -68,6 +77,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             insertText: '#pragma aux ${1:function_name} ${2:calling_convention}',
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             documentation: 'Define auxiliary pragma for function calling convention (Open Watcom)',
+            range,
           },
           {
             label: '#pragma intrinsic',
@@ -75,6 +85,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             insertText: '#pragma intrinsic(${1:function_name})',
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             documentation: 'Use intrinsic function implementation (Open Watcom)',
+            range,
           },
           // DOS-specific functions
           {
@@ -83,6 +94,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             insertText: 'int86(${1:interrupt_number}, &${2:inregs}, &${3:outregs})',
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             documentation: 'Execute DOS interrupt (requires dos.h)',
+            range,
           },
           {
             label: 'int86x',
@@ -90,6 +102,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             insertText: 'int86x(${1:interrupt_number}, &${2:inregs}, &${3:outregs}, &${4:segregs})',
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             documentation: 'Execute DOS interrupt with segment registers (requires dos.h)',
+            range,
           },
           {
             label: 'bdos',
@@ -97,6 +110,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             insertText: 'bdos(${1:function_number}, ${2:dx_value}, ${3:al_value})',
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             documentation: 'Call DOS function (requires dos.h)',
+            range,
           },
           // Memory models
           {
@@ -104,30 +118,35 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             kind: monaco.languages.CompletionItemKind.Keyword,
             insertText: '__small',
             documentation: 'Small memory model keyword (Open Watcom)',
+            range,
           },
           {
             label: '__compact',
             kind: monaco.languages.CompletionItemKind.Keyword,
             insertText: '__compact',
             documentation: 'Compact memory model keyword (Open Watcom)',
+            range,
           },
           {
             label: '__medium',
             kind: monaco.languages.CompletionItemKind.Keyword,
             insertText: '__medium',
             documentation: 'Medium memory model keyword (Open Watcom)',
+            range,
           },
           {
             label: '__large',
             kind: monaco.languages.CompletionItemKind.Keyword,
             insertText: '__large',
             documentation: 'Large memory model keyword (Open Watcom)',
+            range,
           },
           {
             label: '__huge',
             kind: monaco.languages.CompletionItemKind.Keyword,
             insertText: '__huge',
             documentation: 'Huge memory model keyword (Open Watcom)',
+            range,
           },
           // Far/near pointers
           {
@@ -135,12 +154,14 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             kind: monaco.languages.CompletionItemKind.Keyword,
             insertText: '__far',
             documentation: 'Far pointer keyword (Open Watcom)',
+            range,
           },
           {
             label: '__near',
             kind: monaco.languages.CompletionItemKind.Keyword,
             insertText: '__near',
             documentation: 'Near pointer keyword (Open Watcom)',
+            range,
           },
         ];
 
