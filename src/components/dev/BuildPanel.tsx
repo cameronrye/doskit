@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BuildMessage, BuildStatus, CompileResult } from '../../types/compiler';
 import { enhanceErrorMessage } from '../../utils/errorMessages';
+import { OpenWatcomErrorParser, type ParsedMessage } from '../../services/OpenWatcomErrorParser';
 import './BuildPanel.css';
 
 export interface BuildPanelProps {
@@ -20,7 +21,7 @@ export interface BuildPanelProps {
   /** Last compilation result (for statistics) */
   lastResult?: CompileResult | null;
   /** Compiler type being used */
-  compilerType?: 'wasm' | 'mock' | 'none';
+  compilerType?: 'wasm' | 'mock' | 'openwatcom' | 'none';
   /** Callback when Build button is clicked */
   onBuild?: () => void;
   /** Callback when Run button is clicked */
@@ -131,9 +132,45 @@ export const BuildPanel: React.FC<BuildPanelProps> = ({
         return '🔧 WebAssembly GCC';
       case 'mock':
         return '🔧 Mock Compiler';
+      case 'openwatcom':
+        return '🔧 Open Watcom C/C++';
       default:
         return '🔧 No Compiler';
     }
+  };
+
+  /**
+   * Parse Open Watcom error message and create clickable file link
+   */
+  const parseOpenWatcomMessage = (message: string): {
+    parsedMessage?: ParsedMessage;
+    displayText: string;
+    hasFileLink: boolean;
+  } => {
+    if (compilerType !== 'openwatcom') {
+      return { displayText: message, hasFileLink: false };
+    }
+
+    // Try to parse as Open Watcom error/warning
+    const parsed = OpenWatcomErrorParser.parseLine(message);
+    if (parsed) {
+      const displayText = `Line ${parsed.line}: ${parsed.message} (${parsed.code})`;
+      return {
+        parsedMessage: parsed,
+        displayText,
+        hasFileLink: true,
+      };
+    }
+
+    return { displayText: message, hasFileLink: false };
+  };
+
+  /**
+   * Handle clicking on a file link in error message
+   */
+  const handleFileClick = (file: string, line: number) => {
+    // TODO: Implement file navigation when CodeEditor supports it
+    console.log(`Navigate to ${file}:${line}`);
   };
 
   return (
@@ -192,6 +229,9 @@ export const BuildPanel: React.FC<BuildPanelProps> = ({
               const isExpanded = expandedMessages.has(index);
               const hasEnhancement = enhanced && (enhanced.explanation || enhanced.suggestion);
 
+              // Parse Open Watcom message format
+              const openWatcomParsed = parseOpenWatcomMessage(message.message);
+
               return (
                 <div
                   key={index}
@@ -205,13 +245,36 @@ export const BuildPanel: React.FC<BuildPanelProps> = ({
                   </span>
                   <div className="build-message-content">
                     <div className="build-message-text">
-                      {message.message}
-                      {message.file && (
-                        <span className="build-message-location">
-                          {' '}({message.file}
-                          {message.line && `:${message.line}`}
-                          {message.column && `:${message.column}`})
-                        </span>
+                      {openWatcomParsed.hasFileLink && openWatcomParsed.parsedMessage ? (
+                        <>
+                          <button
+                            className="build-message-file-link"
+                            onClick={() => handleFileClick(
+                              openWatcomParsed.parsedMessage!.file,
+                              openWatcomParsed.parsedMessage!.line
+                            )}
+                            title={`Go to ${openWatcomParsed.parsedMessage.file}:${openWatcomParsed.parsedMessage.line}`}
+                          >
+                            📄 {openWatcomParsed.parsedMessage.file}:{openWatcomParsed.parsedMessage.line}
+                          </button>
+                          <span className="build-message-error-code">
+                            {openWatcomParsed.parsedMessage.code}
+                          </span>
+                          <span className="build-message-description">
+                            {openWatcomParsed.parsedMessage.message}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          {openWatcomParsed.displayText}
+                          {message.file && (
+                            <span className="build-message-location">
+                              {' '}({message.file}
+                              {message.line && `:${message.line}`}
+                              {message.column && `:${message.column}`})
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                     {hasEnhancement && (

@@ -1,0 +1,242 @@
+/**
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ *
+ * CompilerOptionsPanel Component Styles
+ */
+
+.compiler-options-panel {
+  background-color: #252526;
+  border-radius: 6px;
+  border: 1px solid #3e3e42;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.compiler-options-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #2d2d30;
+  border-bottom: 1px solid #3e3e42;
+}
+
+.compiler-options-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #cccccc;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 4px 0;
+  transition: color 0.2s ease;
+}
+
+.compiler-options-toggle:hover:not(:disabled) {
+  color: #ffffff;
+}
+
+.compiler-options-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.compiler-options-icon {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.compiler-options-title {
+  font-weight: 500;
+}
+
+.compiler-options-reset {
+  background: none;
+  border: none;
+  color: #cccccc;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.compiler-options-reset:hover:not(:disabled) {
+  background-color: #3e3e42;
+  color: #ffffff;
+}
+
+.compiler-options-reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.compiler-options-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.compiler-option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compiler-option-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #cccccc;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.compiler-option-select,
+.compiler-option-input {
+  padding: 6px 10px;
+  background-color: #3c3c3c;
+  border: 1px solid #5a5a5a;
+  border-radius: 4px;
+  color: #cccccc;
+  font-size: 13px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: border-color 0.2s ease;
+}
+
+.compiler-option-select:focus,
+.compiler-option-input:focus {
+  outline: none;
+  border-color: #007acc;
+  box-shadow: 0 0 0 1px #007acc;
+}
+
+.compiler-option-select:disabled,
+.compiler-option-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.compiler-option-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #cccccc;
+  cursor: pointer;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.compiler-option-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #007acc;
+  cursor: pointer;
+}
+
+.compiler-option-checkbox input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.compiler-option-info {
+  font-size: 11px;
+  color: #999999;
+  font-style: italic;
+  margin-top: 2px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.compiler-option-preview {
+  background-color: #1e1e1e;
+  border: 1px solid #3e3e42;
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 12px;
+  color: #cccccc;
+}
+
+.compiler-option-preview strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+.compiler-option-flags {
+  display: block;
+  background-color: #2d2d30;
+  padding: 8px;
+  border-radius: 3px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  color: #4fc3f7;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .compiler-options-content {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .compiler-option-label {
+    font-size: 12px;
+  }
+
+  .compiler-option-select,
+  .compiler-option-input {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .compiler-option-checkbox {
+    font-size: 12px;
+  }
+
+  .compiler-option-info {
+    font-size: 10px;
+  }
+
+  .compiler-option-flags {
+    font-size: 10px;
+    padding: 6px;
+  }
+}
+
+/* Dark theme adjustments */
+@media (prefers-color-scheme: dark) {
+  .compiler-options-panel {
+    background-color: #1e1e1e;
+    border-color: #333333;
+  }
+
+  .compiler-options-header {
+    background-color: #252526;
+    border-bottom-color: #333333;
+  }
+
+  .compiler-option-select,
+  .compiler-option-input {
+    background-color: #2d2d30;
+    border-color: #464647;
+  }
+
+  .compiler-option-preview {
+    background-color: #181818;
+    border-color: #333333;
+  }
+
+  .compiler-option-flags {
+    background-color: #1e1e1e;
+  }
+}

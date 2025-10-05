@@ -1,9 +1,41 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
+import viteCompression from 'vite-plugin-compression'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+
+    // Copy Open Watcom toolchain to dist/watcom
+    viteStaticCopy({
+      targets: [
+        {
+          src: 'public/watcom',
+          dest: '.'
+        }
+      ]
+    }),
+
+    // Compress assets with Brotli and gzip
+    viteCompression({
+      algorithm: 'brotliCompress',
+      ext: '.br',
+      threshold: 10240, // Only compress files > 10KB
+      deleteOriginFile: false,
+      // Include Open Watcom binaries for compression
+      include: /\.(js|css|html|svg|wasm|exe|lib)$/,
+    }),
+    viteCompression({
+      algorithm: 'gzip',
+      ext: '.gz',
+      threshold: 10240,
+      deleteOriginFile: false,
+      // Include Open Watcom binaries for compression
+      include: /\.(js|css|html|svg|wasm|exe|lib)$/,
+    }),
+  ],
 
   // Custom domain deployment configuration
   // Using custom domain doskit.net, so base path is '/'
@@ -55,8 +87,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000, // 1000 KB (1 MB)
   },
 
-  // Asset handling
-  assetsInclude: ['**/*.wasm', '**/*.jsdos'],
+  // Asset handling - include Open Watcom binaries and libraries
+  assetsInclude: ['**/*.wasm', '**/*.jsdos', '**/*.exe', '**/*.lib'],
 
   // Optimize dependencies
   optimizeDeps: {

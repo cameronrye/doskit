@@ -235,8 +235,9 @@ describe('compiler.config', () => {
   describe('build commands', () => {
     it('should have valid build commands', () => {
       Object.values(projectTemplates).forEach(template => {
-        expect(template.buildCommand).toContain('gcc');
-        expect(template.buildCommand).toContain('-o');
+        // Check for Open Watcom compiler commands (wcc) or linker (wlink)
+        const hasCompiler = template.buildCommand.includes('wcc') || template.buildCommand.includes('wlink');
+        expect(hasCompiler).toBe(true);
         expect(template.buildCommand).toContain('.exe');
       });
     });

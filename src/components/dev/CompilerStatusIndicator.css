@@ -1,0 +1,163 @@
+/**
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ *
+ * CompilerStatusIndicator Component Styles
+ */
+
+.compiler-status-indicator {
+  margin-bottom: 12px;
+}
+
+.compiler-status-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background-color: #2d2d30;
+  border: 2px solid;
+  border-radius: 6px;
+  color: #cccccc;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: all 0.2s ease;
+}
+
+.compiler-status-button:hover {
+  background-color: #3e3e42;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.compiler-status-icon {
+  font-size: 16px;
+}
+
+.compiler-status-name {
+  flex: 1;
+  text-align: left;
+  font-weight: 600;
+}
+
+.compiler-status-version {
+  font-size: 11px;
+  padding: 2px 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.compiler-status-toggle {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.compiler-status-details {
+  margin-top: 8px;
+  padding: 12px;
+  background-color: #252526;
+  border: 1px solid #3e3e42;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #cccccc;
+}
+
+.compiler-status-description {
+  margin-bottom: 12px;
+  color: #999999;
+  font-style: italic;
+}
+
+.compiler-status-capabilities {
+  margin-bottom: 12px;
+}
+
+.compiler-status-capabilities strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.compiler-status-capabilities ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.compiler-status-capabilities li {
+  margin-bottom: 4px;
+  color: #cccccc;
+}
+
+.compiler-status-flags {
+  margin-bottom: 12px;
+}
+
+.compiler-status-flags strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.compiler-status-flag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.compiler-status-flag {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.compiler-status-flag-enabled {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+  border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+.compiler-status-priority {
+  padding: 8px;
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.compiler-status-priority strong {
+  color: #ffffff;
+  margin-right: 6px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .compiler-status-button {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .compiler-status-name {
+    font-size: 12px;
+  }
+
+  .compiler-status-version {
+    font-size: 10px;
+  }
+
+  .compiler-status-details {
+    font-size: 11px;
+    padding: 10px;
+  }
+
+  .compiler-status-capabilities strong,
+  .compiler-status-flags strong {
+    font-size: 12px;
+  }
+}

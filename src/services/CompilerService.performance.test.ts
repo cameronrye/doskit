@@ -9,6 +9,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CompilerService } from './CompilerService';
 import type { CommandInterface } from '../types/js-dos';
+import { createMockCommandInterface } from './__test-helpers__/mockCommandInterface';
 
 // Mock the compiler config to enable real DOS compilation for performance tests
 vi.mock('../config/compiler.config', () => ({
@@ -24,8 +25,10 @@ vi.mock('../config/compiler.config', () => ({
     defaultDebug: false,
   },
   compilerFeatureFlags: {
+    enableOpenWatcomCompiler: false, // Disable Open Watcom for WASM performance tests
     enableWasmCompiler: true,
     enableMockCompiler: false,
+    preferOpenWatcomCompiler: false,
     preferWasmCompiler: true,
   },
   compilerConfig: {
@@ -46,14 +49,7 @@ describe('CompilerService - Performance Benchmarks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Create mock CommandInterface
-    mockCI = {
-      fsWriteFile: vi.fn().mockResolvedValue(undefined),
-      fsReadFile: vi.fn(),
-      fsDeleteFile: vi.fn().mockResolvedValue(undefined),
-      fsTree: vi.fn().mockResolvedValue({ nodes: {} }),
-    } as unknown as CommandInterface;
-
+    mockCI = createMockCommandInterface();
     compiler = new CompilerService(mockCI);
   });
 

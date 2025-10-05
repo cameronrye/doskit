@@ -19,6 +19,7 @@ import {
 } from '../config/compiler.config';
 import { DosExecutableGenerator } from './DosExecutableGenerator';
 import { WasmCompilerService } from './WasmCompilerService';
+import { OpenWatcomCompilerService } from './OpenWatcomCompilerService';
 
 /**
  * Service for compiling DOS programs
@@ -27,15 +28,17 @@ export class CompilerService {
   private fs: FileSystemService;
   private buildMessages: BuildMessage[] = [];
   private wasmCompiler: WasmCompilerService;
+  private openWatcomCompiler: OpenWatcomCompilerService;
 
   constructor(commandInterface: CommandInterface) {
     this.fs = new FileSystemService(commandInterface);
     this.wasmCompiler = new WasmCompilerService(wasmCompilerConfig);
+    this.openWatcomCompiler = new OpenWatcomCompilerService(commandInterface);
   }
 
   /**
    * Compile a C source file
-   * Supports mock compiler, WASM compiler, and legacy DOS compilation
+   * Supports Open Watcom compiler, WASM compiler, mock compiler, and legacy DOS compilation
    */
   async compile(
     sourceFile: string,
@@ -49,6 +52,14 @@ export class CompilerService {
 
     try {
       // Determine which compiler to use based on feature flags and configuration
+      // Priority: Open Watcom > WASM > Mock
+
+      if (compilerFeatureFlags.enableOpenWatcomCompiler &&
+          compilerFeatureFlags.preferOpenWatcomCompiler) {
+        this.addBuildMessage('info', 'Using Open Watcom compiler (Real DOS Compiler)');
+        return await this.openWatcomCompile(sourceFile, outputFile, options);
+      }
+
       if (compilerFeatureFlags.enableWasmCompiler &&
           (compilerFeatureFlags.preferWasmCompiler || realDosCompilerEnabled)) {
         this.addBuildMessage('info', 'Using WebAssembly compiler (Phase 3)');
@@ -62,7 +73,7 @@ export class CompilerService {
       }
 
       // No compiler available
-      throw new Error('No compiler available - both WASM and mock compilers are disabled');
+      throw new Error('No compiler available - all compilers are disabled');
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -77,6 +88,60 @@ export class CompilerService {
         compilationTime: Date.now() - startTime,
       };
     }
+  }
+
+  /**
+   * Open Watcom compiler - uses OpenWatcomCompilerService for real DOS compilation
+   * This is the real DOS compiler running in js-dos emulator
+   */
+  private async openWatcomCompile(
+    sourceFile: string,
+    outputFile: string,
+    options?: Partial<CompilerOptions>
+  ): Promise<CompileResult> {
+    const startTime = Date.now();
+
+    // Read source file from filesystem
+    let sourceCode: string;
+    try {
+      sourceCode = await this.fs.readTextFile(`/C/PROJECT/${sourceFile}`);
+    } catch {
+      this.addBuildMessage('error', `Source file not found: ${sourceFile}`);
+      return {
+        success: false,
+        errors: [`Source file not found: ${sourceFile}`],
+        warnings: [],
+        outputFile,
+        rawOutput: `Error: Source file not found: ${sourceFile}`,
+        compilationTime: Date.now() - startTime,
+      };
+    }
+
+    // Compile using Open Watcom
+    const result = await this.openWatcomCompiler.compile(
+      sourceCode,
+      sourceFile,
+      outputFile,
+      options
+    );
+
+    // Copy build messages from Open Watcom compiler
+    const watcomMessages = this.openWatcomCompiler.getBuildMessages();
+    this.buildMessages.push(...watcomMessages);
+
+    // If compilation successful, write executable to project directory
+    if (result.success && result.executable) {
+      try {
+        const projectPath = `/C/PROJECT/${outputFile}`;
+        await this.fs.writeBinaryFile(projectPath, result.executable);
+        this.addBuildMessage('info', `Executable written to: ${projectPath}`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        this.addBuildMessage('error', `Failed to write executable: ${errorMessage}`);
+      }
+    }
+
+    return result;
   }
 
   /**

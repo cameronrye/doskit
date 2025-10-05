@@ -27,6 +27,11 @@ export interface CompileResult {
 }
 
 /**
+ * Open Watcom memory models
+ */
+export type MemoryModel = 'tiny' | 'small' | 'compact' | 'medium' | 'large' | 'huge';
+
+/**
  * Compiler options for customizing compilation
  */
 export interface CompilerOptions {
@@ -40,6 +45,20 @@ export interface CompilerOptions {
   customFlags?: string[];
   /** Output format (exe, com) */
   outputFormat?: 'exe' | 'com';
+
+  // Open Watcom-specific options (optional for backward compatibility)
+  /** Memory model for Open Watcom compiler */
+  memoryModel?: MemoryModel;
+  /** Open Watcom-specific optimization flags */
+  watcomOptimizations?: string[];
+  /** Target format for Open Watcom (same as outputFormat but more explicit) */
+  targetFormat?: 'exe' | 'com';
+  /** Target architecture (16-bit or 32-bit) */
+  targetArchitecture?: '16bit' | '32bit';
+  /** Warning level for Open Watcom (0-4) */
+  warningLevel?: number;
+  /** Treat warnings as errors */
+  warningsAsErrors?: boolean;
 }
 
 /**

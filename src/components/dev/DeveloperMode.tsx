@@ -11,9 +11,12 @@ import { useState, useEffect, useCallback } from 'react';
 import type { CommandInterface } from '../../types/js-dos';
 import { CodeEditor } from './CodeEditor';
 import { BuildPanel } from './BuildPanel';
+import { CompilerOptionsPanel, type CompilerOptions } from './CompilerOptionsPanel';
+import { CompilerStatusIndicator } from './CompilerStatusIndicator';
 import { useDosFileSystem } from '../../hooks/useDosFileSystem';
 import { useDosCompiler } from '../../hooks/useDosCompiler';
 import { projectTemplates, compilerFeatureFlags } from '../../config/compiler.config';
+import type { CompilationProgress } from '../../services/OpenWatcomCompilerService';
 import './DeveloperMode.css';
 
 export interface ProgramRunConfig {
@@ -40,6 +43,17 @@ export const CodeMode: React.FC<CodeModeProps> = ({
   const [code, setCode] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [compilationProgress, setCompilationProgress] = useState<CompilationProgress | null>(null);
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
+  const [compilationStartTime, setCompilationStartTime] = useState<number | null>(null);
+  const [compilerOptions, setCompilerOptions] = useState<CompilerOptions>({
+    memoryModel: 'small',
+    optimization: 'balanced',
+    warningLevel: 4,
+    warningsAsErrors: false,
+    debug: false,
+    customFlags: [],
+  });
 
   const { writeTextFile } = useDosFileSystem(ci);
   const { compile, buildMessages, clearBuildMessages, buildStatus, lastResult } = useDosCompiler(ci);
@@ -106,8 +120,11 @@ export const CodeMode: React.FC<CodeModeProps> = ({
     // Save file before building
     await handleSave();
 
-    // Clear previous build messages
+    // Clear previous build messages and progress
     clearBuildMessages();
+    setCompilationProgress(null);
+    setEstimatedTimeRemaining(null);
+    setCompilationStartTime(Date.now());
 
     // Compile
     const outputFile = currentFile.replace(/\.(c|cpp)$/, '.exe');
@@ -116,10 +133,35 @@ export const CodeMode: React.FC<CodeModeProps> = ({
     try {
       const result = await compile(currentFile, outputFile);
       console.log('[CodeMode] Build result:', result);
+
+      // Clear progress when done
+      setCompilationProgress(null);
+      setEstimatedTimeRemaining(null);
+      setCompilationStartTime(null);
     } catch (error) {
       console.error('[CodeMode] Build failed:', error);
+
+      // Clear progress on error
+      setCompilationProgress(null);
+      setEstimatedTimeRemaining(null);
+      setCompilationStartTime(null);
     }
   }, [ci, currentFile, handleSave, compile, clearBuildMessages]);
+
+  // Handle compilation progress updates
+  const handleProgressUpdate = useCallback((progress: CompilationProgress) => {
+    setCompilationProgress(progress);
+
+    // Estimate time remaining based on progress
+    if (compilationStartTime && progress.progress > 0 && progress.progress < 100) {
+      const elapsed = Date.now() - compilationStartTime;
+      const estimatedTotal = (elapsed / progress.progress) * 100;
+      const remaining = estimatedTotal - elapsed;
+      setEstimatedTimeRemaining(Math.max(0, remaining));
+    } else {
+      setEstimatedTimeRemaining(null);
+    }
+  }, [compilationStartTime]);
 
   const handleRun = useCallback(() => {
     if (!lastResult || !lastResult.success || !lastResult.executable) {
@@ -169,7 +211,10 @@ pause
     return 'c';
   };
 
-  const getCompilerType = (): 'wasm' | 'mock' | 'none' => {
+  const getCompilerType = (): 'wasm' | 'mock' | 'openwatcom' | 'none' => {
+    if (compilerFeatureFlags.enableOpenWatcomCompiler && compilerFeatureFlags.preferOpenWatcomCompiler) {
+      return 'openwatcom';
+    }
     if (compilerFeatureFlags.enableWasmCompiler && compilerFeatureFlags.preferWasmCompiler) {
       return 'wasm';
     }
@@ -177,6 +222,14 @@ pause
       return 'mock';
     }
     return 'none';
+  };
+
+  const formatTimeRemaining = (ms: number): string => {
+    const seconds = Math.ceil(ms / 1000);
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
   };
 
   return (
@@ -187,8 +240,24 @@ pause
           <h2>DOS Code Environment</h2>
         </div>
         <div className="code-mode-info">
-          {isSaving && <span className="code-mode-status">Saving...</span>}
-          {lastSaved && !isSaving && (
+          {compilationProgress && (
+            <div className="code-mode-progress">
+              <span className="code-mode-progress-spinner">⏳</span>
+              <span className="code-mode-progress-text">
+                {compilationProgress.message}
+              </span>
+              <span className="code-mode-progress-percent">
+                {compilationProgress.progress}%
+              </span>
+              {estimatedTimeRemaining !== null && estimatedTimeRemaining > 1000 && (
+                <span className="code-mode-progress-time">
+                  ~{formatTimeRemaining(estimatedTimeRemaining)}
+                </span>
+              )}
+            </div>
+          )}
+          {!compilationProgress && isSaving && <span className="code-mode-status">Saving...</span>}
+          {!compilationProgress && lastSaved && !isSaving && (
             <span className="code-mode-status">
               Last saved: {lastSaved.toLocaleTimeString()}
             </span>
@@ -214,6 +283,14 @@ pause
         </div>
 
         <div className="code-mode-build">
+          <CompilerStatusIndicator />
+          {getCompilerType() === 'openwatcom' && (
+            <CompilerOptionsPanel
+              options={compilerOptions}
+              onChange={setCompilerOptions}
+              disabled={!ci || buildStatus === 'building'}
+            />
+          )}
           <BuildPanel
             messages={buildMessages}
             status={buildStatus}

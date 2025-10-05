@@ -51,7 +51,7 @@ export const projectTemplates: Record<string, ProjectTemplate> = {
     description: 'Simple C program that prints "Hello, DOS!" to the console',
     category: 'beginner',
     mainFile: 'hello.c',
-    buildCommand: 'gcc -o hello.exe hello.c',
+    buildCommand: 'wcc hello.c && wlink file hello.obj name hello.exe',
     files: [
       {
         name: 'hello.c',
@@ -63,7 +63,7 @@ int main(void) {
     printf("Hello, DOS!\\n");
     printf("Welcome to DosKit Development Environment\\n");
     printf("\\n");
-    printf("This program was compiled with GCC\\n");
+    printf("This program was compiled with Open Watcom C\\n");
     return 0;
 }
 `,
@@ -73,6 +73,9 @@ int main(void) {
       optimization: 'O2',
       warnings: true,
       debug: false,
+      memoryModel: 'small',
+      watcomOptimizations: ['-ox'],
+      targetFormat: 'exe',
     },
   },
 
@@ -82,7 +85,7 @@ int main(void) {
     description: 'Demonstrates reading user input in DOS',
     category: 'beginner',
     mainFile: 'input.c',
-    buildCommand: 'gcc -o input.exe input.c',
+    buildCommand: 'wcc input.c && wlink file input.obj name input.exe',
     files: [
       {
         name: 'input.c',
@@ -116,6 +119,9 @@ int main(void) {
       optimization: 'O2',
       warnings: true,
       debug: false,
+      memoryModel: 'small',
+      watcomOptimizations: ['-ox'],
+      targetFormat: 'exe',
     },
   },
 
@@ -125,7 +131,7 @@ int main(void) {
     description: 'Basic calculator with arithmetic operations',
     category: 'intermediate',
     mainFile: 'calc.c',
-    buildCommand: 'gcc -o calc.exe calc.c',
+    buildCommand: 'wcc calc.c && wlink file calc.obj name calc.exe',
     files: [
       {
         name: 'calc.c',
@@ -175,6 +181,9 @@ int main(void) {
       optimization: 'O2',
       warnings: true,
       debug: false,
+      memoryModel: 'small',
+      watcomOptimizations: ['-ox'],
+      targetFormat: 'exe',
     },
   },
 };
@@ -234,14 +243,54 @@ export const wasmCompilerConfig: WasmCompilerConfig = {
 };
 
 /**
+ * Compiler selection priority order
+ */
+export type CompilerType = 'openwatcom' | 'wasm' | 'mock';
+
+/**
  * Feature flags for compiler selection
+ * Supports three-way selection: OpenWatcom, WASM (DosExecutableGenerator), or Mock
  */
 export const compilerFeatureFlags = {
+  /** Enable Open Watcom compiler (Phase 4 - Real DOS Compiler) */
+  enableOpenWatcomCompiler: true, // Now ready for use
   /** Enable WASM compiler (Phase 3) */
   enableWasmCompiler: true,
   /** Enable mock compiler fallback */
   enableMockCompiler: true,
+  /** Prefer Open Watcom compiler over others when enabled */
+  preferOpenWatcomCompiler: true,
   /** Prefer WASM compiler over mock when both are enabled */
   preferWasmCompiler: true,
 } as const;
+
+/**
+ * Get the preferred compiler type based on feature flags
+ * Priority: OpenWatcom > WASM > Mock
+ */
+export function getPreferredCompilerType(): CompilerType {
+  if (compilerFeatureFlags.enableOpenWatcomCompiler && compilerFeatureFlags.preferOpenWatcomCompiler) {
+    return 'openwatcom';
+  }
+  if (compilerFeatureFlags.enableWasmCompiler && compilerFeatureFlags.preferWasmCompiler) {
+    return 'wasm';
+  }
+  return 'mock';
+}
+
+/**
+ * Check if a specific compiler type is available
+ */
+export function isCompilerTypeAvailable(type: CompilerType): boolean {
+  switch (type) {
+    case 'openwatcom':
+      return compilerFeatureFlags.enableOpenWatcomCompiler;
+    case 'wasm':
+      return compilerFeatureFlags.enableWasmCompiler;
+    case 'mock':
+      return compilerFeatureFlags.enableMockCompiler;
+    default:
+      return false;
+  }
+}
 

@@ -50,6 +50,104 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       }
     });
 
+    // Register Open Watcom-specific code snippets
+    monaco.languages.registerCompletionItemProvider('c', {
+      provideCompletionItems: (model, position) => {
+        const suggestions = [
+          // Open Watcom pragmas
+          {
+            label: '#pragma pack',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: '#pragma pack(${1:1})',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: 'Set structure packing alignment (Open Watcom)',
+          },
+          {
+            label: '#pragma aux',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: '#pragma aux ${1:function_name} ${2:calling_convention}',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: 'Define auxiliary pragma for function calling convention (Open Watcom)',
+          },
+          {
+            label: '#pragma intrinsic',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: '#pragma intrinsic(${1:function_name})',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: 'Use intrinsic function implementation (Open Watcom)',
+          },
+          // DOS-specific functions
+          {
+            label: 'int86',
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: 'int86(${1:interrupt_number}, &${2:inregs}, &${3:outregs})',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: 'Execute DOS interrupt (requires dos.h)',
+          },
+          {
+            label: 'int86x',
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: 'int86x(${1:interrupt_number}, &${2:inregs}, &${3:outregs}, &${4:segregs})',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: 'Execute DOS interrupt with segment registers (requires dos.h)',
+          },
+          {
+            label: 'bdos',
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: 'bdos(${1:function_number}, ${2:dx_value}, ${3:al_value})',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: 'Call DOS function (requires dos.h)',
+          },
+          // Memory models
+          {
+            label: '__small',
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: '__small',
+            documentation: 'Small memory model keyword (Open Watcom)',
+          },
+          {
+            label: '__compact',
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: '__compact',
+            documentation: 'Compact memory model keyword (Open Watcom)',
+          },
+          {
+            label: '__medium',
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: '__medium',
+            documentation: 'Medium memory model keyword (Open Watcom)',
+          },
+          {
+            label: '__large',
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: '__large',
+            documentation: 'Large memory model keyword (Open Watcom)',
+          },
+          {
+            label: '__huge',
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: '__huge',
+            documentation: 'Huge memory model keyword (Open Watcom)',
+          },
+          // Far/near pointers
+          {
+            label: '__far',
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: '__far',
+            documentation: 'Far pointer keyword (Open Watcom)',
+          },
+          {
+            label: '__near',
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: '__near',
+            documentation: 'Near pointer keyword (Open Watcom)',
+          },
+        ];
+
+        return { suggestions };
+      },
+    });
+
     // Focus editor
     editor.focus();
   };
