@@ -141,7 +141,7 @@ describe('FileSystemService', () => {
       const tree = await fs.getFileTree();
       expect(tree).toBeDefined();
       expect(tree.nodes).toBeDefined();
-      expect(tree.nodes.C).toBeDefined();
+      expect(tree.nodes?.C).toBeDefined();
     });
 
     it('should throw error when tree retrieval fails', async () => {

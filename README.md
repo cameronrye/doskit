@@ -240,6 +240,9 @@ doskit/
 ### Available Scripts
 
 ```bash
+# Show all available commands with descriptions
+npm run help
+
 # Start development server
 npm run dev
 
@@ -252,6 +255,8 @@ npm run preview
 # Run linter
 npm run lint
 ```
+
+> 💡 **Tip**: Run `npm run help` to see all available scripts with detailed descriptions and usage examples!
 
 ### Development Workflow
 

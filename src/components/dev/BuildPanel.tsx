@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { BuildMessage, BuildStatus, CompileResult } from '../../types/compiler';
-import { enhanceErrorMessage, formatEnhancedError } from '../../utils/errorMessages';
+import { enhanceErrorMessage } from '../../utils/errorMessages';
 import './BuildPanel.css';
 
 export interface BuildPanelProps {

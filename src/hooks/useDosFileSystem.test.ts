@@ -214,7 +214,7 @@ describe('useDosFileSystem', () => {
 
       expect(tree).toBeDefined();
       expect(tree.nodes).toBeDefined();
-      expect(tree.nodes.C).toBeDefined();
+      expect(tree.nodes?.C).toBeDefined();
       expect(result.current.error).toBeNull();
     });
 

@@ -78,17 +78,7 @@ interface MZConfig {
   calculateChecksum?: boolean;
 }
 
-/**
- * Segment information for multi-segment executables
- */
-interface SegmentInfo {
-  /** Segment data */
-  data: Uint8Array;
-  /** Segment type */
-  type: 'code' | 'data' | 'stack';
-  /** Paragraph alignment (default: 1 = 16 bytes) */
-  alignment?: number;
-}
+
 
 /**
  * Configuration for creating executables with separate segments
@@ -362,7 +352,6 @@ export class DosExecutableGenerator {
       relocations = [],
       entryPoint = 0,
       calculateChecksum = false,
-      initialDS = 0,
     } = config;
 
     // Create MZ config from segmented config

@@ -257,7 +257,8 @@ export class CompilerService {
    * Real DOS compilation using DOS Executable Generator
    * This is the proof-of-concept implementation for Phase 3
    */
-  private async realCompile(
+  // @ts-expect-error - Method reserved for future implementation
+  private async _realCompile(
     sourceFile: string,
     outputFile: string,
     _options?: Partial<CompilerOptions>

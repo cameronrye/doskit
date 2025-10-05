@@ -199,7 +199,7 @@ export interface DosConfig {
 export interface FsNode {
   name: string;
   size: number;
-  nodes?: FsNode[];
+  nodes?: Record<string, FsNode>;
 }
 
 export type NetworkType = 'ipx';

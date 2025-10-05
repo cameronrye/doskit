@@ -36,7 +36,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "generate-icons": "node scripts/generate-icons.js",
-    "create-icon-generator": "node scripts/create-placeholder-icons.js"
+    "help": "node scripts/help.js"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

@@ -241,7 +241,7 @@ export class WasmCompilerService {
    */
   private async performCompilation(
     sourceCode: string,
-    sourceFile: string,
+    _sourceFile: string,
     options: CompilerOptions
   ): Promise<{
     success: boolean;
