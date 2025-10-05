@@ -24,18 +24,35 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: 'hidden', // Generate source maps but don't reference them in production bundles
-    // Optimize chunk splitting
+    // Optimize chunk splitting for better caching and loading performance
     rollupOptions: {
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
+            // React core libraries
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react-vendor';
             }
+            // Monaco Editor (code editor) - large dependency, separate chunk
+            if (id.includes('monaco-editor') || id.includes('@monaco-editor')) {
+              return 'monaco-vendor';
+            }
+            // js-dos and related WASM libraries
+            if (id.includes('js-dos')) {
+              return 'jsdos-vendor';
+            }
+            // JSZip for file compression
+            if (id.includes('jszip')) {
+              return 'jszip-vendor';
+            }
+            // All other node_modules
+            return 'vendor';
           }
         },
       },
     },
+    // Increase chunk size warning limit for WASM files
+    chunkSizeWarningLimit: 1000, // 1000 KB (1 MB)
   },
 
   // Asset handling

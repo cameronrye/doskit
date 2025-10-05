@@ -2,6 +2,8 @@
 
 This guide explains how to deploy DosKit to GitHub Pages with automatic deployment via GitHub Actions.
 
+> 📋 **Before deploying**, review the [Deployment Checklist](DEPLOYMENT-CHECKLIST.md) to ensure everything is ready.
+
 ## 🚀 Quick Start
 
 The project is now configured for automatic deployment to GitHub Pages. Every push to the `main` branch will automatically build and deploy the site.

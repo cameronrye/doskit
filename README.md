@@ -415,30 +415,37 @@ function MyApp() {
 
 ## 🌐 Browser Compatibility
 
-DosKit works on all modern browsers that support WebAssembly:
+DosKit works on all modern browsers that support WebAssembly. See the [Browser Compatibility Guide](docs/BROWSER-COMPATIBILITY.md) for detailed information.
 
 ### Desktop Browsers
-- ✅ **Chrome/Edge** 90+ (Recommended)
+
+- ✅ **Chrome/Edge** 90+ (Recommended - Best Performance)
 - ✅ **Firefox** 88+
 - ✅ **Safari** 15+
 - ✅ **Opera** 76+
+- ✅ **Brave** 1.25+
 
 ### Mobile Browsers
+
 - ✅ **Chrome Mobile** (Android)
 - ✅ **Safari Mobile** (iOS 15+)
 - ✅ **Firefox Mobile**
-- ✅ **Samsung Internet**
+- ✅ **Samsung Internet** 8.2+
 
 ### Requirements
+
 - **WebAssembly** support (required)
 - **JavaScript** enabled
 - **Minimum 2GB RAM** recommended
 - **Modern GPU** for WebGL rendering (optional but recommended)
 
 ### Known Limitations
-- **iOS Safari < 15**: Limited WebAssembly support
+
+- **iOS Safari**: Limited service worker support in standalone mode
 - **Internet Explorer**: Not supported (no WebAssembly)
-- **Older Android browsers**: May have performance issues
+- **Older browsers**: May have performance issues
+
+For detailed browser compatibility information, testing results, and troubleshooting, see the [Browser Compatibility Guide](docs/BROWSER-COMPATIBILITY.md).
 
 ## 🔧 Troubleshooting
 

@@ -42,7 +42,25 @@ jobs:
         env:
           # Building for custom domain doskit.net
           NODE_ENV: production
-        
+
+      - name: Report Build Size
+        run: |
+          echo "📦 Build Size Report"
+          echo "===================="
+          du -sh dist
+          echo ""
+          echo "📊 Asset Breakdown:"
+          du -sh dist/* | sort -h
+          echo ""
+          echo "📄 JavaScript Bundles:"
+          ls -lh dist/assets/*.js | grep -v ".map" || true
+          echo ""
+          echo "🎨 CSS Files:"
+          ls -lh dist/assets/*.css || true
+          echo ""
+          echo "⚡ WASM Files:"
+          ls -lh dist/emulators/*.wasm || true
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
