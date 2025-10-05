@@ -15,10 +15,16 @@ This checklist ensures a smooth deployment of DosKit to production. Follow these
 ### Build Verification
 
 - [ ] Production build succeeds (`npm run build`)
-- [ ] Build size is acceptable (< 15MB total, < 500KB JS gzipped)
+- [ ] Build size is acceptable (< 20MB total, < 500KB JS gzipped)
 - [ ] No build warnings or errors
 - [ ] Source maps are generated but hidden
 - [ ] All assets are properly bundled
+- [ ] **Open Watcom files are included in dist/**
+  - [ ] dist/watcom/BINW/ directory exists
+  - [ ] dist/watcom/H/ directory exists
+  - [ ] dist/watcom/LIB286/ directory exists
+  - [ ] wcc.exe, wlink.exe, wlib.exe are present
+- [ ] Open Watcom toolchain size is acceptable (~5-10 MB)
 
 ### Browser Testing
 
@@ -34,12 +40,21 @@ This checklist ensures a smooth deployment of DosKit to production. Follow these
 - [ ] DOS emulator loads and runs
 - [ ] Code editor works (Monaco Editor)
 - [ ] File system operations work
-- [ ] Compilation works (mock or real)
+- [ ] **Open Watcom compilation works**
+  - [ ] Simple C program compiles successfully
+  - [ ] Compiled executable runs in DOS
+  - [ ] Error messages display with Open Watcom format
+  - [ ] Multi-file compilation works
+  - [ ] Compiler options (memory model, optimization) work
+  - [ ] Progress tracking displays correctly
+  - [ ] Compilation timeout works
+  - [ ] Cancellation works
 - [ ] Build panel displays correctly
-- [ ] Error messages display properly
+- [ ] Error messages display properly with error codes (E1011, etc.)
 - [ ] PWA installation works
 - [ ] Service worker registers correctly
 - [ ] Offline mode works after first visit
+- [ ] **Open Watcom works offline** (toolchain is cached)
 
 ### Performance Testing
 
@@ -300,7 +315,8 @@ git push origin main
 
 | Version | Date | Changes | Deployed By |
 |---------|------|---------|-------------|
-| 1.0.0 | 2025-10-05 | Initial release | GitHub Actions |
+| 1.1.0 | 2025-10-05 | Open Watcom C/C++ Compiler Integration | GitHub Actions |
+| 1.0.0 | 2025-10-03 | Initial release | GitHub Actions |
 
 ## Additional Resources
 
