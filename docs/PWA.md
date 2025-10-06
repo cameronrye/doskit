@@ -338,10 +338,19 @@ Edit `public/sw.js` to customize:
 
 Edit `src/components/OfflineIndicator.tsx` to customize:
 
-- Install prompt timing
+- Install prompt timing (default: 5 seconds)
 - Install prompt design
 - Install prompt behavior
-- Dismissal logic
+- Dismissal logic (default: 3 dismissals max, 7-day cooldown)
+
+**Configuration Options**:
+```typescript
+const CONFIG = {
+  SHOW_DELAY_MS: 5000,        // Delay before showing prompt
+  MAX_DISMISSALS: 3,          // Max dismissals before permanent hide
+  DISMISSAL_COOLDOWN_DAYS: 7, // Days to wait after dismissal
+} as const;
+```
 
 ## Resources
 

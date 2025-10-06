@@ -71,8 +71,13 @@ export type DosEvent =
   | 'open-key'
   | 'fullscreen-change';
 
+export interface InitFileEntry {
+  path: string;
+  contents: Uint8Array;
+}
+
 export type InitFs =
-  | Array<{ path: string; contents: Uint8Array }>
+  | Array<InitFileEntry>
   | Uint8Array;
 
 export interface DosProps {

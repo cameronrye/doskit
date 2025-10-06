@@ -1,0 +1,304 @@
+/**
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ *
+ * Demo Selector Styles
+ */
+
+.demo-selector {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--color-bg-primary, #1a1a1a);
+  border: 2px solid var(--color-border, #333);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  max-width: 800px;
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.demo-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-border, #333);
+}
+
+.demo-selector-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--color-text-primary, #fff);
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary, #aaa);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-button:hover {
+  color: var(--color-text-primary, #fff);
+}
+
+.demo-selector-content {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Application List */
+.app-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.app-card {
+  background: var(--color-bg-secondary, #2a2a2a);
+  border: 2px solid var(--color-border, #333);
+  border-radius: 6px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.app-card:hover {
+  border-color: var(--color-accent, #4a9eff);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.2);
+}
+
+.app-card.selected {
+  border-color: var(--color-accent, #4a9eff);
+  background: var(--color-bg-accent, #1e3a5f);
+}
+
+.app-thumbnail {
+  width: 100%;
+  height: 150px;
+  background: var(--color-bg-tertiary, #1a1a1a);
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.app-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.app-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: var(--color-text-primary, #fff);
+}
+
+.app-meta {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #aaa);
+}
+
+.app-description {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary, #ccc);
+  line-height: 1.4;
+}
+
+.app-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: var(--color-bg-tertiary, #333);
+  color: var(--color-text-secondary, #aaa);
+  border-radius: 3px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* App Details */
+.app-details {
+  background: var(--color-bg-secondary, #2a2a2a);
+  border: 2px solid var(--color-accent, #4a9eff);
+  border-radius: 6px;
+  padding: 1.5rem;
+}
+
+.app-details h3 {
+  margin: 0 0 0.75rem 0;
+  color: var(--color-accent, #4a9eff);
+}
+
+.app-details p {
+  margin: 0 0 1rem 0;
+  color: var(--color-text-secondary, #ccc);
+}
+
+/* Error Message */
+.error-message {
+  background: var(--color-error-bg, #3a1a1a);
+  border: 1px solid var(--color-error, #ff4444);
+  color: var(--color-error, #ff4444);
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+/* Load Progress */
+.load-progress {
+  margin-bottom: 1rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--color-bg-tertiary, #1a1a1a);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-accent, #4a9eff);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #aaa);
+}
+
+/* Actions */
+.app-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.load-button,
+.cancel-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.load-button {
+  background: var(--color-accent, #4a9eff);
+  color: white;
+  flex: 1;
+}
+
+.load-button:hover:not(:disabled) {
+  background: var(--color-accent-hover, #3a8eef);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
+}
+
+.load-button:disabled {
+  background: var(--color-bg-tertiary, #333);
+  color: var(--color-text-disabled, #666);
+  cursor: not-allowed;
+}
+
+.cancel-button {
+  background: transparent;
+  color: var(--color-text-secondary, #aaa);
+  border: 1px solid var(--color-border, #333);
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: var(--color-bg-tertiary, #333);
+  color: var(--color-text-primary, #fff);
+}
+
+.cancel-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .demo-selector {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .app-list {
+    grid-template-columns: 1fr;
+  }
+
+  .demo-selector-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .app-actions {
+    flex-direction: column;
+  }
+
+  .load-button,
+  .cancel-button {
+    width: 100%;
+  }
+}
+
+/* Dark Mode Variables */
+:root {
+  --color-bg-primary: #1a1a1a;
+  --color-bg-secondary: #2a2a2a;
+  --color-bg-tertiary: #333;
+  --color-bg-accent: #1e3a5f;
+  --color-text-primary: #fff;
+  --color-text-secondary: #aaa;
+  --color-text-disabled: #666;
+  --color-border: #333;
+  --color-accent: #4a9eff;
+  --color-accent-hover: #3a8eef;
+  --color-error: #ff4444;
+  --color-error-bg: #3a1a1a;
+}
+
+/* Light Mode (optional) */
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f5f5f5;
+    --color-bg-tertiary: #e0e0e0;
+    --color-bg-accent: #e3f2fd;
+    --color-text-primary: #000;
+    --color-text-secondary: #666;
+    --color-text-disabled: #999;
+    --color-border: #ddd;
+    --color-accent: #2196f3;
+    --color-accent-hover: #1976d2;
+    --color-error: #d32f2f;
+    --color-error-bg: #ffebee;
+  }
+}
+
