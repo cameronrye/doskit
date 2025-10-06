@@ -185,9 +185,10 @@
 /* Ensure proper sizing on mobile */
 @media (max-width: 480px) {
   .dos-player-wrapper {
-    /* Prevent address bar from covering content on mobile */
-    height: 100vh;
-    height: -webkit-fill-available;
+    /* Prevent address bar from covering content on mobile - iOS Safari fix */
+    height: 100vh; /* Fallback for older browsers */
+    height: -webkit-fill-available; /* Fallback for older iOS Safari */
+    height: 100dvh; /* Modern dynamic viewport height - best for iOS */
   }
 }
 

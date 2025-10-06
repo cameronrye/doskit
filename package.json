@@ -35,7 +35,6 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "generate-icons": "node scripts/generate-icons.js",
     "create-icon-generator": "node scripts/create-placeholder-icons.js"
   },
   "dependencies": {

@@ -6,8 +6,10 @@
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100vh; /* Fallback for older browsers */
+  height: 100dvh; /* Dynamic viewport height for modern browsers */
   width: 100vw;
+  width: 100dvw; /* Dynamic viewport width for consistency */
   background-color: #1a1a1a;
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -236,8 +238,10 @@
 /* Mobile optimization */
 @media (max-width: 480px) {
   .app {
-    height: 100vh;
-    height: -webkit-fill-available;
+    /* iOS Safari viewport fix - use multiple fallbacks for best compatibility */
+    height: 100vh; /* Fallback for older browsers */
+    height: -webkit-fill-available; /* Fallback for older iOS Safari */
+    height: 100dvh; /* Modern dynamic viewport height - best for iOS */
   }
 
   .header-logo {
@@ -262,6 +266,6 @@
   }
 
   .app-main {
-    height: 100vh;
+    height: 100vh; /* Print doesn't need dynamic viewport units */
   }
 }

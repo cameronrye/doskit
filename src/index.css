@@ -40,6 +40,10 @@ body {
 body {
   min-width: 320px;
   background-color: #1a1a1a;
+  /* iOS Safari viewport fix - ensure body fills viewport properly */
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
 }
 
 #root {
