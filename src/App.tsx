@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { DosPlayer } from './components/DosPlayer';
+import { DosPlayerWithApps } from './components/DosPlayerWithApps';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import './App.css';
 
@@ -47,9 +47,10 @@ function App() {
       </header>
 
       <main className="app-main">
-        <DosPlayer
+        <DosPlayerWithApps
           onReady={handleDosReady}
           onExit={handleDosExit}
+          showSelector={true}
           className="dos-player"
         />
       </main>

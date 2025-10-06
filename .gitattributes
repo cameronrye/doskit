@@ -1,0 +1,37 @@
+# Git attributes for DosKit
+
+# Ensure ZIP files are treated as binary
+*.zip binary
+
+# Ensure WASM files are treated as binary
+*.wasm binary
+
+# Ensure image files are treated as binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.webp binary
+
+# Ensure font files are treated as binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+
+# Line endings
+* text=auto
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+
