@@ -27,6 +27,7 @@
     "typescript"
   ],
   "scripts": {
+    "help": "node scripts/help.js",
     "dev": "vite",
     "build": "tsc -b && vite build && node scripts/inject-sw-version.js",
     "lint": "eslint .",

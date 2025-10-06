@@ -112,7 +112,9 @@
   transform: translateY(-1px);
 }
 
-/* Control Bar */
+/* Control Bar - REMOVED: Now in App header */
+/* The control bar has been moved to the main app header to save vertical space */
+/*
 .app-control-bar {
   display: flex;
   align-items: center;
@@ -169,6 +171,7 @@
   color: var(--color-text-primary, #fff);
   transform: none;
 }
+*/"
 
 /* DOS Player Instance */
 .dos-player-instance {
@@ -178,19 +181,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .app-control-bar {
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: stretch;
-  }
-
-  .current-app-info {
-    text-align: center;
-  }
-
-  .select-app-button,
-  .change-app-button {
-    width: 100%;
-  }
+  /* Control bar styles removed - now in App header */
 }
 

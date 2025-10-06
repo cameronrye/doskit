@@ -5,13 +5,15 @@
  */
 
 import { useState } from 'react';
-import { DosPlayerWithApps } from './components/DosPlayerWithApps';
+import { DosPlayerWithApps, type DosApp } from './components/DosPlayerWithApps';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import './App.css';
 
 function App() {
   const [isReady, setIsReady] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [currentApp, setCurrentApp] = useState<DosApp | null>(null);
+  const [showAppSelector, setShowAppSelector] = useState(true); // Show selector on initial load
 
   const handleDosReady = () => {
     if (import.meta.env.DEV) {
@@ -34,6 +36,24 @@ function App() {
     setIsOnline(online);
   };
 
+  const handleAppChange = (app: DosApp | null) => {
+    if (import.meta.env.DEV) {
+      console.log('[App] Application changed:', app?.name || 'none');
+    }
+    setCurrentApp(app);
+  };
+
+  const handleSelectorVisibilityChange = (visible: boolean) => {
+    if (import.meta.env.DEV) {
+      console.log('[App] Selector visibility changed:', visible);
+    }
+    setShowAppSelector(visible);
+  };
+
+  const handleChangeAppClick = () => {
+    setShowAppSelector(true);
+  };
+
   return (
     <div className="app">
       {/* PWA Offline Indicator and Install Prompt */}
@@ -41,8 +61,27 @@ function App() {
 
       <header className="app-header">
         <div className="header-content">
-          <img src="/logo.svg" alt="DosKit Logo" className="header-logo" />
-          <h1>DosKit</h1>
+          <div className="header-left">
+            <img src="/logo.svg" alt="DosKit Logo" className="header-logo" />
+            <h1>DosKit</h1>
+          </div>
+          {currentApp && (
+            <div className="header-center">
+              <div className="header-app-info">
+                <span className="header-app-name">{currentApp.name}</span>
+                {currentApp.author && currentApp.year && (
+                  <span className="header-app-meta">
+                    {currentApp.author} ({currentApp.year})
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="header-right">
+            <button className="header-change-app-button" onClick={handleChangeAppClick}>
+              {currentApp ? 'Change Application' : 'Select Application'}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -50,7 +89,9 @@ function App() {
         <DosPlayerWithApps
           onReady={handleDosReady}
           onExit={handleDosExit}
-          showSelector={true}
+          showSelector={showAppSelector}
+          onAppChange={handleAppChange}
+          onSelectorVisibilityChange={handleSelectorVisibilityChange}
           className="dos-player"
         />
       </main>

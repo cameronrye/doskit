@@ -178,6 +178,9 @@ doskit/
 ### Available Scripts
 
 ```bash
+# Show all available scripts with descriptions
+npm run help
+
 # Start development server
 npm run dev
 
@@ -189,7 +192,21 @@ npm run preview
 
 # Run linter
 npm run lint
+
+# Run tests
+npm run test
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests once (CI mode)
+npm run test:run
+
+# Run tests with coverage
+npm run test:coverage
 ```
+
+> 💡 **Tip**: Run `npm run help` anytime to see a formatted list of all available commands!
 
 ### Development Workflow
 

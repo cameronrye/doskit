@@ -14,11 +14,16 @@ import type { DosOptions, CommandInterface } from '../types/js-dos';
 import type { InitFileEntry } from '../types/js-dos';
 import './DosPlayerWithApps.css';
 
+// Re-export DosApp type for use in parent components
+export type { DosApp };
+
 interface DosPlayerWithAppsProps {
   onReady?: (ci: CommandInterface) => void;
   onExit?: () => void;
   className?: string;
   showSelector?: boolean;
+  onAppChange?: (app: DosApp | null) => void;
+  onSelectorVisibilityChange?: (visible: boolean) => void;
 }
 
 export function DosPlayerWithApps({
@@ -26,6 +31,8 @@ export function DosPlayerWithApps({
   onExit,
   className,
   showSelector = false,
+  onAppChange,
+  onSelectorVisibilityChange,
 }: DosPlayerWithAppsProps) {
   const [selectedApp, setSelectedApp] = useState<DosApp | null>(null);
   const [appFiles, setAppFiles] = useState<InitFileEntry[] | Uint8Array | null>(null);
@@ -43,28 +50,34 @@ export function DosPlayerWithApps({
       setAppFiles(files);
       setSelectedApp(app);
       setShowAppSelector(false);
+      onAppChange?.(app);
+      onSelectorVisibilityChange?.(false);
     } catch (err) {
       console.error('[DosPlayerWithApps] Error loading application:', err);
       setError(err instanceof Error ? err.message : 'Failed to load application');
     } finally {
       setIsLoadingApp(false);
     }
-  }, []);
+  }, [onAppChange, onSelectorVisibilityChange]);
 
   const handleCancelSelector = useCallback(() => {
     setShowAppSelector(false);
-  }, []);
+    onSelectorVisibilityChange?.(false);
+  }, [onSelectorVisibilityChange]);
 
   const handleShowSelector = useCallback(() => {
     setShowAppSelector(true);
-  }, []);
+    onSelectorVisibilityChange?.(true);
+  }, [onSelectorVisibilityChange]);
 
   const handleReset = useCallback(() => {
     setSelectedApp(null);
     setAppFiles(null);
     setError(null);
     setShowAppSelector(true);
-  }, []);
+    onAppChange?.(null);
+    onSelectorVisibilityChange?.(true);
+  }, [onAppChange, onSelectorVisibilityChange]);
 
   // Build DosPlayer options
   const dosOptions: Partial<DosOptions> = selectedApp
@@ -103,29 +116,6 @@ export function DosPlayerWithApps({
           </div>
         </div>
       )}
-
-      {/* Control Bar */}
-      <div className="app-control-bar">
-        {selectedApp ? (
-          <>
-            <div className="current-app-info">
-              <span className="app-name">{selectedApp.name}</span>
-              {selectedApp.author && selectedApp.year && (
-                <span className="app-meta">
-                  {selectedApp.author} ({selectedApp.year})
-                </span>
-              )}
-            </div>
-            <button className="change-app-button" onClick={handleShowSelector}>
-              Change Application
-            </button>
-          </>
-        ) : (
-          <button className="select-app-button" onClick={handleShowSelector}>
-            Select DOS Application
-          </button>
-        )}
-      </div>
 
       {/* DOS Player */}
       <DosPlayer
