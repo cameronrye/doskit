@@ -109,13 +109,40 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-first strategy for HTML documents to ensure fresh content
+  if (request.mode === 'navigate' || request.destination === 'document' ||
+      url.pathname.endsWith('.html') || url.pathname === BASE_PATH + '/') {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          // Cache the fresh HTML
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Network failed, fallback to cache
+          console.log('[Service Worker] Network failed, serving cached HTML:', request.url);
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse || caches.match(`${BASE_PATH}/index.html`);
+          });
+        })
+    );
+    return;
+  }
+
+  // Stale-while-revalidate for all other assets
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
         if (cachedResponse) {
           // Return cached response and update cache in background
           console.log('[Service Worker] Serving from cache:', request.url);
-          
+
           // Stale-while-revalidate: return cache immediately, update in background
           event.waitUntil(
             fetch(request)
@@ -132,7 +159,7 @@ self.addEventListener('fetch', (event) => {
                 // Network failed, but we already returned cache
               })
           );
-          
+
           return cachedResponse;
         }
 
@@ -144,24 +171,24 @@ self.addEventListener('fetch', (event) => {
             if (networkResponse && networkResponse.status === 200) {
               // Clone the response before caching
               const responseToCache = networkResponse.clone();
-              
+
               caches.open(CACHE_NAME)
                 .then((cache) => {
                   // Cache the new resource
                   cache.put(request, responseToCache);
                 });
             }
-            
+
             return networkResponse;
           })
           .catch((error) => {
             console.error('[Service Worker] Fetch failed:', error);
-            
+
             // Return offline page for navigation requests
             if (request.mode === 'navigate') {
               return caches.match(`${BASE_PATH}/index.html`);
             }
-            
+
             // For other requests, throw the error
             throw error;
           });

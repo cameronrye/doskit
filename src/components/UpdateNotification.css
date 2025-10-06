@@ -1,0 +1,164 @@
+/**
+ * DosKit - Update Notification Styles
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ */
+
+.update-notification-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.update-notification {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+  color: white;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.update-notification-icon {
+  width: 48px;
+  height: 48px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.update-notification-icon svg {
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.update-notification-content {
+  margin-bottom: 1.5rem;
+}
+
+.update-notification-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: white;
+}
+
+.update-notification-message {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.update-notification-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-direction: column;
+}
+
+.update-notification-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.update-notification-button-primary {
+  background-color: white;
+  color: #667eea;
+}
+
+.update-notification-button-primary:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.update-notification-button-primary:active {
+  transform: translateY(0);
+}
+
+.update-notification-button-secondary {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.update-notification-button-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.update-notification-button-secondary:active {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .update-notification {
+    padding: 1.5rem;
+  }
+
+  .update-notification-title {
+    font-size: 1.25rem;
+  }
+
+  .update-notification-message {
+    font-size: 0.9rem;
+  }
+}
+
+/* iOS-specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .update-notification-button {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none;
+  }
+}
+

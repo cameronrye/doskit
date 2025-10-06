@@ -5,8 +5,10 @@
  */
 
 import { createRoot } from 'react-dom/client'
+import { createElement } from 'react'
 import './index.css'
 import App from './App.tsx'
+import { UpdateNotification } from './components/UpdateNotification.tsx'
 import * as serviceWorkerRegistration from './utils/serviceWorkerRegistration'
 
 // Suppress harmless browser API errors that occur during js-dos initialization
@@ -30,9 +32,33 @@ console.error = (...args: unknown[]) => {
 
 // Note: StrictMode is disabled because it causes double-mounting in development,
 // which conflicts with js-dos initialization (WASM modules can't be initialized twice)
-createRoot(document.getElementById('root')!).render(
-  <App />
-)
+const root = createRoot(document.getElementById('root')!);
+root.render(<App />);
+
+// State for update notification
+let updateRegistration: ServiceWorkerRegistration | null = null;
+
+// Function to show update notification
+function showUpdateNotification(registration: ServiceWorkerRegistration) {
+  updateRegistration = registration;
+
+  // Create a container for the update notification
+  const notificationContainer = document.createElement('div');
+  notificationContainer.id = 'update-notification-container';
+  document.body.appendChild(notificationContainer);
+
+  // Render the update notification
+  const notificationRoot = createRoot(notificationContainer);
+  notificationRoot.render(
+    createElement(UpdateNotification, {
+      registration: updateRegistration,
+      onDismiss: () => {
+        notificationRoot.unmount();
+        notificationContainer.remove();
+      }
+    })
+  );
+}
 
 // Register service worker for PWA functionality
 serviceWorkerRegistration.register({
@@ -41,15 +67,7 @@ serviceWorkerRegistration.register({
   },
   onUpdate: (registration) => {
     console.log('[PWA] New content is available; please refresh.');
-
-    // Optionally, you can show a notification to the user
-    if (confirm('New version available! Click OK to update.')) {
-      // Tell the service worker to skip waiting
-      if (registration.waiting) {
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-      window.location.reload();
-    }
+    showUpdateNotification(registration);
   },
   onOfflineReady: () => {
     console.log('[PWA] App is ready for offline use.');
