@@ -72,6 +72,35 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
           console.log('[DosPlayer] Emulator ready');
         }
         setIsLoading(false);
+
+        // Close the sidebar menu on startup for a cleaner initial view
+        // Use a small delay to ensure the UI is fully rendered
+        setTimeout(() => {
+          if (dosContainerRef.current) {
+            // Find and click the menu toggle button to close the sidebar
+            const toggleButton = dosContainerRef.current.querySelector('[data-dos-sidebar-toggle]');
+            if (toggleButton instanceof HTMLElement) {
+              toggleButton.click();
+              if (import.meta.env.DEV) {
+                console.log('[DosPlayer] Sidebar closed on startup');
+              }
+            } else {
+              // Fallback: try to find the button by class or other selector
+              const buttons = dosContainerRef.current.querySelectorAll('button');
+              const menuButton = Array.from(buttons).find(btn =>
+                btn.textContent?.includes('☰') ||
+                btn.className?.includes('sidebar') ||
+                btn.className?.includes('menu')
+              );
+              if (menuButton instanceof HTMLElement) {
+                menuButton.click();
+                if (import.meta.env.DEV) {
+                  console.log('[DosPlayer] Sidebar closed on startup (fallback method)');
+                }
+              }
+            }
+          }
+        }, 500);
         break;
 
       case 'ci-ready':

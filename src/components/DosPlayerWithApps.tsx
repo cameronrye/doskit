@@ -65,11 +65,6 @@ export function DosPlayerWithApps({
     onSelectorVisibilityChange?.(false);
   }, [onSelectorVisibilityChange]);
 
-  const handleShowSelector = useCallback(() => {
-    setShowAppSelector(true);
-    onSelectorVisibilityChange?.(true);
-  }, [onSelectorVisibilityChange]);
-
   const handleReset = useCallback(() => {
     setSelectedApp(null);
     setAppFiles(null);
