@@ -26,14 +26,48 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
 
   const handleUpdate = () => {
     if (registration?.waiting) {
-      // Tell the service worker to skip waiting
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      
-      // Listen for the controlling service worker to change
+      console.log('[UpdateNotification] Initiating update...');
+
+      // Set up a flag to prevent multiple reloads
+      let reloadTriggered = false;
+
+      const performReload = () => {
+        if (!reloadTriggered) {
+          reloadTriggered = true;
+          console.log('[UpdateNotification] Reloading to activate new version...');
+          window.location.reload();
+        }
+      };
+
+      // IMPORTANT: Add the controllerchange listener BEFORE sending the SKIP_WAITING message
+      // This prevents a race condition where the event fires before the listener is registered
+      // (especially critical on iOS Safari where service worker activation can be very fast)
+      navigator.serviceWorker.addEventListener('controllerchange', performReload, { once: true });
+
+      // Fallback: If controllerchange doesn't fire within 2 seconds (can happen on iOS Safari),
+      // reload anyway to ensure the update completes
+      const fallbackTimeout = setTimeout(() => {
+        console.log('[UpdateNotification] Fallback reload triggered (controllerchange event may not have fired)');
+        performReload();
+      }, 2000);
+
+      // Clear the fallback timeout if controllerchange fires normally
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        // Reload the page to get the new version
-        window.location.reload();
-      });
+        clearTimeout(fallbackTimeout);
+      }, { once: true });
+
+      // Now send the SKIP_WAITING message to the service worker
+      try {
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        console.log('[UpdateNotification] SKIP_WAITING message sent to service worker');
+      } catch (error) {
+        console.error('[UpdateNotification] Error sending SKIP_WAITING message:', error);
+        // If we can't send the message, clear the timeout and try a simple reload
+        clearTimeout(fallbackTimeout);
+        performReload();
+      }
+    } else {
+      console.warn('[UpdateNotification] No waiting service worker found');
     }
   };
 
