@@ -95,6 +95,17 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
               console.log('[DOS]', message);
             });
           }
+
+          // Enable audio - unmute after user interaction
+          // This is required for browser autoplay policies
+          try {
+            ciRef.current.unmute();
+            if (import.meta.env.DEV) {
+              console.log('[DosPlayer] Audio unmuted');
+            }
+          } catch (err) {
+            console.warn('[DosPlayer] Failed to unmute audio:', err);
+          }
         }
 
         // Call the onReady callback

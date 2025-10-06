@@ -426,11 +426,15 @@ DosKit works on all modern browsers that support WebAssembly:
 **Problem**: No sound from DOS applications.
 
 **Solutions:**
-1. Check browser audio is not muted
-2. Verify volume setting: `volume: 0.7` in options
-3. Click inside emulator (browsers require user interaction for audio)
-4. Check if DOS application has sound enabled
-5. Try `ci.unmute()` programmatically
+1. **Audio is automatically unmuted** when the emulator is ready (as of latest version)
+2. Check browser audio is not muted (system volume and browser tab)
+3. Verify volume setting: `volume: 0.7` in options
+4. Click inside emulator to ensure user interaction (required by browsers)
+5. Check if DOS application has sound enabled in its settings
+6. Verify DOSBox sound card configuration (Sound Blaster, GUS, etc.)
+7. Check browser console for audio-related errors
+
+**Note**: Modern browsers require user interaction before audio can play. The emulator automatically unmutes audio when you interact with it (click play or click inside the emulator window).
 
 #### Mobile Touch Controls Not Appearing
 
