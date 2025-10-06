@@ -20,12 +20,54 @@ export class FileSystemService {
   }
 
   /**
-   * Write a text file to the DOS filesystem
+   * Write a text file to the DOS filesystem using DOS commands
+   * This ensures the file is visible to DOS programs
    */
   async writeTextFile(path: string, content: string): Promise<void> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(content);
-    await this.ci.fsWriteFile(path, data);
+    const dosPath = path.replace(/\//g, '\\');
+    if (import.meta.env.DEV) {
+      console.log(`[FileSystemService] writeTextFile via DOS exec: ${path} -> ${dosPath}`);
+    }
+
+    // Create directory if needed
+    const dirPath = dosPath.substring(0, dosPath.lastIndexOf('\\'));
+    if (dirPath) {
+      try {
+        await this.ci.exec(`MD ${dirPath}`);
+        await new Promise(resolve => setTimeout(resolve, 50));
+      } catch (e) {
+        // Directory might already exist, ignore error
+      }
+    }
+
+    // Split content into lines
+    const lines = content.split('\n');
+
+    // Write file line by line using ECHO
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+        .replace(/\\/g, '\\\\')  // Escape backslashes
+        .replace(/"/g, '\\"')     // Escape quotes
+        .replace(/\|/g, '^|')     // Escape pipe
+        .replace(/</g, '^<')      // Escape less-than
+        .replace(/>/g, '^>')      // Escape greater-than
+        .replace(/&/g, '^&');     // Escape ampersand
+
+      const redirect = i === 0 ? '>' : '>>';
+      const command = `ECHO ${line}${redirect}${dosPath}`;
+
+      try {
+        await this.ci.exec(command);
+        await new Promise(resolve => setTimeout(resolve, 10));
+      } catch (e) {
+        console.error(`[FileSystemService] Failed to write line ${i}:`, e);
+        throw new Error(`Failed to write file: ${dosPath}`);
+      }
+    }
+
+    if (import.meta.env.DEV) {
+      console.log(`[FileSystemService] Successfully wrote via DOS exec: ${dosPath}`);
+    }
   }
 
   /**
@@ -33,7 +75,8 @@ export class FileSystemService {
    */
   async readTextFile(path: string): Promise<string> {
     try {
-      const data = await this.ci.fsReadFile(path);
+      const normalizedPath = this.normalizePath(path);
+      const data = await this.ci.fsReadFile(normalizedPath);
       const decoder = new TextDecoder();
       return decoder.decode(data);
     } catch (error) {
@@ -46,7 +89,8 @@ export class FileSystemService {
    * Write a binary file to the DOS filesystem
    */
   async writeBinaryFile(path: string, data: Uint8Array): Promise<void> {
-    await this.ci.fsWriteFile(path, data);
+    const normalizedPath = this.normalizePath(path);
+    await this.ci.fsWriteFile(normalizedPath, data);
   }
 
   /**
@@ -54,7 +98,8 @@ export class FileSystemService {
    */
   async readBinaryFile(path: string): Promise<Uint8Array> {
     try {
-      return await this.ci.fsReadFile(path);
+      const normalizedPath = this.normalizePath(path);
+      return await this.ci.fsReadFile(normalizedPath);
     } catch (error) {
       console.error(`Failed to read binary file ${path}:`, error);
       throw new Error(`Failed to read binary file: ${path}`);
@@ -66,7 +111,8 @@ export class FileSystemService {
    */
   async deleteFile(path: string): Promise<void> {
     try {
-      await this.ci.fsDeleteFile(path);
+      const normalizedPath = this.normalizePath(path);
+      await this.ci.fsDeleteFile(normalizedPath);
     } catch (error) {
       console.error(`Failed to delete file ${path}:`, error);
       throw new Error(`Failed to delete file: ${path}`);
@@ -93,10 +139,14 @@ export class FileSystemService {
   async createDirectory(path: string): Promise<void> {
     try {
       // Create a dummy file in the directory to ensure it exists
-      const dummyFile = `${path}/.keep`;
-      await this.writeTextFile(dummyFile, '');
+      // Use a DOS-friendly filename instead of .keep
+      const dummyFile = `${path}/DIRKEEP.TXT`;
+      await this.writeTextFile(dummyFile, 'Directory placeholder');
+      if (import.meta.env.DEV) {
+        console.log(`[FileSystemService] Created directory: ${path}`);
+      }
     } catch (error) {
-      console.error(`Failed to create directory ${path}:`, error);
+      console.error(`[FileSystemService] Failed to create directory ${path}:`, error);
       throw new Error(`Failed to create directory: ${path}`);
     }
   }
@@ -120,20 +170,26 @@ export class FileSystemService {
   async ensureDirectory(path: string): Promise<void> {
     // js-dos automatically creates directories when writing files
     // We can write a placeholder file to ensure the directory exists
-    const placeholderPath = `${path}/.keep`;
-    await this.writeTextFile(placeholderPath, '');
+    const placeholderPath = `${path}/DIRKEEP.TXT`;
+    await this.writeTextFile(placeholderPath, 'Directory placeholder');
+    if (import.meta.env.DEV) {
+      console.log(`[FileSystemService] Ensured directory: ${path}`);
+    }
   }
 
   /**
-   * Normalize DOS path (ensure it starts with / and uses forward slashes)
+   * Normalize DOS path for js-dos filesystem
+   *
+   * js-dos mounts C: to the root of the virtual filesystem (mount c .)
+   * So C:\TEMP\file.txt should become /TEMP/file.txt (not /C/TEMP/file.txt)
    */
   normalizePath(path: string): string {
     // Convert backslashes to forward slashes
     let normalized = path.replace(/\\/g, '/');
 
-    // Remove drive letter colons (C: -> C)
-    normalized = normalized.replace(/^\/([A-Za-z]):/, '/$1');
-    normalized = normalized.replace(/^([A-Za-z]):/, '$1');
+    // Remove drive letter and colon (C:\TEMP -> /TEMP)
+    // This is because js-dos mounts C: to the root
+    normalized = normalized.replace(/^([A-Za-z]):/, '');
 
     // Ensure path starts with /
     if (!normalized.startsWith('/')) {

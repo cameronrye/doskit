@@ -74,15 +74,27 @@ export class DosCommandExecutor {
 
   /**
    * Set up output capture from DOS emulator
-   * 
+   *
    * Registers an onStdout handler to capture all output from the DOS emulator.
    * Output is appended to the internal buffer for later retrieval.
+   *
+   * IMPORTANT: Only ONE stdout handler should be registered per CommandInterface.
+   * Multiple handlers may cause output capture to fail.
    */
   private setupOutputCapture(): void {
     this.stdoutHandler = (message: string) => {
+      if (import.meta.env.DEV) {
+        // Show the actual content, not just the length
+        const preview = message.length > 200 ? message.substring(0, 200) + '...' : message;
+        console.log('[DosCommandExecutor] Received stdout:', message.length, 'chars:', JSON.stringify(preview));
+      }
       this.outputBuffer += message;
     };
     this.ci.events().onStdout(this.stdoutHandler);
+
+    if (import.meta.env.DEV) {
+      console.log('[DosCommandExecutor] Output capture handler registered');
+    }
   }
 
   /**
@@ -121,14 +133,39 @@ export class DosCommandExecutor {
     const clearBuffer = options?.clearBuffer ?? true;
 
     this.isExecutingFlag = true;
-    
-    if (clearBuffer) {
-      this.outputBuffer = '';
-    }
 
     try {
+      // Wait for DOS prompt to be ready before typing command
+      if (import.meta.env.DEV) {
+        console.log('[DosCommandExecutor] Waiting for DOS prompt before typing command...');
+      }
+      await this.waitForDosPrompt(5000); // Wait up to 5 seconds for prompt
+
+      // Ensure emulator is resumed (not paused)
+      try {
+        this.ci.resume();
+        if (import.meta.env.DEV) {
+          console.log('[DosCommandExecutor] Emulator resumed');
+        }
+      } catch (e) {
+        if (import.meta.env.DEV) {
+          console.log('[DosCommandExecutor] Resume failed (might already be running):', e);
+        }
+      }
+
+      if (clearBuffer) {
+        this.outputBuffer = '';
+      }
+
       // Type the command
       this.typeCommand(command);
+
+      // Give DOS a moment to start processing the command
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      if (import.meta.env.DEV) {
+        console.log('[DosCommandExecutor] After typing, buffer has:', this.outputBuffer.length, 'chars');
+      }
 
       // Wait for command to complete
       await this.waitForCompletion(timeoutMs, completionMarkers, errorMarkers);
@@ -194,40 +231,55 @@ export class DosCommandExecutor {
 
   /**
    * Type a command character-by-character
-   * 
+   *
    * Simulates typing by sending individual key presses for each character,
    * then presses Enter to execute the command.
-   * 
+   *
    * @param command - Command to type
    */
   private typeCommand(command: string): void {
-    // Type each character
-    for (const char of command) {
+    if (import.meta.env.DEV) {
+      console.log('[DosCommandExecutor] Typing command:', command);
+      console.log('[DosCommandExecutor] Command length:', command.length, 'chars');
+    }
+
+    // Try using sendKeyEvent instead of simulateKeyPress
+    // sendKeyEvent sends both key down and key up events
+    for (let i = 0; i < command.length; i++) {
+      const char = command[i];
       const keyCode = char.charCodeAt(0);
-      this.ci.simulateKeyPress(keyCode);
+
+      if (import.meta.env.DEV && i === 0) {
+        console.log('[DosCommandExecutor] First char:', char, 'keyCode:', keyCode);
+        console.log('[DosCommandExecutor] Using sendKeyEvent method');
+      }
+
+      // Send key down
+      this.ci.sendKeyEvent(keyCode, true);
+      // Send key up
+      this.ci.sendKeyEvent(keyCode, false);
     }
 
     // Press Enter (key code 13)
-    this.ci.simulateKeyPress(13);
+    this.ci.sendKeyEvent(13, true);
+    this.ci.sendKeyEvent(13, false);
+
+    if (import.meta.env.DEV) {
+      console.log('[DosCommandExecutor] Command typed, Enter pressed (keyCode 13)');
+    }
   }
 
   /**
-   * Wait for command completion
-   * 
-   * Waits for the DOS prompt to appear, indicating command completion.
-   * Also checks for completion markers and error markers.
-   * 
+   * Wait for DOS prompt to appear
+   *
+   * Waits for DOS to be ready to accept commands. Since the DOSBox config
+   * doesn't explicitly show a prompt, we look for the last autoexec message
+   * and then wait a bit for DOS to be ready.
+   *
    * @param timeoutMs - Maximum time to wait in milliseconds
-   * @param completionMarkers - Markers indicating successful completion
-   * @param errorMarkers - Markers indicating errors
-   * 
    * @throws Error if timeout is reached
    */
-  private async waitForCompletion(
-    timeoutMs: number,
-    completionMarkers: string[],
-    errorMarkers: string[]
-  ): Promise<void> {
+  private async waitForDosPrompt(timeoutMs: number): Promise<void> {
     const startTime = Date.now();
     const checkInterval = 100; // Check every 100ms
 
@@ -238,7 +290,81 @@ export class DosCommandExecutor {
         // Check for timeout
         if (elapsed >= timeoutMs) {
           clearInterval(intervalId);
-          reject(new Error(`Command timeout after ${timeoutMs}ms`));
+          reject(new Error(`Timeout waiting for DOS prompt after ${timeoutMs}ms. Buffer: ${this.outputBuffer.substring(0, 200)}`));
+          return;
+        }
+
+        // Check for DOS prompt (standard format)
+        const hasPrompt = this.outputBuffer.includes('C:\\>') ||
+                         this.outputBuffer.includes('C:>');
+
+        // Check for our custom ready marker (from dosbox.conf autoexec)
+        const hasReadyMarker = this.outputBuffer.includes("DOSKIT_READY");
+
+        if (hasPrompt || hasReadyMarker) {
+          clearInterval(intervalId);
+          if (import.meta.env.DEV) {
+            console.log('[DosCommandExecutor] DOS ready marker detected, waiting 1000ms for full initialization...');
+          }
+          // Wait longer for DOS to be fully ready to accept input
+          setTimeout(() => {
+            if (import.meta.env.DEV) {
+              console.log('[DosCommandExecutor] DOS should be ready to accept commands now');
+            }
+            resolve();
+          }, 1000); // Increased from 500ms to 1000ms
+        }
+      }, checkInterval);
+    });
+  }
+
+  /**
+   * Wait for command completion
+   *
+   * Waits for the DOS prompt to appear, indicating command completion.
+   * Also checks for completion markers and error markers.
+   *
+   * @param timeoutMs - Maximum time to wait in milliseconds
+   * @param completionMarkers - Markers indicating successful completion
+   * @param errorMarkers - Markers indicating errors
+   *
+   * @throws Error if timeout is reached
+   */
+  private async waitForCompletion(
+    timeoutMs: number,
+    completionMarkers: string[],
+    errorMarkers: string[]
+  ): Promise<void> {
+    const startTime = Date.now();
+    const checkInterval = 100; // Check every 100ms
+
+    if (import.meta.env.DEV) {
+      console.log('[DosCommandExecutor] Waiting for completion. Markers:', {
+        completion: completionMarkers,
+        error: errorMarkers,
+        timeout: timeoutMs
+      });
+    }
+
+    return new Promise((resolve, reject) => {
+      let lastLogTime = startTime;
+
+      const intervalId = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+
+        // Log progress every 5 seconds in dev mode
+        if (import.meta.env.DEV && elapsed - (lastLogTime - startTime) >= 5000) {
+          console.log(`[DosCommandExecutor] Still waiting... (${Math.floor(elapsed / 1000)}s elapsed, ${this.outputBuffer.length} chars captured)`);
+          lastLogTime = Date.now();
+        }
+
+        // Check for timeout
+        if (elapsed >= timeoutMs) {
+          clearInterval(intervalId);
+          const outputPreview = this.outputBuffer.length > 0
+            ? `\nCaptured output (${this.outputBuffer.length} chars):\n${this.outputBuffer.substring(0, 500)}${this.outputBuffer.length > 500 ? '...' : ''}`
+            : '\nNo output captured from DOS emulator';
+          reject(new Error(`Command timeout after ${timeoutMs}ms${outputPreview}`));
           return;
         }
 
@@ -247,7 +373,7 @@ export class DosCommandExecutor {
           completionMarkers.some(marker => this.outputBuffer.includes(marker));
 
         // Check for error markers
-        const hasErrorMarker = errorMarkers.some(marker => 
+        const hasErrorMarker = errorMarkers.some(marker =>
           this.outputBuffer.includes(marker)
         );
 
@@ -261,6 +387,9 @@ export class DosCommandExecutor {
         // - An error marker is found
         if (hasPrompt && (hasCompletionMarker || hasErrorMarker || completionMarkers.length === 0)) {
           clearInterval(intervalId);
+          if (import.meta.env.DEV) {
+            console.log('[DosCommandExecutor] Command completed successfully');
+          }
           resolve();
         }
       }, checkInterval);

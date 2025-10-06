@@ -33,10 +33,20 @@ function App() {
     }];
   }, [programExecutable]);
 
-  const handleDosReady = (commandInterface: CommandInterface) => {
+  const handleDosReady = async (commandInterface: CommandInterface) => {
     if (import.meta.env.DEV) {
       console.log('[App] DOS is ready!');
     }
+
+    // Load WATCOM compiler files into the filesystem
+    try {
+      const { WatcomLoaderService } = await import('./services/WatcomLoaderService');
+      const watcomLoader = new WatcomLoaderService(commandInterface);
+      await watcomLoader.loadWatcomFiles();
+    } catch (error) {
+      console.error('[App] Failed to load WATCOM files:', error);
+    }
+
     setIsReady(true);
     setCi(commandInterface);
   };

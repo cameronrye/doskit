@@ -116,11 +116,21 @@
   flex: 1;
   display: flex;
   position: relative;
+  visibility: visible;
+  opacity: 1;
 }
 
 .dos-player-hidden {
-  display: none !important;
-  pointer-events: none !important;
+  /* Keep the DOS player rendered but off-screen so it can still process commands */
+  /* Using display:none or visibility:hidden prevents the emulator from processing keyboard input */
+  /* The emulator needs to be actually rendered (not just in the DOM) to process input */
+  position: absolute;
+  top: -10000px;
+  left: -10000px;
+  width: 640px;
+  height: 400px;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 /* Program Running Overlay */

@@ -145,6 +145,35 @@ export class CompilerService {
   }
 
   /**
+   * Check compilation result after manual execution
+   * Used when keyboard simulation isn't available
+   */
+  async checkCompilationResult(outputFile: string): Promise<CompileResult> {
+    this.buildMessages = [];
+
+    // Use Open Watcom compiler's check method
+    const result = await this.openWatcomCompiler.checkCompilationResult(outputFile);
+
+    // Copy build messages
+    const watcomMessages = this.openWatcomCompiler.getBuildMessages();
+    this.buildMessages.push(...watcomMessages);
+
+    // If successful, write executable to project directory
+    if (result.success && result.executable) {
+      try {
+        const projectPath = `/C/PROJECT/${outputFile}`;
+        await this.fs.writeBinaryFile(projectPath, result.executable);
+        this.addBuildMessage('info', `Executable written to: ${projectPath}`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        this.addBuildMessage('error', `Failed to write executable: ${errorMessage}`);
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * WebAssembly compiler - uses WasmCompilerService for real compilation
    * This is the main compilation path for Phase 3
    */

@@ -13,6 +13,8 @@ export const defaultDosboxConfig = `
 core=auto
 cputype=auto
 cycles=max
+cycleup=10000
+cycledown=10000
 
 [video]
 vmemsize=8
@@ -22,6 +24,9 @@ ver=7.1
 umb=true
 ems=true
 xms=true
+
+[dpmi]
+dpmi=true
 
 [sblaster]
 sbtype=sb16
@@ -65,6 +70,7 @@ echo.
 echo Type 'help' for DOS commands
 echo Type 'dir' to list files
 echo.
+echo DOSKIT_READY
 `;
 
 

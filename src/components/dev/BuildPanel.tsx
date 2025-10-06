@@ -26,12 +26,16 @@ export interface BuildPanelProps {
   onBuild?: () => void;
   /** Callback when Run button is clicked */
   onRun?: () => void;
+  /** Callback when Check Result button is clicked */
+  onCheckResult?: () => void;
   /** Callback when Clear button is clicked */
   onClear?: () => void;
   /** Whether build button is disabled */
   buildDisabled?: boolean;
   /** Whether run button is disabled */
   runDisabled?: boolean;
+  /** Whether check result button should be shown */
+  showCheckResult?: boolean;
   /** Custom CSS class */
   className?: string;
 }
@@ -43,9 +47,11 @@ export const BuildPanel: React.FC<BuildPanelProps> = ({
   compilerType = 'none',
   onBuild,
   onRun,
+  onCheckResult,
   onClear,
   buildDisabled = false,
   runDisabled = false,
+  showCheckResult = false,
   className = '',
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -196,6 +202,16 @@ export const BuildPanel: React.FC<BuildPanelProps> = ({
           >
             🔨 Build
           </button>
+          {showCheckResult && (
+            <button
+              className="build-panel-button check-result-button"
+              onClick={onCheckResult}
+              disabled={status === 'building'}
+              title="Check compilation result"
+            >
+              🔍 Check Result
+            </button>
+          )}
           <button
             className="build-panel-button run-button"
             onClick={onRun}

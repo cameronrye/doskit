@@ -186,26 +186,38 @@ export class OpenWatcomCompilerService {
     outputFile: string,
     options?: OpenWatcomOptions
   ): Promise<CompileResult> {
+    // Use filesystem-based compilation (keyboard simulation doesn't work when DOS window is hidden)
+    return this.compileViaFilesystem(sourceCode, sourceFile, outputFile, options);
+  }
+
+  /**
+   * Filesystem-based compilation (no keyboard simulation required)
+   *
+   * This method prepares compilation files and provides instructions for manual execution.
+   * It's used when keyboard simulation isn't available (e.g., DOS window hidden).
+   *
+   * Workflow:
+   * 1. Write source file to C:\TEMP\
+   * 2. Generate compilation batch file
+   * 3. Write batch file to C:\TEMP\COMPILE.BAT
+   * 4. Return instructions for user to run the batch file
+   * 5. User can then call checkCompilationResult() to retrieve the executable
+   */
+  private async compileViaFilesystem(
+    sourceCode: string,
+    sourceFile: string,
+    outputFile: string,
+    options?: OpenWatcomOptions
+  ): Promise<CompileResult> {
     const startTime = Date.now();
     this.buildMessages = [];
     this.compilerOutput = '';
-    this.abortController = new AbortController();
 
-    this.addBuildMessage('info', `Starting Open Watcom compilation of ${sourceFile}...`);
-    this.reportProgress('initializing', 0, sourceFile, 'Initializing compilation...');
-
-    // Set up timeout
-    const timeoutId = setTimeout(() => {
-      this.abortController?.abort();
-      this.addBuildMessage('error', `Compilation timeout after ${this.config.maxCompilationTime}ms`);
-    }, this.config.maxCompilationTime);
+    this.addBuildMessage('info', `Preparing compilation of ${sourceFile}...`);
+    this.addBuildMessage('info', 'Using filesystem-based compilation (keyboard simulation not available)');
+    this.reportProgress('initializing', 0, sourceFile, 'Preparing compilation...');
 
     try {
-      // Check for cancellation
-      if (this.abortController.signal.aborted) {
-        throw new Error('Compilation cancelled');
-      }
-
       // Step 1: Ensure directories exist
       this.reportProgress('initializing', 10, sourceFile, 'Creating directories...');
       await this.ensureDirectories();
@@ -216,104 +228,106 @@ export class OpenWatcomCompilerService {
       await this.fs.writeTextFile(sourcePath, sourceCode);
       this.addBuildMessage('info', `Source file written: ${sourcePath}`);
 
-      // Check for cancellation
-      if (this.abortController.signal.aborted) {
-        throw new Error('Compilation cancelled');
-      }
+      // Step 3: Generate compilation batch file
+      this.reportProgress('compiling', 30, sourceFile, 'Generating batch file...');
+      const objFile = sourceFile.replace(/\.(c|cpp)$/i, '.OBJ');
+      const compilerFlags = this.buildCompilerFlags(options);
+      const flagsStr = Array.isArray(compilerFlags) ? compilerFlags.join(' ') : compilerFlags;
 
-      // Step 3: Compile source to object file
-      this.reportProgress('compiling', 40, sourceFile, `Compiling ${sourceFile}...`);
-      const objFile = sourceFile.replace(/\.c$/i, '.OBJ');
-      const objPath = `${this.config.tempPath}\\${objFile}`;
+      const batchContent = `@echo off
+SET WATCOM=${this.config.watcomPath}
+SET PATH=%WATCOM%\\BINW;%PATH%
+SET INCLUDE=%WATCOM%\\H
+SET LIB=%WATCOM%\\LIB286\\DOS
 
-      const compileSuccess = await this.compileToObject(
-        sourcePath,
-        objPath,
-        options
-      );
+echo.
+echo ========================================
+echo   DosKit - Open Watcom Compiler
+echo ========================================
+echo.
+echo Compiling: ${sourceFile}
+echo Output: ${outputFile}
+echo.
 
-      if (!compileSuccess) {
-        this.reportProgress('error', 100, sourceFile, 'Compilation failed');
-        const parseResult = OpenWatcomErrorParser.parse(this.compilerOutput);
-        const errors = OpenWatcomErrorParser.formatForUI(parseResult.errors);
-        const warnings = OpenWatcomErrorParser.formatForUI(parseResult.warnings);
+REM Compile source to object file
+echo [1/2] Compiling...
+${this.config.compilerBin} ${sourcePath} -FO=${this.config.tempPath}\\${objFile} ${flagsStr} 2>&1
+if errorlevel 1 goto compile_error
 
-        return {
-          success: false,
-          errors,
-          warnings,
-          outputFile,
-          rawOutput: this.compilerOutput,
-          compilationTime: Date.now() - startTime,
-        };
-      }
+REM Link object file to executable
+echo [2/2] Linking...
+${this.config.linkerBin} FILE ${this.config.tempPath}\\${objFile} NAME ${this.config.outputPath}\\${outputFile} SYSTEM DOS 2>&1
+if errorlevel 1 goto link_error
 
-      // Check for cancellation
-      if (this.abortController.signal.aborted) {
-        throw new Error('Compilation cancelled');
-      }
+REM Success
+echo.
+echo SUCCESS > ${this.config.tempPath}\\STATUS.TXT
+echo ========================================
+echo   Compilation Successful!
+echo ========================================
+echo.
+echo Executable: ${this.config.outputPath}\\${outputFile}
+echo.
+goto end
 
-      // Step 4: Link object file to executable
-      this.reportProgress('linking', 60, outputFile, `Linking ${outputFile}...`);
-      const exePath = `${this.config.outputPath}\\${outputFile}`;
+:compile_error
+echo COMPILE_ERROR > ${this.config.tempPath}\\STATUS.TXT
+echo.
+echo ========================================
+echo   Compilation Failed!
+echo ========================================
+echo.
+echo Check the error messages above.
+echo.
+goto end
 
-      const linkSuccess = await this.linkToExecutable(
-        objPath,
-        exePath,
-        options
-      );
+:link_error
+echo LINK_ERROR > ${this.config.tempPath}\\STATUS.TXT
+echo.
+echo ========================================
+echo   Linking Failed!
+echo ========================================
+echo.
+echo Check the error messages above.
+echo.
+goto end
 
-      if (!linkSuccess) {
-        this.reportProgress('error', 100, outputFile, 'Linking failed');
-        const parseResult = OpenWatcomErrorParser.parse(this.compilerOutput);
-        const errors = OpenWatcomErrorParser.formatForUI(parseResult.errors);
-        const warnings = OpenWatcomErrorParser.formatForUI(parseResult.warnings);
+:end
+`;
 
-        return {
-          success: false,
-          errors,
-          warnings,
-          outputFile,
-          rawOutput: this.compilerOutput,
-          compilationTime: Date.now() - startTime,
-        };
-      }
+      const batchPath = `${this.config.tempPath}\\COMPILE.BAT`;
+      await this.fs.writeTextFile(batchPath, batchContent);
+      this.addBuildMessage('info', `Batch file created: ${batchPath}`);
 
-      // Check for cancellation
-      if (this.abortController.signal.aborted) {
-        throw new Error('Compilation cancelled');
-      }
-
-      // Step 5: Read compiled executable
-      this.reportProgress('reading', 80, outputFile, 'Reading compiled executable...');
-      const executable = await this.fs.readBinaryFile(exePath);
-
-      // Parse any warnings from compilation
-      const parseResult = OpenWatcomErrorParser.parse(this.compilerOutput);
-      const warnings = OpenWatcomErrorParser.formatForUI(parseResult.warnings);
-
-      this.reportProgress('complete', 100, outputFile, 'Compilation complete!');
-      this.addBuildMessage('success', `Compilation successful: ${outputFile}`);
-      this.addBuildMessage('info', `Executable size: ${executable.length} bytes`);
-      this.addBuildMessage('info', `Build completed in ${Date.now() - startTime}ms`);
-
-      clearTimeout(timeoutId);
+      // Step 4: Provide instructions for manual execution
+      this.reportProgress('compiling', 50, sourceFile, 'Ready for manual compilation');
+      this.addBuildMessage('info', '');
+      this.addBuildMessage('info', '📋 MANUAL COMPILATION REQUIRED');
+      this.addBuildMessage('info', '');
+      this.addBuildMessage('info', 'Keyboard simulation is not available when the DOS window is hidden.');
+      this.addBuildMessage('info', 'Please follow these steps:');
+      this.addBuildMessage('info', '');
+      this.addBuildMessage('info', '1. Switch to Terminal mode (click the Terminal tab)');
+      this.addBuildMessage('info', '2. Type the following command and press Enter:');
+      this.addBuildMessage('info', `   ${batchPath}`);
+      this.addBuildMessage('info', '3. Wait for compilation to complete');
+      this.addBuildMessage('info', '4. Switch back to Code mode');
+      this.addBuildMessage('info', '5. Click "Check Result" to retrieve the executable');
+      this.addBuildMessage('info', '');
 
       return {
-        success: true,
-        errors: [],
-        warnings,
+        success: false,
+        errors: ['Manual compilation required - see instructions above'],
+        warnings: [],
         outputFile,
-        executable,
-        rawOutput: this.compilerOutput,
+        rawOutput: `Batch file created: ${batchPath}\n\nPlease run it manually in the DOS terminal.`,
         compilationTime: Date.now() - startTime,
       };
-    } catch (error) {
-      clearTimeout(timeoutId);
 
+    } catch (error) {
       const errorMessage = this.formatErrorMessage(error);
       this.reportProgress('error', 100, outputFile, `Error: ${errorMessage}`);
-      this.addBuildMessage('error', `Compilation failed: ${errorMessage}`);
+      this.addBuildMessage('error', `Compilation setup failed: ${errorMessage}`);
 
       return {
         success: false,
@@ -321,6 +335,120 @@ export class OpenWatcomCompilerService {
         warnings: [],
         outputFile,
         rawOutput: this.compilerOutput || errorMessage,
+        compilationTime: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * Check compilation result after manual execution
+   *
+   * This method checks if the compilation was successful by:
+   * 1. Reading the STATUS.TXT file to check for SUCCESS/COMPILE_ERROR/LINK_ERROR
+   * 2. If successful, reading the compiled executable
+   * 3. Returning the result
+   *
+   * @param outputFile - Name of the expected output file
+   * @returns Compilation result
+   */
+  async checkCompilationResult(outputFile: string): Promise<CompileResult> {
+    const startTime = Date.now();
+    this.buildMessages = [];
+
+    this.addBuildMessage('info', 'Checking compilation result...');
+
+    try {
+      // Check status file
+      const statusPath = `${this.config.tempPath}\\STATUS.TXT`;
+      let status: string;
+
+      try {
+        status = await this.fs.readTextFile(statusPath);
+        status = status.trim();
+      } catch (error) {
+        this.addBuildMessage('error', 'Status file not found. Did you run the batch file?');
+        return {
+          success: false,
+          errors: ['Compilation not executed yet. Please run the batch file in the DOS terminal.'],
+          warnings: [],
+          outputFile,
+          rawOutput: 'Status file not found',
+          compilationTime: Date.now() - startTime,
+        };
+      }
+
+      // Check if compilation was successful
+      if (status === 'SUCCESS') {
+        // Read the executable
+        const exePath = `${this.config.outputPath}\\${outputFile}`;
+
+        try {
+          const executable = await this.fs.readBinaryFile(exePath);
+
+          this.addBuildMessage('success', `Compilation successful: ${outputFile}`);
+          this.addBuildMessage('info', `Executable size: ${executable.length} bytes`);
+
+          return {
+            success: true,
+            errors: [],
+            warnings: [],
+            outputFile,
+            executable,
+            rawOutput: 'Compilation successful',
+            compilationTime: Date.now() - startTime,
+          };
+        } catch (error) {
+          this.addBuildMessage('error', `Failed to read executable: ${exePath}`);
+          return {
+            success: false,
+            errors: ['Executable file not found. Compilation may have failed.'],
+            warnings: [],
+            outputFile,
+            rawOutput: 'Executable not found',
+            compilationTime: Date.now() - startTime,
+          };
+        }
+      } else if (status === 'COMPILE_ERROR') {
+        this.addBuildMessage('error', 'Compilation failed. Check the DOS terminal for error messages.');
+        return {
+          success: false,
+          errors: ['Compilation failed. Check the DOS terminal output for details.'],
+          warnings: [],
+          outputFile,
+          rawOutput: 'Compilation error',
+          compilationTime: Date.now() - startTime,
+        };
+      } else if (status === 'LINK_ERROR') {
+        this.addBuildMessage('error', 'Linking failed. Check the DOS terminal for error messages.');
+        return {
+          success: false,
+          errors: ['Linking failed. Check the DOS terminal output for details.'],
+          warnings: [],
+          outputFile,
+          rawOutput: 'Link error',
+          compilationTime: Date.now() - startTime,
+        };
+      } else {
+        this.addBuildMessage('error', `Unknown status: ${status}`);
+        return {
+          success: false,
+          errors: [`Unknown compilation status: ${status}`],
+          warnings: [],
+          outputFile,
+          rawOutput: `Unknown status: ${status}`,
+          compilationTime: Date.now() - startTime,
+        };
+      }
+    } catch (error) {
+      const errorMessage = this.formatErrorMessage(error);
+      this.addBuildMessage('error', `Failed to check result: ${errorMessage}`);
+
+      return {
+        success: false,
+        errors: [errorMessage],
+        warnings: [],
+        outputFile,
+        rawOutput: errorMessage,
         compilationTime: Date.now() - startTime,
       };
     }
@@ -359,27 +487,23 @@ export class OpenWatcomCompilerService {
     // Create temp directory if it doesn't exist
     try {
       await this.fs.createDirectory(this.config.tempPath);
-      if (this.config.verbose) {
-        this.addBuildMessage('info', `Created temp directory: ${this.config.tempPath}`);
-      }
+      this.addBuildMessage('info', `Created temp directory: ${this.config.tempPath}`);
     } catch (error) {
-      // Directory might already exist, which is fine
-      if (this.config.verbose && error instanceof Error && !error.message.includes('exists')) {
-        this.addBuildMessage('warning', `Could not create temp directory: ${error.message}`);
-      }
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      this.addBuildMessage('error', `Failed to create temp directory: ${errorMsg}`);
+      console.error('[OpenWatcomCompiler] Failed to create temp directory:', error);
+      throw error; // Re-throw to stop compilation
     }
 
     // Create output directory if it doesn't exist
     try {
       await this.fs.createDirectory(this.config.outputPath);
-      if (this.config.verbose) {
-        this.addBuildMessage('info', `Created output directory: ${this.config.outputPath}`);
-      }
+      this.addBuildMessage('info', `Created output directory: ${this.config.outputPath}`);
     } catch (error) {
-      // Directory might already exist, which is fine
-      if (this.config.verbose && error instanceof Error && !error.message.includes('exists')) {
-        this.addBuildMessage('warning', `Could not create output directory: ${error.message}`);
-      }
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      this.addBuildMessage('error', `Failed to create output directory: ${errorMsg}`);
+      console.error('[OpenWatcomCompiler] Failed to create output directory:', error);
+      throw error; // Re-throw to stop compilation
     }
 
     // Log Open Watcom configuration
@@ -420,6 +544,7 @@ export class OpenWatcomCompilerService {
       if (this.config.verbose) {
         this.addBuildMessage('info', `Compiler command: ${this.config.compilerBin} ${sourcePath} -FO=${objPath} ${compilerFlags}`);
         this.addBuildMessage('info', `Writing batch file: ${batchPath}`);
+        this.addBuildMessage('info', `Batch file content:\n${batchContent}`);
       }
 
       // Write batch file to DOS filesystem
@@ -427,9 +552,21 @@ export class OpenWatcomCompilerService {
 
       // Execute batch file
       this.addBuildMessage('info', 'Executing compiler...');
-      const result = await this.dosExecutor.executeBatchFile(batchPath, {
-        timeoutMs: this.config.maxCompilationTime,
-      });
+
+      let result;
+      try {
+        result = await this.dosExecutor.executeBatchFile(batchPath, {
+          timeoutMs: this.config.maxCompilationTime,
+        });
+      } catch (error) {
+        // On timeout or other errors, try to get whatever output was captured
+        const partialOutput = this.dosExecutor.getOutputBuffer();
+        if (partialOutput) {
+          this.compilerOutput += partialOutput;
+          this.addBuildMessage('info', `Partial output captured (${partialOutput.length} chars)`);
+        }
+        throw error; // Re-throw to be caught by outer catch block
+      }
 
       // Capture output
       this.compilerOutput += result.output;
@@ -441,6 +578,9 @@ export class OpenWatcomCompilerService {
       // Check for success
       if (!result.success) {
         this.addBuildMessage('error', 'Compilation failed');
+        if (this.config.verbose && result.output) {
+          this.addBuildMessage('info', `Compiler output:\n${result.output}`);
+        }
         return false;
       }
 
@@ -456,7 +596,12 @@ export class OpenWatcomCompilerService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.addBuildMessage('error', `Compilation error: ${errorMessage}`);
-      this.compilerOutput += `\nError: ${errorMessage}\n`;
+
+      // The error message from DosCommandExecutor now includes output preview
+      // but we also add it to compilerOutput for the final result
+      if (!this.compilerOutput.includes(errorMessage)) {
+        this.compilerOutput += `\nError: ${errorMessage}\n`;
+      }
       return false;
     }
   }
@@ -495,9 +640,21 @@ export class OpenWatcomCompilerService {
 
       // Execute batch file
       this.addBuildMessage('info', 'Executing linker...');
-      const result = await this.dosExecutor.executeBatchFile(batchPath, {
-        timeoutMs: this.config.maxCompilationTime,
-      });
+
+      let result;
+      try {
+        result = await this.dosExecutor.executeBatchFile(batchPath, {
+          timeoutMs: this.config.maxCompilationTime,
+        });
+      } catch (error) {
+        // On timeout or other errors, try to get whatever output was captured
+        const partialOutput = this.dosExecutor.getOutputBuffer();
+        if (partialOutput) {
+          this.compilerOutput += partialOutput;
+          this.addBuildMessage('info', `Partial output captured (${partialOutput.length} chars)`);
+        }
+        throw error; // Re-throw to be caught by outer catch block
+      }
 
       // Capture output
       this.compilerOutput += result.output;
@@ -509,6 +666,9 @@ export class OpenWatcomCompilerService {
       // Check for success
       if (!result.success) {
         this.addBuildMessage('error', 'Linking failed');
+        if (this.config.verbose && result.output) {
+          this.addBuildMessage('info', `Linker output:\n${result.output}`);
+        }
         return false;
       }
 
@@ -524,7 +684,12 @@ export class OpenWatcomCompilerService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.addBuildMessage('error', `Linking error: ${errorMessage}`);
-      this.compilerOutput += `\nError: ${errorMessage}\n`;
+
+      // The error message from DosCommandExecutor now includes output preview
+      // but we also add it to compilerOutput for the final result
+      if (!this.compilerOutput.includes(errorMessage)) {
+        this.compilerOutput += `\nError: ${errorMessage}\n`;
+      }
       return false;
     }
   }

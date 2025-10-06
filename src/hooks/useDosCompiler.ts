@@ -15,6 +15,8 @@ import { CompilerService } from '../services/CompilerService';
 export interface UseDosCompilerResult {
   /** Compile a source file */
   compile: (sourceFile: string, outputFile: string) => Promise<CompileResult>;
+  /** Check compilation result (for manual execution) */
+  checkResult: (outputFile: string) => Promise<CompileResult>;
   /** Get build messages */
   buildMessages: BuildMessage[];
   /** Clear build messages */
@@ -93,12 +95,51 @@ export function useDosCompiler(ci: CommandInterface | null): UseDosCompilerResul
     }
   }, []);
 
+  const checkResult = useCallback(async (outputFile: string): Promise<CompileResult> => {
+    if (!compilerServiceRef.current) {
+      throw new Error('CompilerService not initialized');
+    }
+
+    setBuildStatus('building');
+    setError(null);
+    setBuildMessages([]);
+
+    try {
+      const result = await compilerServiceRef.current.checkCompilationResult(outputFile);
+
+      // Get build messages from compiler service
+      const messages = compilerServiceRef.current.getBuildMessages();
+      setBuildMessages(messages);
+
+      setLastResult(result);
+      setBuildStatus(result.success ? 'success' : 'error');
+
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to check result';
+      setError(errorMessage);
+      setBuildStatus('error');
+
+      const failedResult: CompileResult = {
+        success: false,
+        errors: [errorMessage],
+        warnings: [],
+        outputFile,
+        rawOutput: errorMessage,
+      };
+
+      setLastResult(failedResult);
+      return failedResult;
+    }
+  }, []);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
   return {
     compile,
+    checkResult,
     buildMessages,
     clearBuildMessages,
     buildStatus,

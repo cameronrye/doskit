@@ -55,7 +55,7 @@ export const CodeMode: React.FC<CodeModeProps> = ({
   });
 
   const { writeTextFile } = useDosFileSystem(ci);
-  const { compile, buildMessages, clearBuildMessages, buildStatus, lastResult } = useDosCompiler(ci);
+  const { compile, checkResult, buildMessages, clearBuildMessages, buildStatus, lastResult } = useDosCompiler(ci);
 
   // Load Hello World template on mount
   useEffect(() => {
@@ -181,6 +181,23 @@ pause
     }
   }, [lastResult, onRunProgram]);
 
+  const handleCheckResult = useCallback(async () => {
+    if (!ci) {
+      console.error('[CodeMode] Cannot check result: CommandInterface not ready');
+      return;
+    }
+
+    const outputFile = currentFile.replace(/\.(c|cpp)$/, '.exe');
+    console.log('[CodeMode] Checking result for:', outputFile);
+
+    try {
+      const result = await checkResult(outputFile);
+      console.log('[CodeMode] Check result:', result);
+    } catch (error) {
+      console.error('[CodeMode] Check result failed:', error);
+    }
+  }, [ci, currentFile, checkResult]);
+
   const handleClear = useCallback(() => {
     clearBuildMessages();
   }, [clearBuildMessages]);
@@ -279,9 +296,11 @@ pause
             compilerType={getCompilerType()}
             onBuild={handleBuild}
             onRun={handleRun}
+            onCheckResult={handleCheckResult}
             onClear={handleClear}
             buildDisabled={!ci}
             runDisabled={!ci || buildStatus !== 'success'}
+            showCheckResult={getCompilerType() === 'openwatcom'}
           />
         </div>
       </div>

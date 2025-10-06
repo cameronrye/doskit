@@ -92,12 +92,11 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
             onExitRef.current?.();
           });
 
-          // Set up stdout logging for debugging (only in development)
-          if (import.meta.env.DEV) {
-            ciRef.current.events().onStdout((message: string) => {
-              console.log('[DOS]', message);
-            });
-          }
+          // NOTE: We do NOT set up stdout logging here because it interferes
+          // with DosCommandExecutor's stdout handler. js-dos might only support
+          // one stdout handler at a time, and registering multiple handlers
+          // causes the output capture to fail.
+          // The DosCommandExecutor will handle stdout capture for compilation.
         }
 
         // Call the onReady callback
