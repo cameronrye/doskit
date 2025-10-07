@@ -16,6 +16,11 @@ import {
   secondRealityMetadata,
 } from '../dos-apps/second-reality.config';
 import {
+  impulseTrackerZipUrl,
+  impulseTrackerDosboxConf,
+  impulseTrackerMetadata,
+} from '../dos-apps/impulse-tracker.config';
+import {
   testAppFiles,
   testAppDosboxConf,
   testAppMetadata,
@@ -67,6 +72,19 @@ const availableApps: DosApp[] = [
     loader: async () => {
       // Load the compiled demo from Archive.org
       return loadZipArchive(secondRealityZipUrl);
+    },
+  },
+  {
+    id: 'impulse-tracker',
+    name: impulseTrackerMetadata.name,
+    description: impulseTrackerMetadata.description,
+    author: impulseTrackerMetadata.author,
+    year: impulseTrackerMetadata.year,
+    loadMethod: 'zip',
+    dosboxConf: impulseTrackerDosboxConf,
+    loader: async () => {
+      // Load the tracker application from Archive.org
+      return loadZipArchive(impulseTrackerZipUrl);
     },
   },
   // Add more applications here

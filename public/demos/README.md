@@ -29,6 +29,33 @@ This directory contains DOS demo files that are bundled with the application to 
 - Graphics: VGA
 - Sound: Sound Blaster (optional)
 
+### impulse-tracker.zip (1.0 MB)
+
+**Application**: Impulse Tracker 2.14 by Jeffrey Lim (1997)
+
+**Source**: https://archive.org/details/demoscene_ImpulseTracker214
+
+**Original URL**: https://archive.org/download/demoscene_ImpulseTracker214/it214v3.zip
+
+**License**: BSD-3-Clause (source code released in 2014)
+
+**Contents**:
+- `IT.EXE` (91 KB) - Main tracker executable
+- 26 sound driver files (.DRV) for various sound cards
+- Support for Sound Blaster, Gravis UltraSound, AWE32, and more
+
+**Description**: A legendary music tracker for creating MOD/IT music. One of the most popular and influential trackers in the demoscene. Impulse Tracker introduced many advanced features like filters, New Note Actions (NNA), and created the .IT module format that became widely used in the scene.
+
+**Requirements**:
+- CPU: 486 or better
+- Memory: 4MB RAM
+- Graphics: VGA (text mode)
+- Sound: Sound Blaster or compatible (optional)
+
+**Additional Info**:
+- Pouet.net: https://www.pouet.net/prod.php?which=13366
+- GitHub (source code): https://github.com/jthlim/impulse-tracker
+
 ## Why Local Hosting?
 
 While Archive.org is an excellent resource for preserving digital history, loading files directly from external sources can encounter CORS (Cross-Origin Resource Sharing) restrictions in modern browsers. By hosting the demo files locally:

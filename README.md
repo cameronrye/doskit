@@ -110,7 +110,6 @@ DosKit is a fully-featured **Progressive Web App** that can be installed on your
 
 - **[PWA Quick Start Guide](docs/PWA-QUICK-START.md)** - Get started in 5 minutes
 - **[Full PWA Documentation](docs/PWA.md)** - Comprehensive guide
-- **[PWA Testing Guide](docs/PWA-TESTING.md)** - Testing checklist
 
 ## 🛠️ Technology Stack
 
