@@ -16,6 +16,7 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 - **Interactive DOS Prompt**: Boots directly to a fully functional DOS command prompt
 - **Cross-Platform**: Works on Windows, macOS, Linux, iOS, and Android
 - **Progressive Web App (PWA)**: Install as a native app with offline support
+- **Deep Linking**: Load specific applications directly via URL (e.g., `?app=secondreality`)
 - **Offline Functionality**: Works completely offline after first visit
 - **Modern Tech Stack**: Built with React 19, TypeScript, and Vite
 - **WebAssembly Performance**: Leverages js-dos v8.3.20 for near-native DOS emulation
@@ -306,6 +307,29 @@ npm run dev
 ```
 
 This will start a DOS prompt that you can interact with directly in your browser.
+
+### Deep Linking
+
+DosKit supports loading specific applications directly via URL parameters, making it easy to share links to specific DOS applications:
+
+**Load Second Reality:**
+```
+https://doskit.net/?app=secondreality
+```
+
+**Load Impulse Tracker:**
+```
+https://doskit.net/?app=impulsetracker
+```
+
+**Features:**
+- 🔗 **Shareable Links**: URLs automatically update when you select an app
+- 📖 **Bookmarkable**: Save direct links to your favorite DOS applications
+- ⬅️ **Browser Navigation**: Back/forward buttons work correctly
+- 🔄 **Refresh-Safe**: Page refreshes maintain the loaded application
+- ⚠️ **Error Handling**: Invalid app IDs show helpful error messages
+
+For more details, see the [Deep Linking Guide](docs/DEEP-LINKING.md).
 
 ### Adding DOS Applications
 

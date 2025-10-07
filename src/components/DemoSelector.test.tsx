@@ -5,7 +5,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { DemoSelector } from './DemoSelector';
-import type { DosApp } from './DemoSelector';
 import { loadZipArchive } from '../utils/diskLoader';
 
 // Mock the disk loader

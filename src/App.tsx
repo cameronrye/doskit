@@ -4,9 +4,15 @@
  * Licensed under the MIT License
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DosPlayerWithApps, type DosApp } from './components/DosPlayerWithApps';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { findAppById } from './components/DemoSelector';
+import {
+  getAppIdFromUrl,
+  updateUrlWithApp,
+  updateDocumentTitle,
+} from './utils/urlRouting';
 import './App.css';
 
 function App() {
@@ -14,6 +20,9 @@ function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [currentApp, setCurrentApp] = useState<DosApp | null>(null);
   const [showAppSelector, setShowAppSelector] = useState(true); // Show selector on initial load
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const isInitialMount = useRef(true);
+  const isHandlingPopState = useRef(false);
 
   const handleDosReady = () => {
     if (import.meta.env.DEV) {
@@ -41,6 +50,19 @@ function App() {
       console.log('[App] Application changed:', app?.name || 'none');
     }
     setCurrentApp(app);
+
+    // Update URL when app changes (but not during popstate handling to avoid loops)
+    if (!isHandlingPopState.current) {
+      updateUrlWithApp(app?.id || null);
+    }
+
+    // Update document title
+    updateDocumentTitle(app?.name);
+
+    // Clear any URL error when successfully loading an app
+    if (app) {
+      setUrlError(null);
+    }
   };
 
   const handleSelectorVisibilityChange = (visible: boolean) => {
@@ -53,6 +75,95 @@ function App() {
   const handleChangeAppClick = () => {
     setShowAppSelector(true);
   };
+
+  // Handle initial URL-based app loading on mount
+  useEffect(() => {
+    if (!isInitialMount.current) return;
+    isInitialMount.current = false;
+
+    const appIdFromUrl = getAppIdFromUrl();
+
+    if (appIdFromUrl) {
+      if (import.meta.env.DEV) {
+        console.log('[App] Loading app from URL:', appIdFromUrl);
+      }
+
+      const app = findAppById(appIdFromUrl);
+
+      if (app) {
+        // Valid app ID in URL - hide selector and let DosPlayerWithApps load it
+        setShowAppSelector(false);
+        setCurrentApp(app);
+        updateDocumentTitle(app.name);
+
+        // Trigger app loading by simulating selection
+        // The app will be loaded by DosPlayerWithApps when it receives the app change
+        setTimeout(() => {
+          // This ensures the component is mounted before we try to load
+          const event = new CustomEvent('load-app-from-url', { detail: { app } });
+          window.dispatchEvent(event);
+        }, 100);
+      } else {
+        // Invalid app ID in URL
+        if (import.meta.env.DEV) {
+          console.warn('[App] Invalid app ID in URL:', appIdFromUrl);
+        }
+        setUrlError(`Application "${appIdFromUrl}" not found. Please select from available applications.`);
+        setShowAppSelector(true);
+        // Clear the invalid app parameter from URL
+        updateUrlWithApp(null, true);
+      }
+    } else {
+      // No app in URL - show selector (default behavior)
+      updateDocumentTitle();
+    }
+  }, []);
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      isHandlingPopState.current = true;
+
+      const appIdFromUrl = getAppIdFromUrl();
+
+      if (import.meta.env.DEV) {
+        console.log('[App] Popstate event - app ID from URL:', appIdFromUrl);
+      }
+
+      if (appIdFromUrl) {
+        const app = findAppById(appIdFromUrl);
+
+        if (app) {
+          setCurrentApp(app);
+          setShowAppSelector(false);
+          updateDocumentTitle(app.name);
+
+          // Trigger app loading
+          const event = new CustomEvent('load-app-from-url', { detail: { app } });
+          window.dispatchEvent(event);
+        } else {
+          setUrlError(`Application "${appIdFromUrl}" not found.`);
+          setShowAppSelector(true);
+        }
+      } else {
+        // No app in URL - show selector
+        setCurrentApp(null);
+        setShowAppSelector(true);
+        updateDocumentTitle();
+      }
+
+      // Reset flag after a short delay
+      setTimeout(() => {
+        isHandlingPopState.current = false;
+      }, 100);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   return (
     <div className="app">
@@ -86,6 +197,21 @@ function App() {
       </header>
 
       <main className="app-main">
+        {/* URL Error Message */}
+        {urlError && (
+          <div className="url-error-banner">
+            <span className="error-icon">⚠️</span>
+            <span className="error-message">{urlError}</span>
+            <button
+              className="error-dismiss"
+              onClick={() => setUrlError(null)}
+              aria-label="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <DosPlayerWithApps
           onReady={handleDosReady}
           onExit={handleDosExit}

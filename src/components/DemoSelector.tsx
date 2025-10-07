@@ -41,8 +41,10 @@ interface DemoSelectorProps {
 
 /**
  * Available DOS applications and demos
+ * Exported for use in URL routing and deep linking
  */
-const availableApps: DosApp[] = [
+// eslint-disable-next-line react-refresh/only-export-components
+export const availableApps: DosApp[] = [
   {
     id: 'second-reality',
     name: secondRealityMetadata.name,
@@ -71,6 +73,16 @@ const availableApps: DosApp[] = [
   },
   // Add more applications here
 ];
+
+/**
+ * Find an application by its ID
+ * @param id - The app ID to search for
+ * @returns The DosApp if found, undefined otherwise
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function findAppById(id: string): DosApp | undefined {
+  return availableApps.find(app => app.id === id);
+}
 
 export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   const [selectedApp, setSelectedApp] = useState<DosApp | null>(null);

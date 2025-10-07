@@ -13,12 +13,14 @@ describe('UpdateNotification', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Save original location
     originalLocation = window.location;
-    
+
     // Mock window.location.reload
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).location;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     window.location = { ...originalLocation, reload: vi.fn() } as any;
 
     // Mock ServiceWorker
@@ -31,7 +33,7 @@ describe('UpdateNotification', () => {
       dispatchEvent: vi.fn(),
       onstatechange: null,
       onerror: null,
-    } as any;
+    } as unknown as ServiceWorker;
 
     // Mock ServiceWorkerRegistration
     mockRegistration = {
@@ -46,7 +48,7 @@ describe('UpdateNotification', () => {
       update: vi.fn(),
       unregister: vi.fn(),
       onupdatefound: null,
-    } as any;
+    } as unknown as ServiceWorkerRegistration;
 
     // Mock navigator.serviceWorker
     Object.defineProperty(navigator, 'serviceWorker', {
@@ -66,7 +68,11 @@ describe('UpdateNotification', () => {
 
   afterEach(() => {
     // Restore original location
-    window.location = originalLocation;
+    Object.defineProperty(window, 'location', {
+      value: originalLocation,
+      writable: true,
+      configurable: true,
+    });
     vi.restoreAllMocks();
   });
 
@@ -172,8 +178,8 @@ describe('UpdateNotification', () => {
     it('should handle missing waiting service worker', async () => {
       const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const registrationWithoutWaiting = { ...mockRegistration, waiting: null };
-      
-      render(<UpdateNotification registration={registrationWithoutWaiting as any} />);
+
+      render(<UpdateNotification registration={registrationWithoutWaiting as unknown as ServiceWorkerRegistration} />);
       
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
@@ -300,7 +306,7 @@ describe('UpdateNotification', () => {
       fireEvent.click(updateButton);
 
       // Should send SKIP_WAITING message
-      expect(mockRegistration.waiting.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
+      expect(mockRegistration.waiting!.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
     });
   });
 });

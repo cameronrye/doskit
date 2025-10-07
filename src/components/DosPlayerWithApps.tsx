@@ -65,6 +65,26 @@ export function DosPlayerWithApps({
     }
   }, [onAppChange, onSelectorVisibilityChange]);
 
+  // Listen for URL-based app loading events
+  useEffect(() => {
+    const handleLoadAppFromUrl = (event: Event) => {
+      const customEvent = event as CustomEvent<{ app: DosApp }>;
+      const app = customEvent.detail.app;
+
+      if (import.meta.env.DEV) {
+        console.log('[DosPlayerWithApps] Loading app from URL event:', app.name);
+      }
+
+      handleSelectApp(app);
+    };
+
+    window.addEventListener('load-app-from-url', handleLoadAppFromUrl);
+
+    return () => {
+      window.removeEventListener('load-app-from-url', handleLoadAppFromUrl);
+    };
+  }, [handleSelectApp]);
+
   const handleCancelSelector = useCallback(() => {
     setShowAppSelector(false);
     onSelectorVisibilityChange?.(false);

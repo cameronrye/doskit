@@ -7,6 +7,16 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { DosPlayerWithApps } from './DosPlayerWithApps';
 import type { DosApp } from './DemoSelector';
 
+// Type definitions for test mocks
+interface DemoSelectorProps {
+  onSelect: (app: DosApp) => void;
+  onCancel: () => void;
+}
+
+interface WindowWithMockApp extends Window {
+  __mockApp?: DosApp;
+}
+
 // Create a mock app
 const mockApp: DosApp = {
   id: 'test-app',
@@ -37,9 +47,9 @@ vi.mock('./DosPlayer', () => ({
 
 // Mock DemoSelector component
 vi.mock('./DemoSelector', () => ({
-  DemoSelector: ({ onSelect, onCancel }: { onSelect: (app: any) => void; onCancel: () => void }) => (
+  DemoSelector: ({ onSelect, onCancel }: DemoSelectorProps) => (
     <div data-testid="demo-selector-mock">
-      <button onClick={() => onSelect((window as any).__mockApp)}>Select App</button>
+      <button onClick={() => onSelect((window as WindowWithMockApp).__mockApp!)}>Select App</button>
       <button onClick={onCancel}>Cancel</button>
     </div>
   ),
@@ -49,7 +59,7 @@ describe('DosPlayerWithApps', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Store mock app in window for the mock selector to use
-    (window as any).__mockApp = mockApp;
+    (window as WindowWithMockApp).__mockApp = mockApp;
   });
 
   describe('Rendering', () => {
@@ -289,7 +299,7 @@ describe('DosPlayerWithApps', () => {
       const slowLoader = vi.fn().mockImplementation(
         () => new Promise(resolve => setTimeout(() => resolve(new Uint8Array([1, 2, 3])), 100))
       );
-      (window as any).__mockApp = { ...mockApp, loader: slowLoader };
+      (window as WindowWithMockApp).__mockApp = { ...mockApp, loader: slowLoader };
 
       render(<DosPlayerWithApps showSelector={true} />);
 
@@ -303,7 +313,7 @@ describe('DosPlayerWithApps', () => {
 
     it('should handle app loading errors', async () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      (window as any).__mockApp = mockAppWithError;
+      (window as WindowWithMockApp).__mockApp = mockAppWithError;
 
       render(<DosPlayerWithApps showSelector={true} />);
 
@@ -324,7 +334,7 @@ describe('DosPlayerWithApps', () => {
         ...mockApp,
         loader: vi.fn().mockRejectedValue('String error'),
       };
-      (window as any).__mockApp = appWithStringError;
+      (window as WindowWithMockApp).__mockApp = appWithStringError;
 
       render(<DosPlayerWithApps showSelector={true} />);
 
@@ -340,7 +350,7 @@ describe('DosPlayerWithApps', () => {
 
     it('should show Try Again button on error', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      (window as any).__mockApp = mockAppWithError;
+      (window as WindowWithMockApp).__mockApp = mockAppWithError;
 
       render(<DosPlayerWithApps showSelector={true} />);
 
@@ -354,7 +364,7 @@ describe('DosPlayerWithApps', () => {
 
     it('should reset state when Try Again is clicked', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      (window as any).__mockApp = mockAppWithError;
+      (window as WindowWithMockApp).__mockApp = mockAppWithError;
 
       render(<DosPlayerWithApps showSelector={true} />);
 
@@ -377,7 +387,7 @@ describe('DosPlayerWithApps', () => {
     it('should call onAppChange with null when reset', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       const onAppChange = vi.fn();
-      (window as any).__mockApp = mockAppWithError;
+      (window as WindowWithMockApp).__mockApp = mockAppWithError;
 
       render(<DosPlayerWithApps showSelector={true} onAppChange={onAppChange} />);
 
@@ -401,7 +411,7 @@ describe('DosPlayerWithApps', () => {
     it('should call onSelectorVisibilityChange with true when reset', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       const onSelectorVisibilityChange = vi.fn();
-      (window as any).__mockApp = mockAppWithError;
+      (window as WindowWithMockApp).__mockApp = mockAppWithError;
 
       render(
         <DosPlayerWithApps

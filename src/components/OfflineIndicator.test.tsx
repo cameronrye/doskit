@@ -6,16 +6,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { OfflineIndicator } from './OfflineIndicator';
 
+// Type definition for BeforeInstallPromptEvent
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  preventDefault: () => void;
+}
+
 describe('OfflineIndicator', () => {
   let originalNavigator: Navigator;
-  let originalLocalStorage: Storage;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     // Save originals
     originalNavigator = window.navigator;
-    originalLocalStorage = window.localStorage;
 
     // Clear localStorage
     localStorage.clear();
@@ -179,10 +184,10 @@ describe('OfflineIndicator', () => {
       });
 
       vi.useFakeTimers();
-      
+
       render(<OfflineIndicator />);
-      
-      const event = new Event('beforeinstallprompt') as any;
+
+      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
       event.prompt = vi.fn();
       event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
       event.preventDefault = vi.fn();
@@ -199,30 +204,30 @@ describe('OfflineIndicator', () => {
       localStorage.setItem('pwa-install-dismissed', 'permanent');
       
       vi.useFakeTimers();
-      
+
       render(<OfflineIndicator />);
-      
-      const event = new Event('beforeinstallprompt') as any;
+
+      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
       event.prompt = vi.fn();
       event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
       event.preventDefault = vi.fn();
-      
+
       fireEvent(window, event);
       vi.advanceTimersByTime(5000);
-      
+
       expect(screen.queryByText(/Install DosKit/i)).not.toBeInTheDocument();
-      
+
       vi.useRealTimers();
     });
 
     it('should not show install prompt if dismissed too many times', async () => {
       localStorage.setItem('pwa-install-dismissed-count', '3');
-      
+
       vi.useFakeTimers();
-      
+
       render(<OfflineIndicator />);
-      
-      const event = new Event('beforeinstallprompt') as any;
+
+      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
       event.prompt = vi.fn();
       event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
       event.preventDefault = vi.fn();
@@ -241,10 +246,10 @@ describe('OfflineIndicator', () => {
       localStorage.setItem('pwa-install-last-dismissed', twoDaysAgo.toISOString());
       
       vi.useFakeTimers();
-      
+
       render(<OfflineIndicator />);
-      
-      const event = new Event('beforeinstallprompt') as any;
+
+      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
       event.prompt = vi.fn();
       event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
       event.preventDefault = vi.fn();

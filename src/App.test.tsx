@@ -7,6 +7,29 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from './App';
 import type { DosApp } from './components/DosPlayerWithApps';
 
+// Type definitions for test mocks
+interface DosPlayerWithAppsProps {
+  onReady?: () => void;
+  onExit?: () => void;
+  onAppChange?: (app: DosApp | null) => void;
+  onSelectorVisibilityChange?: (visible: boolean) => void;
+  showSelector?: boolean;
+}
+
+interface OfflineIndicatorProps {
+  onNetworkStatusChange?: (isOnline: boolean) => void;
+}
+
+interface WindowWithTestCallbacks extends Window {
+  __dosCallbacks?: {
+    onReady?: () => void;
+    onExit?: () => void;
+    onAppChange?: (app: DosApp | null) => void;
+    onSelectorVisibilityChange?: (visible: boolean) => void;
+  };
+  __networkCallback?: (isOnline: boolean) => void;
+}
+
 // Create a mock app
 const mockApp: DosApp = {
   id: 'test-app',
@@ -27,9 +50,9 @@ vi.mock('./components/DosPlayerWithApps', () => ({
     onAppChange,
     onSelectorVisibilityChange,
     showSelector
-  }: any) => {
+  }: DosPlayerWithAppsProps) => {
     // Store callbacks in window for test access
-    (window as any).__dosCallbacks = {
+    (window as WindowWithTestCallbacks).__dosCallbacks = {
       onReady,
       onExit,
       onAppChange,
@@ -40,10 +63,10 @@ vi.mock('./components/DosPlayerWithApps', () => ({
       <div data-testid="dos-player-with-apps-mock">
         <button onClick={onReady}>Trigger Ready</button>
         <button onClick={onExit}>Trigger Exit</button>
-        <button onClick={() => onAppChange(mockApp)}>Load App</button>
-        <button onClick={() => onAppChange(null)}>Clear App</button>
-        <button onClick={() => onSelectorVisibilityChange(true)}>Show Selector</button>
-        <button onClick={() => onSelectorVisibilityChange(false)}>Hide Selector</button>
+        <button onClick={() => onAppChange?.(mockApp)}>Load App</button>
+        <button onClick={() => onAppChange?.(null)}>Clear App</button>
+        <button onClick={() => onSelectorVisibilityChange?.(true)}>Show Selector</button>
+        <button onClick={() => onSelectorVisibilityChange?.(false)}>Hide Selector</button>
         <div data-testid="selector-state">{showSelector ? 'visible' : 'hidden'}</div>
       </div>
     );
@@ -52,14 +75,14 @@ vi.mock('./components/DosPlayerWithApps', () => ({
 
 // Mock OfflineIndicator component
 vi.mock('./components/OfflineIndicator', () => ({
-  OfflineIndicator: ({ onNetworkStatusChange }: any) => {
+  OfflineIndicator: ({ onNetworkStatusChange }: OfflineIndicatorProps) => {
     // Store callback in window for test access
-    (window as any).__networkCallback = onNetworkStatusChange;
+    (window as WindowWithTestCallbacks).__networkCallback = onNetworkStatusChange;
 
     return (
       <div data-testid="offline-indicator-mock">
-        <button onClick={() => onNetworkStatusChange(false)}>Go Offline</button>
-        <button onClick={() => onNetworkStatusChange(true)}>Go Online</button>
+        <button onClick={() => onNetworkStatusChange?.(false)}>Go Offline</button>
+        <button onClick={() => onNetworkStatusChange?.(true)}>Go Online</button>
       </div>
     );
   },
@@ -69,8 +92,8 @@ describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Clear window callbacks
-    delete (window as any).__dosCallbacks;
-    delete (window as any).__networkCallback;
+    delete (window as WindowWithTestCallbacks).__dosCallbacks;
+    delete (window as WindowWithTestCallbacks).__networkCallback;
   });
 
   describe('Rendering', () => {
