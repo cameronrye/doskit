@@ -157,7 +157,7 @@ describe('App', () => {
     });
 
     it('should call handleChangeAppClick when clicked', () => {
-      const { container } = render(<App />);
+      render(<App />);
       const button = screen.getByRole('button', { name: /Select Application/i });
 
       // Click the button
