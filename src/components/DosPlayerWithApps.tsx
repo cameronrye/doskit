@@ -7,7 +7,7 @@
  * Enhanced DosPlayer that supports loading different DOS applications
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { DosPlayer } from './DosPlayer';
 import { DemoSelector, type DosApp } from './DemoSelector';
 import type { DosOptions, CommandInterface } from '../types/js-dos';
@@ -39,6 +39,11 @@ export function DosPlayerWithApps({
   const [isLoadingApp, setIsLoadingApp] = useState(false);
   const [showAppSelector, setShowAppSelector] = useState(showSelector);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync showSelector prop with local state
+  useEffect(() => {
+    setShowAppSelector(showSelector);
+  }, [showSelector]);
 
   const handleSelectApp = useCallback(async (app: DosApp) => {
     setIsLoadingApp(true);

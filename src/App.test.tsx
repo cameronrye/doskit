@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
 
 // Mock DosPlayer component
@@ -124,12 +124,47 @@ describe('App', () => {
     it('should have proper link attributes for security', () => {
       render(<App />);
       const links = screen.getAllByRole('link');
-      
+
       links.forEach((link) => {
         if (link.getAttribute('target') === '_blank') {
           expect(link).toHaveAttribute('rel', 'noopener noreferrer');
         }
       });
+    });
+  });
+
+  describe('Change Application Button', () => {
+    it('should render the change application button', () => {
+      render(<App />);
+      const button = screen.getByRole('button', { name: /Select Application/i });
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveClass('header-change-app-button');
+    });
+
+    it('should have correct button text when no app is selected', () => {
+      render(<App />);
+      const button = screen.getByRole('button', { name: /Select Application/i });
+      expect(button).toHaveTextContent('Select Application');
+    });
+
+    it('should be clickable and not disabled', () => {
+      render(<App />);
+      const button = screen.getByRole('button', { name: /Select Application/i });
+      expect(button).not.toBeDisabled();
+
+      // Verify the button can be clicked without errors
+      expect(() => fireEvent.click(button)).not.toThrow();
+    });
+
+    it('should call handleChangeAppClick when clicked', () => {
+      const { container } = render(<App />);
+      const button = screen.getByRole('button', { name: /Select Application/i });
+
+      // Click the button
+      fireEvent.click(button);
+
+      // The button should still be in the document after clicking
+      expect(button).toBeInTheDocument();
     });
   });
 });

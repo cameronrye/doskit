@@ -61,7 +61,7 @@ src/
 │   └── diskLoader.ts              # File loading utilities
 ├── dos-apps/
 │   ├── second-reality.config.ts   # Second Reality configuration
-│   └── test-app.config.ts         # Test application
+│   └── impulse-tracker.config.ts  # Impulse Tracker configuration
 └── components/
     ├── DemoSelector.tsx           # Application selector UI
     ├── DosPlayerWithApps.tsx      # Enhanced player
@@ -94,9 +94,27 @@ SecondReality/
 └── README.1ST      # Instructions
 ```
 
-### Test Application
+### Impulse Tracker 2.14 (1998)
 
-A simple test application for verifying the disk mounting system works correctly.
+**Impulse Tracker** is a legendary music tracker application for creating and editing digital music.
+
+- **Author**: Jeffrey Lim
+- **Year**: 1998
+- **License**: Freeware
+- **Size**: ~1.0 MB
+- **Website**: https://www.pouet.net/prod.php?which=53
+
+**System Requirements**:
+- CPU: 386 or better
+- Memory: 4MB RAM
+- Graphics: VGA
+- Sound: Sound Blaster 16 or Gravis UltraSound (recommended)
+
+**Features**:
+- Advanced sample editing
+- 64 channels of audio
+- Support for various module formats (.IT, .XM, .S3M, .MOD)
+- Built-in synthesizer and effects
 
 ## Loading Methods
 

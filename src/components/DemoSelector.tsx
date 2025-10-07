@@ -20,11 +20,6 @@ import {
   impulseTrackerDosboxConf,
   impulseTrackerMetadata,
 } from '../dos-apps/impulse-tracker.config';
-import {
-  testAppFiles,
-  testAppDosboxConf,
-  testAppMetadata,
-} from '../dos-apps/test-app.config';
 import './DemoSelector.css';
 
 export interface DosApp {
@@ -48,19 +43,6 @@ interface DemoSelectorProps {
  * Available DOS applications and demos
  */
 const availableApps: DosApp[] = [
-  {
-    id: 'test-app',
-    name: testAppMetadata.name,
-    description: testAppMetadata.description,
-    author: testAppMetadata.author,
-    year: testAppMetadata.year,
-    loadMethod: 'files',
-    dosboxConf: testAppDosboxConf,
-    loader: async () => {
-      // Test app files are already in memory (no network loading needed)
-      return Promise.resolve(testAppFiles);
-    },
-  },
   {
     id: 'second-reality',
     name: secondRealityMetadata.name,
