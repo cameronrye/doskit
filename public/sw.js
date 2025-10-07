@@ -7,6 +7,13 @@
 const CACHE_VERSION = 'v1';
 const CACHE_NAME = `doskit-${CACHE_VERSION}`;
 
+// Configuration
+const CONFIG = {
+  NETWORK_TIMEOUT: 5000, // 5 seconds timeout for network requests
+  MAX_CACHE_SIZE: 100, // Maximum number of items in cache
+  MAX_CACHE_AGE: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+};
+
 // Base path handling for GitHub Pages vs local
 const getBasePath = () => {
   // Check if we're on GitHub Pages
@@ -43,29 +50,41 @@ const EMULATOR_ASSETS = [
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing service worker...', CACHE_NAME);
-  
+
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('[Service Worker] Caching static assets');
-        // Cache static assets first
+        console.log(`[Service Worker] Total assets to cache: ${STATIC_ASSETS.length + EMULATOR_ASSETS.length}`);
+
+        // Cache static assets first (critical for app to work)
         return cache.addAll(STATIC_ASSETS)
           .then(() => {
-            console.log('[Service Worker] Static assets cached');
+            console.log(`[Service Worker] ✅ Static assets cached (${STATIC_ASSETS.length} files)`);
             // Then cache emulator assets (these are larger)
             return cache.addAll(EMULATOR_ASSETS);
           })
           .then(() => {
-            console.log('[Service Worker] Emulator assets cached');
+            console.log(`[Service Worker] ✅ Emulator assets cached (${EMULATOR_ASSETS.length} files)`);
+          })
+          .catch((error) => {
+            console.error('[Service Worker] ❌ Failed to cache assets:', error);
+            // Log which asset failed
+            if (error.message) {
+              console.error('[Service Worker] Error details:', error.message);
+            }
+            throw error; // Re-throw to fail the installation
           });
       })
       .then(() => {
-        console.log('[Service Worker] Installation complete');
+        console.log('[Service Worker] ✅ Installation complete - all assets cached');
         // Force the waiting service worker to become the active service worker
         return self.skipWaiting();
       })
       .catch((error) => {
-        console.error('[Service Worker] Installation failed:', error);
+        console.error('[Service Worker] ❌ Installation failed:', error);
+        // Don't call skipWaiting if installation failed
+        throw error;
       })
   );
 });
@@ -73,7 +92,7 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating service worker...', CACHE_NAME);
-  
+
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
@@ -91,8 +110,48 @@ self.addEventListener('activate', (event) => {
         // Take control of all pages immediately
         return self.clients.claim();
       })
+      .then(() => {
+        // Clean up old cache entries
+        return trimCache(CACHE_NAME);
+      })
   );
 });
+
+/**
+ * Utility: Fetch with timeout
+ * Prevents hanging on slow network connections
+ */
+function fetchWithTimeout(request, timeout = CONFIG.NETWORK_TIMEOUT) {
+  return Promise.race([
+    fetch(request),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Network timeout')), timeout)
+    )
+  ]);
+}
+
+/**
+ * Utility: Trim cache to maximum size
+ * Removes oldest entries when cache exceeds MAX_CACHE_SIZE
+ */
+async function trimCache(cacheName) {
+  try {
+    const cache = await caches.open(cacheName);
+    const keys = await cache.keys();
+
+    if (keys.length > CONFIG.MAX_CACHE_SIZE) {
+      console.log(`[Service Worker] Cache size (${keys.length}) exceeds limit (${CONFIG.MAX_CACHE_SIZE}), trimming...`);
+
+      // Delete oldest entries (first in the array)
+      const keysToDelete = keys.slice(0, keys.length - CONFIG.MAX_CACHE_SIZE);
+      await Promise.all(keysToDelete.map(key => cache.delete(key)));
+
+      console.log(`[Service Worker] Deleted ${keysToDelete.length} old cache entries`);
+    }
+  } catch (error) {
+    console.error('[Service Worker] Error trimming cache:', error);
+  }
+}
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
@@ -113,20 +172,22 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate' || request.destination === 'document' ||
       url.pathname.endsWith('.html') || url.pathname === BASE_PATH + '/') {
     event.respondWith(
-      fetch(request)
+      fetchWithTimeout(request)
         .then((networkResponse) => {
           // Cache the fresh HTML
           if (networkResponse && networkResponse.status === 200) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(request, responseToCache);
+              // Trim cache after adding new entry
+              trimCache(CACHE_NAME);
             });
           }
           return networkResponse;
         })
-        .catch(() => {
-          // Network failed, fallback to cache
-          console.log('[Service Worker] Network failed, serving cached HTML:', request.url);
+        .catch((error) => {
+          // Network failed or timed out, fallback to cache
+          console.log('[Service Worker] Network failed/timeout, serving cached HTML:', request.url, error.message);
           return caches.match(request).then((cachedResponse) => {
             return cachedResponse || caches.match(`${BASE_PATH}/index.html`);
           });
@@ -145,11 +206,13 @@ self.addEventListener('fetch', (event) => {
 
           // Stale-while-revalidate: return cache immediately, update in background
           event.waitUntil(
-            fetch(request)
+            fetchWithTimeout(request)
               .then((networkResponse) => {
                 if (networkResponse && networkResponse.status === 200) {
                   return caches.open(CACHE_NAME).then((cache) => {
                     cache.put(request, networkResponse.clone());
+                    // Trim cache after adding new entry
+                    trimCache(CACHE_NAME);
                     return networkResponse;
                   });
                 }
@@ -165,7 +228,7 @@ self.addEventListener('fetch', (event) => {
 
         // Not in cache, fetch from network
         console.log('[Service Worker] Fetching from network:', request.url);
-        return fetch(request)
+        return fetchWithTimeout(request)
           .then((networkResponse) => {
             // Cache successful responses
             if (networkResponse && networkResponse.status === 200) {
@@ -176,6 +239,8 @@ self.addEventListener('fetch', (event) => {
                 .then((cache) => {
                   // Cache the new resource
                   cache.put(request, responseToCache);
+                  // Trim cache after adding new entry
+                  trimCache(CACHE_NAME);
                 });
             }
 

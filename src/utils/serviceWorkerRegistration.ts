@@ -65,13 +65,16 @@ function registerValidSW(swUrl: string, config?: ServiceWorkerConfig): void {
     .register(swUrl)
     .then((registration) => {
       console.log('[SW] Service worker registered successfully:', registration);
-      
+
+      // Set up periodic update checks (every hour when page is visible)
+      setupPeriodicUpdateChecks(registration);
+
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
         if (installingWorker == null) {
           return;
         }
-        
+
         installingWorker.onstatechange = () => {
           if (installingWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
@@ -82,7 +85,7 @@ function registerValidSW(swUrl: string, config?: ServiceWorkerConfig): void {
                 '[SW] New content is available and will be used when all tabs for this page are closed. ' +
                 'See https://cra.link/PWA.'
               );
-              
+
               // Execute callback
               if (config && config.onUpdate) {
                 config.onUpdate(registration);
@@ -91,12 +94,12 @@ function registerValidSW(swUrl: string, config?: ServiceWorkerConfig): void {
               // At this point, everything has been precached.
               // It's the perfect time to display a "Content is cached for offline use." message.
               console.log('[SW] Content is cached for offline use.');
-              
+
               // Execute callback
               if (config && config.onSuccess) {
                 config.onSuccess(registration);
               }
-              
+
               if (config && config.onOfflineReady) {
                 config.onOfflineReady();
               }
@@ -108,6 +111,37 @@ function registerValidSW(swUrl: string, config?: ServiceWorkerConfig): void {
     .catch((error) => {
       console.error('[SW] Error during service worker registration:', error);
     });
+}
+
+/**
+ * Set up periodic update checks for the service worker
+ * Checks for updates every hour when the page is visible
+ */
+function setupPeriodicUpdateChecks(registration: ServiceWorkerRegistration): void {
+  const UPDATE_CHECK_INTERVAL = 60 * 60 * 1000; // 1 hour
+
+  // Check for updates periodically
+  const checkForUpdates = () => {
+    // Only check if page is visible to save resources
+    if (document.visibilityState === 'visible') {
+      console.log('[SW] Checking for service worker updates...');
+      registration.update().catch((error) => {
+        console.error('[SW] Error checking for updates:', error);
+      });
+    }
+  };
+
+  // Set up interval for periodic checks
+  setInterval(checkForUpdates, UPDATE_CHECK_INTERVAL);
+
+  // Also check when page becomes visible (user returns to tab)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      checkForUpdates();
+    }
+  });
+
+  console.log('[SW] Periodic update checks enabled (every hour)');
 }
 
 /**
