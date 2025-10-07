@@ -3,8 +3,27 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { DosPlayerWithApps } from './DosPlayerWithApps';
+import type { DosApp } from './DemoSelector';
+
+// Create a mock app
+const mockApp: DosApp = {
+  id: 'test-app',
+  name: 'Test App',
+  description: 'A test application',
+  author: 'Test Author',
+  year: 2024,
+  loadMethod: 'zip',
+  dosboxConf: '[cpu]\ncore=auto',
+  loader: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
+};
+
+const mockAppWithError: DosApp = {
+  ...mockApp,
+  id: 'error-app',
+  loader: vi.fn().mockRejectedValue(new Error('Failed to load')),
+};
 
 // Mock DosPlayer component
 vi.mock('./DosPlayer', () => ({
@@ -18,9 +37,9 @@ vi.mock('./DosPlayer', () => ({
 
 // Mock DemoSelector component
 vi.mock('./DemoSelector', () => ({
-  DemoSelector: ({ onSelect, onCancel }: { onSelect: () => void; onCancel: () => void }) => (
+  DemoSelector: ({ onSelect, onCancel }: { onSelect: (app: any) => void; onCancel: () => void }) => (
     <div data-testid="demo-selector-mock">
-      <button onClick={onSelect}>Select App</button>
+      <button onClick={() => onSelect((window as any).__mockApp)}>Select App</button>
       <button onClick={onCancel}>Cancel</button>
     </div>
   ),
@@ -29,6 +48,8 @@ vi.mock('./DemoSelector', () => ({
 describe('DosPlayerWithApps', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Store mock app in window for the mock selector to use
+    (window as any).__mockApp = mockApp;
   });
 
   describe('Rendering', () => {
@@ -179,5 +200,261 @@ describe('DosPlayerWithApps', () => {
       expect(wrapper).toBeInTheDocument();
     });
   });
-});
 
+  describe('Overlay click handling', () => {
+    it('should close selector when overlay is clicked', async () => {
+      const { container } = render(<DosPlayerWithApps showSelector={true} />);
+      const overlay = container.querySelector('.selector-overlay');
+
+      expect(overlay).toBeInTheDocument();
+
+      fireEvent.click(overlay!);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should call onSelectorVisibilityChange when overlay is clicked', async () => {
+      const onSelectorVisibilityChange = vi.fn();
+      const { container } = render(
+        <DosPlayerWithApps
+          showSelector={true}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+
+      const overlay = container.querySelector('.selector-overlay');
+      fireEvent.click(overlay!);
+
+      await waitFor(() => {
+        expect(onSelectorVisibilityChange).toHaveBeenCalledWith(false);
+      });
+    });
+  });
+
+  describe('App selection and loading', () => {
+    it('should load app when selected from DemoSelector', async () => {
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      const selectButton = screen.getByText('Select App');
+      fireEvent.click(selectButton);
+
+      await waitFor(() => {
+        expect(mockApp.loader).toHaveBeenCalled();
+      });
+    });
+
+    it('should hide selector after app is loaded', async () => {
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      const selectButton = screen.getByText('Select App');
+      fireEvent.click(selectButton);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should call onAppChange when app is loaded', async () => {
+      const onAppChange = vi.fn();
+      render(<DosPlayerWithApps showSelector={true} onAppChange={onAppChange} />);
+
+      const selectButton = screen.getByText('Select App');
+      fireEvent.click(selectButton);
+
+      await waitFor(() => {
+        expect(onAppChange).toHaveBeenCalledWith(mockApp);
+      });
+    });
+
+    it('should call onSelectorVisibilityChange when app is loaded', async () => {
+      const onSelectorVisibilityChange = vi.fn();
+      render(
+        <DosPlayerWithApps
+          showSelector={true}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+
+      const selectButton = screen.getByText('Select App');
+      fireEvent.click(selectButton);
+
+      await waitFor(() => {
+        expect(onSelectorVisibilityChange).toHaveBeenCalledWith(false);
+      });
+    });
+
+    it('should show loading overlay while loading app', async () => {
+      const slowLoader = vi.fn().mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve(new Uint8Array([1, 2, 3])), 100))
+      );
+      (window as any).__mockApp = { ...mockApp, loader: slowLoader };
+
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      const selectButton = screen.getByText('Select App');
+      fireEvent.click(selectButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Loading application...')).toBeInTheDocument();
+      });
+    });
+
+    it('should handle app loading errors', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      (window as any).__mockApp = mockAppWithError;
+
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      const selectButton = screen.getByText('Select App');
+      fireEvent.click(selectButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
+        expect(screen.getByText('Failed to load')).toBeInTheDocument();
+      });
+
+      consoleError.mockRestore();
+    });
+
+    it('should handle non-Error exceptions during loading', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const appWithStringError: DosApp = {
+        ...mockApp,
+        loader: vi.fn().mockRejectedValue('String error'),
+      };
+      (window as any).__mockApp = appWithStringError;
+
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      const selectButton = screen.getByText('Select App');
+      fireEvent.click(selectButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to load application')).toBeInTheDocument();
+      });
+
+      consoleError.mockRestore();
+    });
+
+    it('should show Try Again button on error', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      (window as any).__mockApp = mockAppWithError;
+
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      const selectButton = screen.getByText('Select App');
+      fireEvent.click(selectButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Try Again/i })).toBeInTheDocument();
+      });
+    });
+
+    it('should reset state when Try Again is clicked', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      (window as any).__mockApp = mockAppWithError;
+
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      const selectButton = screen.getByText('Select App');
+      fireEvent.click(selectButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
+      });
+
+      const tryAgainButton = screen.getByRole('button', { name: /Try Again/i });
+      fireEvent.click(tryAgainButton);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+        expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+      });
+    });
+
+    it('should call onAppChange with null when reset', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const onAppChange = vi.fn();
+      (window as any).__mockApp = mockAppWithError;
+
+      render(<DosPlayerWithApps showSelector={true} onAppChange={onAppChange} />);
+
+      const selectButton = screen.getByText('Select App');
+      fireEvent.click(selectButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
+      });
+
+      onAppChange.mockClear();
+
+      const tryAgainButton = screen.getByRole('button', { name: /Try Again/i });
+      fireEvent.click(tryAgainButton);
+
+      await waitFor(() => {
+        expect(onAppChange).toHaveBeenCalledWith(null);
+      });
+    });
+
+    it('should call onSelectorVisibilityChange with true when reset', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const onSelectorVisibilityChange = vi.fn();
+      (window as any).__mockApp = mockAppWithError;
+
+      render(
+        <DosPlayerWithApps
+          showSelector={true}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+
+      const selectButton = screen.getByText('Select App');
+      fireEvent.click(selectButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
+      });
+
+      onSelectorVisibilityChange.mockClear();
+
+      const tryAgainButton = screen.getByRole('button', { name: /Try Again/i });
+      fireEvent.click(tryAgainButton);
+
+      await waitFor(() => {
+        expect(onSelectorVisibilityChange).toHaveBeenCalledWith(true);
+      });
+    });
+  });
+
+  describe('Cancel functionality', () => {
+    it('should hide selector when Cancel is clicked', async () => {
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      const cancelButton = screen.getByText('Cancel');
+      fireEvent.click(cancelButton);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should call onSelectorVisibilityChange when Cancel is clicked', async () => {
+      const onSelectorVisibilityChange = vi.fn();
+      render(
+        <DosPlayerWithApps
+          showSelector={true}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+
+      const cancelButton = screen.getByText('Cancel');
+      fireEvent.click(cancelButton);
+
+      await waitFor(() => {
+        expect(onSelectorVisibilityChange).toHaveBeenCalledWith(false);
+      });
+    });
+  });
+});

@@ -72,7 +72,7 @@ The DOS emulator will automatically load and present an interactive DOS prompt!
 
 ## 🌐 Live Demo
 
-**Try it now**: [https://cameronrye.github.io/doskit/](https://cameronrye.github.io/doskit/)
+**Try it now**: [https://doskit.net/](https://doskit.net/)
 
 The live demo is automatically deployed from the `main` branch using GitHub Actions. Every push to `main` triggers a new deployment.
 
@@ -504,12 +504,6 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 - **js-dos** by caiiiycuk - For the amazing WebAssembly DOS emulator
 - **DOSBox** team - For the original DOS emulation
 - **React** team - For the excellent UI framework
-
-## 📞 Contact
-
-- **Author**: Cameron Rye
-- **Website**: https://rye.dev
-- **GitHub**: https://github.com/cameronrye/doskit
 
 ---
 
