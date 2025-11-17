@@ -18,9 +18,28 @@ import './App.css';
 function App() {
   const [isReady, setIsReady] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [currentApp, setCurrentApp] = useState<DosApp | null>(null);
-  const [showAppSelector, setShowAppSelector] = useState(true); // Show selector on initial load
-  const [urlError, setUrlError] = useState<string | null>(null);
+
+  // Initialize state based on URL on first render
+  const [currentApp, setCurrentApp] = useState<DosApp | null>(() => {
+    const appIdFromUrl = getAppIdFromUrl();
+    return appIdFromUrl ? (findAppById(appIdFromUrl) ?? null) : null;
+  });
+
+  const [showAppSelector, setShowAppSelector] = useState(() => {
+    // Hide selector if there's a valid app in URL
+    const appIdFromUrl = getAppIdFromUrl();
+    const app = appIdFromUrl ? findAppById(appIdFromUrl) : null;
+    return !app;
+  });
+
+  const [urlError, setUrlError] = useState<string | null>(() => {
+    // Check for invalid app ID on initial render
+    const appIdFromUrl = getAppIdFromUrl();
+    if (appIdFromUrl && !findAppById(appIdFromUrl)) {
+      return `Application "${appIdFromUrl}" not found. Please select from available applications.`;
+    }
+    return null;
+  });
   const isInitialMount = useRef(true);
   const isHandlingPopState = useRef(false);
 
@@ -91,9 +110,7 @@ function App() {
       const app = findAppById(appIdFromUrl);
 
       if (app) {
-        // Valid app ID in URL - hide selector and let DosPlayerWithApps load it
-        setShowAppSelector(false);
-        setCurrentApp(app);
+        // Valid app ID in URL - state already initialized, just update title and trigger load
         updateDocumentTitle(app.name);
 
         // Trigger app loading by simulating selection
@@ -104,12 +121,10 @@ function App() {
           window.dispatchEvent(event);
         }, 100);
       } else {
-        // Invalid app ID in URL
+        // Invalid app ID in URL - error already set in state initializer
         if (import.meta.env.DEV) {
           console.warn('[App] Invalid app ID in URL:', appIdFromUrl);
         }
-        setUrlError(`Application "${appIdFromUrl}" not found. Please select from available applications.`);
-        setShowAppSelector(true);
         // Clear the invalid app parameter from URL
         updateUrlWithApp(null, true);
       }

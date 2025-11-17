@@ -7,7 +7,7 @@
  * Works reliably across all platforms including iOS Safari
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './UpdateNotification.css';
 
 interface UpdateNotificationProps {
@@ -16,13 +16,11 @@ interface UpdateNotificationProps {
 }
 
 export function UpdateNotification({ registration, onDismiss }: UpdateNotificationProps) {
-  const [show, setShow] = useState(false);
+  // Track if user has dismissed the notification
+  const [isDismissed, setIsDismissed] = useState(false);
 
-  useEffect(() => {
-    if (registration) {
-      setShow(true);
-    }
-  }, [registration]);
+  // Show notification when registration exists and hasn't been dismissed
+  const show = !!registration && !isDismissed;
 
   const handleUpdate = () => {
     if (registration?.waiting) {
@@ -72,7 +70,7 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
   };
 
   const handleDismiss = () => {
-    setShow(false);
+    setIsDismissed(true);
     onDismiss?.();
   };
 
