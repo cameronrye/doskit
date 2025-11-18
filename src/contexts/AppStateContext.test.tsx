@@ -10,7 +10,7 @@ import {
   useAppStateValue,
   useAppStateActions,
 } from "./AppStateContext";
-import type { DosApp } from "../components/DemoSelector";
+import type { DosApp } from "../types/dos-app";
 
 const mockApp: DosApp = {
   id: "test-app",

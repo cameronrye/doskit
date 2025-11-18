@@ -105,10 +105,15 @@ describe("DOSBoxConfigBuilder", () => {
       const config = presets.default().build();
 
       expect(config).toContain("[cpu]");
-      expect(config).toContain("core=auto");
+      expect(config).toContain("core=dynamic");
       expect(config).toContain("cycles=max");
       expect(config).toContain("[video]");
       expect(config).toContain("vmemsize=8");
+      expect(config).toContain("[render]");
+      expect(config).toContain("scaler=none");
+      expect(config).toContain("[mixer]");
+      expect(config).toContain("rate=44100");
+      expect(config).toContain("blocksize=2048");
       expect(config).toContain("[sblaster]");
       expect(config).toContain("sbtype=sb16");
     });

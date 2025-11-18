@@ -5,7 +5,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { DosPlayerWithApps } from "./DosPlayerWithApps";
-import type { DosApp, LoadedApp } from "./DemoSelector";
+import type { DosApp } from "../types/dos-app";
+import type { LoadedApp } from "./DemoSelector";
 
 // Type definitions for test mocks
 interface DemoSelectorProps {
@@ -333,23 +334,21 @@ describe("DosPlayerWithApps", () => {
     });
 
     it("should show loading overlay while loading app", async () => {
-      const slowLoader = vi
-        .fn()
-        .mockImplementation(
-          () =>
-            new Promise((resolve) =>
-              setTimeout(
-                () =>
-                  resolve({
-                    files: [
-                      { path: "/test.exe", content: new Uint8Array([1, 2, 3]) },
-                    ],
-                    dosboxConf: "",
-                  }),
-                100,
-              ),
+      const slowLoader = vi.fn().mockImplementation(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(
+              () =>
+                resolve({
+                  files: [
+                    { path: "/test.exe", content: new Uint8Array([1, 2, 3]) },
+                  ],
+                  dosboxConf: "",
+                }),
+              100,
             ),
-        );
+          ),
+      );
       const slowApp = { ...mockApp, loader: slowLoader };
 
       render(<DosPlayerWithApps showSelector={false} />);

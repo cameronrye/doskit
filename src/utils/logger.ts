@@ -17,14 +17,20 @@ export const LogLevel = {
 
 export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
 
-interface LoggerConfig {
+/**
+ * Configuration options for the Logger
+ */
+export interface LoggerConfig {
   level: LogLevel;
   enableTimestamps: boolean;
   enableColors: boolean;
   prefix?: string;
 }
 
-class Logger {
+/**
+ * Logger class for centralized logging with environment-aware behavior
+ */
+export class Logger {
   private config: LoggerConfig;
 
   constructor(config: Partial<LoggerConfig> = {}) {

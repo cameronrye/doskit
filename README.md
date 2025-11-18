@@ -115,8 +115,7 @@ DosKit is a fully-featured **Progressive Web App** that can be installed on your
 
 ### PWA Documentation
 
-- **[PWA Quick Start Guide](docs/PWA-QUICK-START.md)** - Get started in 5 minutes
-- **[Full PWA Documentation](docs/PWA.md)** - Comprehensive guide
+DosKit includes Progressive Web App (PWA) capabilities for offline functionality and app-like experience. See the main documentation sections above for PWA-related features.
 
 ## Technology Stack
 
@@ -227,7 +226,7 @@ npm run test:coverage
 
 ## Deployment
 
-DosKit is configured for automatic deployment to GitHub Pages. See the [Deployment Guide](docs/DEPLOYMENT.md) for detailed instructions.
+DosKit is configured for automatic deployment to GitHub Pages.
 
 ### Quick Deployment
 
@@ -342,8 +341,6 @@ https://doskit.net/?app=impulsetracker
 - **Browser Navigation**: Back/forward buttons work correctly
 - **Refresh-Safe**: Page refreshes maintain the loaded application
 - **Error Handling**: Invalid app IDs show helpful error messages
-
-For more details, see the [Deep Linking Guide](docs/DEEP-LINKING.md).
 
 ### Adding DOS Applications
 

@@ -18,6 +18,17 @@ export interface VideoConfig {
   vmemsize?: number;
 }
 
+export interface RenderConfig {
+  scaler?:
+    | "none"
+    | "normal2x"
+    | "normal3x"
+    | "hardware2x"
+    | "advmame2x"
+    | "advmame3x";
+  aspect?: boolean;
+}
+
 export interface DOSConfig {
   ver?: string;
   umb?: boolean;
@@ -83,6 +94,7 @@ export interface SerialConfig {
 export class DOSBoxConfigBuilder {
   private cpu: CPUConfig = {};
   private video: VideoConfig = {};
+  private render: RenderConfig = {};
   private dos: DOSConfig = {};
   private memory: MemoryConfig = {};
   private mixer: MixerConfig = {};
@@ -110,6 +122,16 @@ export class DOSBoxConfigBuilder {
    */
   setVideo(config: VideoConfig): this {
     this.video = { ...this.video, ...config };
+    return this;
+  }
+
+  /**
+   * Set render configuration
+   * @param config - Render configuration options (scaler, aspect)
+   * @returns This builder instance for method chaining
+   */
+  setRender(config: RenderConfig): this {
+    this.render = { ...this.render, ...config };
     return this;
   }
 
@@ -234,6 +256,10 @@ export class DOSBoxConfigBuilder {
       sections.push(this.buildSection("video", this.video));
     }
 
+    if (Object.keys(this.render).length > 0) {
+      sections.push(this.buildSection("render", this.render));
+    }
+
     if (Object.keys(this.dos).length > 0) {
       sections.push(this.buildSection("dos", this.dos));
     }
@@ -291,16 +317,20 @@ export function createDOSBoxConfig(): DOSBoxConfigBuilder {
 
 /**
  * Preset configurations for common use cases
+ * Optimized for performance and audio quality based on research
  */
 export const presets = {
   /**
    * Default configuration for general DOS applications
+   * Optimized for performance with high-quality audio
    */
   default: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: "auto", cputype: "auto", cycles: "max" })
+      .setCPU({ core: "dynamic", cputype: "auto", cycles: "max" })
       .setVideo({ vmemsize: 8 })
+      .setRender({ scaler: "none", aspect: false })
       .setDOS({ ver: "7.1", umb: true, ems: true, xms: true })
+      .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 40 })
       .setSoundBlaster({
         sbtype: "sb16",
         sbbase: 220,

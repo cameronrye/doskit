@@ -8,25 +8,13 @@
  */
 
 import { useState } from "react";
+import type { DosApp } from "../types/dos-app";
 import type { InitFileEntry } from "../types/js-dos";
 import { type LoadProgress } from "../utils/diskLoader";
 import "./DemoSelector.css";
 
-export interface DosApp {
-  id: string;
-  name: string;
-  description: string;
-  author?: string;
-  year?: number;
-  thumbnail?: string;
-  loadMethod: "files" | "zip" | "disk-image";
-  dosboxConf: string;
-  loader: (
-    onProgress?: (progress: LoadProgress) => void,
-  ) => Promise<InitFileEntry[] | Uint8Array>;
-  /** Lazy load the dosbox configuration */
-  loadDosboxConf?: () => Promise<string>;
-}
+// Re-export DosApp for backward compatibility
+export type { DosApp };
 
 export interface LoadedApp {
   app: DosApp;

@@ -9,7 +9,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { DosPlayer } from "./DosPlayer";
-import { DemoSelector, type DosApp, type LoadedApp } from "./DemoSelector";
+import { DemoSelector, type LoadedApp } from "./DemoSelector";
+import type { DosApp } from "../types/dos-app";
 import type { DosOptions, CommandInterface } from "../types/js-dos";
 import type { InitFileEntry } from "../types/js-dos";
 import "./DosPlayerWithApps.css";

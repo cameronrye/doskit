@@ -6,7 +6,8 @@
     "src/contexts",
     "src/adapters",
     "src/config",
-    "src/constants"
+    "src/constants",
+    "src/types"
   ],
   "entryPointStrategy": "expand",
   "out": "docs/api",

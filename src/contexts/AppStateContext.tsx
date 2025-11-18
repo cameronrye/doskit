@@ -8,7 +8,7 @@
 
 import { createContext, useContext, useState, useCallback } from "react";
 import type { ReactNode } from "react";
-import type { DosApp } from "../components/DemoSelector";
+import type { DosApp } from "../types/dos-app";
 
 /**
  * App state interface
