@@ -9,7 +9,9 @@ const CACHE_NAME = `doskit-${CACHE_VERSION}`;
 
 // Configuration
 const CONFIG = {
-  NETWORK_TIMEOUT: 5000, // 5 seconds timeout for network requests
+  NETWORK_TIMEOUT_BASE: 5000, // Base timeout: 5 seconds for small files
+  NETWORK_TIMEOUT_PER_MB: 2000, // Additional 2 seconds per MB
+  NETWORK_TIMEOUT_MAX: 60000, // Maximum timeout: 60 seconds
   MAX_CACHE_SIZE: 100, // Maximum number of items in cache
   MAX_CACHE_AGE: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
 };
@@ -118,14 +120,47 @@ self.addEventListener('activate', (event) => {
 });
 
 /**
- * Utility: Fetch with timeout
- * Prevents hanging on slow network connections
+ * Calculate dynamic timeout based on file type and estimated size
+ * @param {Request} request - The fetch request
+ * @returns {number} Timeout in milliseconds
  */
-function fetchWithTimeout(request, timeout = CONFIG.NETWORK_TIMEOUT) {
+function calculateTimeout(request) {
+  const url = new URL(request.url);
+  const pathname = url.pathname.toLowerCase();
+
+  // Large file types get longer timeouts
+  if (pathname.endsWith('.wasm') || pathname.endsWith('.zip') ||
+      pathname.endsWith('.iso') || pathname.endsWith('.img')) {
+    // WASM and archive files: 30 seconds
+    return Math.min(30000, CONFIG.NETWORK_TIMEOUT_MAX);
+  }
+
+  if (pathname.endsWith('.js') || pathname.endsWith('.css')) {
+    // JavaScript and CSS: 10 seconds
+    return 10000;
+  }
+
+  if (pathname.endsWith('.html') || pathname === BASE_PATH + '/') {
+    // HTML documents: 5 seconds (should be fast)
+    return CONFIG.NETWORK_TIMEOUT_BASE;
+  }
+
+  // Default timeout for other files
+  return CONFIG.NETWORK_TIMEOUT_BASE;
+}
+
+/**
+ * Utility: Fetch with dynamic timeout
+ * Prevents hanging on slow network connections
+ * Timeout is calculated based on file type
+ */
+function fetchWithTimeout(request, timeout = null) {
+  const actualTimeout = timeout || calculateTimeout(request);
+
   return Promise.race([
     fetch(request),
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Network timeout')), timeout)
+      setTimeout(() => reject(new Error(`Network timeout after ${actualTimeout}ms`)), actualTimeout)
     )
   ]);
 }
@@ -133,6 +168,43 @@ function fetchWithTimeout(request, timeout = CONFIG.NETWORK_TIMEOUT) {
 /**
  * Utility: Trim cache to maximum size
  * Removes oldest entries when cache exceeds MAX_CACHE_SIZE
+ */
+/**
+ * Get cache metadata from IndexedDB
+ * Stores timestamps for LRU cache management
+ */
+async function getCacheMetadata() {
+  try {
+    const cache = await caches.open(`${CACHE_NAME}-metadata`);
+    const response = await cache.match('metadata');
+    if (response) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.error('[Service Worker] Error reading cache metadata:', error);
+  }
+  return {};
+}
+
+/**
+ * Update cache metadata with timestamp
+ */
+async function updateCacheMetadata(url, timestamp = Date.now()) {
+  try {
+    const metadata = await getCacheMetadata();
+    metadata[url] = timestamp;
+
+    const cache = await caches.open(`${CACHE_NAME}-metadata`);
+    await cache.put('metadata', new Response(JSON.stringify(metadata), {
+      headers: { 'Content-Type': 'application/json' }
+    }));
+  } catch (error) {
+    console.error('[Service Worker] Error updating cache metadata:', error);
+  }
+}
+
+/**
+ * Trim cache using LRU (Least Recently Used) strategy with timestamps
  */
 async function trimCache(cacheName) {
   try {
@@ -142,11 +214,38 @@ async function trimCache(cacheName) {
     if (keys.length > CONFIG.MAX_CACHE_SIZE) {
       console.log(`[Service Worker] Cache size (${keys.length}) exceeds limit (${CONFIG.MAX_CACHE_SIZE}), trimming...`);
 
-      // Delete oldest entries (first in the array)
-      const keysToDelete = keys.slice(0, keys.length - CONFIG.MAX_CACHE_SIZE);
-      await Promise.all(keysToDelete.map(key => cache.delete(key)));
+      // Get metadata with timestamps
+      const metadata = await getCacheMetadata();
 
-      console.log(`[Service Worker] Deleted ${keysToDelete.length} old cache entries`);
+      // Create array of entries with timestamps
+      const entries = keys.map(request => ({
+        request,
+        url: request.url,
+        timestamp: metadata[request.url] || 0
+      }));
+
+      // Sort by timestamp (oldest first)
+      entries.sort((a, b) => a.timestamp - b.timestamp);
+
+      // Calculate how many entries to delete
+      const deleteCount = keys.length - CONFIG.MAX_CACHE_SIZE;
+      const keysToDelete = entries.slice(0, deleteCount);
+
+      // Delete oldest entries
+      await Promise.all(keysToDelete.map(entry => cache.delete(entry.request)));
+
+      // Update metadata to remove deleted entries
+      const updatedMetadata = await getCacheMetadata();
+      keysToDelete.forEach(entry => {
+        delete updatedMetadata[entry.url];
+      });
+
+      const metadataCache = await caches.open(`${CACHE_NAME}-metadata`);
+      await metadataCache.put('metadata', new Response(JSON.stringify(updatedMetadata), {
+        headers: { 'Content-Type': 'application/json' }
+      }));
+
+      console.log(`[Service Worker] Deleted ${keysToDelete.length} old cache entries using LRU strategy`);
     }
   } catch (error) {
     console.error('[Service Worker] Error trimming cache:', error);
@@ -179,6 +278,8 @@ self.addEventListener('fetch', (event) => {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(request, responseToCache);
+              // Update timestamp for LRU cache
+              updateCacheMetadata(request.url);
               // Trim cache after adding new entry
               trimCache(CACHE_NAME);
             });
@@ -189,6 +290,10 @@ self.addEventListener('fetch', (event) => {
           // Network failed or timed out, fallback to cache
           console.log('[Service Worker] Network failed/timeout, serving cached HTML:', request.url, error.message);
           return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+              // Update timestamp when serving from cache
+              updateCacheMetadata(request.url);
+            }
             return cachedResponse || caches.match(`${BASE_PATH}/index.html`);
           });
         })
@@ -196,13 +301,47 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for all other assets
+  // Cache-first strategy for WASM files (immutable, large, expensive to fetch)
+  if (url.pathname.endsWith('.wasm') || url.pathname.endsWith('.wasm.gz')) {
+    event.respondWith(
+      caches.match(request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            console.log('[Service Worker] Serving WASM from cache:', request.url);
+            // Update timestamp when serving from cache
+            updateCacheMetadata(request.url);
+            return cachedResponse;
+          }
+
+          // Not in cache, fetch from network
+          console.log('[Service Worker] Fetching WASM from network:', request.url);
+          return fetchWithTimeout(request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                const responseToCache = networkResponse.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                  cache.put(request, responseToCache);
+                  updateCacheMetadata(request.url);
+                  trimCache(CACHE_NAME);
+                });
+              }
+              return networkResponse;
+            });
+        })
+    );
+    return;
+  }
+
+  // Stale-while-revalidate for JS/CSS and other assets
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
         if (cachedResponse) {
           // Return cached response and update cache in background
           console.log('[Service Worker] Serving from cache:', request.url);
+
+          // Update timestamp when serving from cache
+          updateCacheMetadata(request.url);
 
           // Stale-while-revalidate: return cache immediately, update in background
           event.waitUntil(
@@ -211,6 +350,8 @@ self.addEventListener('fetch', (event) => {
                 if (networkResponse && networkResponse.status === 200) {
                   return caches.open(CACHE_NAME).then((cache) => {
                     cache.put(request, networkResponse.clone());
+                    // Update timestamp for LRU cache
+                    updateCacheMetadata(request.url);
                     // Trim cache after adding new entry
                     trimCache(CACHE_NAME);
                     return networkResponse;
@@ -239,6 +380,8 @@ self.addEventListener('fetch', (event) => {
                 .then((cache) => {
                   // Cache the new resource
                   cache.put(request, responseToCache);
+                  // Update timestamp for LRU cache
+                  updateCacheMetadata(request.url);
                   // Trim cache after adding new entry
                   trimCache(CACHE_NAME);
                 });

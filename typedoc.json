@@ -1,0 +1,60 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/utils",
+    "src/hooks",
+    "src/contexts",
+    "src/adapters",
+    "src/config",
+    "src/constants"
+  ],
+  "entryPointStrategy": "expand",
+  "out": "docs/api",
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/test/**",
+    "**/integration/**",
+    "src/dos-apps/**"
+  ],
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeInternal": false,
+  "includeVersion": true,
+  "readme": "README.md",
+  "name": "DosKit API Documentation",
+  "navigationLinks": {
+    "GitHub": "https://github.com/cameronrye/doskit",
+    "Documentation": "https://github.com/cameronrye/doskit#readme"
+  },
+  "plugin": [],
+  "theme": "default",
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Utilities",
+    "Hooks",
+    "Contexts",
+    "Adapters",
+    "Configuration",
+    "Constants",
+    "*"
+  ],
+  "sort": ["source-order"],
+  "visibilityFilters": {
+    "protected": false,
+    "private": false,
+    "inherited": true,
+    "external": false
+  },
+  "searchInComments": true,
+  "cleanOutputDir": true,
+  "gitRevision": "main",
+  "githubPages": false,
+  "hideGenerator": false,
+  "includeHierarchySummary": true,
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": false
+  }
+}

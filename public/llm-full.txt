@@ -1,0 +1,611 @@
+# DosKit - Comprehensive Documentation
+
+> A robust, cross-platform foundation for running DOS applications using js-dos WebAssembly technology
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Features](#features)
+3. [Technology Stack](#technology-stack)
+4. [Architecture](#architecture)
+5. [Project Structure](#project-structure)
+6. [Installation & Setup](#installation--setup)
+7. [Configuration](#configuration)
+8. [Usage](#usage)
+9. [API Documentation](#api-documentation)
+10. [Development](#development)
+11. [Deployment](#deployment)
+12. [Browser Compatibility](#browser-compatibility)
+13. [Troubleshooting](#troubleshooting)
+14. [Contributing](#contributing)
+15. [License](#license)
+
+## Overview
+
+DosKit is a modern web application that enables users to run classic DOS applications and games directly in their browser without any installation. Built with cutting-edge web technologies, it provides a seamless, cross-platform DOS emulation experience that works on desktop and mobile devices.
+
+The project leverages js-dos v8.3.20, a WebAssembly-based DOS emulator that achieves 80-90% of native DOS performance. Combined with React 19's modern component architecture and Vite's lightning-fast build system, DosKit delivers an exceptional user experience for retro computing enthusiasts and developers.
+
+## Features
+
+### Core Features
+
+- **Interactive DOS Prompt**: Boots directly to a fully functional DOS command prompt where users can execute DOS commands
+- **Cross-Platform Compatibility**: Works seamlessly on Windows, macOS, Linux, iOS, and Android
+- **Progressive Web App (PWA)**: Can be installed as a native app with full offline support
+- **Deep Linking**: Load specific applications directly via URL parameters (e.g., `?app=secondreality`)
+- **Offline Functionality**: Works completely offline after first visit thanks to service worker caching
+- **WebAssembly Performance**: Leverages js-dos v8.3.20 for near-native DOS emulation speed
+- **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
+- **Audio Support**: Sound Blaster and AdLib emulation with proper audio output
+- **Responsive Design**: Optimized layouts for desktop, tablet, and mobile devices
+- **Touch Controls**: Mobile-friendly on-screen keyboard for touch devices
+- **Type-Safe Development**: Full TypeScript support with comprehensive type definitions
+- **Service Worker Caching**: Intelligent cache management for fast loading
+
+### PWA Features
+
+- **Installable**: Install DosKit as a native app on desktop and mobile
+- **Offline Support**: Works completely offline after first visit
+- **Fast Loading**: Service worker caches assets for instant loading
+- **Native Experience**: Standalone mode without browser UI
+- **Auto-Updates**: Automatic updates when new versions are available
+- **Connection Status**: Real-time online/offline indicator
+
+## Technology Stack
+
+### Core Technologies
+
+- **React 19.2.0**: Modern UI framework with latest features including concurrent rendering
+- **TypeScript 5.9.3**: Type-safe JavaScript with strict mode enabled
+- **Vite 7.1.14**: Next-generation frontend tooling (Rolldown variant for improved build performance)
+- **js-dos 8.3.20**: WebAssembly DOS emulator with DOSBox and DOSBox-X backends
+
+### Development Tools
+
+- **ESLint**: Code linting with TypeScript support
+- **Vitest**: Fast unit testing framework
+- **TypeDoc**: API documentation generation
+- **Sharp**: High-performance image processing for social media previews
+- **Husky**: Git hooks for pre-commit checks
+
+### Why These Technologies?
+
+#### React + Vite (Rolldown Variant)
+- Fast Development: Hot Module Replacement (HMR) for instant feedback
+- Modern Build: Optimized production builds with code splitting
+- Developer Experience: Excellent TypeScript integration and tooling
+- Experimental Rolldown: Rust-based bundler for faster builds and better tree-shaking
+
+#### js-dos v8.3.20
+- Latest Stable: Most recent version with bug fixes and improvements
+- WebAssembly: High-performance emulation (80-90% of native speed)
+- Cross-Platform: Works in all modern browsers and Node.js
+- Multiple Backends: Supports both DOSBox and DOSBox-X
+- Active Development: Regular updates and community support
+
+#### TypeScript
+- Type Safety: Catch errors at compile time
+- Better IDE Support: Autocomplete and inline documentation
+- Maintainability: Easier to refactor and scale
+
+## Architecture
+
+### Component Hierarchy
+
+```
+App (Root)
+├── ErrorBoundary
+│   └── DosPlayerWithApps
+│       ├── DemoSelector (modal)
+│       │   └── App selection UI
+│       ├── DosPlayer
+│       │   └── js-dos emulator instance
+│       ├── Loading overlay
+│       └── Error overlay
+├── OfflineIndicator
+└── UpdateNotification
+```
+
+### Data Flow
+
+1. **Application Loading**: User visits site → Service worker checks cache → Loads assets
+2. **Emulator Initialization**: DosPlayer component mounts → js-dos library loads → DOSBox initializes
+3. **User Interaction**: User types commands → js-dos processes input → DOSBox executes → Screen updates
+4. **Deep Linking**: URL parameter detected → App configuration loaded → Emulator starts with app
+
+### State Management
+
+- React hooks (useState, useEffect, useCallback) for component state
+- Context API for global state (error tracking, service worker updates)
+- Local storage for user preferences and saved states
+- URL parameters for deep linking state
+
+## Project Structure
+
+```
+doskit/
+├── docs/                      # Documentation
+│   ├── API-DOCUMENTATION.md   # API reference
+│   ├── ERROR-HANDLING.md      # Error handling guide
+│   ├── STATE-MANAGEMENT.md    # State management patterns
+│   └── js-dos-llm-reference.md # Comprehensive js-dos API reference
+├── public/                    # Static assets
+│   ├── demos/                 # Demo DOS applications
+│   ├── emulators/             # Emulator files
+│   ├── icons/                 # PWA icons
+│   ├── .well-known/           # Well-known URIs
+│   ├── CNAME                  # Custom domain configuration
+│   ├── favicon.svg            # Favicon
+│   ├── logo.svg               # Logo
+│   ├── manifest.json          # PWA manifest
+│   ├── sw.js                  # Service worker
+│   ├── og-image.png           # Open Graph image
+│   ├── github-social.png      # GitHub social preview
+│   ├── sitemap.xml            # SEO sitemap
+│   ├── robots.txt             # Crawler rules
+│   ├── humans.txt             # Team credits
+│   ├── llm.txt                # LLM discovery (concise)
+│   └── llm-full.txt           # LLM discovery (comprehensive)
+├── scripts/                   # Build and utility scripts
+│   ├── generate-icons.js      # Icon generation
+│   ├── generate-social-images.js # Social media image generation
+│   ├── inject-sw-version.js   # Service worker versioning
+│   └── help.js                # CLI help
+├── src/
+│   ├── components/            # React components
+│   │   ├── DosPlayer.tsx      # Main DOS emulator component
+│   │   ├── DosPlayer.css      # Component styles
+│   │   ├── DosPlayerWithApps.tsx # Wrapper with app selection
+│   │   ├── DemoSelector.tsx   # Application selector UI
+│   │   ├── ErrorBoundary.tsx  # Error handling boundary
+│   │   ├── OfflineIndicator.tsx # Network status indicator
+│   │   └── UpdateNotification.tsx # PWA update notifications
+│   ├── config/                # Configuration files
+│   │   ├── dosbox.conf.ts     # DOSBox configurations
+│   │   └── jsdos.config.ts    # js-dos settings
+│   ├── dos-apps/              # DOS application configurations
+│   │   └── second-reality.config.ts
+│   ├── hooks/                 # Custom React hooks
+│   │   └── useDosEmulator.ts  # DOS emulator hook
+│   ├── types/                 # TypeScript type definitions
+│   │   └── js-dos.d.ts        # js-dos type definitions
+│   ├── utils/                 # Utility functions
+│   │   ├── diskLoader.ts      # Disk image loading
+│   │   ├── urlRouting.ts      # URL parameter handling
+│   │   ├── logger.ts          # Logging utility
+│   │   ├── errorTracking.ts   # Error tracking
+│   │   ├── globalErrorHandler.ts # Global error handler
+│   │   ├── errorMessages.ts   # User-friendly error messages
+│   │   └── serviceWorkerRegistration.ts # SW registration
+│   ├── App.tsx                # Main application component
+│   ├── App.css                # Application styles
+│   ├── main.tsx               # Application entry point
+│   └── index.css              # Global styles
+├── .gitignore
+├── eslint.config.js           # ESLint configuration
+├── index.html                 # HTML entry point
+├── package.json               # Dependencies and scripts
+├── tsconfig.json              # TypeScript configuration
+├── tsconfig.app.json          # App TypeScript config
+├── tsconfig.node.json         # Node TypeScript config
+├── vite.config.ts             # Vite configuration
+├── vitest.config.ts           # Vitest configuration
+├── typedoc.json               # TypeDoc configuration
+├── ARCHITECTURE.md            # Architecture documentation
+├── CHANGELOG.md               # Version history
+├── CONTRIBUTING.md            # Contribution guidelines
+├── LICENSE                    # MIT License
+├── README.md                  # Main documentation
+├── SECURITY.md                # Security policy
+└── STYLE_GUIDE.md             # Code style guide
+```
+
+## Installation & Setup
+
+### Prerequisites
+
+- Node.js 18+ (recommended: 24.4.1 or later)
+- npm 9+ or yarn 1.22+
+- Modern browser with WebAssembly support
+
+### Installation Steps
+
+1. Clone the repository:
+```bash
+git clone https://github.com/cameronrye/doskit.git
+cd doskit
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the development server:
+```bash
+npm run dev
+```
+
+4. Open your browser and navigate to `http://localhost:5173`
+
+The DOS emulator will automatically load and present an interactive DOS prompt!
+
+## Configuration
+
+### DOSBox Configuration
+
+DosKit uses DOSBox configuration files to customize the DOS environment. The default configuration is located in `src/config/dosbox.conf.ts`.
+
+Example custom configuration:
+```typescript
+const customConfig = `
+[cpu]
+core=auto
+cycles=max
+
+[autoexec]
+@echo off
+echo Welcome to My DOS App!
+mount c .
+c:
+myapp.exe
+`;
+```
+
+### js-dos Options
+
+Customize the emulator behavior with js-dos options in `src/config/jsdos.config.ts`:
+
+Available options:
+- `theme`: 'dark' or 'light'
+- `volume`: 0.0 to 1.0
+- `fullScreen`: Enable fullscreen mode
+- `autoStart`: Auto-start emulator on load
+- `backend`: 'dosbox' or 'dosboxX'
+- `mouseCapture`: Auto-capture mouse input
+
+### Mobile Configuration
+
+DosKit automatically detects mobile devices and applies optimized settings:
+- Larger touch controls
+- On-screen keyboard with common DOS keys
+- Optimized aspect ratio for mobile screens
+
+## Usage
+
+### Basic Usage
+
+Visit https://doskit.net/ to use the emulator directly in your browser. The application boots to an interactive DOS prompt where you can execute DOS commands.
+
+### Deep Linking
+
+DosKit supports loading specific applications directly via URL parameters:
+
+- Load Second Reality: `https://doskit.net/?app=secondreality`
+- Load Impulse Tracker: `https://doskit.net/?app=impulsetracker`
+
+Features:
+- Shareable Links: URLs automatically update when you select an app
+- Bookmarkable: Save direct links to your favorite DOS applications
+- Browser Navigation: Back/forward buttons work correctly
+- Refresh-Safe: Page refreshes maintain the loaded application
+- Error Handling: Invalid app IDs show helpful error messages
+
+### Adding DOS Applications
+
+To run DOS applications or games:
+
+1. Create a custom DOSBox configuration
+2. Place your DOS files in the public directory or use the `initFs` option
+3. Update the DosPlayer component with your configuration
+
+### Programmatic Control
+
+Access the Command Interface for programmatic control:
+
+```typescript
+import { useState } from 'react';
+import { DosPlayer } from './components/DosPlayer';
+import type { CommandInterface } from './types/js-dos';
+
+function MyApp() {
+  const [ci, setCi] = useState<CommandInterface | null>(null);
+
+  const handleReady = (commandInterface: CommandInterface) => {
+    setCi(commandInterface);
+    // Control DOS programmatically
+    commandInterface.simulateKeyPress(13); // Press Enter
+  };
+
+  return <DosPlayer onReady={handleReady} />;
+}
+```
+
+Available commands:
+- `ci.pause()` / `ci.resume()` - Control emulation
+- `ci.mute()` / `ci.unmute()` - Audio control
+- `ci.screenshot()` - Capture screen
+- `ci.fsReadFile()` / `ci.fsWriteFile()` - File system access
+
+## API Documentation
+
+### DosPlayer Component
+
+Main component for DOS emulation.
+
+Props:
+- `dosboxConf?: string` - DOSBox configuration
+- `options?: DosOptions` - js-dos options
+- `onReady?: (ci: CommandInterface) => void` - Callback when emulator is ready
+- `onExit?: () => void` - Callback when emulator exits
+- `className?: string` - CSS class name
+
+### CommandInterface
+
+Interface for controlling the DOS emulator programmatically.
+
+Methods:
+- `pause(): Promise<void>` - Pause emulation
+- `resume(): Promise<void>` - Resume emulation
+- `mute(): Promise<void>` - Mute audio
+- `unmute(): Promise<void>` - Unmute audio
+- `screenshot(): Promise<ImageData>` - Capture screenshot
+- `fsReadFile(path: string): Promise<Uint8Array>` - Read file from DOS filesystem
+- `fsWriteFile(path: string, data: Uint8Array): Promise<void>` - Write file to DOS filesystem
+- `simulateKeyPress(keyCode: number): void` - Simulate key press
+- `exit(): Promise<void>` - Exit emulator
+
+## Development
+
+### Available Scripts
+
+```bash
+# Show all available scripts with descriptions
+npm run help
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Run linter
+npm run lint
+
+# Run tests
+npm run test
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests once (CI mode)
+npm run test:run
+
+# Run tests with coverage
+npm run test:coverage
+
+# Generate social media images
+npm run generate-social-images
+
+# Generate API documentation
+npm run docs
+
+# Watch API documentation
+npm run docs:watch
+```
+
+### Development Workflow
+
+1. Start the dev server: `npm run dev`
+2. Make changes: Edit files in `src/`
+3. See changes instantly: Vite HMR updates the browser automatically
+4. Test: Interact with the DOS prompt to verify functionality
+5. Build: Run `npm run build` to create production bundle
+
+### Testing
+
+DosKit uses Vitest for unit testing:
+
+```bash
+# Run tests in watch mode
+npm run test
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests once
+npm run test:run
+
+# Generate coverage report
+npm run test:coverage
+```
+
+### Code Style
+
+The project follows strict TypeScript and ESLint rules:
+
+- Strict TypeScript mode enabled
+- ESLint with React hooks plugin
+- Prettier for code formatting
+- Husky for pre-commit hooks
+
+See STYLE_GUIDE.md for detailed coding standards.
+
+## Deployment
+
+DosKit is configured for automatic deployment to GitHub Pages with custom domain support.
+
+### Quick Deployment
+
+1. Enable GitHub Pages in repository settings (Settings → Pages → Source: GitHub Actions)
+2. Push to main branch: `git push origin main`
+3. Monitor deployment: Check the Actions tab
+4. Visit your site: `https://doskit.net/`
+
+The site automatically rebuilds and deploys on every push to `main`.
+
+### Custom Domain Setup
+
+1. Add CNAME file to public/ directory with your domain
+2. Configure DNS records to point to GitHub Pages
+3. Enable HTTPS in GitHub Pages settings
+
+### Build Process
+
+The build process includes:
+1. Generate social media images from SVG sources
+2. TypeScript compilation
+3. Vite production build with code splitting
+4. Service worker version injection
+5. Asset optimization and minification
+
+## Browser Compatibility
+
+### Desktop Browsers
+
+- Chrome/Edge 90+ (Recommended)
+- Firefox 88+
+- Safari 15+
+- Opera 76+
+
+### Mobile Browsers
+
+- Chrome Mobile (Android)
+- Safari Mobile (iOS 15+)
+- Firefox Mobile
+- Samsung Internet
+
+### Requirements
+
+- WebAssembly support (required)
+- JavaScript enabled
+- Minimum 2GB RAM recommended
+- Modern GPU for WebGL rendering (optional but recommended)
+
+### Feature Support Matrix
+
+| Feature | Chrome 90+ | Firefox 88+ | Safari 15+ | Edge 90+ | Mobile |
+|---------|------------|-------------|------------|----------|--------|
+| WebAssembly | Yes | Yes | Yes | Yes | Yes |
+| Service Workers | Yes | Yes | Yes | Yes | Yes |
+| PWA Install | Yes | Yes | Yes | Yes | Yes |
+| Fullscreen API | Yes | Yes | Yes | Yes | Partial |
+| Keyboard Lock | Yes | No | No | Yes | No |
+| Audio | Yes | Yes | Yes | Yes | Yes |
+| Touch Controls | N/A | N/A | N/A | N/A | Yes |
+| Offline Mode | Yes | Yes | Yes | Yes | Yes |
+
+## Troubleshooting
+
+### Common Issues
+
+#### "DOS emulator library not loaded"
+- Check internet connection
+- Verify CDN is accessible
+- Check browser console for errors
+- Try refreshing the page
+- Clear browser cache
+
+#### Black Screen / Emulator Not Starting
+- Check browser console for errors
+- Verify WebAssembly support
+- Try a different browser
+- Disable browser extensions
+- Check hardware acceleration
+
+#### Poor Performance / Lag
+- Reduce CPU cycles in DOSBox config
+- Enable hardware acceleration
+- Close other browser tabs
+- Try different rendering backend
+- Reduce screen resolution
+
+#### Keyboard Not Working
+- Click inside emulator window
+- Check browser has focus
+- Try clicking Play button
+- Use on-screen keyboard on mobile
+- Check console for errors
+
+#### Audio Not Playing
+- Audio automatically unmutes when ready
+- Check browser audio not muted
+- Verify volume setting in options
+- Click inside emulator for user interaction
+- Check DOSBox sound card configuration
+
+### Debug Mode
+
+Enable detailed logging in development:
+```typescript
+import { logger } from './utils/logger';
+logger.debug('Debug message');
+```
+
+## Contributing
+
+Contributions are welcome! Please see CONTRIBUTING.md for guidelines.
+
+### How to Contribute
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Write tests
+5. Submit a pull request
+
+### Code of Conduct
+
+- Be respectful and inclusive
+- Follow the code style guide
+- Write clear commit messages
+- Add tests for new features
+- Update documentation
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+### Third-Party Licenses
+
+- js-dos: GPL-2.0 License - https://github.com/caiiiycuk/js-dos
+- React: MIT License
+- DOSBox: GPL-2.0 License
+
+## Contact & Links
+
+- **Website**: https://doskit.net/
+- **GitHub**: https://github.com/cameronrye/doskit
+- **Issues**: https://github.com/cameronrye/doskit/issues
+- **Author**: Cameron Rye <cameron@rye.dev>
+- **Author Website**: https://rye.dev/
+
+## Acknowledgments
+
+- **js-dos** by caiiiycuk - For the amazing WebAssembly DOS emulator
+- **DOSBox** team - For the original DOS emulation
+- **React** team - For the excellent UI framework
+- **Vite** team - For the fast build tooling
+
+## Version History
+
+See CHANGELOG.md for detailed version history.
+
+Current version: 1.0.0
+
+## Security
+
+For security issues, please see SECURITY.md or contact cameron@rye.dev
+
+## Keywords
+
+DOS, emulator, DOSBox, WebAssembly, WASM, js-dos, retro gaming, cross-platform, React, TypeScript, Vite, PWA, Progressive Web App, browser emulation, vintage computing, DOS games, DOS applications
+
+---
+
+Last updated: 2025-11-18
+

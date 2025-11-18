@@ -1,0 +1,72 @@
+# DosKit
+
+> A robust, cross-platform DOS emulator powered by js-dos WebAssembly technology
+
+## Overview
+
+DosKit is a modern web application that enables users to run classic DOS applications and games directly in their browser. Built with React 19, TypeScript, and Vite, it leverages js-dos v8.3.20 for high-performance DOS emulation through WebAssembly.
+
+## Key Features
+
+- **Interactive DOS Prompt**: Boots directly to a fully functional DOS command prompt
+- **Cross-Platform**: Works on Windows, macOS, Linux, iOS, and Android
+- **Progressive Web App**: Installable with offline support
+- **Deep Linking**: Load specific applications via URL parameters
+- **WebAssembly Performance**: Near-native DOS emulation speed
+- **Full Keyboard & Audio Support**: Complete DOS experience including Sound Blaster emulation
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **Type-Safe**: Full TypeScript support with comprehensive type definitions
+
+## Technology Stack
+
+- React 19.2.0 - Modern UI framework
+- TypeScript 5.9.3 - Type-safe JavaScript
+- Vite 7.1.14 - Next-generation frontend tooling (Rolldown variant)
+- js-dos 8.3.20 - WebAssembly DOS emulator
+- Sharp - Image processing for social media previews
+
+## Project Structure
+
+- `/src/components/` - React components including DosPlayer
+- `/src/config/` - DOSBox and js-dos configuration files
+- `/src/dos-apps/` - DOS application configurations
+- `/src/hooks/` - Custom React hooks
+- `/src/types/` - TypeScript type definitions
+- `/src/utils/` - Utility functions
+- `/public/` - Static assets
+- `/docs/` - Documentation
+
+## Usage
+
+Visit https://doskit.net/ to use the emulator directly in your browser. The application can be installed as a PWA for offline use.
+
+Deep linking example: `https://doskit.net/?app=secondreality`
+
+## Development
+
+```bash
+npm install
+npm run dev
+npm run build
+npm run test
+```
+
+## License
+
+MIT License - Copyright (c) 2025 Cameron Rye
+
+## Links
+
+- Website: https://doskit.net/
+- GitHub: https://github.com/cameronrye/doskit
+- Author: Cameron Rye <cameron@rye.dev>
+- Documentation: https://doskit.net/docs/
+
+## Browser Compatibility
+
+Requires modern browsers with WebAssembly support:
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 15+
+- Mobile browsers (iOS 15+, Android Chrome)
+

@@ -7,20 +7,10 @@
  * Allows users to select and load different DOS applications and demos
  */
 
-import { useState } from 'react';
-import type { InitFileEntry } from '../types/js-dos';
-import { loadZipArchive, type LoadProgress } from '../utils/diskLoader';
-import {
-  secondRealityZipUrl,
-  secondRealityDosboxConf,
-  secondRealityMetadata,
-} from '../dos-apps/second-reality.config';
-import {
-  impulseTrackerZipUrl,
-  impulseTrackerDosboxConf,
-  impulseTrackerMetadata,
-} from '../dos-apps/impulse-tracker.config';
-import './DemoSelector.css';
+import { useState } from "react";
+import type { InitFileEntry } from "../types/js-dos";
+import { type LoadProgress } from "../utils/diskLoader";
+import "./DemoSelector.css";
 
 export interface DosApp {
   id: string;
@@ -29,46 +19,67 @@ export interface DosApp {
   author?: string;
   year?: number;
   thumbnail?: string;
-  loadMethod: 'files' | 'zip' | 'disk-image';
+  loadMethod: "files" | "zip" | "disk-image";
   dosboxConf: string;
-  loader: () => Promise<InitFileEntry[] | Uint8Array>;
+  loader: (
+    onProgress?: (progress: LoadProgress) => void,
+  ) => Promise<InitFileEntry[] | Uint8Array>;
+  /** Lazy load the dosbox configuration */
+  loadDosboxConf?: () => Promise<string>;
+}
+
+export interface LoadedApp {
+  app: DosApp;
+  files: InitFileEntry[] | Uint8Array;
+  dosboxConf: string;
 }
 
 interface DemoSelectorProps {
-  onSelect: (app: DosApp) => void;
+  onSelect: (loadedApp: LoadedApp) => void;
   onCancel?: () => void;
 }
 
 /**
  * Available DOS applications and demos
  * Exported for use in URL routing and deep linking
+ * Uses lazy loading to reduce initial bundle size
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export const availableApps: DosApp[] = [
   {
-    id: 'second-reality',
-    name: secondRealityMetadata.name,
-    description: secondRealityMetadata.description,
-    author: secondRealityMetadata.author,
-    year: secondRealityMetadata.year,
-    loadMethod: 'zip',
-    dosboxConf: secondRealityDosboxConf,
-    loader: async () => {
-      // Load the compiled demo from Archive.org
-      return loadZipArchive(secondRealityZipUrl);
+    id: "second-reality",
+    name: "Second Reality",
+    description: "Legendary 1993 demo by Future Crew",
+    author: "Future Crew",
+    year: 1993,
+    loadMethod: "zip",
+    dosboxConf: "", // Loaded dynamically
+    loader: async (onProgress) => {
+      const config = await import("../dos-apps/second-reality.config");
+      const { loadZipArchive } = await import("../utils/diskLoader");
+      // Use local ZIP file for fast loading
+      return loadZipArchive(config.secondRealityZipUrl, onProgress);
+    },
+    loadDosboxConf: async () => {
+      const config = await import("../dos-apps/second-reality.config");
+      return config.secondRealityDosboxConf;
     },
   },
   {
-    id: 'impulse-tracker',
-    name: impulseTrackerMetadata.name,
-    description: impulseTrackerMetadata.description,
-    author: impulseTrackerMetadata.author,
-    year: impulseTrackerMetadata.year,
-    loadMethod: 'zip',
-    dosboxConf: impulseTrackerDosboxConf,
-    loader: async () => {
-      // Load the tracker application from Archive.org
-      return loadZipArchive(impulseTrackerZipUrl);
+    id: "impulse-tracker",
+    name: "Impulse Tracker",
+    description: "Classic music tracker software",
+    author: "Jeffrey Lim",
+    year: 1995,
+    loadMethod: "zip",
+    dosboxConf: "", // Loaded dynamically
+    loader: async (onProgress) => {
+      const config = await import("../dos-apps/impulse-tracker.config");
+      return config.loadZipArchive(config.impulseTrackerZipUrl, onProgress);
+    },
+    loadDosboxConf: async () => {
+      const config = await import("../dos-apps/impulse-tracker.config");
+      return config.impulseTrackerDosboxConf;
     },
   },
   // Add more applications here
@@ -81,7 +92,7 @@ export const availableApps: DosApp[] = [
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export function findAppById(id: string): DosApp | undefined {
-  return availableApps.find(app => app.id === id);
+  return availableApps.find((app) => app.id === id);
 }
 
 export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
@@ -100,17 +111,28 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
 
     setIsLoading(true);
     setError(null);
-    setLoadProgress({ loaded: 0, total: 1, currentFile: 'Starting...' });
+    setLoadProgress({ loaded: 0, total: 1, currentFile: "Starting..." });
 
     try {
-      // Load the application files
-      await selectedApp.loader();
+      // Load the application files and dosbox config in parallel with progress tracking
+      const [files, conf] = await Promise.all([
+        selectedApp.loader(setLoadProgress),
+        selectedApp.loadDosboxConf
+          ? selectedApp.loadDosboxConf()
+          : Promise.resolve(selectedApp.dosboxConf),
+      ]);
 
-      // Notify parent component
-      onSelect(selectedApp);
+      // Notify parent component with loaded data
+      onSelect({
+        app: selectedApp,
+        files,
+        dosboxConf: conf,
+      });
     } catch (err) {
-      console.error('[DemoSelector] Error loading application:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load application');
+      console.error("[DemoSelector] Error loading application:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to load application",
+      );
       setIsLoading(false);
       setLoadProgress(null);
     }
@@ -130,7 +152,11 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
       <div className="demo-selector-header">
         <h2>Select DOS Application</h2>
         {onCancel && (
-          <button className="close-button" onClick={handleCancel} aria-label="Close">
+          <button
+            className="close-button"
+            onClick={handleCancel}
+            aria-label="Close"
+          >
             ✕
           </button>
         )}
@@ -142,7 +168,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
           {availableApps.map((app) => (
             <div
               key={app.id}
-              className={`app-card ${selectedApp?.id === app.id ? 'selected' : ''}`}
+              className={`app-card ${selectedApp?.id === app.id ? "selected" : ""}`}
               onClick={() => handleSelectApp(app)}
             >
               {app.thumbnail && (
@@ -197,9 +223,13 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
                 onClick={handleLoadApp}
                 disabled={isLoading}
               >
-                {isLoading ? 'Loading...' : 'Load Application'}
+                {isLoading ? "Loading..." : "Load Application"}
               </button>
-              <button className="cancel-button" onClick={handleCancel} disabled={isLoading}>
+              <button
+                className="cancel-button"
+                onClick={handleCancel}
+                disabled={isLoading}
+              >
                 Cancel
               </button>
             </div>
@@ -209,4 +239,3 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
     </div>
   );
 }
-

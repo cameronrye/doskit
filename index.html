@@ -5,6 +5,12 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
+    <!-- Resource Hints for Performance -->
+    <link rel="dns-prefetch" href="https://api.github.com" />
+    <link rel="dns-prefetch" href="https://raw.githubusercontent.com" />
+    <link rel="preconnect" href="https://api.github.com" crossorigin />
+    <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin />
+
     <!-- Primary Meta Tags -->
     <title>DosKit - Cross-Platform DOS Emulator</title>
     <meta name="title" content="DosKit - Cross-Platform DOS Emulator" />
@@ -22,6 +28,9 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
 
+    <!-- Humans.txt -->
+    <link rel="author" type="text/plain" href="/humans.txt" />
+
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
     <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
@@ -30,23 +39,123 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://cameronrye.github.io/doskit/" />
+    <meta property="og:url" content="https://doskit.net/" />
+    <meta property="og:site_name" content="DosKit" />
     <meta property="og:title" content="DosKit - Cross-Platform DOS Emulator" />
-    <meta property="og:description" content="Run classic DOS applications and games directly in your browser with WebAssembly technology." />
-    <meta property="og:image" content="https://cameronrye.github.io/doskit/logo.svg" />
+    <meta property="og:description" content="Run classic DOS applications and games directly in your browser with WebAssembly technology. Cross-platform, offline-capable, and installable as a PWA." />
+    <meta property="og:image" content="https://doskit.net/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DosKit - Cross-Platform DOS Emulator with terminal interface" />
+    <meta property="og:locale" content="en_US" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://cameronrye.github.io/doskit/" />
-    <meta property="twitter:title" content="DosKit - Cross-Platform DOS Emulator" />
-    <meta property="twitter:description" content="Run classic DOS applications and games directly in your browser with WebAssembly technology." />
-    <meta property="twitter:image" content="https://cameronrye.github.io/doskit/logo.svg" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://doskit.net/" />
+    <meta name="twitter:title" content="DosKit - Cross-Platform DOS Emulator" />
+    <meta name="twitter:description" content="Run classic DOS applications and games directly in your browser with WebAssembly technology. Cross-platform, offline-capable, and installable as a PWA." />
+    <meta name="twitter:image" content="https://doskit.net/og-image.png" />
+    <meta name="twitter:image:alt" content="DosKit - Cross-Platform DOS Emulator with terminal interface" />
+    <meta name="twitter:creator" content="@cameronrye" />
+    <meta name="twitter:site" content="@cameronrye" />
 
     <!-- js-dos CSS (local copy) -->
     <link rel="stylesheet" href="/js-dos.css">
 
     <!-- js-dos JavaScript (local copy, loaded before React app) -->
     <script src="/js-dos.js"></script>
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://doskit.net/#website",
+          "url": "https://doskit.net/",
+          "name": "DosKit",
+          "description": "A robust, cross-platform DOS emulator powered by js-dos WebAssembly technology",
+          "inLanguage": "en-US",
+          "publisher": {
+            "@type": "Person",
+            "@id": "https://doskit.net/#person"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://doskit.net/#softwareapplication",
+          "name": "DosKit",
+          "applicationCategory": "DeveloperApplication",
+          "operatingSystem": "Web Browser",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "A robust, cross-platform foundation for running DOS applications using js-dos WebAssembly technology. Works seamlessly across different platforms and devices.",
+          "url": "https://doskit.net/",
+          "screenshot": "https://doskit.net/og-image.png",
+          "softwareVersion": "1.0.0",
+          "author": {
+            "@type": "Person",
+            "@id": "https://doskit.net/#person"
+          },
+          "publisher": {
+            "@type": "Person",
+            "@id": "https://doskit.net/#person"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "5",
+            "ratingCount": "1"
+          },
+          "featureList": [
+            "Interactive DOS Prompt",
+            "Cross-Platform Support",
+            "Progressive Web App",
+            "Deep Linking",
+            "Offline Functionality",
+            "WebAssembly Performance",
+            "Full Keyboard Support",
+            "Audio Support",
+            "Responsive Design",
+            "Touch Controls"
+          ]
+        },
+        {
+          "@type": "Person",
+          "@id": "https://doskit.net/#person",
+          "name": "Cameron Rye",
+          "email": "cameron@rye.dev",
+          "url": "https://rye.dev/",
+          "sameAs": [
+            "https://github.com/cameronrye"
+          ]
+        },
+        {
+          "@type": "WebPage",
+          "@id": "https://doskit.net/#webpage",
+          "url": "https://doskit.net/",
+          "name": "DosKit - Cross-Platform DOS Emulator",
+          "description": "Run classic DOS applications and games directly in your browser with WebAssembly technology",
+          "inLanguage": "en-US",
+          "isPartOf": {
+            "@id": "https://doskit.net/#website"
+          },
+          "about": {
+            "@id": "https://doskit.net/#softwareapplication"
+          },
+          "primaryImageOfPage": {
+            "@type": "ImageObject",
+            "url": "https://doskit.net/og-image.png",
+            "width": 1200,
+            "height": 630
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <noscript>

@@ -12,6 +12,7 @@ export default tseslint.config(
       'public/**',
       'scripts/**',
       'node_modules/**',
+      'docs/api/**',
     ]
   },
   js.configs.recommended,

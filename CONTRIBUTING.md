@@ -15,17 +15,20 @@ Thank you for your interest in contributing to DosKit! This document provides gu
 1. **Fork the repository** on GitHub
 
 2. **Clone your fork**:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/doskit.git
    cd doskit
    ```
 
 3. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 4. **Start the development server**:
+
    ```bash
    npm run dev
    ```
@@ -37,6 +40,7 @@ Thank you for your interest in contributing to DosKit! This document provides gu
 ### Branch Naming
 
 Use descriptive branch names that follow this pattern:
+
 - `feature/description` - For new features
 - `fix/description` - For bug fixes
 - `docs/description` - For documentation updates
@@ -48,6 +52,7 @@ Example: `feature/add-gamepad-support`
 ### Making Changes
 
 1. **Create a new branch** from `main`:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -57,11 +62,13 @@ Example: `feature/add-gamepad-support`
 3. **Write or update tests** for your changes
 
 4. **Run the test suite** to ensure all tests pass:
+
    ```bash
    npm test
    ```
 
 5. **Run the linter** to check code style:
+
    ```bash
    npm run lint
    ```
@@ -86,6 +93,7 @@ Closes #123
 ```
 
 **Commit message format**:
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `docs:` - Documentation changes
@@ -97,6 +105,7 @@ Closes #123
 ### Pull Requests
 
 1. **Push your changes** to your fork:
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -140,6 +149,7 @@ Closes #123
 - **Line length**: Maximum 100 characters (soft limit)
 
 Run the linter to auto-fix many style issues:
+
 ```bash
 npm run lint
 ```
@@ -173,16 +183,17 @@ src/
 - Follow the AAA pattern: Arrange, Act, Assert
 
 Example:
+
 ```typescript
 describe('DosPlayer', () => {
   it('should initialize js-dos on mount', () => {
     // Arrange
     const mockDos = vi.fn();
     window.Dos = mockDos;
-    
+
     // Act
     render(<DosPlayer />);
-    
+
     // Assert
     expect(mockDos).toHaveBeenCalled();
   });
@@ -217,6 +228,7 @@ npm run test:ui
 ### Bug Reports
 
 When reporting bugs, please include:
+
 - **Description**: Clear description of the bug
 - **Steps to reproduce**: Detailed steps to reproduce the issue
 - **Expected behavior**: What you expected to happen
@@ -227,6 +239,7 @@ When reporting bugs, please include:
 ### Feature Requests
 
 When requesting features, please include:
+
 - **Description**: Clear description of the feature
 - **Use case**: Why this feature would be useful
 - **Proposed solution**: How you think it should work
@@ -235,6 +248,7 @@ When requesting features, please include:
 ## Questions?
 
 If you have questions about contributing:
+
 - Open a **GitHub Discussion**
 - Check existing **Issues** and **Pull Requests**
 - Contact the maintainer: [cameron@rye.dev](mailto:cameron@rye.dev)
@@ -245,5 +259,4 @@ By contributing to DosKit, you agree that your contributions will be licensed un
 
 ---
 
-Thank you for contributing to DosKit! 🎮
-
+Thank you for contributing to DosKit!

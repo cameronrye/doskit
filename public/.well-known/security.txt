@@ -1,0 +1,24 @@
+# Security Policy for DosKit
+# https://securitytxt.org/
+
+Contact: mailto:cameron@rye.dev
+Contact: https://github.com/cameronrye/doskit/security/advisories/new
+Expires: 2026-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://doskit.net/.well-known/security.txt
+
+# Security Policy
+Policy: https://github.com/cameronrye/doskit/blob/main/SECURITY.md
+
+# Acknowledgments
+Acknowledgments: https://github.com/cameronrye/doskit#acknowledgments
+
+# Encryption
+# PGP key available upon request
+
+# Hiring
+# Not currently hiring
+
+# Please report security vulnerabilities responsibly
+# We appreciate your efforts to improve the security of DosKit
+

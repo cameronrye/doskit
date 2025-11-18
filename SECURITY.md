@@ -4,10 +4,10 @@
 
 We release patches for security vulnerabilities in the following versions:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+| Version | Supported |
+| ------- | --------- |
+| 1.x.x   | ✓         |
+| < 1.0   | ✗         |
 
 ## Reporting a Vulnerability
 
@@ -119,5 +119,4 @@ If you have questions about this security policy, please contact:
 
 ---
 
-Thank you for helping keep DosKit and its users safe! 🔒
-
+Thank you for helping keep DosKit and its users safe!

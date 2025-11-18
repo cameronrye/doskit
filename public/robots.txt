@@ -1,0 +1,56 @@
+# robots.txt for DosKit
+# https://doskit.net/
+
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow crawling of build artifacts and internal files
+Disallow: /assets/
+Disallow: /*.map$
+
+# Allow specific AI/LLM crawlers
+User-agent: GPTBot
+Allow: /
+Allow: /llm.txt
+Allow: /llm-full.txt
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /llm.txt
+Allow: /llm-full.txt
+
+User-agent: CCBot
+Allow: /
+Allow: /llm.txt
+Allow: /llm-full.txt
+
+User-agent: anthropic-ai
+Allow: /
+Allow: /llm.txt
+Allow: /llm-full.txt
+
+User-agent: Claude-Web
+Allow: /
+Allow: /llm.txt
+Allow: /llm-full.txt
+
+User-agent: Google-Extended
+Allow: /
+Allow: /llm.txt
+Allow: /llm-full.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llm.txt
+Allow: /llm-full.txt
+
+# Sitemap location
+Sitemap: https://doskit.net/sitemap.xml
+
+# Crawl-delay (optional, adjust as needed)
+# Crawl-delay: 1
+
+# Host preference (for SEO)
+Host: https://doskit.net
+

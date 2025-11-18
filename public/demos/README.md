@@ -15,6 +15,7 @@ This directory contains DOS demo files that are bundled with the application to 
 **License**: Public Domain (released by Future Crew to celebrate the 20th anniversary)
 
 **Contents**:
+
 - `SECOND.EXE` (1.4 MB) - Main demo executable
 - `REALITY.FC` (992 KB) - Demo data file
 - `README.1ST` - Instructions and information
@@ -24,6 +25,7 @@ This directory contains DOS demo files that are bundled with the application to 
 **Description**: One of the most influential demos in PC demo scene history. Released in 1993, it showcased groundbreaking 3D graphics, music, and effects that pushed the limits of PC hardware at the time.
 
 **Requirements**:
+
 - CPU: 486 or better
 - Memory: 4MB RAM
 - Graphics: VGA
@@ -40,6 +42,7 @@ This directory contains DOS demo files that are bundled with the application to 
 **License**: BSD-3-Clause (source code released in 2014)
 
 **Contents**:
+
 - `IT.EXE` (91 KB) - Main tracker executable
 - 26 sound driver files (.DRV) for various sound cards
 - Support for Sound Blaster, Gravis UltraSound, AWE32, and more
@@ -47,12 +50,14 @@ This directory contains DOS demo files that are bundled with the application to 
 **Description**: A legendary music tracker for creating MOD/IT music. One of the most popular and influential trackers in the demoscene. Impulse Tracker introduced many advanced features like filters, New Note Actions (NNA), and created the .IT module format that became widely used in the scene.
 
 **Requirements**:
+
 - CPU: 486 or better
 - Memory: 4MB RAM
 - Graphics: VGA (text mode)
 - Sound: Sound Blaster or compatible (optional)
 
 **Additional Info**:
+
 - Pouet.net: https://www.pouet.net/prod.php?which=13366
 - GitHub (source code): https://github.com/jthlim/impulse-tracker
 
@@ -60,11 +65,11 @@ This directory contains DOS demo files that are bundled with the application to 
 
 While Archive.org is an excellent resource for preserving digital history, loading files directly from external sources can encounter CORS (Cross-Origin Resource Sharing) restrictions in modern browsers. By hosting the demo files locally:
 
-1. ✅ **No CORS issues** - Files are served from the same origin as the application
-2. ✅ **Faster loading** - No external network requests
-3. ✅ **Offline support** - Works with PWA offline functionality
-4. ✅ **Reliable** - No dependency on external services
-5. ✅ **Better UX** - Instant loading without external delays
+1. **No CORS issues** - Files are served from the same origin as the application
+2. **Faster loading** - No external network requests
+3. **Offline support** - Works with PWA offline functionality
+4. **Reliable** - No dependency on external services
+5. **Better UX** - Instant loading without external delays
 
 ## Adding More Demos
 
@@ -84,6 +89,7 @@ To add more DOS demos to this directory:
 ## Legal Considerations
 
 All demos in this directory should be:
+
 - Legally distributable (public domain, freeware, or with permission)
 - Properly attributed to their creators
 - Documented with their original source
@@ -103,6 +109,7 @@ Files in the `public/` directory are automatically copied to the build output by
 ## Maintenance
 
 When updating demos:
+
 1. Replace the ZIP file in this directory
 2. Update the configuration in `src/dos-apps/`
 3. Update this README with any changes
@@ -112,4 +119,3 @@ When updating demos:
 
 **Last Updated**: 2025-10-06
 **Maintained By**: DosKit Project
-
