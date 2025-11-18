@@ -237,6 +237,17 @@ DosKit is configured for automatic deployment to GitHub Pages.
 
 The site automatically rebuilds and deploys on every push to `main`.
 
+### Creating Releases
+
+DosKit uses **fully automated releases** with [release-please](https://github.com/googleapis/release-please):
+
+1. **Use conventional commits**: `feat:`, `fix:`, etc.
+2. **Merge PR to main**: That's it!
+3. **release-please bot**: Automatically creates a Release PR
+4. **Merge Release PR**: Automatic GitHub release with artifacts
+
+See [docs/RELEASE-PROCESS.md](docs/RELEASE-PROCESS.md) for details on conventional commits.
+
 ## Configuration
 
 ### DOSBox Configuration

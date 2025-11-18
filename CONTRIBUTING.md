@@ -245,6 +245,37 @@ When requesting features, please include:
 - **Proposed solution**: How you think it should work
 - **Alternatives**: Other solutions you've considered
 
+## Commit Messages
+
+Use **conventional commits** for automatic versioning and changelog generation:
+
+- `feat:` - New feature (minor version bump)
+- `fix:` - Bug fix (patch version bump)
+- `docs:` - Documentation changes
+- `chore:` - Maintenance tasks
+- `refactor:` - Code refactoring
+- `test:` - Test changes
+- `BREAKING CHANGE:` - Breaking changes (major version bump)
+
+Examples:
+
+```bash
+git commit -m "feat: add gamepad support"
+git commit -m "fix: resolve audio sync issue"
+git commit -m "docs: update installation guide"
+```
+
+## Release Process
+
+Releases are **fully automated** using [release-please](https://github.com/googleapis/release-please):
+
+1. **Merge PRs to main** with conventional commits
+2. **release-please bot** creates a Release PR automatically
+3. **Review and merge** the Release PR
+4. **GitHub release** is created automatically with artifacts
+
+See [docs/RELEASE-PROCESS.md](docs/RELEASE-PROCESS.md) for detailed information.
+
 ## Questions?
 
 If you have questions about contributing:
