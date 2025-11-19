@@ -318,19 +318,31 @@ export function createDOSBoxConfig(): DOSBoxConfigBuilder {
 /**
  * Preset configurations for common use cases
  * Optimized for performance and audio quality based on research
+ *
+ * Audio Optimization Research:
+ * - Fixed CPU cycles prevent audio stuttering (cycles=max causes issues)
+ * - Larger prebuffer values (50+) reduce audio crackling
+ * - Blocksize 2048 balances latency and stability
+ * - Sample rate 44100 Hz is standard for DOS audio
+ *
+ * Sources:
+ * - DOSBox Wiki Performance Guide
+ * - VOGONS forum discussions on audio optimization
+ * - DOSBox Staging audio recommendations
  */
 export const presets = {
   /**
    * Default configuration for general DOS applications
    * Optimized for performance with high-quality audio
+   * Uses fixed cycles (25000) to prevent audio stuttering
    */
   default: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: "dynamic", cputype: "auto", cycles: "max" })
+      .setCPU({ core: "dynamic", cputype: "auto", cycles: 25000 })
       .setVideo({ vmemsize: 8 })
       .setRender({ scaler: "none", aspect: false })
       .setDOS({ ver: "7.1", umb: true, ems: true, xms: true })
-      .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 40 })
+      .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 64 })
       .setSoundBlaster({
         sbtype: "sb16",
         sbbase: 220,
@@ -359,15 +371,23 @@ export const presets = {
       }),
 
   /**
-   * Configuration optimized for music trackers (Impulse Tracker, FastTracker, etc.)
+   * Configuration optimized for music trackers and MOD playback
+   * (Impulse Tracker, FastTracker, ScreamTracker, etc.)
+   *
+   * Optimizations:
+   * - Fixed cycles (18000) for stable audio timing
+   * - Pentium CPU for better instruction set support
+   * - Increased prebuffer (64) for smooth MOD playback (max 8192 if needed)
+   * - Blocksize 2048 for optimal buffering
+   * - 16MB RAM for loading large samples
    */
   musicTracker: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: "dynamic", cputype: "pentium", cycles: 15000 })
+      .setCPU({ core: "dynamic", cputype: "pentium", cycles: 18000 })
       .setVideo({ vmemsize: 2 })
       .setDOS({ ver: "7.1", umb: true, ems: true, xms: true })
       .setMemory({ memsize: 16 })
-      .setMixer({ nosound: false, rate: 44100, blocksize: 2048, prebuffer: 25 })
+      .setMixer({ nosound: false, rate: 44100, blocksize: 2048, prebuffer: 64 })
       .setSoundBlaster({
         sbtype: "sb16",
         sbbase: 220,
@@ -391,12 +411,15 @@ export const presets = {
 
   /**
    * Configuration optimized for demos and graphics applications
+   * Demos often have synchronized audio/video, so stable timing is critical
+   * Uses fixed cycles (30000) for consistent performance
    */
   demo: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: "auto", cputype: "auto", cycles: "max" })
+      .setCPU({ core: "dynamic", cputype: "auto", cycles: 30000 })
       .setVideo({ vmemsize: 8 })
       .setDOS({ ver: "7.1", umb: true, ems: true, xms: true })
+      .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 64 })
       .setSoundBlaster({
         sbtype: "sb16",
         sbbase: 220,

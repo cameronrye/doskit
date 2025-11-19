@@ -15,7 +15,7 @@ describe("dosbox.conf", () => {
     it("should contain CPU configuration", () => {
       expect(defaultDosboxConfig).toContain("[cpu]");
       expect(defaultDosboxConfig).toContain("core=dynamic");
-      expect(defaultDosboxConfig).toContain("cycles=max");
+      expect(defaultDosboxConfig).toContain("cycles=25000");
     });
 
     it("should contain render configuration", () => {
@@ -28,7 +28,7 @@ describe("dosbox.conf", () => {
       expect(defaultDosboxConfig).toContain("[mixer]");
       expect(defaultDosboxConfig).toContain("rate=44100");
       expect(defaultDosboxConfig).toContain("blocksize=2048");
-      expect(defaultDosboxConfig).toContain("prebuffer=40");
+      expect(defaultDosboxConfig).toContain("prebuffer=64");
     });
 
     it("should contain video configuration", () => {

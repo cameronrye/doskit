@@ -644,17 +644,5 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 ---
 
 <div align="center">
-  <style>
-    @keyframes heartbeat {
-      0%, 100% { transform: scale(1); }
-      10%, 30% { transform: scale(0.9); }
-      20%, 40%, 60%, 80% { transform: scale(1.1); }
-      50%, 70% { transform: scale(1.05); }
-    }
-    .heart {
-      display: inline-block;
-      animation: heartbeat 1.5s ease-in-out infinite;
-    }
-  </style>
-  Made with <span class="heart">❤️</span> by <a href="https://rye.dev/">Cameron Rye</a>
+  Made with ❤️ by <a href="https://rye.dev/">Cameron Rye</a>
 </div>

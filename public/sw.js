@@ -80,12 +80,12 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('[Service Worker] ✅ Installation complete - all assets cached');
-        // Force the waiting service worker to become the active service worker
-        return self.skipWaiting();
+        console.log('[Service Worker] Waiting for user to activate update...');
+        // Don't call skipWaiting() here - let the user decide when to update
+        // The service worker will skip waiting when it receives a SKIP_WAITING message
       })
       .catch((error) => {
         console.error('[Service Worker] ❌ Installation failed:', error);
-        // Don't call skipWaiting if installation failed
         throw error;
       })
   );
@@ -409,6 +409,7 @@ self.addEventListener('message', (event) => {
   console.log('[Service Worker] Message received:', event.data);
   
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[Service Worker] SKIP_WAITING message received - activating new version');
     self.skipWaiting();
   }
   
