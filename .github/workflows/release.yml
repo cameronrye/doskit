@@ -21,6 +21,7 @@ jobs:
         uses: googleapis/release-please-action@v4
         with:
           release-type: node
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   # Build and upload artifacts when a release is created
   build-release:
