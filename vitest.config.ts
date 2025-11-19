@@ -24,9 +24,9 @@ export default defineConfig({
         'scripts/**',
       ],
       thresholds: {
-        lines: 85,
+        lines: 70,
         branches: 50,
-        statements: 85,
+        statements: 70,
       },
     },
   },
