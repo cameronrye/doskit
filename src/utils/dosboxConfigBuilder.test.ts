@@ -106,7 +106,7 @@ describe("DOSBoxConfigBuilder", () => {
 
       expect(config).toContain("[cpu]");
       expect(config).toContain("core=dynamic");
-      expect(config).toContain("cycles=max");
+      expect(config).toContain("cycles=25000");
       expect(config).toContain("[video]");
       expect(config).toContain("vmemsize=8");
       expect(config).toContain("[render]");
@@ -124,7 +124,7 @@ describe("DOSBoxConfigBuilder", () => {
       expect(config).toContain("[cpu]");
       expect(config).toContain("core=dynamic");
       expect(config).toContain("cputype=pentium");
-      expect(config).toContain("cycles=15000");
+      expect(config).toContain("cycles=18000");
       expect(config).toContain("[mixer]");
       expect(config).toContain("blocksize=2048");
       expect(config).toContain("[memory]");
@@ -135,7 +135,7 @@ describe("DOSBoxConfigBuilder", () => {
       const config = presets.demo().build();
 
       expect(config).toContain("[cpu]");
-      expect(config).toContain("cycles=max");
+      expect(config).toContain("cycles=30000");
       expect(config).toContain("[video]");
       expect(config).toContain("vmemsize=8");
     });
