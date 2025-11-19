@@ -1,6 +1,6 @@
 {
   "name": "doskit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A robust, cross-platform foundation for running DOS applications using js-dos WebAssembly technology",
   "type": "module",
   "author": "Cameron Rye <cameron@rye.dev>",
