@@ -31,6 +31,63 @@ This directory contains DOS demo files that are bundled with the application to 
 - Graphics: VGA
 - Sound: Sound Blaster (optional)
 
+### unreal.zip (~1.3 MB)
+
+**Demo**: Unreal by Future Crew (1992)
+
+**Source**: https://archive.org/details/unreal_zip
+
+**Original URL**: https://archive.org/download/unreal_zip/unreal.zip
+
+**License**: Freeware
+
+**Contents**:
+
+- `UNREAL.EXE` - Main demo executable
+- Demo data files
+
+**Description**: A groundbreaking demo that won 1st place at Assembly 1992. One of the most influential PC demos of the early 90s, featuring advanced 3D graphics, smooth animations, and excellent music by Purple Motion (Jonne Valtonen). Two versions exist: 1.0 and 1.1 (with Gravis UltraSound support).
+
+**Requirements**:
+
+- CPU: 386 or better (486 recommended)
+- Memory: 4MB RAM
+- Graphics: VGA
+- Sound: Sound Blaster compatible
+
+**Additional Info**:
+
+- Pouet.net: https://www.pouet.net/prod.php?which=713
+- Party: Assembly 1992 (1st place)
+
+### panic.zip
+
+**Demo**: Panic by Future Crew (1992)
+
+**Source**: https://files.scene.org/view/demos/groups/future_crew/demos/panic.zip
+
+**License**: Freeware
+
+**Contents**:
+
+- `PANIC.EXE` - Main demo executable
+- Demo data files
+
+**Description**: A classic demo that came 2nd place at The Party 1992. Features impressive voxel fractal rendering, shadebobs, and hard techno music by Purple Motion with a dark atmosphere. Released between Unreal and Second Reality, showcasing Future Crew's evolution in demo production.
+
+**Requirements**:
+
+- CPU: 386 or better (486 recommended)
+- Memory: 4MB RAM
+- Graphics: VGA
+- Sound: Sound Blaster compatible
+- Requires EMS memory
+
+**Additional Info**:
+
+- Pouet.net: https://www.pouet.net/prod.php?which=479
+- Party: The Party 1992 (2nd place)
+
 ### impulse-tracker.zip (1.0 MB)
 
 **Application**: Impulse Tracker 2.14 by Jeffrey Lim (1997)

@@ -15,9 +15,15 @@ const APP_ID_MAPPING: Record<string, string> = {
   // URL-friendly (no hyphens) -> Internal ID (with hyphens)
   secondreality: "second-reality",
   impulsetracker: "impulse-tracker",
+  starportbbstro: "starport-bbstro",
+  screamtracker: "scream-tracker",
+  unreal: "unreal",
+  panic: "panic",
   // Also support the hyphenated versions directly
   "second-reality": "second-reality",
   "impulse-tracker": "impulse-tracker",
+  "starport-bbstro": "starport-bbstro",
+  "scream-tracker": "scream-tracker",
 };
 
 /**
@@ -26,6 +32,10 @@ const APP_ID_MAPPING: Record<string, string> = {
 const INTERNAL_TO_URL_MAPPING: Record<string, string> = {
   "second-reality": "secondreality",
   "impulse-tracker": "impulsetracker",
+  "starport-bbstro": "starportbbstro",
+  "scream-tracker": "screamtracker",
+  unreal: "unreal",
+  panic: "panic",
 };
 
 /**

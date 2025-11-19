@@ -70,6 +70,74 @@ export const availableApps: DosApp[] = [
       return config.impulseTrackerDosboxConf;
     },
   },
+  {
+    id: "starport-bbstro",
+    name: "Starport BBS Intro II",
+    description: "Tiny BBS intro (1993 bytes) by Future Crew",
+    author: "Future Crew",
+    year: 1993,
+    loadMethod: "zip",
+    dosboxConf: "", // Loaded dynamically
+    loader: async (onProgress) => {
+      const config = await import("../dos-apps/starport-bbstro.config");
+      return config.loadZipArchive(config.starportBbstroZipUrl, onProgress);
+    },
+    loadDosboxConf: async () => {
+      const config = await import("../dos-apps/starport-bbstro.config");
+      return config.starportBbstroDosboxConf;
+    },
+  },
+  {
+    id: "scream-tracker",
+    name: "Scream Tracker 3",
+    description: "Legendary S3M tracker by Future Crew",
+    author: "Future Crew",
+    year: 1994,
+    loadMethod: "zip",
+    dosboxConf: "", // Loaded dynamically
+    loader: async (onProgress) => {
+      const config = await import("../dos-apps/scream-tracker.config");
+      return config.loadZipArchive(config.screamTrackerZipUrl, onProgress);
+    },
+    loadDosboxConf: async () => {
+      const config = await import("../dos-apps/scream-tracker.config");
+      return config.screamTrackerDosboxConf;
+    },
+  },
+  {
+    id: "unreal",
+    name: "Unreal",
+    description: "Groundbreaking 1992 demo by Future Crew",
+    author: "Future Crew",
+    year: 1992,
+    loadMethod: "zip",
+    dosboxConf: "", // Loaded dynamically
+    loader: async (onProgress) => {
+      const config = await import("../dos-apps/unreal.config");
+      return config.loadZipArchive(config.unrealZipUrl, onProgress);
+    },
+    loadDosboxConf: async () => {
+      const config = await import("../dos-apps/unreal.config");
+      return config.unrealDosboxConf;
+    },
+  },
+  {
+    id: "panic",
+    name: "Panic",
+    description: "Classic 1992 demo by Future Crew",
+    author: "Future Crew",
+    year: 1992,
+    loadMethod: "zip",
+    dosboxConf: "", // Loaded dynamically
+    loader: async (onProgress) => {
+      const config = await import("../dos-apps/panic.config");
+      return config.loadZipArchive(config.panicZipUrl, onProgress);
+    },
+    loadDosboxConf: async () => {
+      const config = await import("../dos-apps/panic.config");
+      return config.panicDosboxConf;
+    },
+  },
   // Add more applications here
 ];
 

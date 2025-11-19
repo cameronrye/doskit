@@ -81,7 +81,10 @@ describe("DemoSelector", () => {
 
     it("should render app metadata (author and year)", () => {
       render(<DemoSelector onSelect={mockOnSelect} />);
-      expect(screen.getByText(/Future Crew \(1993\)/i)).toBeInTheDocument();
+      // Multiple apps may have the same author/year, so use getAllByText
+      expect(
+        screen.getAllByText(/Future Crew \(1993\)/i).length,
+      ).toBeGreaterThan(0);
       expect(screen.getByText(/Jeffrey Lim \(1995\)/i)).toBeInTheDocument();
     });
 
