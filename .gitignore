@@ -16,6 +16,9 @@ dist-ssr
 coverage
 .nyc_output
 
+# Generated documentation
+docs/api
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

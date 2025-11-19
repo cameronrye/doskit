@@ -1,0 +1,146 @@
+# humanstxt.org/
+# The humans responsible & technology colophon
+
+# TEAM
+
+    Developer & Designer: Cameron Rye
+    Contact: cameron [at] rye.dev
+    Twitter: @cameronrye
+    GitHub: github.com/cameronrye
+    Website: rye.dev
+    Location: Earth
+
+# THANKS
+
+    js-dos by caiiiycuk
+    For the amazing WebAssembly DOS emulator
+    GitHub: github.com/caiiiycuk/js-dos
+
+    DOSBox Team
+    For the original DOS emulation
+    Website: dosbox.com
+
+    React Team
+    For the excellent UI framework
+    Website: react.dev
+
+    Vite Team
+    For the fast build tooling
+    Website: vite.dev
+
+# TECHNOLOGY COLOPHON
+
+    ## Frontend
+    React 19.2.0
+    TypeScript 5.9.3
+    Vite 7.1.14 (Rolldown variant)
+    
+    ## Emulation
+    js-dos 8.3.20
+    DOSBox (via WebAssembly)
+    
+    ## Development Tools
+    ESLint 9.39.1
+    Vitest 4.0.10
+    TypeDoc 0.28.14
+    Sharp 0.34.5
+    
+    ## Build & Deploy
+    GitHub Actions
+    GitHub Pages
+    Custom Domain: doskit.net
+    
+    ## Standards
+    HTML5
+    CSS3
+    ES2022
+    WebAssembly
+    Service Workers
+    Progressive Web App (PWA)
+    
+    ## Design
+    Custom SVG graphics
+    Gradient backgrounds
+    Monospace fonts (Courier New)
+    Retro terminal aesthetic
+    
+    ## Performance
+    Code splitting
+    Lazy loading
+    Service worker caching
+    Asset optimization
+    WebAssembly compilation
+
+# PROJECT
+
+    Project: DosKit
+    Version: 1.0.0
+    License: MIT
+    Repository: github.com/cameronrye/doskit
+    Website: doskit.net
+    Started: 2024
+    Last update: 2025-11-18
+
+# SITE
+
+    Language: English
+    Doctype: HTML5
+    IDE: Visual Studio Code
+    Components: React Components
+    Fonts: Courier New, monospace
+    Standards: W3C, WHATWG
+    Accessibility: WCAG 2.1 AA
+    SEO: Schema.org JSON-LD, Open Graph, Twitter Cards
+    
+# FEATURES
+
+    ✓ Interactive DOS Prompt
+    ✓ Cross-Platform Support
+    ✓ Progressive Web App
+    ✓ Deep Linking
+    ✓ Offline Functionality
+    ✓ WebAssembly Performance
+    ✓ Full Keyboard Support
+    ✓ Audio Support (Sound Blaster, AdLib)
+    ✓ Responsive Design
+    ✓ Touch Controls
+    ✓ Type-Safe Development
+    ✓ Service Worker Caching
+    ✓ Auto-Updates
+    ✓ Error Tracking
+    ✓ Performance Monitoring
+
+# BROWSER SUPPORT
+
+    Chrome/Edge 90+
+    Firefox 88+
+    Safari 15+
+    Opera 76+
+    Mobile browsers (iOS 15+, Android)
+
+# CONTACT
+
+    For questions, issues, or contributions:
+    GitHub Issues: github.com/cameronrye/doskit/issues
+    Email: cameron [at] rye.dev
+    Website: doskit.net
+
+# ACKNOWLEDGMENTS
+
+    Made with ❤️ by Cameron Rye
+    Powered by js-dos WebAssembly technology
+    Built with React, TypeScript, and Vite
+    Deployed on GitHub Pages
+    
+    Special thanks to the open source community
+    and all contributors to the technologies used.
+
+                            _|_|_|    _|_|      _|_|_|  _|    _|  _|_|_|  _|_|_|_|_|
+                            _|    _|  _|    _|  _|      _|  _|      _|        _|
+                            _|    _|  _|    _|  _|_|_|  _|_|        _|        _|
+                            _|    _|  _|    _|      _|  _|  _|      _|        _|
+                            _|_|_|    _|_|    _|_|_|    _|    _|  _|_|_|      _|
+
+                                    Cross-Platform DOS Emulator
+                                        https://doskit.net
+

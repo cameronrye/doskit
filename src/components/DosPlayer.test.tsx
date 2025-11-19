@@ -2,15 +2,15 @@
  * Tests for DosPlayer component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { DosPlayer } from './DosPlayer';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { DosPlayer } from "./DosPlayer";
 
 // Mock window.Dos
 const mockDos = vi.fn();
 const mockStop = vi.fn().mockResolvedValue(undefined);
 
-describe('DosPlayer', () => {
+describe("DosPlayer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockStop.mockClear();
@@ -18,81 +18,93 @@ describe('DosPlayer', () => {
     // Setup window.Dos mock
     global.window.Dos = mockDos.mockReturnValue({
       stop: mockStop,
-      getVersion: () => ['8.3.20', 'dosbox'],
+      getVersion: () => ["8.3.20", "dosbox"],
       getToken: () => null,
     });
   });
 
-  describe('Rendering', () => {
-    it('should render without crashing', () => {
+  describe("Rendering", () => {
+    it("should render without crashing", () => {
       render(<DosPlayer />);
       expect(screen.getByText(/Loading DOS emulator/i)).toBeInTheDocument();
     });
 
-    it('should render with custom className', () => {
+    it("should render with custom className", () => {
       const { container } = render(<DosPlayer className="custom-class" />);
-      expect(container.querySelector('.custom-class')).toBeInTheDocument();
+      expect(container.querySelector(".custom-class")).toBeInTheDocument();
     });
 
-    it('should apply custom styles', () => {
-      const customStyle = { backgroundColor: 'red' };
+    it("should apply custom styles", () => {
+      const customStyle = { backgroundColor: "red" };
       const { container } = render(<DosPlayer style={customStyle} />);
-      const wrapper = container.querySelector('.dos-player-wrapper');
+      const wrapper = container.querySelector(".dos-player-wrapper");
       // Check that style prop is passed (inline styles may be overridden by CSS)
       expect(wrapper).toBeInTheDocument();
     });
   });
 
-  describe('Loading state', () => {
-    it('should show loading indicator initially', () => {
+  describe("Loading state", () => {
+    it("should show loading indicator initially", () => {
       render(<DosPlayer />);
       expect(screen.getByText(/Loading DOS emulator/i)).toBeInTheDocument();
     });
 
-    it('should show loading spinner', () => {
+    it("should show loading spinner", () => {
       const { container } = render(<DosPlayer />);
-      expect(container.querySelector('.dos-player-spinner')).toBeInTheDocument();
+      expect(
+        container.querySelector(".dos-player-spinner"),
+      ).toBeInTheDocument();
     });
   });
 
-  describe('Error handling', () => {
-    it('should show error when Dos is not available', () => {
+  describe("Error handling", () => {
+    it("should show error when Dos is not available", () => {
       global.window.Dos = undefined;
       render(<DosPlayer />);
 
       expect(screen.getByText(/Error/i)).toBeInTheDocument();
-      expect(screen.getByText(/DOS emulator library not loaded/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/DOS emulator library not loaded/i),
+      ).toBeInTheDocument();
     });
 
-    it('should show reload button on error', () => {
+    it("should show reload button on error", () => {
       global.window.Dos = undefined;
       render(<DosPlayer />);
 
-      expect(screen.getByRole('button', { name: /Reload Page/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Reload Page/i }),
+      ).toBeInTheDocument();
     });
 
-    it('should handle initialization errors gracefully', () => {
+    it("should handle initialization errors gracefully", () => {
       global.window.Dos = vi.fn().mockImplementation(() => {
-        throw new Error('Initialization failed');
+        throw new Error("Initialization failed");
       });
 
       render(<DosPlayer />);
 
       waitFor(() => {
-        expect(screen.getByText(/Failed to initialize DOS emulator/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/Failed to initialize DOS emulator/i),
+        ).toBeInTheDocument();
       });
     });
 
-    it('should suppress fullscreen errors from unhandled promise rejections', () => {
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    it("should suppress fullscreen errors from unhandled promise rejections", () => {
+      const consoleWarn = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
 
       render(<DosPlayer />);
 
       // Simulate a fullscreen error from js-dos
-      const fullscreenError = new TypeError("Failed to execute 'exitFullscreen' on 'Document': Document not active");
+      const fullscreenError = new TypeError(
+        "Failed to execute 'exitFullscreen' on 'Document': Document not active",
+      );
       // Create a promise and catch it to prevent unhandled rejection
       const rejectedPromise = Promise.reject(fullscreenError).catch(() => {});
-      const event = new PromiseRejectionEvent('unhandledrejection', {
+      const event = new PromiseRejectionEvent("unhandledrejection", {
         promise: rejectedPromise,
         reason: fullscreenError,
         cancelable: true,
@@ -107,14 +119,14 @@ describe('DosPlayer', () => {
       consoleWarn.mockRestore();
     });
 
-    it('should not suppress non-fullscreen errors', () => {
+    it("should not suppress non-fullscreen errors", () => {
       render(<DosPlayer />);
 
       // Simulate a different error
-      const otherError = new Error('Some other error');
+      const otherError = new Error("Some other error");
       // Create a promise and catch it to prevent unhandled rejection
       const rejectedPromise = Promise.reject(otherError).catch(() => {});
-      const event = new PromiseRejectionEvent('unhandledrejection', {
+      const event = new PromiseRejectionEvent("unhandledrejection", {
         promise: rejectedPromise,
         reason: otherError,
         cancelable: true,
@@ -128,35 +140,35 @@ describe('DosPlayer', () => {
     });
   });
 
-  describe('Initialization', () => {
-    it('should call window.Dos on mount', () => {
+  describe("Initialization", () => {
+    it("should call window.Dos on mount", () => {
       render(<DosPlayer />);
       expect(mockDos).toHaveBeenCalledTimes(1);
     });
 
-    it('should pass dosboxConf to Dos', () => {
-      const customConfig = '[cpu]\ncore=auto';
+    it("should pass dosboxConf to Dos", () => {
+      const customConfig = "[cpu]\ncore=auto";
       render(<DosPlayer dosboxConf={customConfig} />);
 
       expect(mockDos).toHaveBeenCalledWith(
         expect.any(HTMLDivElement),
         expect.objectContaining({
           dosboxConf: customConfig,
-        })
+        }),
       );
     });
 
-    it('should merge custom options with defaults', () => {
-      const customOptions = { volume: 0.5, theme: 'light' };
+    it("should merge custom options with defaults", () => {
+      const customOptions = { volume: 0.5, theme: "light" };
       render(<DosPlayer options={customOptions} />);
 
       expect(mockDos).toHaveBeenCalledWith(
         expect.any(HTMLDivElement),
-        expect.objectContaining(customOptions)
+        expect.objectContaining(customOptions),
       );
     });
 
-    it('should not initialize twice', () => {
+    it("should not initialize twice", () => {
       const { rerender } = render(<DosPlayer />);
       rerender(<DosPlayer />);
 
@@ -165,8 +177,8 @@ describe('DosPlayer', () => {
     });
   });
 
-  describe('Callbacks', () => {
-    it('should call onReady when provided', async () => {
+  describe("Callbacks", () => {
+    it("should call onReady when provided", async () => {
       const onReady = vi.fn();
       const mockCi = {
         events: () => ({
@@ -213,7 +225,7 @@ describe('DosPlayer', () => {
       global.window.Dos = vi.fn((_element, options) => {
         // Simulate ci-ready event
         setTimeout(() => {
-          options?.onEvent?.('ci-ready', mockCi);
+          options?.onEvent?.("ci-ready", mockCi);
         }, 0);
         return mockDosProps;
       });
@@ -225,7 +237,7 @@ describe('DosPlayer', () => {
       });
     });
 
-    it('should unmute audio when Command Interface is ready', async () => {
+    it("should unmute audio when Command Interface is ready", async () => {
       const mockUnmute = vi.fn();
       const mockCi = {
         events: () => ({
@@ -272,7 +284,7 @@ describe('DosPlayer', () => {
       global.window.Dos = vi.fn((_element, options) => {
         // Simulate ci-ready event
         setTimeout(() => {
-          options?.onEvent?.('ci-ready', mockCi);
+          options?.onEvent?.("ci-ready", mockCi);
         }, 0);
         return mockDosProps;
       });
@@ -284,7 +296,7 @@ describe('DosPlayer', () => {
       });
     });
 
-    it('should call onExit when DOS exits', async () => {
+    it("should call onExit when DOS exits", async () => {
       const onExit = vi.fn();
       let exitCallback: (() => void) | undefined;
 
@@ -334,7 +346,7 @@ describe('DosPlayer', () => {
 
       global.window.Dos = vi.fn((_element, options) => {
         setTimeout(() => {
-          options?.onEvent?.('ci-ready', mockCi);
+          options?.onEvent?.("ci-ready", mockCi);
         }, 0);
         return mockDosProps;
       });
@@ -351,39 +363,54 @@ describe('DosPlayer', () => {
     });
   });
 
-  describe('Cleanup', () => {
-    it('should call stop on unmount', () => {
+  describe("Cleanup", () => {
+    it("should call stop on unmount", async () => {
       const { unmount } = render(<DosPlayer />);
+
+      // Wait for initialization to complete
+      await waitFor(() => {
+        expect(mockDos).toHaveBeenCalled();
+      });
+
       unmount();
-      
+
       expect(mockStop).toHaveBeenCalled();
     });
 
-    it('should handle stop errors gracefully', () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockStop.mockRejectedValueOnce(new Error('Stop failed'));
-      
+    it("should handle stop errors gracefully", async () => {
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      mockStop.mockRejectedValueOnce(new Error("Stop failed"));
+
       const { unmount } = render(<DosPlayer />);
+
+      // Wait for initialization to complete
+      await waitFor(() => {
+        expect(mockDos).toHaveBeenCalled();
+      });
+
       unmount();
-      
+
       // Should not throw
       expect(mockStop).toHaveBeenCalled();
-      
+
       consoleError.mockRestore();
     });
   });
 
-  describe('Container element', () => {
-    it('should render DOS container', () => {
+  describe("Container element", () => {
+    it("should render DOS container", () => {
       const { container } = render(<DosPlayer />);
-      expect(container.querySelector('.dos-player-container')).toBeInTheDocument();
+      expect(
+        container.querySelector(".dos-player-container"),
+      ).toBeInTheDocument();
     });
 
-    it('should have correct container styles', () => {
+    it("should have correct container styles", () => {
       const { container } = render(<DosPlayer />);
-      const dosContainer = container.querySelector('.dos-player-container');
-      expect(dosContainer).toHaveStyle({ width: '100%', height: '100%' });
+      const dosContainer = container.querySelector(".dos-player-container");
+      expect(dosContainer).toHaveStyle({ width: "100%", height: "100%" });
     });
   });
 });
-

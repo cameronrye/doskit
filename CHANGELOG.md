@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Initial open source release preparation
 - Comprehensive test suite with Vitest and Testing Library
 - CI/CD pipeline with GitHub Actions
@@ -16,17 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changelog (this file)
 
 ### Changed
+
 - Updated package.json for npm publication
 - Enhanced README with comprehensive documentation
 - Improved TypeScript type safety (removed all `any` types)
 
 ### Security
+
 - Added Subresource Integrity (SRI) hashes to CDN resources
 - Wrapped debug console.log statements in development-only checks
 
 ## [1.0.0] - 2025-10-03
 
 ### Added
+
 - Cross-platform DOS emulator using js-dos WebAssembly technology
 - React 19 + TypeScript 5 modern architecture
 - Vite build system with Rolldown variant
@@ -42,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 
 ### Features
+
 - **DOSBox Emulation**: Full DOSBox emulation via js-dos WebAssembly
 - **Configuration**: Flexible DOSBox and js-dos configuration system
 - **Mobile Support**: Automatic mobile detection with optimized settings
@@ -51,7 +56,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CDN Integration**: js-dos loaded from official CDN with SRI protection
 
 ### Technical Details
-- React 19.1.1
+
+- React 19.2.0
 - TypeScript 5.9.3
 - Vite 7.1.14 (Rolldown variant)
 - js-dos 8.3.20
@@ -84,4 +90,3 @@ Changes are grouped into the following categories:
 
 [Unreleased]: https://github.com/cameronrye/doskit/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/cameronrye/doskit/releases/tag/v1.0.0
-

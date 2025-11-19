@@ -6,12 +6,13 @@
  * Displays online/offline status and PWA installation prompt
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import './OfflineIndicator.css';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { PWA_CONFIG } from "../constants/app";
+import "./OfflineIndicator.css";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
 export interface OfflineIndicatorProps {
@@ -20,24 +21,18 @@ export interface OfflineIndicatorProps {
 
 // LocalStorage keys for PWA install prompt state
 const STORAGE_KEYS = {
-  DISMISSED: 'pwa-install-dismissed',
-  DISMISSED_COUNT: 'pwa-install-dismissed-count',
-  LAST_DISMISSED: 'pwa-install-last-dismissed',
-} as const;
-
-// Configuration constants
-const CONFIG = {
-  SHOW_DELAY_MS: 5000, // Delay before showing install prompt
-  MAX_DISMISSALS: 3, // Maximum number of times to show after dismissal
-  DISMISSAL_COOLDOWN_DAYS: 7, // Days to wait before showing again after dismissal
+  DISMISSED: "pwa-install-dismissed",
+  DISMISSED_COUNT: "pwa-install-dismissed-count",
+  LAST_DISMISSED: "pwa-install-last-dismissed",
 } as const;
 
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
-  onNetworkStatusChange
+  onNetworkStatusChange,
 }) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOfflineMessage, setShowOfflineMessage] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
@@ -48,10 +43,14 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
    * Check if the app is already installed
    */
   const checkInstalled = useCallback(() => {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isStandalone = window.matchMedia(
+      "(display-mode: standalone)",
+    ).matches;
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     // iOS Safari has a non-standard 'standalone' property
-    const isIOSStandalone = 'standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true;
+    const isIOSStandalone =
+      "standalone" in window.navigator &&
+      (window.navigator as { standalone?: boolean }).standalone === true;
 
     return isStandalone || (isIOS && isIOSStandalone);
   }, []);
@@ -61,13 +60,16 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
    */
   const isPermanentlyDismissed = useCallback((): boolean => {
     const dismissed = localStorage.getItem(STORAGE_KEYS.DISMISSED);
-    if (dismissed === 'permanent') {
+    if (dismissed === "permanent") {
       return true;
     }
 
     // Check if user has dismissed too many times
-    const dismissCount = parseInt(localStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || '0', 10);
-    if (dismissCount >= CONFIG.MAX_DISMISSALS) {
+    const dismissCount = parseInt(
+      localStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || "0",
+      10,
+    );
+    if (dismissCount >= PWA_CONFIG.MAX_INSTALL_DISMISSALS) {
       return true;
     }
 
@@ -75,8 +77,9 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
     const lastDismissed = localStorage.getItem(STORAGE_KEYS.LAST_DISMISSED);
     if (lastDismissed) {
       const lastDismissedDate = new Date(lastDismissed);
-      const daysSinceDismissal = (Date.now() - lastDismissedDate.getTime()) / (1000 * 60 * 60 * 24);
-      if (daysSinceDismissal < CONFIG.DISMISSAL_COOLDOWN_DAYS) {
+      const daysSinceDismissal =
+        (Date.now() - lastDismissedDate.getTime()) / PWA_CONFIG.MS_PER_DAY;
+      if (daysSinceDismissal < PWA_CONFIG.INSTALL_DISMISSAL_COOLDOWN_DAYS) {
         return true;
       }
     }
@@ -124,7 +127,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
     // PWA install prompt handler
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      console.log('[PWA] beforeinstallprompt event fired');
+      console.log("[PWA] beforeinstallprompt event fired");
 
       const promptEvent = e as BeforeInstallPromptEvent;
       setDeferredPrompt(promptEvent);
@@ -137,18 +140,18 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
         setTimeout(() => {
           // Double-check conditions before showing
           if (shouldShowPrompt() && promptEvent) {
-            console.log('[PWA] Showing install prompt');
+            console.log("[PWA] Showing install prompt");
             setShowInstallPrompt(true);
           }
-        }, CONFIG.SHOW_DELAY_MS);
+        }, PWA_CONFIG.INSTALL_PROMPT_DELAY);
       } else {
-        console.log('[PWA] Install prompt not shown - conditions not met');
+        console.log("[PWA] Install prompt not shown - conditions not met");
       }
     };
 
     // App installed handler
     const handleAppInstalled = () => {
-      console.log('[PWA] App installed');
+      console.log("[PWA] App installed");
       setIsInstalled(true);
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
@@ -158,16 +161,19 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
       localStorage.removeItem(STORAGE_KEYS.LAST_DISMISSED);
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, [onNetworkStatusChange, shouldShowPrompt]);
 
@@ -183,21 +189,30 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
       // Wait for the user to respond to the prompt
       const { outcome } = await deferredPrompt.userChoice;
 
-      if (outcome === 'accepted') {
-        console.log('[PWA] User accepted the install prompt');
+      if (outcome === "accepted") {
+        console.log("[PWA] User accepted the install prompt");
         // Clear dismissal tracking
         localStorage.removeItem(STORAGE_KEYS.DISMISSED);
         localStorage.removeItem(STORAGE_KEYS.DISMISSED_COUNT);
         localStorage.removeItem(STORAGE_KEYS.LAST_DISMISSED);
       } else {
-        console.log('[PWA] User dismissed the install prompt');
+        console.log("[PWA] User dismissed the install prompt");
         // Track dismissal
-        const currentCount = parseInt(localStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || '0', 10);
-        localStorage.setItem(STORAGE_KEYS.DISMISSED_COUNT, String(currentCount + 1));
-        localStorage.setItem(STORAGE_KEYS.LAST_DISMISSED, new Date().toISOString());
+        const currentCount = parseInt(
+          localStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || "0",
+          10,
+        );
+        localStorage.setItem(
+          STORAGE_KEYS.DISMISSED_COUNT,
+          String(currentCount + 1),
+        );
+        localStorage.setItem(
+          STORAGE_KEYS.LAST_DISMISSED,
+          new Date().toISOString(),
+        );
       }
     } catch (error) {
-      console.error('[PWA] Error showing install prompt:', error);
+      console.error("[PWA] Error showing install prompt:", error);
     }
 
     // Clear the deferred prompt
@@ -206,20 +221,27 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
   };
 
   const handleDismissInstall = () => {
-    console.log('[PWA] User dismissed install prompt');
+    console.log("[PWA] User dismissed install prompt");
     setShowInstallPrompt(false);
 
     // Track dismissal
-    const currentCount = parseInt(localStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || '0', 10);
+    const currentCount = parseInt(
+      localStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || "0",
+      10,
+    );
     const newCount = currentCount + 1;
 
     localStorage.setItem(STORAGE_KEYS.DISMISSED_COUNT, String(newCount));
     localStorage.setItem(STORAGE_KEYS.LAST_DISMISSED, new Date().toISOString());
 
     // If user has dismissed multiple times, consider it permanent
-    if (newCount >= CONFIG.MAX_DISMISSALS) {
-      localStorage.setItem(STORAGE_KEYS.DISMISSED, 'permanent');
-      console.log('[PWA] Install prompt permanently dismissed after', newCount, 'dismissals');
+    if (newCount >= PWA_CONFIG.MAX_INSTALL_DISMISSALS) {
+      localStorage.setItem(STORAGE_KEYS.DISMISSED, "permanent");
+      console.log(
+        "[PWA] Install prompt permanently dismissed after",
+        newCount,
+        "dismissals",
+      );
     }
   };
 
@@ -232,9 +254,11 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
             <span className="offline-icon">📡</span>
             <div className="offline-text">
               <strong>You're offline</strong>
-              <p>Don't worry, the app will continue to work with cached content.</p>
+              <p>
+                Don't worry, the app will continue to work with cached content.
+              </p>
             </div>
-            <button 
+            <button
               className="offline-close"
               onClick={() => setShowOfflineMessage(false)}
               aria-label="Close offline message"
@@ -260,7 +284,9 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
             <div className="install-icon">📱</div>
             <div className="install-text">
               <strong>Install DosKit</strong>
-              <p>Install this app for a better experience and offline access.</p>
+              <p>
+                Install this app for a better experience and offline access.
+              </p>
             </div>
             <div className="install-actions">
               <button
@@ -282,4 +308,3 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
     </>
   );
 };
-
