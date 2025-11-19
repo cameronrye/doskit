@@ -77,22 +77,6 @@
       "purpose": "any"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop-1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "DosKit running DOS prompt"
-    },
-    {
-      "src": "/screenshots/mobile-1.png",
-      "sizes": "750x1334",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "DosKit on mobile device"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Open DOS Prompt",
@@ -113,4 +97,3 @@
   "lang": "en-US",
   "dir": "ltr"
 }
-

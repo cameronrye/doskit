@@ -6,13 +6,25 @@
  * DOSBox configuration for interactive DOS prompt
  * Optimized for performance and high-quality audio
  * Based on research of DOSBox performance optimization techniques
+ *
+ * Audio Optimization Notes:
+ * - Fixed CPU cycles (25000) instead of "max" to prevent audio stuttering/crackling
+ * - Mixer prebuffer increased to 64 for smoother audio buffering
+ *   (can go up to 8192 max for extremely problematic cases)
+ * - Blocksize 2048 provides good balance between latency and stability
+ * - Sample rate 44100 Hz is standard for DOS audio (CD quality)
+ *
+ * Research Sources:
+ * - DOSBox Wiki Performance Guide
+ * - Community feedback on cycles=max causing audio issues
+ * - DOSBox Staging audio optimization recommendations
  */
 
 export const defaultDosboxConfig = `
 [cpu]
 core=dynamic
 cputype=auto
-cycles=max
+cycles=25000
 
 [video]
 vmemsize=8
@@ -30,7 +42,7 @@ xms=true
 [mixer]
 rate=44100
 blocksize=2048
-prebuffer=40
+prebuffer=64
 
 [sblaster]
 sbtype=sb16
