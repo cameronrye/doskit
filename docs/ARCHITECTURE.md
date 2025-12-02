@@ -81,14 +81,40 @@ App (Root)
 
 ### State Management
 
-Currently using React's built-in state management:
+DosKit uses React Context API for global state management, organized into three separate contexts:
 
-- **Local component state** (useState) for UI state
-- **Props drilling** for passing data between components
-- **Custom events** for URL-based app loading
-- **Callbacks** for parent-child communication
+1. **AppStateContext** - Application selection and emulator status
+2. **NetworkContext** - Network connectivity status
+3. **PWAContext** - Progressive Web App features (install, updates)
 
-Future consideration: Zustand or Context API for global state.
+#### Why Context API?
+
+- **No additional dependencies** - Uses built-in React features
+- **Appropriate scale** - Sufficient for DosKit's state management needs
+- **Better React integration** - Works seamlessly with React DevTools
+- **Simpler testing** - Easier to mock and test
+- **Type safety** - Full TypeScript support out of the box
+
+#### Context Usage
+
+```typescript
+import { useAppState, useAppStateValue, useAppStateActions } from '@/contexts';
+
+// Get full context (state + actions)
+const { currentApp, setCurrentApp } = useAppState();
+
+// Get only state (read-only) - prevents unnecessary re-renders
+const { currentApp, isEmulatorReady } = useAppStateValue();
+
+// Get only actions
+const { setCurrentApp, setEmulatorReady } = useAppStateActions();
+```
+
+#### Best Practices
+
+- **Use specific hooks** - Prefer `useAppStateValue()` over `useAppState()` for read-only access
+- **Separate read and write** - Components that only read should use value hooks
+- **Keep contexts focused** - Each context manages a single domain
 
 ## Key Features
 
@@ -142,7 +168,7 @@ DOS application configs use dynamic imports to reduce initial bundle size:
 
 ```typescript
 loader: async () => {
-  const config = await import("../dos-apps/second-reality.config");
+  const config = await import('../dos-apps/second-reality.config');
   return config.loadZipArchive(config.secondRealityZipUrl);
 };
 ```
@@ -188,10 +214,33 @@ Custom events for URL-based app loading and cross-component communication.
 3. **Service worker versioning**: Inject build timestamp
 4. **Asset optimization**: Minification and tree-shaking
 
+## js-dos Dependency Strategy
+
+DosKit uses a **local copy strategy** for the js-dos library:
+
+### Why Local Copy?
+
+1. **Stability** - CDN versions can change unexpectedly
+2. **Offline Support** - Required for PWA functionality
+3. **Version Control** - Explicit control over updates
+4. **Performance** - Optimized caching with service worker
+
+### Files
+
+- `public/js-dos.js` - Main js-dos library
+- `public/js-dos.css` - js-dos styles
+- `src/types/js-dos.d.ts` - TypeScript declarations
+
+### Updating js-dos
+
+1. Download new version from [js-dos releases](https://github.com/nicholasday/js-dos/releases)
+2. Replace files in `public/`
+3. Update types in `src/types/js-dos.d.ts` if API changed
+4. Test thoroughly before deploying
+
 ## Future Improvements
 
-1. **State Management**: Implement Zustand or Context API
-2. **Testing**: Add unit, integration, and visual regression tests
-3. **Component Refactoring**: Split DosPlayer into smaller components
-4. **DOSBox Builder**: Create builder pattern for DOSBox configs
-5. **Emulator Abstraction**: Decouple from js-dos with adapter interface
+1. **Testing**: Add visual regression tests
+2. **Component Refactoring**: Split DosPlayer into smaller components
+3. **DOSBox Builder**: Create builder pattern for DOSBox configs
+4. **Emulator Abstraction**: Decouple from js-dos with adapter interface

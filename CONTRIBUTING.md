@@ -223,6 +223,49 @@ npm run test:ui
 - Update **type definitions** in `src/types/` as needed
 - Include **code examples** for new features
 
+### Generating API Documentation
+
+The API documentation is generated from JSDoc comments using [TypeDoc](https://typedoc.org/):
+
+```bash
+# Generate documentation
+npm run docs
+
+# Watch mode - regenerate on file changes
+npm run docs:watch
+```
+
+Documentation is output to `docs/api/`. Open `docs/api/index.html` in your browser to view.
+
+### JSDoc Guidelines
+
+All public APIs should have JSDoc comments with:
+
+- **Description** - Brief description of what the function/class does
+- **@param** - Description of each parameter
+- **@returns** - Description of the return value
+- **@throws** - Description of errors that may be thrown
+- **@example** - Usage examples (optional but recommended)
+
+Example:
+
+```typescript
+/**
+ * Load files from URLs with progress tracking
+ *
+ * @param urls - Array of file URLs to load
+ * @param onProgress - Optional callback for progress updates
+ * @returns Promise that resolves to array of loaded files
+ * @throws {Error} If any file fails to load
+ */
+export async function loadFilesFromUrls(
+  urls: string[],
+  onProgress?: (progress: LoadProgress) => void
+): Promise<InitFileEntry[]> {
+  // Implementation...
+}
+```
+
 ## Reporting Issues
 
 ### Bug Reports
@@ -269,12 +312,40 @@ git commit -m "docs: update installation guide"
 
 Releases are **fully automated** using [release-please](https://github.com/googleapis/release-please):
 
-1. **Merge PRs to main** with conventional commits
-2. **release-please bot** creates a Release PR automatically
-3. **Review and merge** the Release PR
-4. **GitHub release** is created automatically with artifacts
+### How It Works
 
-See [docs/RELEASE-PROCESS.md](docs/RELEASE-PROCESS.md) for detailed information.
+1. **Write code** with conventional commit messages
+2. **Merge PR to main** - that's it!
+3. **release-please bot** automatically:
+   - Creates/updates a "Release PR" with version bump and changelog
+   - When you merge the Release PR, it creates a GitHub release
+   - Builds and uploads artifacts automatically
+
+### Creating a Release
+
+After merging PRs to main, release-please automatically creates a **Release PR**:
+
+1. **Check for Release PR** - Look for a PR titled "chore(main): release X.Y.Z"
+2. **Review the Release PR** - Check version number and auto-generated changelog
+3. **Merge the Release PR** - This triggers the GitHub release creation
+
+### Versioning
+
+DosKit follows [Semantic Versioning](https://semver.org/):
+
+- **MAJOR** (X.0.0): Breaking changes, incompatible API changes
+- **MINOR** (0.X.0): New features, backwards compatible
+- **PATCH** (0.0.X): Bug fixes, backwards compatible
+
+### Manual Release (Emergency Only)
+
+If you need to create a release manually:
+
+1. Update version in `package.json`
+2. Update `CHANGELOG.md` manually
+3. Commit: `git commit -m "chore: release X.Y.Z"`
+4. Tag: `git tag vX.Y.Z`
+5. Push: `git push origin main --tags`
 
 ## Questions?
 

@@ -7,11 +7,11 @@
  * Allows users to select and load different DOS applications and demos
  */
 
-import { useState } from "react";
-import type { DosApp } from "../types/dos-app";
-import type { InitFileEntry } from "../types/js-dos";
-import { type LoadProgress } from "../utils/diskLoader";
-import "./DemoSelector.css";
+import { useState } from 'react';
+import type { DosApp } from '../types/dos-app';
+import type { InitFileEntry } from '../types/js-dos';
+import { type LoadProgress } from '../utils/diskLoader';
+import './DemoSelector.css';
 
 // Re-export DosApp for backward compatibility
 export type { DosApp };
@@ -35,107 +35,175 @@ interface DemoSelectorProps {
 // eslint-disable-next-line react-refresh/only-export-components
 export const availableApps: DosApp[] = [
   {
-    id: "second-reality",
-    name: "Second Reality",
-    description: "Legendary 1993 demo by Future Crew",
-    author: "Future Crew",
+    id: 'second-reality',
+    name: 'Second Reality',
+    description: 'Legendary 1993 demo by Future Crew',
+    author: 'Future Crew',
     year: 1993,
-    loadMethod: "zip",
-    dosboxConf: "", // Loaded dynamically
+    loadMethod: 'zip',
+    dosboxConf: '', // Loaded dynamically
     loader: async (onProgress) => {
-      const config = await import("../dos-apps/second-reality.config");
-      const { loadZipArchive } = await import("../utils/diskLoader");
+      const config = await import('../dos-apps/second-reality.config');
+      const { loadZipArchive } = await import('../utils/diskLoader');
       // Use local ZIP file for fast loading
       return loadZipArchive(config.secondRealityZipUrl, onProgress);
     },
     loadDosboxConf: async () => {
-      const config = await import("../dos-apps/second-reality.config");
+      const config = await import('../dos-apps/second-reality.config');
       return config.secondRealityDosboxConf;
     },
   },
   {
-    id: "impulse-tracker",
-    name: "Impulse Tracker",
-    description: "Classic music tracker software",
-    author: "Jeffrey Lim",
+    id: 'impulse-tracker',
+    name: 'Impulse Tracker',
+    description: 'Classic music tracker software',
+    author: 'Jeffrey Lim',
     year: 1995,
-    loadMethod: "zip",
-    dosboxConf: "", // Loaded dynamically
+    loadMethod: 'zip',
+    dosboxConf: '', // Loaded dynamically
     loader: async (onProgress) => {
-      const config = await import("../dos-apps/impulse-tracker.config");
+      const config = await import('../dos-apps/impulse-tracker.config');
       return config.loadZipArchive(config.impulseTrackerZipUrl, onProgress);
     },
     loadDosboxConf: async () => {
-      const config = await import("../dos-apps/impulse-tracker.config");
+      const config = await import('../dos-apps/impulse-tracker.config');
       return config.impulseTrackerDosboxConf;
     },
   },
   {
-    id: "starport-bbstro",
-    name: "Starport BBS Intro II",
-    description: "Tiny BBS intro (1993 bytes) by Future Crew",
-    author: "Future Crew",
+    id: 'starport-bbstro',
+    name: 'Starport BBS Intro II',
+    description: 'Tiny BBS intro (1993 bytes) by Future Crew',
+    author: 'Future Crew',
     year: 1993,
-    loadMethod: "zip",
-    dosboxConf: "", // Loaded dynamically
+    loadMethod: 'zip',
+    dosboxConf: '', // Loaded dynamically
     loader: async (onProgress) => {
-      const config = await import("../dos-apps/starport-bbstro.config");
+      const config = await import('../dos-apps/starport-bbstro.config');
       return config.loadZipArchive(config.starportBbstroZipUrl, onProgress);
     },
     loadDosboxConf: async () => {
-      const config = await import("../dos-apps/starport-bbstro.config");
+      const config = await import('../dos-apps/starport-bbstro.config');
       return config.starportBbstroDosboxConf;
     },
   },
   {
-    id: "scream-tracker",
-    name: "Scream Tracker 3",
-    description: "Legendary S3M tracker by Future Crew",
-    author: "Future Crew",
+    id: 'scream-tracker',
+    name: 'Scream Tracker 3',
+    description: 'Legendary S3M tracker by Future Crew',
+    author: 'Future Crew',
     year: 1994,
-    loadMethod: "zip",
-    dosboxConf: "", // Loaded dynamically
+    loadMethod: 'zip',
+    dosboxConf: '', // Loaded dynamically
     loader: async (onProgress) => {
-      const config = await import("../dos-apps/scream-tracker.config");
+      const config = await import('../dos-apps/scream-tracker.config');
       return config.loadZipArchive(config.screamTrackerZipUrl, onProgress);
     },
     loadDosboxConf: async () => {
-      const config = await import("../dos-apps/scream-tracker.config");
+      const config = await import('../dos-apps/scream-tracker.config');
       return config.screamTrackerDosboxConf;
     },
   },
   {
-    id: "unreal",
-    name: "Unreal",
-    description: "Groundbreaking 1992 demo by Future Crew",
-    author: "Future Crew",
+    id: 'unreal',
+    name: 'Unreal',
+    description: 'Groundbreaking 1992 demo by Future Crew',
+    author: 'Future Crew',
     year: 1992,
-    loadMethod: "zip",
-    dosboxConf: "", // Loaded dynamically
+    loadMethod: 'zip',
+    dosboxConf: '', // Loaded dynamically
     loader: async (onProgress) => {
-      const config = await import("../dos-apps/unreal.config");
+      const config = await import('../dos-apps/unreal.config');
       return config.loadZipArchive(config.unrealZipUrl, onProgress);
     },
     loadDosboxConf: async () => {
-      const config = await import("../dos-apps/unreal.config");
+      const config = await import('../dos-apps/unreal.config');
       return config.unrealDosboxConf;
     },
   },
   {
-    id: "panic",
-    name: "Panic",
-    description: "Classic 1992 demo by Future Crew",
-    author: "Future Crew",
+    id: 'panic',
+    name: 'Panic',
+    description: 'Classic 1992 demo by Future Crew',
+    author: 'Future Crew',
     year: 1992,
-    loadMethod: "zip",
-    dosboxConf: "", // Loaded dynamically
+    loadMethod: 'zip',
+    dosboxConf: '', // Loaded dynamically
     loader: async (onProgress) => {
-      const config = await import("../dos-apps/panic.config");
+      const config = await import('../dos-apps/panic.config');
       return config.loadZipArchive(config.panicZipUrl, onProgress);
     },
     loadDosboxConf: async () => {
-      const config = await import("../dos-apps/panic.config");
+      const config = await import('../dos-apps/panic.config');
       return config.panicDosboxConf;
+    },
+  },
+  {
+    id: 'squid-bbstro',
+    name: 'Squid BBS Intro',
+    description: 'Tiny BBS intro (1899 bytes) by cld & The Doctor',
+    author: 'cld & The Doctor',
+    year: 1994,
+    loadMethod: 'zip',
+    dosboxConf: '', // Loaded dynamically
+    loader: async (onProgress) => {
+      const config = await import('../dos-apps/squid-bbstro.config');
+      return config.loadZipArchive(config.squidBbstroZipUrl, onProgress);
+    },
+    loadDosboxConf: async () => {
+      const config = await import('../dos-apps/squid-bbstro.config');
+      return config.squidBbstroDosboxConf;
+    },
+  },
+  {
+    id: '3drotate',
+    name: '3D Rotation Demo',
+    description: "Classic 3D rotation effect from Grumpy's collection",
+    author: "Grumpy's Collection",
+    year: 1990,
+    loadMethod: 'zip',
+    dosboxConf: '', // Loaded dynamically
+    loader: async (onProgress) => {
+      const config = await import('../dos-apps/3drotate.config');
+      return config.loadZipArchive(config.rotate3dZipUrl, onProgress);
+    },
+    loadDosboxConf: async () => {
+      const config = await import('../dos-apps/3drotate.config');
+      return config.rotate3dDosboxConf;
+    },
+  },
+  {
+    id: 'stars',
+    name: 'Starfield Effect',
+    description: 'Classic starfield effect simulating flying through space',
+    author: "Grumpy's Collection",
+    year: 1990,
+    loadMethod: 'zip',
+    dosboxConf: '', // Loaded dynamically
+    loader: async (onProgress) => {
+      const config = await import('../dos-apps/stars.config');
+      return config.loadZipArchive(config.starsZipUrl, onProgress);
+    },
+    loadDosboxConf: async () => {
+      const config = await import('../dos-apps/stars.config');
+      return config.starsDosboxConf;
+    },
+  },
+  {
+    id: 'crystal-dream-2',
+    name: 'Crystal Dream 2',
+    description: "Legendary 1993 demo by Triton - 1st place at TCC'93",
+    author: 'Triton',
+    year: 1993,
+    loadMethod: 'zip',
+    dosboxConf: '', // Loaded dynamically
+    loader: async (onProgress) => {
+      const config = await import('../dos-apps/crystal-dream-2.config');
+      return config.loadZipArchive(config.crystalDream2ZipUrl, onProgress);
+    },
+    loadDosboxConf: async () => {
+      const config = await import('../dos-apps/crystal-dream-2.config');
+      return config.crystalDream2DosboxConf;
     },
   },
   // Add more applications here
@@ -167,7 +235,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
 
     setIsLoading(true);
     setError(null);
-    setLoadProgress({ loaded: 0, total: 1, currentFile: "Starting..." });
+    setLoadProgress({ loaded: 0, total: 1, currentFile: 'Starting...' });
 
     try {
       // Load the application files and dosbox config in parallel with progress tracking
@@ -185,10 +253,8 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
         dosboxConf: conf,
       });
     } catch (err) {
-      console.error("[DemoSelector] Error loading application:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load application",
-      );
+      console.error('[DemoSelector] Error loading application:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load application');
       setIsLoading(false);
       setLoadProgress(null);
     }
@@ -208,11 +274,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
       <div className="demo-selector-header">
         <h2>Select DOS Application</h2>
         {onCancel && (
-          <button
-            className="close-button"
-            onClick={handleCancel}
-            aria-label="Close"
-          >
+          <button className="close-button" onClick={handleCancel} aria-label="Close">
             ✕
           </button>
         )}
@@ -224,7 +286,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
           {availableApps.map((app) => (
             <div
               key={app.id}
-              className={`app-card ${selectedApp?.id === app.id ? "selected" : ""}`}
+              className={`app-card ${selectedApp?.id === app.id ? 'selected' : ''}`}
               onClick={() => handleSelectApp(app)}
             >
               {app.thumbnail && (
@@ -267,25 +329,16 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
                   />
                 </div>
                 <p className="progress-text">
-                  Loading {loadProgress.currentFile}... ({loadProgress.loaded}/
-                  {loadProgress.total})
+                  Loading {loadProgress.currentFile}... ({loadProgress.loaded}/{loadProgress.total})
                 </p>
               </div>
             )}
 
             <div className="app-actions">
-              <button
-                className="load-button"
-                onClick={handleLoadApp}
-                disabled={isLoading}
-              >
-                {isLoading ? "Loading..." : "Load Application"}
+              <button className="load-button" onClick={handleLoadApp} disabled={isLoading}>
+                {isLoading ? 'Loading...' : 'Load Application'}
               </button>
-              <button
-                className="cancel-button"
-                onClick={handleCancel}
-                disabled={isLoading}
-              >
+              <button className="cancel-button" onClick={handleCancel} disabled={isLoading}>
                 Cancel
               </button>
             </div>

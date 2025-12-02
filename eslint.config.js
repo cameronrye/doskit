@@ -31,7 +31,20 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true },
+        {
+          allowConstantExport: true,
+          allowExportNames: [
+            'useAppState',
+            'useAppStateValue',
+            'useAppStateActions',
+            'useNetwork',
+            'useNetworkState',
+            'useNetworkActions',
+            'usePWA',
+            'usePWAState',
+            'usePWAActions',
+          ],
+        },
       ],
     },
   },
