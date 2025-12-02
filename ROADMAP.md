@@ -2,7 +2,7 @@
 
 > **Mission**: Preserve and celebrate vintage DOS demoscene productions, audio applications, and legacy software through modern web technology.
 
-**Current Status**: Foundation Complete (v0.1.0)  
+**Current Status**: Foundation Complete (v1.0.1)
 **Focus Areas**: Demoscene Productions • Music Trackers • Legacy Productivity Software  
 **Explicitly Excluded**: Gaming applications (this is not a DOS game emulator)
 
@@ -126,10 +126,10 @@ interface SearchFilters {
   query: string;
   yearRange?: [number, number];
   parties?: string[];
-  categories?: ("demo" | "tracker" | "utility")[];
+  categories?: ('demo' | 'tracker' | 'utility')[];
   tags?: string[];
-  sortBy: "name" | "year" | "popularity" | "dateAdded";
-  sortOrder: "asc" | "desc";
+  sortBy: 'name' | 'year' | 'popularity' | 'dateAdded';
+  sortOrder: 'asc' | 'desc';
 }
 ```
 
@@ -387,7 +387,7 @@ interface AudioRecorder {
   stop(): Blob;
   isRecording(): boolean;
   getWaveform(): Float32Array;
-  export(format: "wav" | "mp3"): Blob;
+  export(format: 'wav' | 'mp3'): Blob;
 }
 ```
 

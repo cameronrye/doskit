@@ -11,13 +11,15 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: var(--color-bg-primary, #1a1a1a);
-  border: 2px solid var(--color-border, #333);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  max-width: 800px;
-  width: 90%;
-  max-height: 80vh;
+  background: linear-gradient(180deg, #1e1e1e 0%, #121212 100%);
+  border: 1px solid #333;
+  border-radius: 12px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 8px 25px rgba(0, 0, 0, 0.4);
+  max-width: 1400px;
+  width: 95%;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   z-index: 1000;
@@ -27,45 +29,64 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--color-border, #333);
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid #333;
+  background: #1a1a1a;
+  border-radius: 12px 12px 0 0;
 }
 
 .demo-selector-header h2 {
   margin: 0;
   font-size: 1.5rem;
-  color: var(--color-text-primary, #fff);
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .close-button {
   background: transparent;
   border: none;
-  color: var(--color-text-secondary, #aaa);
+  color: #888;
   font-size: 1.5rem;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem;
   line-height: 1;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  border-radius: 6px;
 }
 
 .close-button:hover {
-  color: var(--color-text-primary, #fff);
+  color: #fff;
+  background: #333;
 }
 
 .demo-selector-content {
-  padding: 1.5rem;
+  padding: 2rem;
   overflow-y: auto;
   flex: 1;
+  background: #1e1e1e;
 }
 
-/* Application List */
+/* Application List - Floppy Disk Grid */
 .app-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 2rem;
   margin-bottom: 1.5rem;
+  justify-items: center;
+  padding: 1.5rem;
 }
 
+/* Floppy grid specific styling */
+.app-list.floppy-grid {
+  background: #151515;
+  border-radius: 10px;
+  border: 1px solid #2a2a2a;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Legacy app card styles (kept for backward compatibility) */
 .app-card {
   background: var(--color-bg-secondary, #2a2a2a);
   border: 2px solid var(--color-border, #333);
@@ -139,20 +160,23 @@
 
 /* App Details */
 .app-details {
-  background: var(--color-bg-secondary, #2a2a2a);
-  border: 2px solid var(--color-accent, #4a9eff);
-  border-radius: 6px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 10px;
   padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .app-details h3 {
   margin: 0 0 0.75rem 0;
-  color: var(--color-accent, #4a9eff);
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
 }
 
 .app-details p {
   margin: 0 0 1rem 0;
-  color: var(--color-text-secondary, #ccc);
+  color: #aaa;
 }
 
 /* Error Message */
@@ -173,7 +197,8 @@
 .progress-bar {
   width: 100%;
   height: 8px;
-  background: var(--color-bg-tertiary, #1a1a1a);
+  background: #2a2a2a;
+  border: none;
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -181,14 +206,16 @@
 
 .progress-fill {
   height: 100%;
-  background: var(--color-accent, #4a9eff);
+  background: linear-gradient(90deg, #4dabf7 0%, #228be6 100%);
   transition: width 0.3s ease;
+  border-radius: 4px;
 }
 
 .progress-text {
   margin: 0;
   font-size: 0.875rem;
-  color: var(--color-text-secondary, #aaa);
+  color: #aaa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Actions */
@@ -202,40 +229,42 @@
 .cancel-button {
   padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .load-button {
-  background: var(--color-accent, #4a9eff);
-  color: white;
+  background: #228be6;
+  color: #ffffff;
   flex: 1;
+  border: none;
 }
 
 .load-button:hover:not(:disabled) {
-  background: var(--color-accent-hover, #3a8eef);
+  background: #1c7ed6;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(34, 139, 230, 0.35);
 }
 
 .load-button:disabled {
-  background: var(--color-bg-tertiary, #333);
-  color: var(--color-text-disabled, #666);
+  background: #adb5bd;
+  color: #ffffff;
   cursor: not-allowed;
 }
 
 .cancel-button {
-  background: transparent;
-  color: var(--color-text-secondary, #aaa);
-  border: 1px solid var(--color-border, #333);
+  background: #2a2a2a;
+  color: #aaa;
+  border: 1px solid #444;
 }
 
 .cancel-button:hover:not(:disabled) {
-  background: var(--color-bg-tertiary, #333);
-  color: var(--color-text-primary, #fff);
+  background: #333;
+  color: #fff;
 }
 
 .cancel-button:disabled {
@@ -244,14 +273,30 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+  .demo-selector {
+    max-width: 95%;
+  }
+}
+
 @media (max-width: 768px) {
   .demo-selector {
-    width: 95%;
-    max-height: 90vh;
+    width: 98%;
+    max-height: 95vh;
+    border-radius: 8px;
+  }
+
+  .demo-selector-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .demo-selector-content {
+    padding: 1.5rem;
   }
 
   .app-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
   }
 
   .demo-selector-header h2 {
@@ -265,6 +310,14 @@
   .load-button,
   .cancel-button {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-list {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+    padding: 0.75rem;
   }
 }
 
@@ -301,4 +354,3 @@
     --color-error-bg: #ffebee;
   }
 }
-

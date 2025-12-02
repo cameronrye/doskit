@@ -7,26 +7,11 @@
  * Handles deep linking and URL-based app loading
  */
 
-/**
- * Mapping between URL-friendly app identifiers and internal app IDs
- * URL-friendly IDs have no hyphens for easier typing
- */
-const APP_ID_MAPPING: Record<string, string> = {
-  // URL-friendly (no hyphens) -> Internal ID (with hyphens)
-  secondreality: "second-reality",
-  impulsetracker: "impulse-tracker",
-  // Also support the hyphenated versions directly
-  "second-reality": "second-reality",
-  "impulse-tracker": "impulse-tracker",
-};
-
-/**
- * Reverse mapping: Internal ID -> URL-friendly ID
- */
-const INTERNAL_TO_URL_MAPPING: Record<string, string> = {
-  "second-reality": "secondreality",
-  "impulse-tracker": "impulsetracker",
-};
+import {
+  APP_ID_MAPPING,
+  INTERNAL_TO_URL_MAPPING,
+  getUrlFriendlyId as getUrlFriendlyIdFromConfig,
+} from '../config/apps.config';
 
 /**
  * Get the app ID from the current URL
@@ -36,7 +21,7 @@ const INTERNAL_TO_URL_MAPPING: Record<string, string> = {
 export function getAppIdFromUrl(): string | null {
   // First, try query parameter
   const params = new URLSearchParams(window.location.search);
-  const appParam = params.get("app");
+  const appParam = params.get('app');
 
   if (appParam) {
     const sanitized = sanitizeInput(appParam);
@@ -47,7 +32,7 @@ export function getAppIdFromUrl(): string | null {
 
   // Then, try path-based routing (e.g., /secondreality)
   const path = window.location.pathname;
-  const pathSegments = path.split("/").filter((segment) => segment.length > 0);
+  const pathSegments = path.split('/').filter((segment) => segment.length > 0);
 
   // If there's a path segment, try to use it as an app ID
   if (pathSegments.length > 0) {
@@ -75,12 +60,12 @@ export function getAppIdFromUrl(): string | null {
  * @returns The sanitized string or null if invalid
  */
 function sanitizeInput(input: string): string | null {
-  if (!input || typeof input !== "string") {
+  if (!input || typeof input !== 'string') {
     return null;
   }
 
   // Remove any characters that aren't alphanumeric, hyphens, or underscores
-  const sanitized = input.replace(/[^a-zA-Z0-9\-_]/g, "");
+  const sanitized = input.replace(/[^a-zA-Z0-9\-_]/g, '');
 
   // Ensure the result is not empty and has reasonable length
   if (sanitized.length === 0 || sanitized.length > 100) {
@@ -112,7 +97,7 @@ export function normalizeAppId(urlId: string): string | null {
  * @returns The URL-friendly ID (e.g., 'secondreality')
  */
 export function getUrlFriendlyId(appId: string): string {
-  return INTERNAL_TO_URL_MAPPING[appId] || appId.replace(/-/g, "");
+  return INTERNAL_TO_URL_MAPPING[appId] || getUrlFriendlyIdFromConfig(appId);
 }
 
 /**
@@ -121,24 +106,21 @@ export function getUrlFriendlyId(appId: string): string {
  * @param appId - The internal app ID, or null to remove the app parameter
  * @param replace - If true, replaces the current history entry instead of adding a new one
  */
-export function updateUrlWithApp(
-  appId: string | null,
-  replace: boolean = false,
-): void {
+export function updateUrlWithApp(appId: string | null, replace: boolean = false): void {
   const url = new URL(window.location.href);
 
   if (appId) {
     const urlFriendlyId = getUrlFriendlyId(appId);
-    url.searchParams.set("app", urlFriendlyId);
+    url.searchParams.set('app', urlFriendlyId);
   } else {
-    url.searchParams.delete("app");
+    url.searchParams.delete('app');
   }
 
   // Update the URL without reloading the page
   if (replace) {
-    window.history.replaceState({}, "", url.toString());
+    window.history.replaceState({}, '', url.toString());
   } else {
-    window.history.pushState({}, "", url.toString());
+    window.history.pushState({}, '', url.toString());
   }
 }
 
@@ -150,7 +132,7 @@ export function updateDocumentTitle(appName?: string): void {
   if (appName) {
     document.title = `${appName} - DosKit`;
   } else {
-    document.title = "DosKit - Cross-Platform DOS Emulator";
+    document.title = 'DosKit - Cross-Platform DOS Emulator';
   }
 }
 
@@ -176,16 +158,13 @@ export function getShareableUrl(): string {
  * @param urlFriendlyId - The URL-friendly identifier (e.g., 'myapp')
  * @param internalId - The internal app ID (e.g., 'my-app')
  */
-export function registerAppIdMapping(
-  urlFriendlyId: string,
-  internalId: string,
-): void {
+export function registerAppIdMapping(urlFriendlyId: string, internalId: string): void {
   // Sanitize inputs to prevent XSS
   const sanitizedUrlId = sanitizeInput(urlFriendlyId);
   const sanitizedInternalId = sanitizeInput(internalId);
 
   if (!sanitizedUrlId || !sanitizedInternalId) {
-    console.warn("[urlRouting] Invalid app ID mapping rejected:", {
+    console.warn('[urlRouting] Invalid app ID mapping rejected:', {
       urlFriendlyId,
       internalId,
     });

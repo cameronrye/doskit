@@ -3,10 +3,10 @@
  * Tests the complete user flow: select app -> load files -> initialize emulator -> verify running
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, waitFor } from "@testing-library/react";
-import { DosPlayer } from "../components/DosPlayer";
-import type { CommandInterface, DosOptions } from "../types/js-dos";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, waitFor, act } from '@testing-library/react';
+import { DosPlayer } from '../components/DosPlayer';
+import type { CommandInterface, DosOptions } from '../types/js-dos';
 
 // Create mock command interface
 function createMockCommandInterface(): CommandInterface {
@@ -51,8 +51,8 @@ function createMockCommandInterface(): CommandInterface {
 function createMockDosInstance() {
   return {
     stop: vi.fn().mockResolvedValue(undefined),
-    getVersion: vi.fn().mockReturnValue("8.3.20"),
-    getToken: vi.fn().mockReturnValue("test-token"),
+    getVersion: vi.fn().mockReturnValue('8.3.20'),
+    getToken: vi.fn().mockReturnValue('test-token'),
     setTheme: vi.fn(),
     setLang: vi.fn(),
     setBackend: vi.fn(),
@@ -84,7 +84,7 @@ function createMockDosInstance() {
   };
 }
 
-describe("DOS Application Loading Integration Tests", () => {
+describe('DOS Application Loading Integration Tests', () => {
   let mockDos: ReturnType<typeof vi.fn>;
   let mockCommandInterface: CommandInterface;
   let mockDosInstance: ReturnType<typeof createMockDosInstance>;
@@ -98,34 +98,29 @@ describe("DOS Application Loading Integration Tests", () => {
     mockDosInstance = createMockDosInstance();
 
     // Mock window.Dos
-    mockDos = vi
-      .fn()
-      .mockImplementation((_container: HTMLElement, options: DosOptions) => {
-        // Store the onEvent callback
-        if (options.onEvent) {
-          onEventCallback = options.onEvent as (
-            event: string,
-            ci?: unknown,
-          ) => void;
+    mockDos = vi.fn().mockImplementation((_container: HTMLElement, options: DosOptions) => {
+      // Store the onEvent callback
+      if (options.onEvent) {
+        onEventCallback = options.onEvent as (event: string, ci?: unknown) => void;
+      }
+
+      // Simulate async initialization - trigger events after a delay
+      // This gives the component time to set up its event handlers
+      setTimeout(() => {
+        if (onEventCallback) {
+          // First trigger emu-ready
+          onEventCallback('emu-ready');
+          // Then trigger ci-ready with command interface
+          setTimeout(() => {
+            if (onEventCallback) {
+              onEventCallback('ci-ready', mockCommandInterface);
+            }
+          }, 10);
         }
+      }, 50);
 
-        // Simulate async initialization - trigger events after a delay
-        // This gives the component time to set up its event handlers
-        setTimeout(() => {
-          if (onEventCallback) {
-            // First trigger emu-ready
-            onEventCallback("emu-ready");
-            // Then trigger ci-ready with command interface
-            setTimeout(() => {
-              if (onEventCallback) {
-                onEventCallback("ci-ready", mockCommandInterface);
-              }
-            }, 10);
-          }
-        }, 50);
-
-        return Promise.resolve(mockDosInstance);
-      });
+      return Promise.resolve(mockDosInstance);
+    });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).Dos = mockDos;
@@ -137,7 +132,7 @@ describe("DOS Application Loading Integration Tests", () => {
     vi.restoreAllMocks();
   });
 
-  it("should initialize emulator with default configuration", async () => {
+  it('should initialize emulator with default configuration', async () => {
     const onReady = vi.fn();
 
     render(<DosPlayer onReady={onReady} />);
@@ -149,21 +144,20 @@ describe("DOS Application Loading Integration Tests", () => {
 
     const dosCallArgs = mockDos.mock.calls[0];
     expect(dosCallArgs[0]).toBeInstanceOf(HTMLElement);
-    expect(dosCallArgs[1]).toHaveProperty("dosboxConf");
-    expect(dosCallArgs[1]).toHaveProperty("onEvent");
+    expect(dosCallArgs[1]).toHaveProperty('dosboxConf');
+    expect(dosCallArgs[1]).toHaveProperty('onEvent');
 
     // Wait for emulator ready event
     await waitFor(
       () => {
         expect(onReady).toHaveBeenCalledWith(mockCommandInterface);
       },
-      { timeout: 1000 },
+      { timeout: 1000 }
     );
   });
 
-  it("should initialize emulator with custom dosbox configuration", async () => {
-    const customConf =
-      "[cpu]\ncore=dynamic\ncycles=10000\n[autoexec]\nmount c .\nc:\ntest.exe";
+  it('should initialize emulator with custom dosbox configuration', async () => {
+    const customConf = '[cpu]\ncore=dynamic\ncycles=10000\n[autoexec]\nmount c .\nc:\ntest.exe';
     const onReady = vi.fn();
 
     render(<DosPlayer dosboxConf={customConf} onReady={onReady} />);
@@ -182,14 +176,14 @@ describe("DOS Application Loading Integration Tests", () => {
       () => {
         expect(onReady).toHaveBeenCalledWith(mockCommandInterface);
       },
-      { timeout: 1000 },
+      { timeout: 1000 }
     );
   });
 
-  it("should pass custom options to emulator", async () => {
+  it('should pass custom options to emulator', async () => {
     const customOptions: Partial<DosOptions> = {
-      theme: "dark" as const,
-      lang: "en" as const,
+      theme: 'dark' as const,
+      lang: 'en' as const,
       volume: 0.5,
     };
 
@@ -203,11 +197,9 @@ describe("DOS Application Loading Integration Tests", () => {
     expect(dosCallArgs[1]).toMatchObject(customOptions);
   });
 
-  it("should handle emulator initialization errors", async () => {
+  it('should handle emulator initialization errors', async () => {
     // Mock Dos to throw error
-    const errorDos = vi
-      .fn()
-      .mockRejectedValue(new Error("Emulator initialization failed"));
+    const errorDos = vi.fn().mockRejectedValue(new Error('Emulator initialization failed'));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).Dos = errorDos;
 
@@ -222,16 +214,18 @@ describe("DOS Application Loading Integration Tests", () => {
 
     // Verify error message is displayed
     await waitFor(() => {
-      const errorElement = container.querySelector(".dos-player-error");
+      const errorElement = container.querySelector('.dos-player-error');
       expect(errorElement).not.toBeNull();
     });
 
-    // Verify onReady is not called
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Verify onReady is not called - wrap in act
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
     expect(onReady).not.toHaveBeenCalled();
   });
 
-  it("should handle emulator exit event", async () => {
+  it('should handle emulator exit event', async () => {
     const onExit = vi.fn();
 
     render(<DosPlayer onExit={onExit} />);
@@ -241,15 +235,19 @@ describe("DOS Application Loading Integration Tests", () => {
       expect(mockDos).toHaveBeenCalled();
     });
 
-    // Wait for ci-ready event to be processed
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Wait for ci-ready event to be processed wrapped in act
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
 
-    // Trigger exit through command interface
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (mockCommandInterface && (mockCommandInterface as any)._triggerExit) {
+    // Trigger exit through command interface wrapped in act
+    await act(async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mockCommandInterface as any)._triggerExit();
-    }
+      if (mockCommandInterface && (mockCommandInterface as any)._triggerExit) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (mockCommandInterface as any)._triggerExit();
+      }
+    });
 
     // Verify onExit callback
     await waitFor(() => {
@@ -257,7 +255,7 @@ describe("DOS Application Loading Integration Tests", () => {
     });
   });
 
-  it("should handle emulator error event", async () => {
+  it('should handle emulator error event', async () => {
     render(<DosPlayer />);
 
     // Wait for emulator to be ready
@@ -265,17 +263,19 @@ describe("DOS Application Loading Integration Tests", () => {
       expect(mockDos).toHaveBeenCalled();
     });
 
-    // Simulate error event
-    if (onEventCallback) {
-      onEventCallback("emu-error");
-    }
+    // Simulate error event wrapped in act
+    await act(async () => {
+      if (onEventCallback) {
+        onEventCallback('emu-error');
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
 
     // Verify error is handled (component should still be mounted)
-    await new Promise((resolve) => setTimeout(resolve, 100));
     expect(mockDos).toHaveBeenCalledTimes(1);
   });
 
-  it("should cleanup emulator on unmount", async () => {
+  it('should cleanup emulator on unmount', async () => {
     const { unmount } = render(<DosPlayer />);
 
     // Wait for emulator to be ready
@@ -292,7 +292,7 @@ describe("DOS Application Loading Integration Tests", () => {
     });
   });
 
-  it("should not reinitialize emulator on re-render", async () => {
+  it('should not reinitialize emulator on re-render', async () => {
     const { rerender } = render(<DosPlayer />);
 
     // Wait for initial initialization
@@ -300,17 +300,24 @@ describe("DOS Application Loading Integration Tests", () => {
       expect(mockDos).toHaveBeenCalledTimes(1);
     });
 
+    // Wait for async events to complete
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+
     // Re-render with same props
     rerender(<DosPlayer />);
 
-    // Wait a bit
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Wait for any pending state updates
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
 
     // Verify Dos is still only called once
     expect(mockDos).toHaveBeenCalledTimes(1);
   });
 
-  it("should handle missing window.Dos gracefully", async () => {
+  it('should handle missing window.Dos gracefully', async () => {
     // Remove window.Dos
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).Dos;
@@ -319,15 +326,15 @@ describe("DOS Application Loading Integration Tests", () => {
 
     // Verify error message is displayed
     await waitFor(() => {
-      const errorElement = container.querySelector(".dos-player-error");
+      const errorElement = container.querySelector('.dos-player-error');
       expect(errorElement).not.toBeNull();
     });
   });
 
-  it("should trigger all emulator lifecycle events in correct order", async () => {
+  it('should trigger all emulator lifecycle events in correct order', async () => {
     const events: string[] = [];
-    const onReady = vi.fn(() => events.push("ready"));
-    const onExit = vi.fn(() => events.push("exit"));
+    const onReady = vi.fn(() => events.push('ready'));
+    const onExit = vi.fn(() => events.push('exit'));
 
     render(<DosPlayer onReady={onReady} onExit={onExit} />);
 
@@ -341,21 +348,23 @@ describe("DOS Application Loading Integration Tests", () => {
       () => {
         expect(onReady).toHaveBeenCalled();
       },
-      { timeout: 2000 },
+      { timeout: 2000 }
     );
 
-    // Trigger exit through command interface
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (mockCommandInterface && (mockCommandInterface as any)._triggerExit) {
+    // Trigger exit through command interface wrapped in act
+    await act(async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mockCommandInterface as any)._triggerExit();
-    }
+      if (mockCommandInterface && (mockCommandInterface as any)._triggerExit) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (mockCommandInterface as any)._triggerExit();
+      }
+    });
 
     await waitFor(() => {
       expect(onExit).toHaveBeenCalled();
     });
 
     // Verify event order
-    expect(events).toEqual(["ready", "exit"]);
+    expect(events).toEqual(['ready', 'exit']);
   });
 });
