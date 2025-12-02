@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0](https://github.com/cameronrye/doskit/compare/v1.0.1...v1.1.0) (2025-12-02)
+
+
+### Features
+
+* katsup ([8e11f00](https://github.com/cameronrye/doskit/commit/8e11f00c37b7ff5348d3dfbb5372fe060e485596))
+
+
+### Bug Fixes
+
+* adjust coverage thresholds to 69% to account for new code ([84e9f66](https://github.com/cameronrye/doskit/commit/84e9f669501be3060ad3512c5ed50f1a0a691fc5))
+* resolve bugs and implement improvements from code review ([34a0502](https://github.com/cameronrye/doskit/commit/34a05029cc5505eb7df8daa2290a5ae56f09724a))
+* resolve bugs and implement improvements from code review ([a41e2c7](https://github.com/cameronrye/doskit/commit/a41e2c7ec158ef8472852d5b702253327893861f))
+
 ## [1.0.1](https://github.com/cameronrye/doskit/compare/v1.0.0...v1.0.1) (2025-11-19)
 
 
