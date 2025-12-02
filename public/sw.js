@@ -31,6 +31,7 @@ const BASE_PATH = getBasePath();
 const STATIC_ASSETS = [
   `${BASE_PATH}/`,
   `${BASE_PATH}/index.html`,
+  `${BASE_PATH}/offline.html`,
   `${BASE_PATH}/manifest.json`,
   `${BASE_PATH}/logo.svg`,
   `${BASE_PATH}/favicon.svg`,
@@ -394,7 +395,14 @@ self.addEventListener('fetch', (event) => {
 
             // Return offline page for navigation requests
             if (request.mode === 'navigate') {
-              return caches.match(`${BASE_PATH}/index.html`);
+              return caches.match(`${BASE_PATH}/offline.html`)
+                .then((offlineResponse) => {
+                  if (offlineResponse) {
+                    return offlineResponse;
+                  }
+                  // Fallback to index.html if offline.html not cached
+                  return caches.match(`${BASE_PATH}/index.html`);
+                });
             }
 
             // For other requests, throw the error

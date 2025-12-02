@@ -8,7 +8,7 @@
  * This decouples the application from specific emulator libraries (js-dos, etc.)
  */
 
-import type { DosOptions, DosProps } from "../types/js-dos";
+import type { DosOptions, DosProps } from '../types/js-dos';
 
 /**
  * Interface for emulator adapters
@@ -27,10 +27,7 @@ export interface EmulatorAdapter {
    * @param options - Configuration options for the emulator
    * @returns A promise that resolves to the emulator instance
    */
-  initialize(
-    container: HTMLDivElement,
-    options: Partial<DosOptions>,
-  ): Promise<DosProps>;
+  initialize(container: HTMLDivElement, options: Partial<DosOptions>): Promise<DosProps>;
 
   /**
    * Get the name of the emulator implementation
@@ -54,20 +51,15 @@ export class JsDosAdapter implements EmulatorAdapter {
    * Check if js-dos is available on window
    */
   isAvailable(): boolean {
-    return typeof window !== "undefined" && typeof window.Dos === "function";
+    return typeof window !== 'undefined' && typeof window.Dos === 'function';
   }
 
   /**
    * Initialize js-dos emulator
    */
-  async initialize(
-    container: HTMLDivElement,
-    options: Partial<DosOptions>,
-  ): Promise<DosProps> {
+  async initialize(container: HTMLDivElement, options: Partial<DosOptions>): Promise<DosProps> {
     if (!this.isAvailable()) {
-      throw new Error(
-        "js-dos library is not loaded. Please ensure the script is included.",
-      );
+      throw new Error('js-dos library is not loaded. Please ensure the script is included.');
     }
 
     try {
@@ -76,7 +68,7 @@ export class JsDosAdapter implements EmulatorAdapter {
       return Promise.resolve(dosProps);
     } catch (error) {
       throw new Error(
-        `Failed to initialize js-dos: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to initialize js-dos: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -85,7 +77,7 @@ export class JsDosAdapter implements EmulatorAdapter {
    * Get the adapter name
    */
   getName(): string {
-    return "js-dos";
+    return 'js-dos';
   }
 
   /**
@@ -93,25 +85,36 @@ export class JsDosAdapter implements EmulatorAdapter {
    */
   getVersion(): string {
     if (!this.isAvailable()) {
-      return "unknown";
+      return 'unknown';
     }
+
+    let tempContainer: HTMLDivElement | null = null;
+    let dosProps: DosProps | null = null;
 
     try {
       // Create a temporary container to get version
-      const tempContainer = document.createElement("div");
-      tempContainer.style.display = "none";
+      tempContainer = document.createElement('div');
+      tempContainer.style.display = 'none';
       document.body.appendChild(tempContainer);
 
-      const dosProps = window.Dos(tempContainer, {});
+      dosProps = window.Dos(tempContainer, {});
       const [version] = dosProps.getVersion();
-
-      // Cleanup
-      dosProps.stop();
-      document.body.removeChild(tempContainer);
 
       return version;
     } catch {
-      return "unknown";
+      return 'unknown';
+    } finally {
+      // Always cleanup, even if an error occurs
+      if (dosProps) {
+        try {
+          dosProps.stop();
+        } catch {
+          // Ignore stop errors during cleanup
+        }
+      }
+      if (tempContainer && tempContainer.parentNode) {
+        tempContainer.parentNode.removeChild(tempContainer);
+      }
     }
   }
 }

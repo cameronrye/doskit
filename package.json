@@ -54,7 +54,8 @@
   "dependencies": {
     "js-dos": "8.3.20",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "retro-floppy": "^1.0.0"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",
