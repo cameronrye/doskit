@@ -46,7 +46,7 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 
 ### Prerequisites
 
-- Node.js 18+ (recommended: 24.4.1 or later)
+- Node.js 24+ (see `.nvmrc`)
 - npm 9+ or yarn 1.22+
 
 ### Installation
@@ -246,7 +246,7 @@ DosKit uses **fully automated releases** with [release-please](https://github.co
 3. **release-please bot**: Automatically creates a Release PR
 4. **Merge Release PR**: Automatic GitHub release with artifacts
 
-See [docs/RELEASE-PROCESS.md](docs/RELEASE-PROCESS.md) for details on conventional commits.
+See [CONTRIBUTING.md](CONTRIBUTING.md#commit-messages) for details on conventional commits.
 
 ## Configuration
 
