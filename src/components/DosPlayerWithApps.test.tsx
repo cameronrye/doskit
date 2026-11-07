@@ -45,8 +45,16 @@ const mockAppWithError: DosApp = {
 
 // Mock DosPlayer component
 vi.mock('./DosPlayer', () => ({
-  DosPlayer: ({ onReady, onExit }: { onReady?: () => void; onExit?: () => void }) => (
-    <div data-testid="dos-player-mock">
+  DosPlayer: ({
+    onReady,
+    onExit,
+    dosboxConf,
+  }: {
+    onReady?: () => void;
+    onExit?: () => void;
+    dosboxConf?: string;
+  }) => (
+    <div data-testid="dos-player-mock" data-dosbox-conf={dosboxConf ?? 'default'}>
       <button onClick={onReady}>Trigger Ready</button>
       <button onClick={onExit}>Trigger Exit</button>
     </div>
@@ -415,6 +423,29 @@ describe('DosPlayerWithApps', () => {
         expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
         expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
       });
+    });
+
+    it("should boot the default DOS config after Try Again, not the previous app's", async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      // Run an app with its own DOSBox config
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      expect(screen.getByTestId('dos-player-mock')).toHaveAttribute(
+        'data-dosbox-conf',
+        '[cpu]\ncore=auto'
+      );
+
+      // A later load fails and the user resets
+      window.dispatchEvent(
+        new CustomEvent('load-app-from-url', {
+          detail: { app: mockAppWithError },
+        })
+      );
+      fireEvent.click(await screen.findByRole('button', { name: /Try Again/i }));
+
+      expect(screen.getByTestId('dos-player-mock')).toHaveAttribute('data-dosbox-conf', 'default');
     });
 
     it('should call onAppChange with null when reset', async () => {

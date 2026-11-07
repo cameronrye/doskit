@@ -115,6 +115,7 @@ export function DosPlayerWithApps({
   const handleReset = useCallback(() => {
     setSelectedApp(null);
     setAppFiles(null);
+    setDosboxConf(undefined);
     setError(null);
     setShowAppSelector(true);
     onAppChange?.(null);
