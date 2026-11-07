@@ -93,8 +93,9 @@ function calculateDelay(
  * @private
  */
 function isRetryableError(error: unknown, retryableStatusCodes: number[]): boolean {
-  // Network errors are retryable
-  if (error instanceof TypeError && error.message.includes('fetch')) {
+  // fetch() rejects with a TypeError on network failure. The message varies by
+  // browser ("Failed to fetch", "NetworkError ...", WebKit's "Load failed").
+  if (error instanceof TypeError) {
     return true;
   }
 
@@ -159,14 +160,19 @@ export async function fetchWithRetry(
 
       const response = await fetch(input, fetchInit);
 
-      // Check if response status is retryable
-      if (!response.ok && retryableStatusCodes.includes(response.status)) {
+      // Retry retryable statuses; on the last attempt hand the response back so
+      // callers can report it via response.ok / statusText like any other HTTP error.
+      if (!response.ok && retryableStatusCodes.includes(response.status) && attempt < maxRetries) {
         throw response;
       }
 
       return response;
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+      if (error instanceof Response) {
+        lastError = new Error(`HTTP ${error.status} ${error.statusText}`.trim());
+      } else {
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
 
       // Don't retry if we've exhausted attempts
       if (attempt >= maxRetries) {
