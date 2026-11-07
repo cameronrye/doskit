@@ -521,5 +521,28 @@ describe('serviceWorkerRegistration', () => {
 
       expect(onUpdate).toHaveBeenCalledWith(mockRegistration);
     });
+
+    it('should call onUpdate for an update already waiting when the page loads', async () => {
+      // e.g. the user chose "Later" and reloaded: updatefound does not fire again
+      const onUpdate = vi.fn();
+      const mockRegistration = createMockRegistration();
+      mockRegistration.waiting = {
+        state: 'installed',
+        postMessage: vi.fn(),
+      } as Partial<ServiceWorker> as ServiceWorker;
+
+      vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(mockRegistration);
+      Object.defineProperty(navigator.serviceWorker, 'controller', {
+        writable: true,
+        configurable: true,
+        value: { state: 'activated' },
+      });
+
+      register({ onUpdate });
+      window.dispatchEvent(new Event('load'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(onUpdate).toHaveBeenCalledWith(mockRegistration);
+    });
   });
 });

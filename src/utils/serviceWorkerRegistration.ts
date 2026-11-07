@@ -83,6 +83,12 @@ function registerValidSW(swUrl: string, config?: ServiceWorkerConfig): void {
       // Set up periodic update checks (every hour when page is visible)
       setupPeriodicUpdateChecks(registration);
 
+      // An update installed earlier may still be waiting (e.g. the user chose
+      // "Later" and reloaded); updatefound won't fire again for it
+      if (registration.waiting && navigator.serviceWorker.controller) {
+        config?.onUpdate?.(registration);
+      }
+
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
         if (installingWorker == null) {
