@@ -97,6 +97,65 @@ describe('globalErrorHandler', () => {
       expect(onError).toHaveBeenCalledWith(error, expect.any(Object));
     });
 
+    it('tracks a promise rejected without a reason', () => {
+      const onError = vi.fn();
+      // Production config (main.tsx); config persists across init calls
+      initializeGlobalErrorHandler({ onError, suppressHarmlessErrors: true });
+
+      const rejectedPromise = Promise.reject();
+      rejectedPromise.catch(() => {});
+      window.dispatchEvent(
+        new PromiseRejectionEvent('unhandledrejection', {
+          promise: rejectedPromise,
+          reason: undefined,
+        })
+      );
+
+      expect(onError).toHaveBeenCalledWith(
+        expect.any(Error),
+        expect.objectContaining({ userAction: 'Promise rejection' })
+      );
+    });
+
+    it("prevents the browser's default report for suppressed uncaught errors", () => {
+      initializeGlobalErrorHandler({ suppressHarmlessErrors: true });
+
+      const errorEvent = new ErrorEvent('error', {
+        error: new Error('exitFullscreen is not available'),
+        message: 'exitFullscreen is not available',
+        cancelable: true,
+      });
+      window.dispatchEvent(errorEvent);
+
+      expect(errorEvent.defaultPrevented).toBe(true);
+    });
+
+    it('records where an uncaught error was thrown', () => {
+      const onError = vi.fn();
+      initializeGlobalErrorHandler({ onError });
+
+      window.dispatchEvent(
+        new ErrorEvent('error', {
+          error: new Error('boom'),
+          message: 'boom',
+          filename: 'https://doskit.net/assets/index.js',
+          lineno: 10,
+          colno: 5,
+        })
+      );
+
+      expect(onError).toHaveBeenCalledWith(
+        expect.any(Error),
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            source: 'https://doskit.net/assets/index.js',
+            lineno: 10,
+            colno: 5,
+          }),
+        })
+      );
+    });
+
     it('should suppress harmless errors', () => {
       const onError = vi.fn();
       initializeGlobalErrorHandler({
