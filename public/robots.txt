@@ -5,8 +5,7 @@
 User-agent: *
 Allow: /
 
-# Disallow crawling of build artifacts and internal files
-Disallow: /assets/
+# Disallow crawling of source maps (the app's JS/CSS must stay crawlable to render)
 Disallow: /*.map$
 
 # Allow specific AI/LLM crawlers
@@ -50,7 +49,4 @@ Sitemap: https://doskit.net/sitemap.xml
 
 # Crawl-delay (optional, adjust as needed)
 # Crawl-delay: 1
-
-# Host preference (for SEO)
-Host: https://doskit.net
 
