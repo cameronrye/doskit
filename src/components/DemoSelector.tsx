@@ -67,8 +67,11 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
     // Delay preload to avoid unnecessary requests on quick mouse movements
     hoverTimeoutRef.current = setTimeout(() => {
       if (!preloadedConfigs.has(app.id) && app.loadDosboxConf) {
-        // Start preloading the config (don't await, just start the promise)
-        preloadedConfigs.set(app.id, app.loadDosboxConf());
+        // Start preloading the config (don't await, just start the promise).
+        // Evict failures so a later load retries instead of reusing the rejection.
+        const preload = app.loadDosboxConf();
+        preloadedConfigs.set(app.id, preload);
+        preload.catch(() => preloadedConfigs.delete(app.id));
       }
     }, 150);
   }, []);
@@ -89,11 +92,11 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
       const app = appToLoad || selectedApp;
       if (!app) return;
 
-      // Cancel any ongoing load
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      abortControllerRef.current = new AbortController();
+      // Supersede any ongoing load. Each load checks its own controller, so a
+      // cancelled or superseded load can never deliver its result.
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
       setIsLoading(true);
       setError(null);
@@ -101,12 +104,11 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
 
       // Set up timeout
       const timeoutId = setTimeout(() => {
-        if (abortControllerRef.current) {
-          abortControllerRef.current.abort();
-          setError('Loading timed out. Please check your internet connection and try again.');
-          setIsLoading(false);
-          setLoadProgress(null);
-        }
+        if (abortControllerRef.current !== controller) return; // already cancelled/superseded
+        controller.abort();
+        setError('Loading timed out. Please check your internet connection and try again.');
+        setIsLoading(false);
+        setLoadProgress(null);
       }, LOADING_TIMEOUT_MS);
 
       try {
@@ -116,12 +118,13 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
           (app.loadDosboxConf ? app.loadDosboxConf() : Promise.resolve(app.dosboxConf));
 
         // Load the application files and dosbox config in parallel with progress tracking
-        const [files, conf] = await Promise.all([app.loader(setLoadProgress), configPromise]);
+        const [files, conf] = await Promise.all([
+          app.loader(setLoadProgress, controller.signal),
+          configPromise,
+        ]);
 
-        clearTimeout(timeoutId);
-
-        // Check if aborted
-        if (abortControllerRef.current?.signal.aborted) {
+        // Cancelled, timed out, or superseded while loading
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -132,10 +135,9 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
           dosboxConf: conf,
         });
       } catch (err) {
-        clearTimeout(timeoutId);
-
-        // Don't show error if intentionally cancelled
-        if (err instanceof Error && err.name === 'AbortError') {
+        // Don't show an error for a cancelled or superseded load (a timeout
+        // has already set its own message)
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -154,6 +156,8 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
         setError(errorMessage);
         setIsLoading(false);
         setLoadProgress(null);
+      } finally {
+        clearTimeout(timeoutId);
       }
     },
     [selectedApp, onSelect]

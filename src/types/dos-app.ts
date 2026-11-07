@@ -32,9 +32,13 @@ export interface DosApp {
   /**
    * Function to load the application files
    * @param onProgress - Optional callback for progress updates
+   * @param signal - Optional AbortSignal that cancels the download
    * @returns Promise resolving to file entries or disk image data
    */
-  loader: (onProgress?: (progress: LoadProgress) => void) => Promise<InitFileEntry[] | Uint8Array>;
+  loader: (
+    onProgress?: (progress: LoadProgress) => void,
+    signal?: AbortSignal
+  ) => Promise<InitFileEntry[] | Uint8Array>;
   /**
    * Lazy load the DOSBox configuration
    * @returns Promise resolving to DOSBox configuration string
