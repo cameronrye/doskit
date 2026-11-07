@@ -7,13 +7,13 @@
  * Enhanced DosPlayer that supports loading different DOS applications
  */
 
-import { useState, useCallback, useEffect } from "react";
-import { DosPlayer } from "./DosPlayer";
-import { DemoSelector, type LoadedApp } from "./DemoSelector";
-import type { DosApp } from "../types/dos-app";
-import type { DosOptions, CommandInterface } from "../types/js-dos";
-import type { InitFileEntry } from "../types/js-dos";
-import "./DosPlayerWithApps.css";
+import { useState, useCallback, useEffect } from 'react';
+import { DosPlayer } from './DosPlayer';
+import { DemoSelector, type LoadedApp } from './DemoSelector';
+import type { DosApp } from '../types/dos-app';
+import type { DosOptions, CommandInterface } from '../types/js-dos';
+import type { InitFileEntry } from '../types/js-dos';
+import './DosPlayerWithApps.css';
 
 // Re-export types for use in parent components
 export type { DosApp, LoadedApp };
@@ -36,9 +36,7 @@ export function DosPlayerWithApps({
   onSelectorVisibilityChange,
 }: DosPlayerWithAppsProps) {
   const [selectedApp, setSelectedApp] = useState<DosApp | null>(null);
-  const [appFiles, setAppFiles] = useState<InitFileEntry[] | Uint8Array | null>(
-    null,
-  );
+  const [appFiles, setAppFiles] = useState<InitFileEntry[] | Uint8Array | null>(null);
   const [isLoadingApp, setIsLoadingApp] = useState(false);
   const [dosboxConf, setDosboxConf] = useState<string | undefined>(undefined);
   const [showAppSelector, setShowAppSelector] = useState(showSelector);
@@ -59,7 +57,7 @@ export function DosPlayerWithApps({
       onAppChange?.(loadedApp.app);
       onSelectorVisibilityChange?.(false);
     },
-    [onAppChange, onSelectorVisibilityChange],
+    [onAppChange, onSelectorVisibilityChange]
   );
 
   // Handle loading app from URL (needs to load files first)
@@ -70,15 +68,13 @@ export function DosPlayerWithApps({
 
       try {
         if (import.meta.env.DEV) {
-          console.log("[DosPlayerWithApps] Loading app from URL:", app.name);
+          console.log('[DosPlayerWithApps] Loading app from URL:', app.name);
         }
 
         // Load the application files and dosbox config in parallel
         const [files, conf] = await Promise.all([
           app.loader(),
-          app.loadDosboxConf
-            ? app.loadDosboxConf()
-            : Promise.resolve(app.dosboxConf),
+          app.loadDosboxConf ? app.loadDosboxConf() : Promise.resolve(app.dosboxConf),
         ]);
 
         // Use the same handler as DemoSelector
@@ -88,18 +84,13 @@ export function DosPlayerWithApps({
           dosboxConf: conf,
         });
       } catch (err) {
-        console.error(
-          "[DosPlayerWithApps] Error loading application from URL:",
-          err,
-        );
-        setError(
-          err instanceof Error ? err.message : "Failed to load application",
-        );
+        console.error('[DosPlayerWithApps] Error loading application from URL:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load application');
       } finally {
         setIsLoadingApp(false);
       }
     },
-    [handleSelectApp],
+    [handleSelectApp]
   );
 
   // Listen for URL-based app loading events
@@ -109,10 +100,10 @@ export function DosPlayerWithApps({
       handleLoadAppFromUrl(customEvent.detail.app);
     };
 
-    window.addEventListener("load-app-from-url", handleUrlEvent);
+    window.addEventListener('load-app-from-url', handleUrlEvent);
 
     return () => {
-      window.removeEventListener("load-app-from-url", handleUrlEvent);
+      window.removeEventListener('load-app-from-url', handleUrlEvent);
     };
   }, [handleLoadAppFromUrl]);
 
@@ -138,15 +129,12 @@ export function DosPlayerWithApps({
     : {};
 
   return (
-    <div className={`dos-player-with-apps ${className || ""}`}>
+    <div className={`dos-player-with-apps ${className || ''}`}>
       {/* Application Selector Modal */}
       {showAppSelector && (
         <>
           <div className="selector-overlay" onClick={handleCancelSelector} />
-          <DemoSelector
-            onSelect={handleSelectApp}
-            onCancel={handleCancelSelector}
-          />
+          <DemoSelector onSelect={handleSelectApp} onCancel={handleCancelSelector} />
         </>
       )}
 
@@ -171,7 +159,7 @@ export function DosPlayerWithApps({
 
       {/* DOS Player */}
       <DosPlayer
-        key={selectedApp?.id || "default"} // Force remount when app changes
+        key={selectedApp?.id || 'default'} // Force remount when app changes
         dosboxConf={dosboxConf}
         options={dosOptions}
         onReady={onReady}

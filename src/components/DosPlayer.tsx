@@ -7,11 +7,11 @@
  * Main component that orchestrates the DOS emulator using the useDosEmulator hook
  */
 
-import React from "react";
-import type { DosOptions, CommandInterface } from "../types/js-dos";
-import { defaultDosboxConfig } from "../config/dosbox.conf";
-import { useDosEmulator } from "../hooks/useDosEmulator";
-import { DosPlayerUI } from "./DosPlayerUI";
+import React from 'react';
+import type { DosOptions, CommandInterface } from '../types/js-dos';
+import { defaultDosboxConfig } from '../config/dosbox.conf';
+import { useDosEmulator } from '../hooks/useDosEmulator';
+import { DosPlayerUI } from './DosPlayerUI';
 
 // js-dos is loaded via local script and available globally
 // Type declaration is in src/types/js-dos.d.ts
@@ -40,7 +40,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
   options = {},
   onReady,
   onExit,
-  className = "",
+  className = '',
   style = {},
 }) => {
   const { dosContainerRef, isLoading, error } = useDosEmulator({

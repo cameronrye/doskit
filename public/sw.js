@@ -55,20 +55,26 @@ self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing service worker...', CACHE_NAME);
 
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    caches
+      .open(CACHE_NAME)
       .then((cache) => {
         console.log('[Service Worker] Caching static assets');
-        console.log(`[Service Worker] Total assets to cache: ${STATIC_ASSETS.length + EMULATOR_ASSETS.length}`);
+        console.log(
+          `[Service Worker] Total assets to cache: ${STATIC_ASSETS.length + EMULATOR_ASSETS.length}`
+        );
 
         // Cache static assets first (critical for app to work)
-        return cache.addAll(STATIC_ASSETS)
+        return cache
+          .addAll(STATIC_ASSETS)
           .then(() => {
             console.log(`[Service Worker] ✅ Static assets cached (${STATIC_ASSETS.length} files)`);
             // Then cache emulator assets (these are larger)
             return cache.addAll(EMULATOR_ASSETS);
           })
           .then(() => {
-            console.log(`[Service Worker] ✅ Emulator assets cached (${EMULATOR_ASSETS.length} files)`);
+            console.log(
+              `[Service Worker] ✅ Emulator assets cached (${EMULATOR_ASSETS.length} files)`
+            );
           })
           .catch((error) => {
             console.error('[Service Worker] ❌ Failed to cache assets:', error);
@@ -97,7 +103,8 @@ self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating service worker...', CACHE_NAME);
 
   event.waitUntil(
-    caches.keys()
+    caches
+      .keys()
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
@@ -130,8 +137,12 @@ function calculateTimeout(request) {
   const pathname = url.pathname.toLowerCase();
 
   // Large file types get longer timeouts
-  if (pathname.endsWith('.wasm') || pathname.endsWith('.zip') ||
-      pathname.endsWith('.iso') || pathname.endsWith('.img')) {
+  if (
+    pathname.endsWith('.wasm') ||
+    pathname.endsWith('.zip') ||
+    pathname.endsWith('.iso') ||
+    pathname.endsWith('.img')
+  ) {
     // WASM and archive files: 30 seconds
     return Math.min(30000, CONFIG.NETWORK_TIMEOUT_MAX);
   }
@@ -162,7 +173,7 @@ function fetchWithTimeout(request, timeout = null) {
     fetch(request),
     new Promise((_, reject) =>
       setTimeout(() => reject(new Error(`Network timeout after ${actualTimeout}ms`)), actualTimeout)
-    )
+    ),
   ]);
 }
 
@@ -196,9 +207,12 @@ async function updateCacheMetadata(url, timestamp = Date.now()) {
     metadata[url] = timestamp;
 
     const cache = await caches.open(`${CACHE_NAME}-metadata`);
-    await cache.put('metadata', new Response(JSON.stringify(metadata), {
-      headers: { 'Content-Type': 'application/json' }
-    }));
+    await cache.put(
+      'metadata',
+      new Response(JSON.stringify(metadata), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
   } catch (error) {
     console.error('[Service Worker] Error updating cache metadata:', error);
   }
@@ -213,16 +227,18 @@ async function trimCache(cacheName) {
     const keys = await cache.keys();
 
     if (keys.length > CONFIG.MAX_CACHE_SIZE) {
-      console.log(`[Service Worker] Cache size (${keys.length}) exceeds limit (${CONFIG.MAX_CACHE_SIZE}), trimming...`);
+      console.log(
+        `[Service Worker] Cache size (${keys.length}) exceeds limit (${CONFIG.MAX_CACHE_SIZE}), trimming...`
+      );
 
       // Get metadata with timestamps
       const metadata = await getCacheMetadata();
 
       // Create array of entries with timestamps
-      const entries = keys.map(request => ({
+      const entries = keys.map((request) => ({
         request,
         url: request.url,
-        timestamp: metadata[request.url] || 0
+        timestamp: metadata[request.url] || 0,
       }));
 
       // Sort by timestamp (oldest first)
@@ -233,20 +249,25 @@ async function trimCache(cacheName) {
       const keysToDelete = entries.slice(0, deleteCount);
 
       // Delete oldest entries
-      await Promise.all(keysToDelete.map(entry => cache.delete(entry.request)));
+      await Promise.all(keysToDelete.map((entry) => cache.delete(entry.request)));
 
       // Update metadata to remove deleted entries
       const updatedMetadata = await getCacheMetadata();
-      keysToDelete.forEach(entry => {
+      keysToDelete.forEach((entry) => {
         delete updatedMetadata[entry.url];
       });
 
       const metadataCache = await caches.open(`${CACHE_NAME}-metadata`);
-      await metadataCache.put('metadata', new Response(JSON.stringify(updatedMetadata), {
-        headers: { 'Content-Type': 'application/json' }
-      }));
+      await metadataCache.put(
+        'metadata',
+        new Response(JSON.stringify(updatedMetadata), {
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
 
-      console.log(`[Service Worker] Deleted ${keysToDelete.length} old cache entries using LRU strategy`);
+      console.log(
+        `[Service Worker] Deleted ${keysToDelete.length} old cache entries using LRU strategy`
+      );
     }
   } catch (error) {
     console.error('[Service Worker] Error trimming cache:', error);
@@ -269,8 +290,12 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Network-first strategy for HTML documents to ensure fresh content
-  if (request.mode === 'navigate' || request.destination === 'document' ||
-      url.pathname.endsWith('.html') || url.pathname === BASE_PATH + '/') {
+  if (
+    request.mode === 'navigate' ||
+    request.destination === 'document' ||
+    url.pathname.endsWith('.html') ||
+    url.pathname === BASE_PATH + '/'
+  ) {
     event.respondWith(
       fetchWithTimeout(request)
         .then((networkResponse) => {
@@ -289,7 +314,11 @@ self.addEventListener('fetch', (event) => {
         })
         .catch((error) => {
           // Network failed or timed out, fallback to cache
-          console.log('[Service Worker] Network failed/timeout, serving cached HTML:', request.url, error.message);
+          console.log(
+            '[Service Worker] Network failed/timeout, serving cached HTML:',
+            request.url,
+            error.message
+          );
           return caches.match(request).then((cachedResponse) => {
             if (cachedResponse) {
               // Update timestamp when serving from cache
@@ -305,143 +334,136 @@ self.addEventListener('fetch', (event) => {
   // Cache-first strategy for WASM files (immutable, large, expensive to fetch)
   if (url.pathname.endsWith('.wasm') || url.pathname.endsWith('.wasm.gz')) {
     event.respondWith(
-      caches.match(request)
-        .then((cachedResponse) => {
-          if (cachedResponse) {
-            console.log('[Service Worker] Serving WASM from cache:', request.url);
-            // Update timestamp when serving from cache
-            updateCacheMetadata(request.url);
-            return cachedResponse;
-          }
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          console.log('[Service Worker] Serving WASM from cache:', request.url);
+          // Update timestamp when serving from cache
+          updateCacheMetadata(request.url);
+          return cachedResponse;
+        }
 
-          // Not in cache, fetch from network
-          console.log('[Service Worker] Fetching WASM from network:', request.url);
-          return fetchWithTimeout(request)
-            .then((networkResponse) => {
-              if (networkResponse && networkResponse.status === 200) {
-                const responseToCache = networkResponse.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                  cache.put(request, responseToCache);
-                  updateCacheMetadata(request.url);
-                  trimCache(CACHE_NAME);
-                });
-              }
-              return networkResponse;
+        // Not in cache, fetch from network
+        console.log('[Service Worker] Fetching WASM from network:', request.url);
+        return fetchWithTimeout(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+              updateCacheMetadata(request.url);
+              trimCache(CACHE_NAME);
             });
-        })
+          }
+          return networkResponse;
+        });
+      })
     );
     return;
   }
 
   // Stale-while-revalidate for JS/CSS and other assets
   event.respondWith(
-    caches.match(request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          // Return cached response and update cache in background
-          console.log('[Service Worker] Serving from cache:', request.url);
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        // Return cached response and update cache in background
+        console.log('[Service Worker] Serving from cache:', request.url);
 
-          // Update timestamp when serving from cache
-          updateCacheMetadata(request.url);
+        // Update timestamp when serving from cache
+        updateCacheMetadata(request.url);
 
-          // Stale-while-revalidate: return cache immediately, update in background
-          event.waitUntil(
-            fetchWithTimeout(request)
-              .then((networkResponse) => {
-                if (networkResponse && networkResponse.status === 200) {
-                  return caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(request, networkResponse.clone());
-                    // Update timestamp for LRU cache
-                    updateCacheMetadata(request.url);
-                    // Trim cache after adding new entry
-                    trimCache(CACHE_NAME);
-                    return networkResponse;
-                  });
-                }
-                return networkResponse;
-              })
-              .catch(() => {
-                // Network failed, but we already returned cache
-              })
-          );
-
-          return cachedResponse;
-        }
-
-        // Not in cache, fetch from network
-        console.log('[Service Worker] Fetching from network:', request.url);
-        return fetchWithTimeout(request)
-          .then((networkResponse) => {
-            // Cache successful responses
-            if (networkResponse && networkResponse.status === 200) {
-              // Clone the response before caching
-              const responseToCache = networkResponse.clone();
-
-              caches.open(CACHE_NAME)
-                .then((cache) => {
-                  // Cache the new resource
-                  cache.put(request, responseToCache);
+        // Stale-while-revalidate: return cache immediately, update in background
+        event.waitUntil(
+          fetchWithTimeout(request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                return caches.open(CACHE_NAME).then((cache) => {
+                  cache.put(request, networkResponse.clone());
                   // Update timestamp for LRU cache
                   updateCacheMetadata(request.url);
                   // Trim cache after adding new entry
                   trimCache(CACHE_NAME);
+                  return networkResponse;
                 });
-            }
+              }
+              return networkResponse;
+            })
+            .catch(() => {
+              // Network failed, but we already returned cache
+            })
+        );
 
-            return networkResponse;
-          })
-          .catch((error) => {
-            console.error('[Service Worker] Fetch failed:', error);
+        return cachedResponse;
+      }
 
-            // Return offline page for navigation requests
-            if (request.mode === 'navigate') {
-              return caches.match(`${BASE_PATH}/offline.html`)
-                .then((offlineResponse) => {
-                  if (offlineResponse) {
-                    return offlineResponse;
-                  }
-                  // Fallback to index.html if offline.html not cached
-                  return caches.match(`${BASE_PATH}/index.html`);
-                });
-            }
+      // Not in cache, fetch from network
+      console.log('[Service Worker] Fetching from network:', request.url);
+      return fetchWithTimeout(request)
+        .then((networkResponse) => {
+          // Cache successful responses
+          if (networkResponse && networkResponse.status === 200) {
+            // Clone the response before caching
+            const responseToCache = networkResponse.clone();
 
-            // For other requests, throw the error
-            throw error;
-          });
-      })
+            caches.open(CACHE_NAME).then((cache) => {
+              // Cache the new resource
+              cache.put(request, responseToCache);
+              // Update timestamp for LRU cache
+              updateCacheMetadata(request.url);
+              // Trim cache after adding new entry
+              trimCache(CACHE_NAME);
+            });
+          }
+
+          return networkResponse;
+        })
+        .catch((error) => {
+          console.error('[Service Worker] Fetch failed:', error);
+
+          // Return offline page for navigation requests
+          if (request.mode === 'navigate') {
+            return caches.match(`${BASE_PATH}/offline.html`).then((offlineResponse) => {
+              if (offlineResponse) {
+                return offlineResponse;
+              }
+              // Fallback to index.html if offline.html not cached
+              return caches.match(`${BASE_PATH}/index.html`);
+            });
+          }
+
+          // For other requests, throw the error
+          throw error;
+        });
+    })
   );
 });
 
 // Message event - handle messages from the app
 self.addEventListener('message', (event) => {
   console.log('[Service Worker] Message received:', event.data);
-  
+
   if (event.data && event.data.type === 'SKIP_WAITING') {
     console.log('[Service Worker] SKIP_WAITING message received - activating new version');
     self.skipWaiting();
   }
-  
+
   if (event.data && event.data.type === 'CACHE_URLS') {
     event.waitUntil(
-      caches.open(CACHE_NAME)
-        .then((cache) => {
-          return cache.addAll(event.data.urls);
-        })
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.addAll(event.data.urls);
+      })
     );
   }
-  
+
   if (event.data && event.data.type === 'CLEAR_CACHE') {
     event.waitUntil(
-      caches.keys()
-        .then((cacheNames) => {
-          return Promise.all(
-            cacheNames.map((cacheName) => {
-              if (cacheName.startsWith('doskit-')) {
-                return caches.delete(cacheName);
-              }
-            })
-          );
-        })
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName.startsWith('doskit-')) {
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
     );
   }
 });
@@ -449,7 +471,7 @@ self.addEventListener('message', (event) => {
 // Background sync for future enhancements
 self.addEventListener('sync', (event) => {
   console.log('[Service Worker] Background sync:', event.tag);
-  
+
   if (event.tag === 'sync-dos-state') {
     event.waitUntil(
       // Future: sync DOS state when online
@@ -461,7 +483,7 @@ self.addEventListener('sync', (event) => {
 // Push notifications for future enhancements
 self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push notification received');
-  
+
   const options = {
     body: event.data ? event.data.text() : 'New update available',
     icon: `${BASE_PATH}/icons/icon-192x192.png`,
@@ -470,11 +492,8 @@ self.addEventListener('push', (event) => {
     tag: 'doskit-notification',
     requireInteraction: false,
   };
-  
-  event.waitUntil(
-    self.registration.showNotification('DosKit', options)
-  );
+
+  event.waitUntil(self.registration.showNotification('DosKit', options));
 });
 
 console.log('[Service Worker] Service worker script loaded');
-

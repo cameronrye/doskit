@@ -49,7 +49,7 @@ vi.mock('./components/DosPlayerWithApps', () => ({
     onExit,
     onAppChange,
     onSelectorVisibilityChange,
-    showSelector
+    showSelector,
   }: DosPlayerWithAppsProps) => {
     // Store callbacks in window for test access
     (window as WindowWithTestCallbacks).__dosCallbacks = {
@@ -213,12 +213,12 @@ describe('App', () => {
 
     it('should have correct links', () => {
       render(<App />);
-      
+
       const authorLink = screen.getByRole('link', { name: /Cameron Rye/i });
       expect(authorLink).toHaveAttribute('href', 'https://rye.dev/');
       expect(authorLink).toHaveAttribute('target', '_blank');
       expect(authorLink).toHaveAttribute('rel', 'noopener noreferrer');
-      
+
       const jsDosLink = screen.getByRole('link', { name: /js-dos v8.3.20/i });
       expect(jsDosLink).toHaveAttribute('href', 'https://js-dos.com');
       expect(jsDosLink).toHaveAttribute('target', '_blank');
@@ -229,7 +229,7 @@ describe('App', () => {
   describe('Layout', () => {
     it('should have correct structure', () => {
       const { container } = render(<App />);
-      
+
       expect(container.querySelector('.app')).toBeInTheDocument();
       expect(container.querySelector('.app-header')).toBeInTheDocument();
       expect(container.querySelector('.app-main')).toBeInTheDocument();
@@ -238,13 +238,13 @@ describe('App', () => {
 
     it('should apply correct CSS classes', () => {
       const { container } = render(<App />);
-      
+
       const header = container.querySelector('.app-header');
       expect(header).toBeInTheDocument();
-      
+
       const main = container.querySelector('.app-main');
       expect(main).toBeInTheDocument();
-      
+
       const footer = container.querySelector('.app-footer');
       expect(footer).toBeInTheDocument();
     });
@@ -414,4 +414,3 @@ describe('App', () => {
     });
   });
 });
-

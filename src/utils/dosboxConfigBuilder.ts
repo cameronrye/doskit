@@ -9,9 +9,9 @@
  */
 
 export interface CPUConfig {
-  core?: "auto" | "dynamic" | "normal" | "simple";
-  cputype?: "auto" | "386" | "486" | "pentium" | "pentium_mmx";
-  cycles?: number | "auto" | "max";
+  core?: 'auto' | 'dynamic' | 'normal' | 'simple';
+  cputype?: 'auto' | '386' | '486' | 'pentium' | 'pentium_mmx';
+  cycles?: number | 'auto' | 'max';
 }
 
 export interface VideoConfig {
@@ -19,13 +19,7 @@ export interface VideoConfig {
 }
 
 export interface RenderConfig {
-  scaler?:
-    | "none"
-    | "normal2x"
-    | "normal3x"
-    | "hardware2x"
-    | "advmame2x"
-    | "advmame3x";
+  scaler?: 'none' | 'normal2x' | 'normal3x' | 'hardware2x' | 'advmame2x' | 'advmame3x';
   aspect?: boolean;
 }
 
@@ -48,14 +42,14 @@ export interface MixerConfig {
 }
 
 export interface SoundBlasterConfig {
-  sbtype?: "none" | "sb1" | "sb2" | "sbpro1" | "sbpro2" | "sb16";
+  sbtype?: 'none' | 'sb1' | 'sb2' | 'sbpro1' | 'sbpro2' | 'sb16';
   sbbase?: number;
   irq?: number;
   dma?: number;
   hdma?: number;
   sbmixer?: boolean;
-  oplmode?: "auto" | "cms" | "opl2" | "dualopl2" | "opl3" | "none";
-  oplemu?: "default" | "compat" | "fast";
+  oplmode?: 'auto' | 'cms' | 'opl2' | 'dualopl2' | 'opl3' | 'none';
+  oplemu?: 'default' | 'compat' | 'fast';
   oplrate?: number;
 }
 
@@ -71,13 +65,13 @@ export interface GUSConfig {
 export interface SpeakerConfig {
   pcspeaker?: boolean;
   pcrate?: number;
-  tandy?: "auto" | "on" | "off";
+  tandy?: 'auto' | 'on' | 'off';
   tandyrate?: number;
   disney?: boolean;
 }
 
 export interface JoystickConfig {
-  joysticktype?: "auto" | "none" | "2axis" | "4axis" | "fcs" | "ch";
+  joysticktype?: 'auto' | 'none' | '2axis' | '4axis' | 'fcs' | 'ch';
 }
 
 export interface SerialConfig {
@@ -236,9 +230,9 @@ export class DOSBoxConfigBuilder {
     const entries = Object.entries(config)
       .filter(([, value]) => value !== undefined)
       .map(([key, value]) => `${key}=${value}`)
-      .join("\n");
+      .join('\n');
 
-    return entries ? `[${name}]\n${entries}\n` : "";
+    return entries ? `[${name}]\n${entries}\n` : '';
   }
 
   /**
@@ -249,54 +243,54 @@ export class DOSBoxConfigBuilder {
     const sections: string[] = [];
 
     if (Object.keys(this.cpu).length > 0) {
-      sections.push(this.buildSection("cpu", this.cpu));
+      sections.push(this.buildSection('cpu', this.cpu));
     }
 
     if (Object.keys(this.video).length > 0) {
-      sections.push(this.buildSection("video", this.video));
+      sections.push(this.buildSection('video', this.video));
     }
 
     if (Object.keys(this.render).length > 0) {
-      sections.push(this.buildSection("render", this.render));
+      sections.push(this.buildSection('render', this.render));
     }
 
     if (Object.keys(this.dos).length > 0) {
-      sections.push(this.buildSection("dos", this.dos));
+      sections.push(this.buildSection('dos', this.dos));
     }
 
     if (Object.keys(this.memory).length > 0) {
-      sections.push(this.buildSection("memory", this.memory));
+      sections.push(this.buildSection('memory', this.memory));
     }
 
     if (Object.keys(this.mixer).length > 0) {
-      sections.push(this.buildSection("mixer", this.mixer));
+      sections.push(this.buildSection('mixer', this.mixer));
     }
 
     if (Object.keys(this.soundBlaster).length > 0) {
-      sections.push(this.buildSection("sblaster", this.soundBlaster));
+      sections.push(this.buildSection('sblaster', this.soundBlaster));
     }
 
     if (Object.keys(this.gus).length > 0) {
-      sections.push(this.buildSection("gus", this.gus));
+      sections.push(this.buildSection('gus', this.gus));
     }
 
     if (Object.keys(this.speaker).length > 0) {
-      sections.push(this.buildSection("speaker", this.speaker));
+      sections.push(this.buildSection('speaker', this.speaker));
     }
 
     if (Object.keys(this.joystick).length > 0) {
-      sections.push(this.buildSection("joystick", this.joystick));
+      sections.push(this.buildSection('joystick', this.joystick));
     }
 
     if (Object.keys(this.serial).length > 0) {
-      sections.push(this.buildSection("serial", this.serial));
+      sections.push(this.buildSection('serial', this.serial));
     }
 
     if (this.autoexec.length > 0) {
-      sections.push(`[autoexec]\n${this.autoexec.join("\n")}\n`);
+      sections.push(`[autoexec]\n${this.autoexec.join('\n')}\n`);
     }
 
-    return sections.join("\n");
+    return sections.join('\n');
   }
 }
 
@@ -338,36 +332,36 @@ export const presets = {
    */
   default: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: "dynamic", cputype: "auto", cycles: 25000 })
+      .setCPU({ core: 'dynamic', cputype: 'auto', cycles: 25000 })
       .setVideo({ vmemsize: 8 })
-      .setRender({ scaler: "none", aspect: false })
-      .setDOS({ ver: "7.1", umb: true, ems: true, xms: true })
+      .setRender({ scaler: 'none', aspect: false })
+      .setDOS({ ver: '7.1', umb: true, ems: true, xms: true })
       .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 64 })
       .setSoundBlaster({
-        sbtype: "sb16",
+        sbtype: 'sb16',
         sbbase: 220,
         irq: 7,
         dma: 1,
         hdma: 5,
         sbmixer: true,
-        oplmode: "auto",
-        oplemu: "default",
+        oplmode: 'auto',
+        oplemu: 'default',
         oplrate: 44100,
       })
       .setGUS({ gus: false })
       .setSpeaker({
         pcspeaker: true,
         pcrate: 44100,
-        tandy: "auto",
+        tandy: 'auto',
         tandyrate: 44100,
         disney: true,
       })
-      .setJoystick({ joysticktype: "auto" })
+      .setJoystick({ joysticktype: 'auto' })
       .setSerial({
-        serial1: "dummy",
-        serial2: "dummy",
-        serial3: "disabled",
-        serial4: "disabled",
+        serial1: 'dummy',
+        serial2: 'dummy',
+        serial3: 'disabled',
+        serial4: 'disabled',
       }),
 
   /**
@@ -383,31 +377,31 @@ export const presets = {
    */
   musicTracker: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: "dynamic", cputype: "pentium", cycles: 18000 })
+      .setCPU({ core: 'dynamic', cputype: 'pentium', cycles: 18000 })
       .setVideo({ vmemsize: 2 })
-      .setDOS({ ver: "7.1", umb: true, ems: true, xms: true })
+      .setDOS({ ver: '7.1', umb: true, ems: true, xms: true })
       .setMemory({ memsize: 16 })
       .setMixer({ nosound: false, rate: 44100, blocksize: 2048, prebuffer: 64 })
       .setSoundBlaster({
-        sbtype: "sb16",
+        sbtype: 'sb16',
         sbbase: 220,
         irq: 7,
         dma: 1,
         hdma: 5,
         sbmixer: true,
-        oplmode: "auto",
-        oplemu: "default",
+        oplmode: 'auto',
+        oplemu: 'default',
         oplrate: 44100,
       })
       .setGUS({ gus: false })
       .setSpeaker({
         pcspeaker: true,
         pcrate: 44100,
-        tandy: "auto",
+        tandy: 'auto',
         tandyrate: 44100,
         disney: true,
       })
-      .setJoystick({ joysticktype: "none" }),
+      .setJoystick({ joysticktype: 'none' }),
 
   /**
    * Configuration optimized for demos and graphics applications
@@ -416,28 +410,28 @@ export const presets = {
    */
   demo: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: "dynamic", cputype: "auto", cycles: 30000 })
+      .setCPU({ core: 'dynamic', cputype: 'auto', cycles: 30000 })
       .setVideo({ vmemsize: 8 })
-      .setDOS({ ver: "7.1", umb: true, ems: true, xms: true })
+      .setDOS({ ver: '7.1', umb: true, ems: true, xms: true })
       .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 64 })
       .setSoundBlaster({
-        sbtype: "sb16",
+        sbtype: 'sb16',
         sbbase: 220,
         irq: 7,
         dma: 1,
         hdma: 5,
         sbmixer: true,
-        oplmode: "auto",
-        oplemu: "default",
+        oplmode: 'auto',
+        oplemu: 'default',
         oplrate: 44100,
       })
       .setGUS({ gus: false })
       .setSpeaker({
         pcspeaker: true,
         pcrate: 44100,
-        tandy: "auto",
+        tandy: 'auto',
         tandyrate: 44100,
         disney: true,
       })
-      .setJoystick({ joysticktype: "auto" }),
+      .setJoystick({ joysticktype: 'auto' }),
 };

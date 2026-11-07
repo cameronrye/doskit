@@ -156,8 +156,8 @@ This document defines the coding standards and naming conventions for the DosKit
 - **Type Aliases**: Use `PascalCase`
   ```typescript
   // Good
-  export type DosEvent = "emu-ready" | "ci-ready" | "exit";
-  export type LoadMethod = "files" | "zip" | "diskImage";
+  export type DosEvent = 'emu-ready' | 'ci-ready' | 'exit';
+  export type LoadMethod = 'files' | 'zip' | 'diskImage';
   ```
 
 ### Acronyms in Names
@@ -231,16 +231,16 @@ src/
 ```typescript
 // Good
 const config = {
-  name: "DosKit",
-  version: "1.0.0",
-  features: ["emulator", "pwa"],
+  name: 'DosKit',
+  version: '1.0.0',
+  features: ['emulator', 'pwa'],
 };
 
 // Bad
 const config = {
-  name: "DosKit",
-  version: "1.0.0",
-  features: ["emulator", "pwa"],
+  name: 'DosKit',
+  version: '1.0.0',
+  features: ['emulator', 'pwa'],
 };
 ```
 
@@ -252,22 +252,22 @@ const config = {
 
 ```typescript
 // Good
-import React, { useState, useEffect } from "react";
-import { vi, describe, it, expect } from "vitest";
+import React, { useState, useEffect } from 'react';
+import { vi, describe, it, expect } from 'vitest';
 
-import { DosPlayer } from "./components/DosPlayer";
-import { useDosEmulator } from "./hooks/useDosEmulator";
-import { loadDiskImage } from "./utils/diskLoader";
+import { DosPlayer } from './components/DosPlayer';
+import { useDosEmulator } from './hooks/useDosEmulator';
+import { loadDiskImage } from './utils/diskLoader';
 
-import type { DosOptions, CommandInterface } from "./types/js-dos";
+import type { DosOptions, CommandInterface } from './types/js-dos';
 
-import "./App.css";
+import './App.css';
 
 // Bad
-import "./App.css";
-import { DosPlayer } from "./components/DosPlayer";
-import React, { useState, useEffect } from "react";
-import type { DosOptions } from "./types/js-dos";
+import './App.css';
+import { DosPlayer } from './components/DosPlayer';
+import React, { useState, useEffect } from 'react';
+import type { DosOptions } from './types/js-dos';
 ```
 
 ### Spacing
@@ -327,8 +327,8 @@ interface DosPlayerProps {
   options?: Partial<DosOptions>;
 }
 
-type DosEvent = "emu-ready" | "ci-ready" | "exit";
-type LoadMethod = "files" | "zip" | "diskImage";
+type DosEvent = 'emu-ready' | 'ci-ready' | 'exit';
+type LoadMethod = 'files' | 'zip' | 'diskImage';
 
 // Acceptable but less preferred
 type DosPlayerProps = {
@@ -350,7 +350,7 @@ function findUser(id: string): User | null {
 }
 
 function processData(data: unknown): void {
-  if (typeof data === "string") {
+  if (typeof data === 'string') {
     // Type narrowed to string
   }
 }
@@ -531,10 +531,7 @@ src/
  * const image = await loadDiskImage('https://example.com/disk.img');
  * ```
  */
-export async function loadDiskImage(
-  url: string,
-  maxSizeMB = 50,
-): Promise<Uint8Array> {
+export async function loadDiskImage(url: string, maxSizeMB = 50): Promise<Uint8Array> {
   // Implementation
 }
 ````
@@ -548,7 +545,7 @@ export async function loadDiskImage(
 ```typescript
 // Good
 // Suppress fullscreen errors as they're expected when user denies permission
-if (error.message.includes("fullscreen")) {
+if (error.message.includes('fullscreen')) {
   return;
 }
 
@@ -593,11 +590,11 @@ for (const item of items) {
 ```typescript
 // Good
 if (import.meta.env.DEV) {
-  console.log("[DosPlayer] Initializing emulator");
+  console.log('[DosPlayer] Initializing emulator');
 }
 
 // Bad
-console.log("[DosPlayer] Initializing emulator");
+console.log('[DosPlayer] Initializing emulator');
 ```
 
 ## Testing
@@ -609,21 +606,21 @@ console.log("[DosPlayer] Initializing emulator");
 
 ```typescript
 // Good
-describe("DosPlayer", () => {
-  describe("Initialization", () => {
-    it("should initialize js-dos on mount", () => {
+describe('DosPlayer', () => {
+  describe('Initialization', () => {
+    it('should initialize js-dos on mount', () => {
       // Test implementation
     });
 
-    it("should handle initialization errors gracefully", () => {
+    it('should handle initialization errors gracefully', () => {
       // Test implementation
     });
   });
 });
 
 // Bad
-describe("DosPlayer", () => {
-  it("test1", () => {
+describe('DosPlayer', () => {
+  it('test1', () => {
     // Test implementation
   });
 });

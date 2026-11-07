@@ -93,7 +93,7 @@ describe('urlRouting', () => {
   describe('registerAppIdMapping', () => {
     it('should register new app ID mappings', () => {
       registerAppIdMapping('mynewapp', 'my-new-app');
-      
+
       expect(normalizeAppId('mynewapp')).toBe('my-new-app');
       expect(normalizeAppId('my-new-app')).toBe('my-new-app');
       expect(getUrlFriendlyId('my-new-app')).toBe('mynewapp');
@@ -101,7 +101,7 @@ describe('urlRouting', () => {
 
     it('should handle case-insensitive registration', () => {
       registerAppIdMapping('MyNewApp', 'my-new-app');
-      
+
       expect(normalizeAppId('mynewapp')).toBe('my-new-app');
       expect(normalizeAppId('MYNEWAPP')).toBe('my-new-app');
     });
@@ -109,10 +109,9 @@ describe('urlRouting', () => {
     it('should allow overwriting existing mappings', () => {
       registerAppIdMapping('testapp', 'test-app-v1');
       expect(normalizeAppId('testapp')).toBe('test-app-v1');
-      
+
       registerAppIdMapping('testapp', 'test-app-v2');
       expect(normalizeAppId('testapp')).toBe('test-app-v2');
     });
   });
 });
-

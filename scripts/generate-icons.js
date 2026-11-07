@@ -2,16 +2,16 @@
 
 /**
  * Icon Generation Script for DosKit PWA
- * 
+ *
  * This script generates PWA icons in multiple sizes from the logo.svg file.
- * 
+ *
  * Requirements:
  * - Node.js 18+
  * - sharp package (npm install sharp)
- * 
+ *
  * Usage:
  *   node scripts/generate-icons.js
- * 
+ *
  * Or install sharp and run:
  *   npm install --save-dev sharp
  *   npm run generate-icons
@@ -81,7 +81,7 @@ async function generateIcons() {
     // Generate standard icons
     for (const { size, name } of ICON_SIZES) {
       const outputPath = join(ICONS_DIR, name);
-      
+
       await sharp(LOGO_PATH)
         .resize(size, size, {
           fit: 'contain',
@@ -89,7 +89,7 @@ async function generateIcons() {
         })
         .png()
         .toFile(outputPath);
-      
+
       console.log(`✅ Generated ${name} (${size}x${size})`);
     }
 
@@ -97,7 +97,7 @@ async function generateIcons() {
     for (const { size, name } of MASKABLE_SIZES) {
       const outputPath = join(ICONS_DIR, name);
       const padding = Math.floor(size * 0.1); // 10% padding for safe area
-      
+
       await sharp(LOGO_PATH)
         .resize(size - padding * 2, size - padding * 2, {
           fit: 'contain',
@@ -112,13 +112,12 @@ async function generateIcons() {
         })
         .png()
         .toFile(outputPath);
-      
+
       console.log(`✅ Generated ${name} (${size}x${size}, maskable)`);
     }
 
     console.log('\n✨ All icons generated successfully!');
     console.log(`📁 Icons saved to: ${ICONS_DIR}`);
-    
   } catch (error) {
     console.error('❌ Error generating icons:', error);
     process.exit(1);
@@ -127,4 +126,3 @@ async function generateIcons() {
 
 // Run the script
 generateIcons();
-

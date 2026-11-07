@@ -6,8 +6,8 @@
  * Global state management for network connectivity status
  */
 
-import { createContext, useContext, useState, useEffect } from "react";
-import type { ReactNode } from "react";
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 
 /**
  * Network state interface
@@ -32,9 +32,7 @@ export interface NetworkActions {
  */
 export interface NetworkContextValue extends NetworkState, NetworkActions {}
 
-const NetworkContext = createContext<NetworkContextValue | undefined>(
-  undefined,
-);
+const NetworkContext = createContext<NetworkContextValue | undefined>(undefined);
 
 /**
  * Network Provider Props
@@ -55,7 +53,7 @@ export function NetworkProvider({ children }: NetworkProviderProps) {
   useEffect(() => {
     const handleOnline = () => {
       if (import.meta.env.DEV) {
-        console.log("[NetworkContext] Network status: online");
+        console.log('[NetworkContext] Network status: online');
       }
       setIsOnline(true);
       // Briefly show "back online" message
@@ -64,18 +62,18 @@ export function NetworkProvider({ children }: NetworkProviderProps) {
 
     const handleOffline = () => {
       if (import.meta.env.DEV) {
-        console.log("[NetworkContext] Network status: offline");
+        console.log('[NetworkContext] Network status: offline');
       }
       setIsOnline(false);
       setShowOfflineMessage(true);
     };
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -85,9 +83,7 @@ export function NetworkProvider({ children }: NetworkProviderProps) {
     setShowOfflineMessage,
   };
 
-  return (
-    <NetworkContext.Provider value={value}>{children}</NetworkContext.Provider>
-  );
+  return <NetworkContext.Provider value={value}>{children}</NetworkContext.Provider>;
 }
 
 /**
@@ -97,7 +93,7 @@ export function NetworkProvider({ children }: NetworkProviderProps) {
 export function useNetwork(): NetworkContextValue {
   const context = useContext(NetworkContext);
   if (context === undefined) {
-    throw new Error("useNetwork must be used within a NetworkProvider");
+    throw new Error('useNetwork must be used within a NetworkProvider');
   }
   return context;
 }

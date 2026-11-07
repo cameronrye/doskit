@@ -6,8 +6,8 @@
  * DOS Application Type Definitions
  */
 
-import type { InitFileEntry } from "./js-dos";
-import type { LoadProgress } from "../utils/diskLoader";
+import type { InitFileEntry } from './js-dos';
+import type { LoadProgress } from '../utils/diskLoader';
 
 /**
  * Represents a DOS application that can be loaded and run in the emulator
@@ -26,7 +26,7 @@ export interface DosApp {
   /** URL to thumbnail image */
   thumbnail?: string;
   /** Method used to load the application files */
-  loadMethod: "files" | "zip" | "disk-image";
+  loadMethod: 'files' | 'zip' | 'disk-image';
   /** DOSBox configuration string */
   dosboxConf: string;
   /**
@@ -34,9 +34,7 @@ export interface DosApp {
    * @param onProgress - Optional callback for progress updates
    * @returns Promise resolving to file entries or disk image data
    */
-  loader: (
-    onProgress?: (progress: LoadProgress) => void,
-  ) => Promise<InitFileEntry[] | Uint8Array>;
+  loader: (onProgress?: (progress: LoadProgress) => void) => Promise<InitFileEntry[] | Uint8Array>;
   /**
    * Lazy load the DOSBox configuration
    * @returns Promise resolving to DOSBox configuration string

@@ -7,15 +7,10 @@
  * Custom React hook for managing js-dos emulator lifecycle and state
  */
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import type {
-  DosOptions,
-  DosProps,
-  CommandInterface,
-  DosEvent,
-} from "../types/js-dos";
-import { getDefaultConfig } from "../config/jsdos.config";
-import { getEmulatorAdapter } from "../adapters/EmulatorAdapter";
+import { useEffect, useRef, useState, useCallback } from 'react';
+import type { DosOptions, DosProps, CommandInterface, DosEvent } from '../types/js-dos';
+import { getDefaultConfig } from '../config/jsdos.config';
+import { getEmulatorAdapter } from '../adapters/EmulatorAdapter';
 
 export interface UseDosEmulatorOptions {
   /** Custom DOSBox configuration */
@@ -69,42 +64,37 @@ export const useDosEmulator = ({
   // Event handler for js-dos events (stable reference)
   const handleDosEvent = useCallback((event: DosEvent, arg?: unknown) => {
     if (import.meta.env.DEV) {
-      console.log("[useDosEmulator] Event:", event);
+      console.log('[useDosEmulator] Event:', event);
     }
 
     switch (event) {
-      case "emu-ready":
+      case 'emu-ready':
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Emulator ready");
+          console.log('[useDosEmulator] Emulator ready');
         }
         setIsLoading(false);
 
         // Close the sidebar menu on startup for a cleaner initial view
         setTimeout(() => {
           if (dosContainerRef.current) {
-            const toggleButton = dosContainerRef.current.querySelector(
-              "[data-dos-sidebar-toggle]",
-            );
+            const toggleButton = dosContainerRef.current.querySelector('[data-dos-sidebar-toggle]');
             if (toggleButton instanceof HTMLElement) {
               toggleButton.click();
               if (import.meta.env.DEV) {
-                console.log("[useDosEmulator] Sidebar closed on startup");
+                console.log('[useDosEmulator] Sidebar closed on startup');
               }
             } else {
-              const buttons =
-                dosContainerRef.current.querySelectorAll("button");
+              const buttons = dosContainerRef.current.querySelectorAll('button');
               const menuButton = Array.from(buttons).find(
                 (btn) =>
-                  btn.textContent?.includes("☰") ||
-                  btn.className?.includes("sidebar") ||
-                  btn.className?.includes("menu"),
+                  btn.textContent?.includes('☰') ||
+                  btn.className?.includes('sidebar') ||
+                  btn.className?.includes('menu')
               );
               if (menuButton instanceof HTMLElement) {
                 menuButton.click();
                 if (import.meta.env.DEV) {
-                  console.log(
-                    "[useDosEmulator] Sidebar closed on startup (fallback)",
-                  );
+                  console.log('[useDosEmulator] Sidebar closed on startup (fallback)');
                 }
               }
             }
@@ -112,33 +102,33 @@ export const useDosEmulator = ({
         }, 500);
         break;
 
-      case "ci-ready":
+      case 'ci-ready':
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Command Interface ready");
+          console.log('[useDosEmulator] Command Interface ready');
         }
         ciRef.current = arg as CommandInterface;
 
         if (ciRef.current) {
           ciRef.current.events().onExit(() => {
             if (import.meta.env.DEV) {
-              console.log("[useDosEmulator] DOS exited");
+              console.log('[useDosEmulator] DOS exited');
             }
             onExitRef.current?.();
           });
 
           if (import.meta.env.DEV) {
             ciRef.current.events().onStdout((message: string) => {
-              console.log("[DOS]", message);
+              console.log('[DOS]', message);
             });
           }
 
           try {
             ciRef.current.unmute();
             if (import.meta.env.DEV) {
-              console.log("[useDosEmulator] Audio unmuted");
+              console.log('[useDosEmulator] Audio unmuted');
             }
           } catch (err) {
-            console.warn("[useDosEmulator] Failed to unmute audio:", err);
+            console.warn('[useDosEmulator] Failed to unmute audio:', err);
           }
         }
 
@@ -147,16 +137,16 @@ export const useDosEmulator = ({
         }
         break;
 
-      case "bnd-play":
-      case "fullscreen-change":
+      case 'bnd-play':
+      case 'fullscreen-change':
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Event:", event, arg);
+          console.log('[useDosEmulator] Event:', event, arg);
         }
         break;
 
       default:
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Unknown event:", event, arg);
+          console.log('[useDosEmulator] Unknown event:', event, arg);
         }
     }
   }, []);
@@ -168,26 +158,19 @@ export const useDosEmulator = ({
       const isFullscreenError =
         error instanceof TypeError &&
         error.message &&
-        (error.message.includes("exitFullscreen") ||
-          error.message.includes("requestFullscreen"));
+        (error.message.includes('exitFullscreen') || error.message.includes('requestFullscreen'));
 
       if (isFullscreenError) {
         event.preventDefault();
         if (import.meta.env.DEV) {
-          console.warn(
-            "[useDosEmulator] Suppressed fullscreen error:",
-            error.message,
-          );
+          console.warn('[useDosEmulator] Suppressed fullscreen error:', error.message);
         }
       }
     };
 
-    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
     return () => {
-      window.removeEventListener(
-        "unhandledrejection",
-        handleUnhandledRejection,
-      );
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);
 
@@ -195,21 +178,21 @@ export const useDosEmulator = ({
   useEffect(() => {
     if (isInitializedRef.current) {
       if (import.meta.env.DEV) {
-        console.log("[useDosEmulator] Already initialized, skipping");
+        console.log('[useDosEmulator] Already initialized, skipping');
       }
       return;
     }
 
     if (!dosContainerRef.current) {
-      console.error("[useDosEmulator] Container ref is null");
+      console.error('[useDosEmulator] Container ref is null');
       return;
     }
 
     const adapter = getEmulatorAdapter();
 
     if (!adapter.isAvailable()) {
-      console.error("[useDosEmulator] Emulator not available");
-      setError("DOS emulator library not loaded. Please refresh the page.");
+      console.error('[useDosEmulator] Emulator not available');
+      setError('DOS emulator library not loaded. Please refresh the page.');
       setIsLoading(false);
       return;
     }
@@ -233,24 +216,17 @@ export const useDosEmulator = ({
         };
 
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Configuration:", mergedOptions);
+          console.log('[useDosEmulator] Configuration:', mergedOptions);
         }
 
-        dosPlayerRef.current = await adapter.initialize(
-          dosContainerRef.current!,
-          mergedOptions,
-        );
+        dosPlayerRef.current = await adapter.initialize(dosContainerRef.current!, mergedOptions);
 
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Emulator initialized successfully");
+          console.log('[useDosEmulator] Emulator initialized successfully');
         }
       } catch (err) {
-        console.error("[useDosEmulator] Failed to initialize emulator:", err);
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to initialize DOS emulator",
-        );
+        console.error('[useDosEmulator] Failed to initialize emulator:', err);
+        setError(err instanceof Error ? err.message : 'Failed to initialize DOS emulator');
         setIsLoading(false);
         isInitializedRef.current = false;
       }
@@ -260,11 +236,11 @@ export const useDosEmulator = ({
 
     return () => {
       if (import.meta.env.DEV) {
-        console.log("[useDosEmulator] Cleaning up...");
+        console.log('[useDosEmulator] Cleaning up...');
       }
       if (dosPlayerRef.current) {
         dosPlayerRef.current.stop().catch((err: unknown) => {
-          console.error("[useDosEmulator] Error stopping player:", err);
+          console.error('[useDosEmulator] Error stopping player:', err);
         });
         dosPlayerRef.current = null;
       }

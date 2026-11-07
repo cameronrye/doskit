@@ -7,8 +7,8 @@
  * Utilities for loading DOS files and disk images into the emulator
  */
 
-import type { InitFileEntry } from "../types/js-dos";
-import { fetchWithRetry } from "./fetchWithRetry";
+import type { InitFileEntry } from '../types/js-dos';
+import { fetchWithRetry } from './fetchWithRetry';
 
 export interface DosFile {
   path: string;
@@ -31,7 +31,7 @@ export interface LoadProgress {
 export async function loadFilesFromUrls(
   files: DosFile[],
   onProgress?: (progress: LoadProgress) => void,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<InitFileEntry[]> {
   const initFs: InitFileEntry[] = [];
   let loaded = 0;
@@ -41,7 +41,7 @@ export async function loadFilesFromUrls(
     try {
       // Check if operation was aborted
       if (signal?.aborted) {
-        throw new Error("Operation aborted");
+        throw new Error('Operation aborted');
       }
 
       if (onProgress) {
@@ -58,12 +58,12 @@ export async function loadFilesFromUrls(
             if (import.meta.env.DEV) {
               console.log(
                 `[DiskLoader] Retry ${attempt} for ${file.path} after ${delay}ms:`,
-                error.message,
+                error.message
               );
             }
           },
           signal,
-        },
+        }
       );
 
       if (!response.ok) {
@@ -87,7 +87,7 @@ export async function loadFilesFromUrls(
   }
 
   if (onProgress) {
-    onProgress({ loaded, total, currentFile: "Complete" });
+    onProgress({ loaded, total, currentFile: 'Complete' });
   }
 
   return initFs;
@@ -104,14 +104,14 @@ export async function loadFilesFromUrls(
 export async function loadZipArchive(
   zipUrl: string,
   onProgress?: (progress: LoadProgress) => void,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<Uint8Array> {
   try {
     if (onProgress) {
       onProgress({
         loaded: 0,
         total: 1,
-        currentFile: "Downloading ZIP archive...",
+        currentFile: 'Downloading ZIP archive...',
       });
     }
 
@@ -123,14 +123,11 @@ export async function loadZipArchive(
         initialDelay: 1000,
         onRetry: (attempt, error, delay) => {
           if (import.meta.env.DEV) {
-            console.log(
-              `[DiskLoader] Retry ${attempt} for ZIP after ${delay}ms:`,
-              error.message,
-            );
+            console.log(`[DiskLoader] Retry ${attempt} for ZIP after ${delay}ms:`, error.message);
           }
         },
         signal,
-      },
+      }
     );
 
     if (!response.ok) {
@@ -141,13 +138,11 @@ export async function loadZipArchive(
     const zipData = new Uint8Array(arrayBuffer);
 
     if (onProgress) {
-      onProgress({ loaded: 1, total: 1, currentFile: "ZIP archive loaded" });
+      onProgress({ loaded: 1, total: 1, currentFile: 'ZIP archive loaded' });
     }
 
     if (import.meta.env.DEV) {
-      console.log(
-        `[DiskLoader] Loaded ZIP archive: ${zipUrl} (${zipData.length} bytes)`,
-      );
+      console.log(`[DiskLoader] Loaded ZIP archive: ${zipUrl} (${zipData.length} bytes)`);
     }
 
     return zipData;
@@ -166,8 +161,8 @@ export async function loadZipArchive(
  */
 export async function loadDiskImage(
   imageUrl: string,
-  mountPath: string = "/disk.img",
-  signal?: AbortSignal,
+  mountPath: string = '/disk.img',
+  signal?: AbortSignal
 ): Promise<InitFileEntry> {
   try {
     const response = await fetchWithRetry(
@@ -180,12 +175,12 @@ export async function loadDiskImage(
           if (import.meta.env.DEV) {
             console.log(
               `[DiskLoader] Retry ${attempt} for disk image after ${delay}ms:`,
-              error.message,
+              error.message
             );
           }
         },
         signal,
-      },
+      }
     );
 
     if (!response.ok) {
@@ -196,9 +191,7 @@ export async function loadDiskImage(
     const imageData = new Uint8Array(arrayBuffer);
 
     if (import.meta.env.DEV) {
-      console.log(
-        `[DiskLoader] Loaded disk image: ${imageUrl} (${imageData.length} bytes)`,
-      );
+      console.log(`[DiskLoader] Loaded disk image: ${imageUrl} (${imageData.length} bytes)`);
     }
 
     return {
@@ -223,8 +216,8 @@ export async function loadDiskImage(
 export async function loadDirectory(
   baseUrl: string,
   fileList: string[],
-  basePath: string = "/",
-  signal?: AbortSignal,
+  basePath: string = '/',
+  signal?: AbortSignal
 ): Promise<InitFileEntry[]> {
   const files: DosFile[] = fileList.map((file) => ({
     path: `${basePath}${file}`,
@@ -259,11 +252,11 @@ export function createTextFile(path: string, content: string): InitFileEntry {
 export async function validateFileSize(
   url: string,
   maxSizeMB: number = 50,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<boolean> {
   try {
-    const response = await fetch(url, { method: "HEAD", signal });
-    const contentLength = response.headers.get("content-length");
+    const response = await fetch(url, { method: 'HEAD', signal });
+    const contentLength = response.headers.get('content-length');
 
     if (!contentLength) {
       console.warn(`[DiskLoader] Could not determine file size for ${url}`);
@@ -275,7 +268,7 @@ export async function validateFileSize(
 
     if (!isValid) {
       console.warn(
-        `[DiskLoader] File ${url} exceeds size limit: ${sizeMB.toFixed(2)}MB > ${maxSizeMB}MB`,
+        `[DiskLoader] File ${url} exceeds size limit: ${sizeMB.toFixed(2)}MB > ${maxSizeMB}MB`
       );
     }
 
@@ -294,10 +287,10 @@ export async function validateFileSize(
  */
 export async function cacheFiles(
   files: DosFile[],
-  cacheName: string = "doskit-files",
+  cacheName: string = 'doskit-files'
 ): Promise<void> {
-  if (!("caches" in window)) {
-    console.warn("[DiskLoader] Cache API not available");
+  if (!('caches' in window)) {
+    console.warn('[DiskLoader] Cache API not available');
     return;
   }
 
@@ -310,7 +303,7 @@ export async function cacheFiles(
       console.log(`[DiskLoader] Cached ${urls.length} files`);
     }
   } catch (error) {
-    console.error("[DiskLoader] Error caching files:", error);
+    console.error('[DiskLoader] Error caching files:', error);
   }
 }
 
@@ -323,7 +316,7 @@ export async function cacheFiles(
  */
 export async function loadFilesWithCache(
   files: DosFile[],
-  cacheName: string = "doskit-files",
+  cacheName: string = 'doskit-files'
 ): Promise<InitFileEntry[]> {
   const initFs: InitFileEntry[] = [];
 
@@ -332,7 +325,7 @@ export async function loadFilesWithCache(
       let response: Response;
 
       // Try cache first
-      if ("caches" in window) {
+      if ('caches' in window) {
         const cache = await caches.open(cacheName);
         const cachedResponse = await cache.match(file.url);
 
@@ -346,9 +339,7 @@ export async function loadFilesWithCache(
           // Cache for next time
           await cache.put(file.url, response.clone());
           if (import.meta.env.DEV) {
-            console.log(
-              `[DiskLoader] Loaded ${file.path} from network and cached`,
-            );
+            console.log(`[DiskLoader] Loaded ${file.path} from network and cached`);
           }
         }
       } else {

@@ -2,22 +2,17 @@
  * Tests for NetworkContext
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
-import {
-  NetworkProvider,
-  useNetwork,
-  useNetworkState,
-  useNetworkActions,
-} from "./NetworkContext";
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import { NetworkProvider, useNetwork, useNetworkState, useNetworkActions } from './NetworkContext';
 
-describe("NetworkContext", () => {
+describe('NetworkContext', () => {
   // Store original navigator.onLine
   const originalOnLine = navigator.onLine;
 
   beforeEach(() => {
     // Reset navigator.onLine to true before each test
-    Object.defineProperty(navigator, "onLine", {
+    Object.defineProperty(navigator, 'onLine', {
       writable: true,
       value: true,
     });
@@ -25,14 +20,14 @@ describe("NetworkContext", () => {
 
   afterEach(() => {
     // Restore original value
-    Object.defineProperty(navigator, "onLine", {
+    Object.defineProperty(navigator, 'onLine', {
       writable: true,
       value: originalOnLine,
     });
   });
 
-  describe("NetworkProvider", () => {
-    it("should provide initial online state", () => {
+  describe('NetworkProvider', () => {
+    it('should provide initial online state', () => {
       const { result } = renderHook(() => useNetwork(), {
         wrapper: NetworkProvider,
       });
@@ -41,8 +36,8 @@ describe("NetworkContext", () => {
       expect(result.current.showOfflineMessage).toBe(false);
     });
 
-    it("should provide initial offline state when navigator is offline", () => {
-      Object.defineProperty(navigator, "onLine", {
+    it('should provide initial offline state when navigator is offline', () => {
+      Object.defineProperty(navigator, 'onLine', {
         writable: true,
         value: false,
       });
@@ -54,7 +49,7 @@ describe("NetworkContext", () => {
       expect(result.current.isOnline).toBe(false);
     });
 
-    it("should update state when going offline", async () => {
+    it('should update state when going offline', async () => {
       const { result } = renderHook(() => useNetwork(), {
         wrapper: NetworkProvider,
       });
@@ -63,11 +58,11 @@ describe("NetworkContext", () => {
 
       // Simulate going offline
       act(() => {
-        Object.defineProperty(navigator, "onLine", {
+        Object.defineProperty(navigator, 'onLine', {
           writable: true,
           value: false,
         });
-        window.dispatchEvent(new Event("offline"));
+        window.dispatchEvent(new Event('offline'));
       });
 
       await waitFor(() => {
@@ -76,9 +71,9 @@ describe("NetworkContext", () => {
       });
     });
 
-    it("should update state when going online", async () => {
+    it('should update state when going online', async () => {
       // Start offline
-      Object.defineProperty(navigator, "onLine", {
+      Object.defineProperty(navigator, 'onLine', {
         writable: true,
         value: false,
       });
@@ -91,11 +86,11 @@ describe("NetworkContext", () => {
 
       // Simulate going online
       act(() => {
-        Object.defineProperty(navigator, "onLine", {
+        Object.defineProperty(navigator, 'onLine', {
           writable: true,
           value: true,
         });
-        window.dispatchEvent(new Event("online"));
+        window.dispatchEvent(new Event('online'));
       });
 
       await waitFor(() => {
@@ -104,7 +99,7 @@ describe("NetworkContext", () => {
       });
     });
 
-    it("should allow manual control of offline message", () => {
+    it('should allow manual control of offline message', () => {
       const { result } = renderHook(() => useNetwork(), {
         wrapper: NetworkProvider,
       });
@@ -123,40 +118,40 @@ describe("NetworkContext", () => {
     });
   });
 
-  describe("useNetwork", () => {
-    it("should throw error when used outside provider", () => {
+  describe('useNetwork', () => {
+    it('should throw error when used outside provider', () => {
       // Suppress console.error for this test
       const originalError = console.error;
       console.error = () => {};
 
       expect(() => {
         renderHook(() => useNetwork());
-      }).toThrow("useNetwork must be used within a NetworkProvider");
+      }).toThrow('useNetwork must be used within a NetworkProvider');
 
       console.error = originalError;
     });
   });
 
-  describe("useNetworkState", () => {
-    it("should return only state values", () => {
+  describe('useNetworkState', () => {
+    it('should return only state values', () => {
       const { result } = renderHook(() => useNetworkState(), {
         wrapper: NetworkProvider,
       });
 
-      expect(result.current).toHaveProperty("isOnline");
-      expect(result.current).toHaveProperty("showOfflineMessage");
-      expect(result.current).not.toHaveProperty("setShowOfflineMessage");
+      expect(result.current).toHaveProperty('isOnline');
+      expect(result.current).toHaveProperty('showOfflineMessage');
+      expect(result.current).not.toHaveProperty('setShowOfflineMessage');
     });
   });
 
-  describe("useNetworkActions", () => {
-    it("should return only action functions", () => {
+  describe('useNetworkActions', () => {
+    it('should return only action functions', () => {
       const { result } = renderHook(() => useNetworkActions(), {
         wrapper: NetworkProvider,
       });
 
-      expect(result.current).toHaveProperty("setShowOfflineMessage");
-      expect(result.current).not.toHaveProperty("isOnline");
+      expect(result.current).toHaveProperty('setShowOfflineMessage');
+      expect(result.current).not.toHaveProperty('isOnline');
     });
   });
 });

@@ -6,21 +6,15 @@
  * Global state management for PWA features (install prompt, updates)
  */
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
-import type { ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
 
 /**
  * BeforeInstallPrompt event interface
  */
 export interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
 /**
@@ -50,9 +44,7 @@ export interface PWAActions {
   /** Set installed state */
   setIsInstalled: (installed: boolean) => void;
   /** Set update registration */
-  setUpdateRegistration: (
-    registration: ServiceWorkerRegistration | null,
-  ) => void;
+  setUpdateRegistration: (registration: ServiceWorkerRegistration | null) => void;
   /** Dismiss the update notification */
   dismissUpdate: () => void;
 }
@@ -76,27 +68,26 @@ export interface PWAProviderProps {
  * Provides global state for PWA features
  */
 export function PWAProvider({ children }: PWAProviderProps) {
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [updateRegistration, setUpdateRegistration] =
-    useState<ServiceWorkerRegistration | null>(null);
+  const [updateRegistration, setUpdateRegistration] = useState<ServiceWorkerRegistration | null>(
+    null
+  );
 
   // Check if app is installed on mount
   useEffect(() => {
     const checkInstalled = () => {
       // Check if running in standalone mode (installed PWA)
       const isStandalone =
-        window.matchMedia("(display-mode: standalone)").matches ||
+        window.matchMedia('(display-mode: standalone)').matches ||
         (window.navigator as { standalone?: boolean }).standalone === true;
 
       // Check if installed via related applications API
       const isRelatedApp =
-        "getInstalledRelatedApps" in navigator &&
-        typeof (
-          navigator as { getInstalledRelatedApps?: () => Promise<unknown> }
-        ).getInstalledRelatedApps === "function";
+        'getInstalledRelatedApps' in navigator &&
+        typeof (navigator as { getInstalledRelatedApps?: () => Promise<unknown> })
+          .getInstalledRelatedApps === 'function';
 
       setIsInstalled(isStandalone || isRelatedApp);
     };
@@ -111,7 +102,7 @@ export function PWAProvider({ children }: PWAProviderProps) {
       setDeferredPrompt(e as BeforeInstallPromptEvent);
 
       if (import.meta.env.DEV) {
-        console.log("[PWAContext] Install prompt available");
+        console.log('[PWAContext] Install prompt available');
       }
     };
 
@@ -121,19 +112,16 @@ export function PWAProvider({ children }: PWAProviderProps) {
       setShowInstallPrompt(false);
 
       if (import.meta.env.DEV) {
-        console.log("[PWAContext] App installed");
+        console.log('[PWAContext] App installed');
       }
     };
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt,
-      );
-      window.removeEventListener("appinstalled", handleAppInstalled);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
@@ -168,7 +156,7 @@ export function PWAProvider({ children }: PWAProviderProps) {
 export function usePWA(): PWAContextValue {
   const context = useContext(PWAContext);
   if (context === undefined) {
-    throw new Error("usePWA must be used within a PWAProvider");
+    throw new Error('usePWA must be used within a PWAProvider');
   }
   return context;
 }

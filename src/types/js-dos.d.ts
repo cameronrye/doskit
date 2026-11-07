@@ -15,7 +15,7 @@ export interface DosOptions {
   initFs?: InitFs;
 
   // Emulator Settings
-  backend?: "dosbox" | "dosboxX";
+  backend?: 'dosbox' | 'dosboxX';
   backendLocked?: boolean;
   workerThread?: boolean;
   offscreenCanvas?: boolean;
@@ -23,9 +23,9 @@ export interface DosOptions {
   // Display Settings
   theme?: string;
   background?: string;
-  imageRendering?: "pixelated" | "smooth";
-  renderBackend?: "webgl" | "canvas";
-  renderAspect?: "AsIs" | "1/1" | "5/4" | "4/3" | "16/10" | "16/9" | "Fit";
+  imageRendering?: 'pixelated' | 'smooth';
+  renderBackend?: 'webgl' | 'canvas';
+  renderAspect?: 'AsIs' | '1/1' | '5/4' | '4/3' | '16/10' | '16/9' | 'Fit';
   fullScreen?: boolean;
   softFullscreen?: boolean;
 
@@ -46,14 +46,14 @@ export interface DosOptions {
   kiosk?: boolean;
 
   // UI Settings
-  lang?: "ru" | "en";
+  lang?: 'ru' | 'en';
   thinSidebar?: boolean;
   scaleControls?: number;
 
   // Cloud/Network Settings
   noCloud?: boolean;
   key?: string;
-  sockdrivePreload?: "none" | "all" | "default";
+  sockdrivePreload?: 'none' | 'all' | 'default';
   startIpxServer?: boolean;
   connectIpxAddress?: string;
 
@@ -64,12 +64,7 @@ export interface DosOptions {
   onEvent?: (event: DosEvent, arg?: unknown) => void;
 }
 
-export type DosEvent =
-  | "emu-ready"
-  | "ci-ready"
-  | "bnd-play"
-  | "open-key"
-  | "fullscreen-change";
+export type DosEvent = 'emu-ready' | 'ci-ready' | 'bnd-play' | 'open-key' | 'fullscreen-change';
 
 export interface InitFileEntry {
   path: string;
@@ -85,8 +80,8 @@ export interface DosProps {
 
   // Configuration Methods
   setTheme(theme: string): void;
-  setLang(lang: "ru" | "en"): void;
-  setBackend(backend: "dosbox" | "dosboxX"): void;
+  setLang(lang: 'ru' | 'en'): void;
+  setBackend(backend: 'dosbox' | 'dosboxX'): void;
   setBackendLocked(locked: boolean): void;
   setWorkerThread(workerThread: boolean): void;
   setOffscreenCanvas(offscreenCanvas: boolean): void;
@@ -94,9 +89,9 @@ export interface DosProps {
   // Display Methods
   setBackground(background: string | null): void;
   setFullScreen(fullScreen: boolean): void;
-  setImageRendering(rendering: "pixelated" | "smooth"): void;
-  setRenderBackend(backend: "webgl" | "canvas"): void;
-  setRenderAspect(aspect: DosOptions["renderAspect"]): void;
+  setImageRendering(rendering: 'pixelated' | 'smooth'): void;
+  setRenderBackend(backend: 'webgl' | 'canvas'): void;
+  setRenderAspect(aspect: DosOptions['renderAspect']): void;
   setSoftFullscreen(softFullscreen: boolean): void;
   setThinSidebar(thinSidebar: boolean): void;
 
@@ -160,10 +155,7 @@ export interface CommandInterface {
   // File System Operations
   fsTree(): Promise<FsNode>;
   fsReadFile(file: string): Promise<Uint8Array>;
-  fsWriteFile(
-    file: string,
-    contents: ReadableStream<Uint8Array> | Uint8Array,
-  ): Promise<void>;
+  fsWriteFile(file: string, contents: ReadableStream<Uint8Array> | Uint8Array): Promise<void>;
   fsDeleteFile(file: string): Promise<void>;
 
   // State Management
@@ -183,15 +175,11 @@ export interface CommandInterface {
 export interface CommandInterfaceEvents {
   onStdout(consumer: (message: string) => void): void;
   onFrameSize(consumer: (width: number, height: number) => void): void;
-  onFrame(
-    consumer: (rgb: Uint8Array | null, rgba: Uint8Array | null) => void,
-  ): void;
+  onFrame(consumer: (rgb: Uint8Array | null, rgba: Uint8Array | null) => void): void;
   onSoundPush(consumer: (samples: Float32Array) => void): void;
   onExit(consumer: () => void): void;
   onMessage(consumer: (msgType: MessageType, ...args: unknown[]) => void): void;
-  onNetworkConnected(
-    consumer: (networkType: NetworkType, address: string) => void,
-  ): void;
+  onNetworkConnected(consumer: (networkType: NetworkType, address: string) => void): void;
   onNetworkDisconnected(consumer: (networkType: NetworkType) => void): void;
 }
 
@@ -205,17 +193,14 @@ export interface FsNode {
   nodes?: FsNode[];
 }
 
-export type NetworkType = "ipx";
+export type NetworkType = 'ipx';
 export type MessageType = string;
 
 export interface AsyncifyStats {
   [key: string]: number | string | boolean;
 }
 
-export function Dos(
-  element: HTMLDivElement,
-  options?: Partial<DosOptions>,
-): DosProps;
+export function Dos(element: HTMLDivElement, options?: Partial<DosOptions>): DosProps;
 
 // Global Window interface declaration for js-dos
 declare global {

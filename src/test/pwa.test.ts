@@ -31,7 +31,7 @@ describe('PWA Service Worker Registration', () => {
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
-    
+
     // Mock navigator.serviceWorker
     Object.defineProperty(window.navigator, 'serviceWorker', {
       value: mockServiceWorker,
@@ -259,4 +259,3 @@ describe('PWA Install Prompt', () => {
     expect(true).toBe(true);
   });
 });
-

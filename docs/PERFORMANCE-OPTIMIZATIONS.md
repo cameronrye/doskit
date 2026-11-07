@@ -124,7 +124,7 @@ Based on extensive research from:
 **Configuration:**
 
 ```typescript
-import { presets } from "./utils/dosboxConfigBuilder";
+import { presets } from './utils/dosboxConfigBuilder';
 
 const config = presets.musicTracker().build();
 ```
@@ -218,7 +218,7 @@ aspect=false
 **Configuration:**
 
 ```typescript
-renderBackend: "webgl";
+renderBackend: 'webgl';
 ```
 
 **What it does:** Uses GPU-accelerated WebGL for rendering instead of CPU-based Canvas 2D.

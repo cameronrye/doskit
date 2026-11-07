@@ -6,13 +6,9 @@
  * Centralized error handling for uncaught errors and unhandled promise rejections
  */
 
-import {
-  getErrorTracker,
-  ErrorSeverity,
-  type ErrorContext,
-} from "./errorTracking";
-import { getUserFriendlyError } from "./errorMessages";
-import { logger } from "./logger";
+import { getErrorTracker, ErrorSeverity, type ErrorContext } from './errorTracking';
+import { getUserFriendlyError } from './errorMessages';
+import { logger } from './logger';
 
 /**
  * Known harmless error patterns that should be suppressed
@@ -41,7 +37,7 @@ const HARMLESS_ERROR_PATTERNS = [
  * @returns True if error should be suppressed
  */
 function shouldSuppressError(error: Error | string): boolean {
-  const message = typeof error === "string" ? error : error.message;
+  const message = typeof error === 'string' ? error : error.message;
 
   return HARMLESS_ERROR_PATTERNS.some((pattern) => pattern.test(message));
 }
@@ -50,7 +46,7 @@ function shouldSuppressError(error: Error | string): boolean {
  * Get browser context information
  * @returns Browser context
  */
-function getBrowserContext(): ErrorContext["browser"] {
+function getBrowserContext(): ErrorContext['browser'] {
   return {
     userAgent: navigator.userAgent,
     language: navigator.language,
@@ -86,20 +82,16 @@ function handleUncaughtError(
   source?: string,
   lineno?: number,
   colno?: number,
-  error?: Error,
+  error?: Error
 ): boolean {
   // Extract error information
-  const actualError =
-    error || (typeof event === "string" ? new Error(event) : event.error);
-  const errorMessage = typeof event === "string" ? event : event.message;
+  const actualError = error || (typeof event === 'string' ? new Error(event) : event.error);
+  const errorMessage = typeof event === 'string' ? event : event.message;
 
   // Check if error should be suppressed
-  if (
-    config.suppressHarmlessErrors &&
-    shouldSuppressError(actualError || errorMessage)
-  ) {
+  if (config.suppressHarmlessErrors && shouldSuppressError(actualError || errorMessage)) {
     if (import.meta.env.DEV) {
-      logger.debug("Suppressed harmless error:", errorMessage);
+      logger.debug('Suppressed harmless error:', errorMessage);
     }
     return true; // Prevent default error handling
   }
@@ -111,7 +103,7 @@ function handleUncaughtError(
 
   // Build error context
   const context: ErrorContext = {
-    userAction: "Unknown",
+    userAction: 'Unknown',
     browser: getBrowserContext(),
     metadata: {
       source,
@@ -122,15 +114,11 @@ function handleUncaughtError(
   };
 
   // Log error
-  logger.error("Uncaught error:", actualError || errorMessage, context);
+  logger.error('Uncaught error:', actualError || errorMessage, context);
 
   // Track error
   const tracker = getErrorTracker();
-  tracker.captureError(
-    actualError || new Error(errorMessage),
-    context,
-    ErrorSeverity.ERROR,
-  );
+  tracker.captureError(actualError || new Error(errorMessage), context, ErrorSeverity.ERROR);
 
   // Call custom error handler
   if (config.onError && actualError) {
@@ -141,9 +129,9 @@ function handleUncaughtError(
   if (config.showUserFriendlyErrors && !import.meta.env.DEV) {
     const friendlyError = getUserFriendlyError(actualError || errorMessage);
     // Could show a toast notification here
-    console.error("Error:", friendlyError.message);
+    console.error('Error:', friendlyError.message);
     if (friendlyError.suggestion) {
-      console.info("Suggestion:", friendlyError.suggestion);
+      console.info('Suggestion:', friendlyError.suggestion);
     }
   }
 
@@ -160,7 +148,7 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
   // Check if error should be suppressed
   if (config.suppressHarmlessErrors && shouldSuppressError(error)) {
     if (import.meta.env.DEV) {
-      logger.debug("Suppressed harmless promise rejection:", error);
+      logger.debug('Suppressed harmless promise rejection:', error);
     }
     event.preventDefault();
     return;
@@ -174,7 +162,7 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
 
   // Build error context
   const context: ErrorContext = {
-    userAction: "Promise rejection",
+    userAction: 'Promise rejection',
     browser: getBrowserContext(),
     metadata: {
       timestamp: new Date().toISOString(),
@@ -183,7 +171,7 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
   };
 
   // Log error
-  logger.error("Unhandled promise rejection:", error, context);
+  logger.error('Unhandled promise rejection:', error, context);
 
   // Track error
   const tracker = getErrorTracker();
@@ -198,9 +186,9 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
   // Show user-friendly error if enabled
   if (config.showUserFriendlyErrors && !import.meta.env.DEV) {
     const friendlyError = getUserFriendlyError(error);
-    console.error("Error:", friendlyError.message);
+    console.error('Error:', friendlyError.message);
     if (friendlyError.suggestion) {
-      console.info("Suggestion:", friendlyError.suggestion);
+      console.info('Suggestion:', friendlyError.suggestion);
     }
   }
 }
@@ -209,27 +197,22 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
  * Initialize global error handler
  * @param options - Configuration options
  */
-export function initializeGlobalErrorHandler(
-  options: GlobalErrorHandlerConfig = {},
-): void {
+export function initializeGlobalErrorHandler(options: GlobalErrorHandlerConfig = {}): void {
   if (isInitialized) {
-    logger.warn("GlobalErrorHandler", "Already initialized");
+    logger.warn('GlobalErrorHandler', 'Already initialized');
     return;
   }
 
   config = { ...config, ...options };
 
   // Register global error handler
-  window.addEventListener(
-    "error",
-    handleUncaughtError as unknown as EventListener,
-  );
+  window.addEventListener('error', handleUncaughtError as unknown as EventListener);
 
   // Register unhandled promise rejection handler
-  window.addEventListener("unhandledrejection", handleUnhandledRejection);
+  window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
   isInitialized = true;
-  logger.info("GlobalErrorHandler", "Initialized");
+  logger.info('GlobalErrorHandler', 'Initialized');
 }
 
 /**
@@ -240,14 +223,11 @@ export function cleanupGlobalErrorHandler(): void {
     return;
   }
 
-  window.removeEventListener(
-    "error",
-    handleUncaughtError as unknown as EventListener,
-  );
-  window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+  window.removeEventListener('error', handleUncaughtError as unknown as EventListener);
+  window.removeEventListener('unhandledrejection', handleUnhandledRejection);
 
   isInitialized = false;
-  logger.info("GlobalErrorHandler", "Cleaned up");
+  logger.info('GlobalErrorHandler', 'Cleaned up');
 }
 
 /**

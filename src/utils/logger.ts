@@ -74,11 +74,7 @@ export class Logger {
    * @returns Formatted log message string
    * @private
    */
-  private formatMessage(
-    level: string,
-    context: string,
-    message: string,
-  ): string {
+  private formatMessage(level: string, context: string, message: string): string {
     const parts: string[] = [];
 
     if (this.config.enableTimestamps) {
@@ -94,7 +90,7 @@ export class Logger {
     parts.push(`[${context}]`);
     parts.push(message);
 
-    return parts.join(" ");
+    return parts.join(' ');
   }
 
   /**
@@ -105,7 +101,7 @@ export class Logger {
    */
   debug(context: string, message: string, ...args: unknown[]): void {
     if (this.config.level <= LogLevel.DEBUG) {
-      const formatted = this.formatMessage("DEBUG", context, message);
+      const formatted = this.formatMessage('DEBUG', context, message);
       console.debug(formatted, ...args);
     }
   }
@@ -118,7 +114,7 @@ export class Logger {
    */
   info(context: string, message: string, ...args: unknown[]): void {
     if (this.config.level <= LogLevel.INFO) {
-      const formatted = this.formatMessage("INFO", context, message);
+      const formatted = this.formatMessage('INFO', context, message);
       console.info(formatted, ...args);
     }
   }
@@ -131,7 +127,7 @@ export class Logger {
    */
   warn(context: string, message: string, ...args: unknown[]): void {
     if (this.config.level <= LogLevel.WARN) {
-      const formatted = this.formatMessage("WARN", context, message);
+      const formatted = this.formatMessage('WARN', context, message);
       console.warn(formatted, ...args);
     }
   }
@@ -144,7 +140,7 @@ export class Logger {
    */
   error(context: string, message: string, ...args: unknown[]): void {
     if (this.config.level <= LogLevel.ERROR) {
-      const formatted = this.formatMessage("ERROR", context, message);
+      const formatted = this.formatMessage('ERROR', context, message);
       console.error(formatted, ...args);
     }
   }
@@ -162,14 +158,10 @@ export class Logger {
    */
   scope(context: string) {
     return {
-      debug: (message: string, ...args: unknown[]) =>
-        this.debug(context, message, ...args),
-      info: (message: string, ...args: unknown[]) =>
-        this.info(context, message, ...args),
-      warn: (message: string, ...args: unknown[]) =>
-        this.warn(context, message, ...args),
-      error: (message: string, ...args: unknown[]) =>
-        this.error(context, message, ...args),
+      debug: (message: string, ...args: unknown[]) => this.debug(context, message, ...args),
+      info: (message: string, ...args: unknown[]) => this.info(context, message, ...args),
+      warn: (message: string, ...args: unknown[]) => this.warn(context, message, ...args),
+      error: (message: string, ...args: unknown[]) => this.error(context, message, ...args),
     };
   }
 }

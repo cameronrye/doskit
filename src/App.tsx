@@ -4,17 +4,13 @@
  * Licensed under the MIT License
  */
 
-import { useState, useEffect, useRef } from "react";
-import { DosPlayerWithApps, type DosApp } from "./components/DosPlayerWithApps";
-import { OfflineIndicator } from "./components/OfflineIndicator";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { findAppById } from "./components/DemoSelector";
-import {
-  getAppIdFromUrl,
-  updateUrlWithApp,
-  updateDocumentTitle,
-} from "./utils/urlRouting";
-import "./App.css";
+import { useState, useEffect, useRef } from 'react';
+import { DosPlayerWithApps, type DosApp } from './components/DosPlayerWithApps';
+import { OfflineIndicator } from './components/OfflineIndicator';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { findAppById } from './components/DemoSelector';
+import { getAppIdFromUrl, updateUrlWithApp, updateDocumentTitle } from './utils/urlRouting';
+import './App.css';
 
 function App() {
   const [isReady, setIsReady] = useState(false);
@@ -46,31 +42,28 @@ function App() {
 
   const handleDosReady = () => {
     if (import.meta.env.DEV) {
-      console.log("[App] DOS is ready!");
+      console.log('[App] DOS is ready!');
     }
     setIsReady(true);
   };
 
   const handleDosExit = () => {
     if (import.meta.env.DEV) {
-      console.log("[App] DOS exited");
+      console.log('[App] DOS exited');
     }
     setIsReady(false);
   };
 
   const handleNetworkStatusChange = (online: boolean) => {
     if (import.meta.env.DEV) {
-      console.log(
-        "[App] Network status changed:",
-        online ? "online" : "offline",
-      );
+      console.log('[App] Network status changed:', online ? 'online' : 'offline');
     }
     setIsOnline(online);
   };
 
   const handleAppChange = (app: DosApp | null) => {
     if (import.meta.env.DEV) {
-      console.log("[App] Application changed:", app?.name || "none");
+      console.log('[App] Application changed:', app?.name || 'none');
     }
     setCurrentApp(app);
 
@@ -90,7 +83,7 @@ function App() {
 
   const handleSelectorVisibilityChange = (visible: boolean) => {
     if (import.meta.env.DEV) {
-      console.log("[App] Selector visibility changed:", visible);
+      console.log('[App] Selector visibility changed:', visible);
     }
     setShowAppSelector(visible);
   };
@@ -108,7 +101,7 @@ function App() {
 
     if (appIdFromUrl) {
       if (import.meta.env.DEV) {
-        console.log("[App] Loading app from URL:", appIdFromUrl);
+        console.log('[App] Loading app from URL:', appIdFromUrl);
       }
 
       const app = findAppById(appIdFromUrl);
@@ -121,7 +114,7 @@ function App() {
         // The app will be loaded by DosPlayerWithApps when it receives the app change
         setTimeout(() => {
           // This ensures the component is mounted before we try to load
-          const event = new CustomEvent("load-app-from-url", {
+          const event = new CustomEvent('load-app-from-url', {
             detail: { app },
           });
           window.dispatchEvent(event);
@@ -129,7 +122,7 @@ function App() {
       } else {
         // Invalid app ID in URL - error already set in state initializer
         if (import.meta.env.DEV) {
-          console.warn("[App] Invalid app ID in URL:", appIdFromUrl);
+          console.warn('[App] Invalid app ID in URL:', appIdFromUrl);
         }
         // Clear the invalid app parameter from URL
         updateUrlWithApp(null, true);
@@ -148,7 +141,7 @@ function App() {
       const appIdFromUrl = getAppIdFromUrl();
 
       if (import.meta.env.DEV) {
-        console.log("[App] Popstate event - app ID from URL:", appIdFromUrl);
+        console.log('[App] Popstate event - app ID from URL:', appIdFromUrl);
       }
 
       if (appIdFromUrl) {
@@ -160,7 +153,7 @@ function App() {
           updateDocumentTitle(app.name);
 
           // Trigger app loading
-          const event = new CustomEvent("load-app-from-url", {
+          const event = new CustomEvent('load-app-from-url', {
             detail: { app },
           });
           window.dispatchEvent(event);
@@ -181,10 +174,10 @@ function App() {
       }, 100);
     };
 
-    window.addEventListener("popstate", handlePopState);
+    window.addEventListener('popstate', handlePopState);
 
     return () => {
-      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
@@ -212,11 +205,8 @@ function App() {
             </div>
           )}
           <div className="header-right">
-            <button
-              className="header-change-app-button"
-              onClick={handleChangeAppClick}
-            >
-              {currentApp ? "Change Application" : "Select Application"}
+            <button className="header-change-app-button" onClick={handleChangeAppClick}>
+              {currentApp ? 'Change Application' : 'Select Application'}
             </button>
           </div>
         </div>
@@ -255,18 +245,12 @@ function App() {
           <div className="status-indicators">
             {/* DOS Status */}
             {isReady ? (
-              <span
-                className="status-badge ready"
-                title="DOS emulator is ready"
-              >
+              <span className="status-badge ready" title="DOS emulator is ready">
                 <span className="status-dot"></span>
                 <span>Ready</span>
               </span>
             ) : (
-              <span
-                className="status-badge loading"
-                title="Loading DOS emulator"
-              >
+              <span className="status-badge loading" title="Loading DOS emulator">
                 <span className="status-dot"></span>
                 <span>Loading</span>
               </span>
@@ -274,29 +258,23 @@ function App() {
 
             {/* Network Status */}
             <span
-              className={`status-badge ${isOnline ? "online" : "offline"}`}
-              title={
-                isOnline ? "Connected to internet" : "No internet connection"
-              }
+              className={`status-badge ${isOnline ? 'online' : 'offline'}`}
+              title={isOnline ? 'Connected to internet' : 'No internet connection'}
             >
               <span className="status-dot"></span>
-              <span>{isOnline ? "Online" : "Offline"}</span>
+              <span>{isOnline ? 'Online' : 'Offline'}</span>
             </span>
           </div>
         </div>
         <div className="made-with">
-          Made with <span className="heart">❤️</span> by{" "}
+          Made with <span className="heart">❤️</span> by{' '}
           <a href="https://rye.dev/" target="_blank" rel="noopener noreferrer">
             Cameron Rye
           </a>
         </div>
         <div className="credits">
-          Powered by{" "}
-          <a
-            href="https://js-dos.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          Powered by{' '}
+          <a href="https://js-dos.com" target="_blank" rel="noopener noreferrer">
             js-dos v8.3.20
           </a>
         </div>

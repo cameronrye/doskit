@@ -56,4 +56,3 @@ jobs:
         run: |
           gh release upload ${{ needs.release-please.outputs.tag_name }} \
             doskit-${{ needs.release-please.outputs.tag_name }}.zip
-

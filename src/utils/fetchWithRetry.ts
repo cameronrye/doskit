@@ -44,7 +44,7 @@ const DEFAULT_RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
-      reject(new Error("Operation aborted"));
+      reject(new Error('Operation aborted'));
       return;
     }
 
@@ -52,12 +52,12 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 
     if (signal) {
       signal.addEventListener(
-        "abort",
+        'abort',
         () => {
           clearTimeout(timeout);
-          reject(new Error("Operation aborted"));
+          reject(new Error('Operation aborted'));
         },
-        { once: true },
+        { once: true }
       );
     }
   });
@@ -77,7 +77,7 @@ function calculateDelay(
   attempt: number,
   initialDelay: number,
   maxDelay: number,
-  backoffMultiplier: number,
+  backoffMultiplier: number
 ): number {
   const exponentialDelay = initialDelay * Math.pow(backoffMultiplier, attempt);
   // Add jitter (random variation) to prevent thundering herd
@@ -92,12 +92,9 @@ function calculateDelay(
  * @returns true if the error is retryable, false otherwise
  * @private
  */
-function isRetryableError(
-  error: unknown,
-  retryableStatusCodes: number[],
-): boolean {
+function isRetryableError(error: unknown, retryableStatusCodes: number[]): boolean {
   // Network errors are retryable
-  if (error instanceof TypeError && error.message.includes("fetch")) {
+  if (error instanceof TypeError && error.message.includes('fetch')) {
     return true;
   }
 
@@ -133,7 +130,7 @@ function isRetryableError(
 export async function fetchWithRetry(
   input: RequestInfo | URL,
   init?: RequestInit,
-  options: RetryOptions = {},
+  options: RetryOptions = {}
 ): Promise<Response> {
   const {
     maxRetries = 3,
@@ -151,7 +148,7 @@ export async function fetchWithRetry(
     try {
       // Check if operation was aborted
       if (signal?.aborted) {
-        throw new Error("Operation aborted");
+        throw new Error('Operation aborted');
       }
 
       // Merge signal from options with init
@@ -182,12 +179,7 @@ export async function fetchWithRetry(
       }
 
       // Calculate delay for next retry
-      const retryDelay = calculateDelay(
-        attempt,
-        initialDelay,
-        maxDelay,
-        backoffMultiplier,
-      );
+      const retryDelay = calculateDelay(attempt, initialDelay, maxDelay, backoffMultiplier);
 
       // Call onRetry callback if provided
       if (onRetry) {
@@ -200,5 +192,5 @@ export async function fetchWithRetry(
   }
 
   // All retries exhausted
-  throw lastError || new Error("Fetch failed after retries");
+  throw lastError || new Error('Fetch failed after retries');
 }

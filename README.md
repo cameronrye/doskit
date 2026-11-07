@@ -594,8 +594,8 @@ Enable detailed logging in development:
 // Logs are automatically enabled in development mode
 // Check browser console for detailed information
 // Use logger utility for custom logging:
-import { logger } from "./utils/logger";
-logger.debug("Debug message");
+import { logger } from './utils/logger';
+logger.debug('Debug message');
 ```
 
 ### Performance Tips

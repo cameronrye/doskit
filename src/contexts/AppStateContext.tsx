@@ -6,9 +6,9 @@
  * Global state management for application selection and emulator status
  */
 
-import { createContext, useContext, useState, useCallback } from "react";
-import type { ReactNode } from "react";
-import type { DosApp } from "../types/dos-app";
+import { createContext, useContext, useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import type { DosApp } from '../types/dos-app';
 
 /**
  * App state interface
@@ -49,9 +49,7 @@ export interface AppStateActions {
  */
 export interface AppStateContextValue extends AppState, AppStateActions {}
 
-const AppStateContext = createContext<AppStateContextValue | undefined>(
-  undefined,
-);
+const AppStateContext = createContext<AppStateContextValue | undefined>(undefined);
 
 /**
  * App State Provider Props
@@ -103,11 +101,7 @@ export function AppStateProvider({
     resetState,
   };
 
-  return (
-    <AppStateContext.Provider value={value}>
-      {children}
-    </AppStateContext.Provider>
-  );
+  return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }
 
 /**
@@ -117,7 +111,7 @@ export function AppStateProvider({
 export function useAppState(): AppStateContextValue {
   const context = useContext(AppStateContext);
   if (context === undefined) {
-    throw new Error("useAppState must be used within an AppStateProvider");
+    throw new Error('useAppState must be used within an AppStateProvider');
   }
   return context;
 }

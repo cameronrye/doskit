@@ -7,8 +7,8 @@
  * Configuration for running Impulse Tracker, a music tracker for DOS (1997)
  */
 
-import { loadZipArchive as loadZip } from "../utils/diskLoader";
-import { presets } from "../utils/dosboxConfigBuilder";
+import { loadZipArchive as loadZip } from '../utils/diskLoader';
+import { presets } from '../utils/dosboxConfigBuilder';
 
 // Re-export for lazy loading
 export { loadZip as loadZipArchive };
@@ -22,7 +22,7 @@ export { loadZip as loadZipArchive };
  * File: it214v3.zip
  * Contains: IT.EXE and related files
  */
-export const impulseTrackerZipUrl = "/demos/impulse-tracker.zip";
+export const impulseTrackerZipUrl = '/demos/impulse-tracker.zip';
 
 /**
  * DOSBox configuration optimized for Impulse Tracker
@@ -52,25 +52,25 @@ export const impulseTrackerZipUrl = "/demos/impulse-tracker.zip";
 export const impulseTrackerDosboxConf = presets
   .musicTracker()
   .addAutoexec(
-    "@echo off",
-    "echo.",
-    "echo ========================================",
-    "echo   Impulse Tracker 2.14",
-    "echo   by Jeffrey Lim (1997)",
-    "echo ========================================",
-    "echo.",
-    "echo A music tracker for creating MOD/IT music",
-    "echo.",
-    "echo CPU: Pentium (18000 cycles)",
-    "echo Audio: Sound Blaster 16 (44.1kHz, prebuffer=64)",
-    "echo.",
-    "echo Mounting C: drive...",
-    "mount c .",
-    "c:",
-    "echo.",
-    "echo Starting Impulse Tracker...",
-    "echo.",
-    "IT.EXE",
+    '@echo off',
+    'echo.',
+    'echo ========================================',
+    'echo   Impulse Tracker 2.14',
+    'echo   by Jeffrey Lim (1997)',
+    'echo ========================================',
+    'echo.',
+    'echo A music tracker for creating MOD/IT music',
+    'echo.',
+    'echo CPU: Pentium (18000 cycles)',
+    'echo Audio: Sound Blaster 16 (44.1kHz, prebuffer=64)',
+    'echo.',
+    'echo Mounting C: drive...',
+    'mount c .',
+    'c:',
+    'echo.',
+    'echo Starting Impulse Tracker...',
+    'echo.',
+    'IT.EXE'
   )
   .build();
 
@@ -94,26 +94,26 @@ export const impulseTrackerGUSConf = presets
     gusbase: 240,
     gusirq: 5,
     gusdma: 3,
-    ultradir: "C:\\ULTRASND",
+    ultradir: 'C:\\ULTRASND',
   })
   .addAutoexec(
-    "@echo off",
-    "echo.",
-    "echo ========================================",
-    "echo   Impulse Tracker 2.14",
-    "echo   by Jeffrey Lim (1997)",
-    "echo ========================================",
-    "echo.",
-    "echo CPU: Pentium (15000 cycles)",
-    "echo Audio: Gravis UltraSound (44.1kHz)",
-    "echo.",
-    "echo Mounting C: drive...",
-    "mount c .",
-    "c:",
-    "echo.",
-    "echo Starting Impulse Tracker...",
-    "echo.",
-    "IT.EXE",
+    '@echo off',
+    'echo.',
+    'echo ========================================',
+    'echo   Impulse Tracker 2.14',
+    'echo   by Jeffrey Lim (1997)',
+    'echo ========================================',
+    'echo.',
+    'echo CPU: Pentium (15000 cycles)',
+    'echo Audio: Gravis UltraSound (44.1kHz)',
+    'echo.',
+    'echo Mounting C: drive...',
+    'mount c .',
+    'c:',
+    'echo.',
+    'echo Starting Impulse Tracker...',
+    'echo.',
+    'IT.EXE'
   )
   .build();
 
@@ -125,14 +125,14 @@ export const impulseTrackerGUSConf = presets
 export const impulseTrackerTestConf = presets
   .musicTracker()
   .addAutoexec(
-    "@echo off",
-    "mount c .",
-    "c:",
-    "echo.",
-    "echo Impulse Tracker 2.14 loaded.",
+    '@echo off',
+    'mount c .',
+    'c:',
+    'echo.',
+    'echo Impulse Tracker 2.14 loaded.',
     "echo Type 'IT' to start the tracker.",
     "echo Type 'dir' to see available files.",
-    "echo.",
+    'echo.'
   )
   .build();
 
@@ -140,27 +140,27 @@ export const impulseTrackerTestConf = presets
  * Configuration metadata
  */
 export const impulseTrackerMetadata = {
-  name: "Impulse Tracker",
-  author: "Jeffrey Lim",
+  name: 'Impulse Tracker',
+  author: 'Jeffrey Lim',
   year: 1997,
-  version: "2.14",
+  version: '2.14',
   description:
-    "A legendary music tracker for creating MOD/IT music. One of the most popular trackers in the demoscene.",
-  category: "tracker",
+    'A legendary music tracker for creating MOD/IT music. One of the most popular trackers in the demoscene.',
+  category: 'tracker',
   requirements: {
-    cpu: "486 or better",
-    memory: "4MB RAM",
-    graphics: "VGA (text mode)",
-    sound: "Sound Blaster or compatible (optional)",
+    cpu: '486 or better',
+    memory: '4MB RAM',
+    graphics: 'VGA (text mode)',
+    sound: 'Sound Blaster or compatible (optional)',
   },
-  license: "BSD-3-Clause",
-  repository: "https://github.com/jthlim/impulse-tracker",
-  pouet: "https://www.pouet.net/prod.php?which=13366",
-  archive: "https://archive.org/details/demoscene_ImpulseTracker214",
+  license: 'BSD-3-Clause',
+  repository: 'https://github.com/jthlim/impulse-tracker',
+  pouet: 'https://www.pouet.net/prod.php?which=13366',
+  archive: 'https://archive.org/details/demoscene_ImpulseTracker214',
   notes: [
-    "Source code released in 2014 under BSD-3-Clause license",
-    "One of the most influential music trackers in the demoscene",
-    "Supports advanced features like filters, NNA (New Note Actions), and more",
-    "Created the .IT module format",
+    'Source code released in 2014 under BSD-3-Clause license',
+    'One of the most influential music trackers in the demoscene',
+    'Supports advanced features like filters, NNA (New Note Actions), and more',
+    'Created the .IT module format',
   ],
 };

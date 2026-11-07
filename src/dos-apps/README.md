@@ -20,6 +20,7 @@ The `.jsdos` format is a bundle that contains your DOS program and its configura
 2. **Command line tools**: Use the js-dos CLI
 
 Example structure:
+
 ```
 game.jsdos
 ├── game.exe
@@ -72,6 +73,7 @@ function App() {
 - Abandonware (check local laws)
 
 Do not include:
+
 - Copyrighted commercial software without permission
 - Pirated games or applications
 
@@ -81,4 +83,3 @@ Do not include:
 - **Abandonware**: https://www.myabandonware.com/
 - **js-dos Bundles**: https://dos.zone/
 - **FreeDOS**: https://www.freedos.org/
-

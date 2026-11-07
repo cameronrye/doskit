@@ -4,20 +4,20 @@
  * Licensed under the MIT License
  */
 
-import { createRoot } from "react-dom/client";
-import { createElement } from "react";
-import "./index.css";
-import App from "./App.tsx";
-import { UpdateNotification } from "./components/UpdateNotification.tsx";
-import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
-import * as serviceWorkerRegistration from "./utils/serviceWorkerRegistration";
-import { initializeErrorTracking } from "./utils/errorTracking";
-import { initializeGlobalErrorHandler } from "./utils/globalErrorHandler";
-import { logger } from "./utils/logger";
+import { createRoot } from 'react-dom/client';
+import { createElement } from 'react';
+import './index.css';
+import App from './App.tsx';
+import { UpdateNotification } from './components/UpdateNotification.tsx';
+import { ErrorBoundary } from './components/ErrorBoundary.tsx';
+import * as serviceWorkerRegistration from './utils/serviceWorkerRegistration';
+import { initializeErrorTracking } from './utils/errorTracking';
+import { initializeGlobalErrorHandler } from './utils/globalErrorHandler';
+import { logger } from './utils/logger';
 
 // Initialize error tracking
 // In production, you could use 'sentry' with proper configuration
-initializeErrorTracking(import.meta.env.DEV ? "console" : "console", {
+initializeErrorTracking(import.meta.env.DEV ? 'console' : 'console', {
   // Add Sentry DSN or other config here when ready
   // dsn: import.meta.env.VITE_SENTRY_DSN,
 });
@@ -28,7 +28,7 @@ initializeGlobalErrorHandler({
   suppressHarmlessErrors: true,
   onError: (error, context) => {
     // Custom error handling logic
-    logger.error("GlobalErrorHandler", "Error captured", error, context);
+    logger.error('GlobalErrorHandler', 'Error captured', error, context);
   },
 });
 
@@ -40,8 +40,8 @@ console.error = (...args: unknown[]) => {
 
   // Suppress known harmless errors from js-dos initialization
   if (
-    message.includes("exitFullscreen") ||
-    message.includes("lock() request could not be registered")
+    message.includes('exitFullscreen') ||
+    message.includes('lock() request could not be registered')
   ) {
     // These are expected - fullscreen and keyboard lock require user interaction
     return;
@@ -53,11 +53,11 @@ console.error = (...args: unknown[]) => {
 
 // Note: StrictMode is disabled because it causes double-mounting in development,
 // which conflicts with js-dos initialization (WASM modules can't be initialized twice)
-const root = createRoot(document.getElementById("root")!);
+const root = createRoot(document.getElementById('root')!);
 root.render(
   <ErrorBoundary>
     <App />
-  </ErrorBoundary>,
+  </ErrorBoundary>
 );
 
 // State for update notification
@@ -68,8 +68,8 @@ function showUpdateNotification(registration: ServiceWorkerRegistration) {
   updateRegistration = registration;
 
   // Create a container for the update notification
-  const notificationContainer = document.createElement("div");
-  notificationContainer.id = "update-notification-container";
+  const notificationContainer = document.createElement('div');
+  notificationContainer.id = 'update-notification-container';
   document.body.appendChild(notificationContainer);
 
   // Render the update notification
@@ -81,20 +81,20 @@ function showUpdateNotification(registration: ServiceWorkerRegistration) {
         notificationRoot.unmount();
         notificationContainer.remove();
       },
-    }),
+    })
   );
 }
 
 // Register service worker for PWA functionality
 serviceWorkerRegistration.register({
   onSuccess: () => {
-    console.log("[PWA] Content is cached for offline use.");
+    console.log('[PWA] Content is cached for offline use.');
   },
   onUpdate: (registration) => {
-    console.log("[PWA] New content is available; please refresh.");
+    console.log('[PWA] New content is available; please refresh.');
     showUpdateNotification(registration);
   },
   onOfflineReady: () => {
-    console.log("[PWA] App is ready for offline use.");
+    console.log('[PWA] App is ready for offline use.');
   },
 });

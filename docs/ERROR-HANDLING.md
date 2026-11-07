@@ -38,14 +38,14 @@ DosKit implements a comprehensive, multi-layered error handling strategy to ensu
 **Usage:**
 
 ```typescript
-import { initializeGlobalErrorHandler } from "./utils/globalErrorHandler";
+import { initializeGlobalErrorHandler } from './utils/globalErrorHandler';
 
 initializeGlobalErrorHandler({
   showUserFriendlyErrors: true,
   suppressHarmlessErrors: true,
   onError: (error, context) => {
     // Custom error handling logic
-    console.error("Error captured:", error, context);
+    console.error('Error captured:', error, context);
   },
 });
 ```
@@ -78,19 +78,15 @@ initializeGlobalErrorHandler({
 **Usage:**
 
 ```typescript
-import {
-  initializeErrorTracking,
-  getErrorTracker,
-  ErrorSeverity,
-} from "./utils/errorTracking";
+import { initializeErrorTracking, getErrorTracker, ErrorSeverity } from './utils/errorTracking';
 
 // Initialize (in main.tsx)
-initializeErrorTracking("console"); // or 'sentry' with config
+initializeErrorTracking('console'); // or 'sentry' with config
 
 // Use in code
 const tracker = getErrorTracker();
-tracker.captureError(error, { userAction: "Loading app" }, ErrorSeverity.ERROR);
-tracker.addBreadcrumb("User clicked load button", "user-action");
+tracker.captureError(error, { userAction: 'Loading app' }, ErrorSeverity.ERROR);
+tracker.addBreadcrumb('User clicked load button', 'user-action');
 ```
 
 **Supported Services:**
@@ -158,10 +154,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 **Usage:**
 
 ```typescript
-import {
-  getUserFriendlyError,
-  formatErrorForDisplay,
-} from "./utils/errorMessages";
+import { getUserFriendlyError, formatErrorForDisplay } from './utils/errorMessages';
 
 try {
   await fetchData();
@@ -248,7 +241,7 @@ const handleLoadApp = async () => {
   } catch (error) {
     const friendly = getUserFriendlyError(error);
     setError(friendly.message);
-    getErrorTracker().captureError(error, { userAction: "Loading app" });
+    getErrorTracker().captureError(error, { userAction: 'Loading app' });
   }
 };
 ```
@@ -257,10 +250,10 @@ const handleLoadApp = async () => {
 
 ```typescript
 tracker.captureError(error, {
-  userAction: "Loading Second Reality demo",
-  component: "DemoSelector",
+  userAction: 'Loading Second Reality demo',
+  component: 'DemoSelector',
   metadata: {
-    appId: "second-reality",
+    appId: 'second-reality',
     fileCount: 42,
   },
 });
@@ -269,8 +262,8 @@ tracker.captureError(error, {
 ### 3. Use Breadcrumbs for User Actions
 
 ```typescript
-tracker.addBreadcrumb("User selected app", "user-action", { appId: "doom" });
-tracker.addBreadcrumb("Started loading files", "process", { fileCount: 10 });
+tracker.addBreadcrumb('User selected app', 'user-action', { appId: 'doom' });
+tracker.addBreadcrumb('Started loading files', 'process', { fileCount: 10 });
 ```
 
 ### 4. Wrap Critical Components with Error Boundaries
@@ -319,7 +312,7 @@ test('catches errors', () => {
 
 ```typescript
 // main.tsx
-initializeErrorTracking("console");
+initializeErrorTracking('console');
 initializeGlobalErrorHandler({
   showUserFriendlyErrors: false, // Show technical errors
   suppressHarmlessErrors: true,
@@ -330,9 +323,9 @@ initializeGlobalErrorHandler({
 
 ```typescript
 // main.tsx
-initializeErrorTracking("sentry", {
+initializeErrorTracking('sentry', {
   dsn: import.meta.env.VITE_SENTRY_DSN,
-  environment: "production",
+  environment: 'production',
 });
 
 initializeGlobalErrorHandler({

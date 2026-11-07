@@ -60,6 +60,7 @@ For maskable icons (192x192 and 512x512), add 10% padding around the logo with t
 ## Required Icons
 
 ### Standard Icons
+
 - `icon-72x72.png` - Small icon
 - `icon-96x96.png` - Small icon
 - `icon-128x128.png` - Medium icon
@@ -70,17 +71,20 @@ For maskable icons (192x192 and 512x512), add 10% padding around the logo with t
 - `icon-512x512.png` - Extra large icon
 
 ### Maskable Icons
+
 - `icon-192x192-maskable.png` - Maskable icon (with safe area padding)
 - `icon-512x512-maskable.png` - Large maskable icon (with safe area padding)
 
 ## Icon Guidelines
 
 ### Standard Icons
+
 - Use transparent background or #1a1a1a (app background color)
 - Logo should fill most of the icon space
 - Maintain aspect ratio
 
 ### Maskable Icons
+
 - Use #667eea (theme color) as background
 - Add 10% padding around the logo for safe area
 - Logo should be centered
@@ -91,10 +95,12 @@ For maskable icons (192x192 and 512x512), add 10% padding around the logo with t
 After generating icons, test them:
 
 1. **Local Testing:**
+
    ```bash
    npm run build
    npm run preview
    ```
+
    Then open DevTools → Application → Manifest to verify icons
 
 2. **Lighthouse PWA Audit:**
@@ -110,18 +116,21 @@ After generating icons, test them:
 ## Troubleshooting
 
 ### Icons not showing in manifest
+
 - Clear browser cache
 - Rebuild the app: `npm run build`
 - Check browser console for errors
 - Verify file paths in `public/manifest.json`
 
 ### Icons not loading on mobile
+
 - Ensure icons are in PNG format
 - Check file sizes (should be < 500KB each)
 - Verify MIME types are correct
 - Test on different devices/browsers
 
 ### Maskable icons not working
+
 - Verify 10% safe area padding
 - Use solid background color (#667eea)
 - Test with Chrome's maskable icon preview tool
@@ -132,4 +141,3 @@ After generating icons, test them:
 - [Maskable Icons](https://web.dev/maskable-icon/)
 - [PWA Builder](https://www.pwabuilder.com/)
 - [Adaptive Icons](https://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive)
-

@@ -2,14 +2,14 @@
  * Tests for globalErrorHandler utility
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   initializeGlobalErrorHandler,
   cleanupGlobalErrorHandler,
   isGlobalErrorHandlerInitialized,
-} from "./globalErrorHandler";
+} from './globalErrorHandler';
 
-describe("globalErrorHandler", () => {
+describe('globalErrorHandler', () => {
   beforeEach(() => {
     cleanupGlobalErrorHandler();
   });
@@ -18,14 +18,14 @@ describe("globalErrorHandler", () => {
     cleanupGlobalErrorHandler();
   });
 
-  describe("initializeGlobalErrorHandler", () => {
-    it("should initialize successfully", () => {
+  describe('initializeGlobalErrorHandler', () => {
+    it('should initialize successfully', () => {
       initializeGlobalErrorHandler();
       expect(isGlobalErrorHandlerInitialized()).toBe(true);
     });
 
-    it("should warn if already initialized", () => {
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    it('should warn if already initialized', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       initializeGlobalErrorHandler();
       initializeGlobalErrorHandler(); // Second call
@@ -34,7 +34,7 @@ describe("globalErrorHandler", () => {
       consoleSpy.mockRestore();
     });
 
-    it("should accept configuration options", () => {
+    it('should accept configuration options', () => {
       const onError = vi.fn();
 
       initializeGlobalErrorHandler({
@@ -47,8 +47,8 @@ describe("globalErrorHandler", () => {
     });
   });
 
-  describe("cleanupGlobalErrorHandler", () => {
-    it("should cleanup successfully", () => {
+  describe('cleanupGlobalErrorHandler', () => {
+    it('should cleanup successfully', () => {
       initializeGlobalErrorHandler();
       expect(isGlobalErrorHandlerInitialized()).toBe(true);
 
@@ -56,20 +56,20 @@ describe("globalErrorHandler", () => {
       expect(isGlobalErrorHandlerInitialized()).toBe(false);
     });
 
-    it("should handle cleanup when not initialized", () => {
+    it('should handle cleanup when not initialized', () => {
       expect(() => cleanupGlobalErrorHandler()).not.toThrow();
     });
   });
 
-  describe("error handling", () => {
-    it("should handle uncaught errors", () => {
+  describe('error handling', () => {
+    it('should handle uncaught errors', () => {
       const onError = vi.fn();
       initializeGlobalErrorHandler({ onError });
 
-      const error = new Error("Test error");
-      const errorEvent = new ErrorEvent("error", {
+      const error = new Error('Test error');
+      const errorEvent = new ErrorEvent('error', {
         error,
-        message: "Test error",
+        message: 'Test error',
       });
 
       window.dispatchEvent(errorEvent);
@@ -77,17 +77,17 @@ describe("globalErrorHandler", () => {
       expect(onError).toHaveBeenCalledWith(error, expect.any(Object));
     });
 
-    it("should handle unhandled promise rejections", () => {
+    it('should handle unhandled promise rejections', () => {
       const onError = vi.fn();
       initializeGlobalErrorHandler({ onError });
 
-      const error = new Error("Promise rejection");
+      const error = new Error('Promise rejection');
       // Create a promise that we can control to avoid unhandled rejection
       const rejectedPromise = Promise.reject(error);
       // Catch the rejection to prevent it from being unhandled
       rejectedPromise.catch(() => {});
 
-      const rejectionEvent = new PromiseRejectionEvent("unhandledrejection", {
+      const rejectionEvent = new PromiseRejectionEvent('unhandledrejection', {
         promise: rejectedPromise,
         reason: error,
       });
@@ -97,15 +97,15 @@ describe("globalErrorHandler", () => {
       expect(onError).toHaveBeenCalledWith(error, expect.any(Object));
     });
 
-    it("should suppress harmless errors", () => {
+    it('should suppress harmless errors', () => {
       const onError = vi.fn();
       initializeGlobalErrorHandler({
         onError,
         suppressHarmlessErrors: true,
       });
 
-      const error = new Error("exitFullscreen is not available");
-      const errorEvent = new ErrorEvent("error", {
+      const error = new Error('exitFullscreen is not available');
+      const errorEvent = new ErrorEvent('error', {
         error,
         message: error.message,
       });
@@ -116,15 +116,15 @@ describe("globalErrorHandler", () => {
       expect(onError).not.toHaveBeenCalled();
     });
 
-    it("should not suppress harmless errors when disabled", () => {
+    it('should not suppress harmless errors when disabled', () => {
       const onError = vi.fn();
       initializeGlobalErrorHandler({
         onError,
         suppressHarmlessErrors: false,
       });
 
-      const error = new Error("exitFullscreen is not available");
-      const errorEvent = new ErrorEvent("error", {
+      const error = new Error('exitFullscreen is not available');
+      const errorEvent = new ErrorEvent('error', {
         error,
         message: error.message,
       });
@@ -134,7 +134,7 @@ describe("globalErrorHandler", () => {
       expect(onError).toHaveBeenCalled();
     });
 
-    it("should apply custom error filter", () => {
+    it('should apply custom error filter', () => {
       const onError = vi.fn();
       const errorFilter = vi.fn().mockReturnValue(false); // Filter out all errors
 
@@ -143,10 +143,10 @@ describe("globalErrorHandler", () => {
         errorFilter,
       });
 
-      const error = new Error("Test error");
-      const errorEvent = new ErrorEvent("error", {
+      const error = new Error('Test error');
+      const errorEvent = new ErrorEvent('error', {
         error,
-        message: "Test error",
+        message: 'Test error',
       });
 
       window.dispatchEvent(errorEvent);

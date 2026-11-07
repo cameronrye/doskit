@@ -7,8 +7,8 @@
  * Configuration for running Scream Tracker 3.21, a music tracker for DOS (1994)
  */
 
-import { loadZipArchive as loadZip } from "../utils/diskLoader";
-import { presets } from "../utils/dosboxConfigBuilder";
+import { loadZipArchive as loadZip } from '../utils/diskLoader';
+import { presets } from '../utils/dosboxConfigBuilder';
 
 // Re-export for lazy loading
 export { loadZip as loadZipArchive };
@@ -21,7 +21,7 @@ export { loadZip as loadZipArchive };
  * License: Freeware
  * Released: December 25, 1994
  */
-export const screamTrackerZipUrl = "/demos/scream-tracker.zip";
+export const screamTrackerZipUrl = '/demos/scream-tracker.zip';
 
 /**
  * DOSBox configuration optimized for Scream Tracker 3
@@ -47,15 +47,15 @@ export const screamTrackerZipUrl = "/demos/scream-tracker.zip";
  */
 export const screamTrackerDosboxConf = presets
   .musicTracker()
-  .setCPU({ core: "dynamic", cputype: "486", cycles: 12000 })
+  .setCPU({ core: 'dynamic', cputype: '486', cycles: 12000 })
   .setMemory({ memsize: 8 })
   .setSoundBlaster({
-    sbtype: "sb16",
+    sbtype: 'sb16',
     sbbase: 220,
     irq: 7,
     dma: 1,
     hdma: 5,
-    oplmode: "auto",
+    oplmode: 'auto',
   })
   .setGUS({
     gus: true,
@@ -63,29 +63,29 @@ export const screamTrackerDosboxConf = presets
     gusbase: 240,
     gusirq: 5,
     gusdma: 3,
-    ultradir: "C:\\ULTRASND",
+    ultradir: 'C:\\ULTRASND',
   })
   .addAutoexec(
-    "@echo off",
-    "echo.",
-    "echo ========================================",
-    "echo   Scream Tracker 3.21",
-    "echo   by Future Crew (1994)",
-    "echo ========================================",
-    "echo.",
-    "echo The legendary S3M tracker",
-    "echo Code by Psi (Sami Tammilehto)",
-    "echo.",
-    "echo CPU: 486 (12000 cycles)",
-    "echo Audio: Sound Blaster 16 + Gravis UltraSound",
-    "echo.",
-    "echo Mounting C: drive...",
-    "mount c .",
-    "c:",
-    "echo.",
-    "echo Starting Scream Tracker 3...",
-    "echo.",
-    "ST3.EXE",
+    '@echo off',
+    'echo.',
+    'echo ========================================',
+    'echo   Scream Tracker 3.21',
+    'echo   by Future Crew (1994)',
+    'echo ========================================',
+    'echo.',
+    'echo The legendary S3M tracker',
+    'echo Code by Psi (Sami Tammilehto)',
+    'echo.',
+    'echo CPU: 486 (12000 cycles)',
+    'echo Audio: Sound Blaster 16 + Gravis UltraSound',
+    'echo.',
+    'echo Mounting C: drive...',
+    'mount c .',
+    'c:',
+    'echo.',
+    'echo Starting Scream Tracker 3...',
+    'echo.',
+    'ST3.EXE'
   )
   .build();
 
@@ -93,29 +93,29 @@ export const screamTrackerDosboxConf = presets
  * Configuration metadata
  */
 export const screamTrackerMetadata = {
-  name: "Scream Tracker 3",
-  author: "Future Crew (Psi)",
+  name: 'Scream Tracker 3',
+  author: 'Future Crew (Psi)',
   year: 1994,
-  version: "3.21",
+  version: '3.21',
   description:
-    "The legendary music tracker that created the S3M format. Features 32 channels and excellent Gravis UltraSound support.",
-  category: "tracker",
+    'The legendary music tracker that created the S3M format. Features 32 channels and excellent Gravis UltraSound support.',
+  category: 'tracker',
   requirements: {
-    cpu: "286 or better (386+ recommended)",
-    memory: "640KB RAM minimum",
-    graphics: "VGA (text mode)",
-    sound: "Sound Blaster, Gravis UltraSound, or AdLib",
+    cpu: '286 or better (386+ recommended)',
+    memory: '640KB RAM minimum',
+    graphics: 'VGA (text mode)',
+    sound: 'Sound Blaster, Gravis UltraSound, or AdLib',
   },
-  license: "Freeware",
-  archive: "https://archive.org/details/scrmt321_202207",
-  pouet: "https://www.pouet.net/prod.php?which=13351",
+  license: 'Freeware',
+  archive: 'https://archive.org/details/scrmt321_202207',
+  pouet: 'https://www.pouet.net/prod.php?which=13351',
   notes: [
-    "Created by Future Crew (same group as Second Reality)",
-    "Introduced the S3M (ScreamTracker 3 Module) format",
-    "Supports up to 32 channels of digital audio",
-    "Can play PCM samples and FM instruments simultaneously",
-    "Excellent Gravis UltraSound support with hardware mixing",
-    "Includes sample module: ARMANI.S3M",
-    "Last version released December 25, 1994",
+    'Created by Future Crew (same group as Second Reality)',
+    'Introduced the S3M (ScreamTracker 3 Module) format',
+    'Supports up to 32 channels of digital audio',
+    'Can play PCM samples and FM instruments simultaneously',
+    'Excellent Gravis UltraSound support with hardware mixing',
+    'Includes sample module: ARMANI.S3M',
+    'Last version released December 25, 1994',
   ],
 };

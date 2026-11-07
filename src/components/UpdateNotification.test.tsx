@@ -84,7 +84,7 @@ describe('UpdateNotification', () => {
 
     it('should render when registration is provided', async () => {
       render(<UpdateNotification registration={mockRegistration} />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Update Available')).toBeInTheDocument();
       });
@@ -92,15 +92,17 @@ describe('UpdateNotification', () => {
 
     it('should display update message', async () => {
       render(<UpdateNotification registration={mockRegistration} />);
-      
+
       await waitFor(() => {
-        expect(screen.getByText(/A new version of DosKit is ready to install/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/A new version of DosKit is ready to install/i)
+        ).toBeInTheDocument();
       });
     });
 
     it('should render Update Now button', async () => {
       render(<UpdateNotification registration={mockRegistration} />);
-      
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
       });
@@ -108,7 +110,7 @@ describe('UpdateNotification', () => {
 
     it('should render Later button', async () => {
       render(<UpdateNotification registration={mockRegistration} />);
-      
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Later/i })).toBeInTheDocument();
       });
@@ -116,7 +118,7 @@ describe('UpdateNotification', () => {
 
     it('should render update icon', async () => {
       const { container } = render(<UpdateNotification registration={mockRegistration} />);
-      
+
       await waitFor(() => {
         expect(container.querySelector('.update-notification-icon svg')).toBeInTheDocument();
       });
@@ -126,7 +128,7 @@ describe('UpdateNotification', () => {
   describe('Update functionality', () => {
     it('should send SKIP_WAITING message when Update Now is clicked', async () => {
       render(<UpdateNotification registration={mockRegistration} />);
-      
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
       });
@@ -141,9 +143,9 @@ describe('UpdateNotification', () => {
 
     it('should add controllerchange event listener before sending SKIP_WAITING', async () => {
       const addEventListenerSpy = vi.spyOn(navigator.serviceWorker, 'addEventListener');
-      
+
       render(<UpdateNotification registration={mockRegistration} />);
-      
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
       });
@@ -152,11 +154,9 @@ describe('UpdateNotification', () => {
       fireEvent.click(updateButton);
 
       await waitFor(() => {
-        expect(addEventListenerSpy).toHaveBeenCalledWith(
-          'controllerchange',
-          expect.any(Function),
-          { once: true }
-        );
+        expect(addEventListenerSpy).toHaveBeenCalledWith('controllerchange', expect.any(Function), {
+          once: true,
+        });
       });
     });
 
@@ -179,8 +179,12 @@ describe('UpdateNotification', () => {
       const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const registrationWithoutWaiting = { ...mockRegistration, waiting: null };
 
-      render(<UpdateNotification registration={registrationWithoutWaiting as unknown as ServiceWorkerRegistration} />);
-      
+      render(
+        <UpdateNotification
+          registration={registrationWithoutWaiting as unknown as ServiceWorkerRegistration}
+        />
+      );
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
       });
@@ -205,7 +209,7 @@ describe('UpdateNotification', () => {
       });
 
       render(<UpdateNotification registration={mockRegistration} />);
-      
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
       });
@@ -230,7 +234,7 @@ describe('UpdateNotification', () => {
       });
 
       render(<UpdateNotification registration={mockRegistration} />);
-      
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
       });
@@ -238,9 +242,12 @@ describe('UpdateNotification', () => {
       const updateButton = screen.getByRole('button', { name: /Update Now/i });
       fireEvent.click(updateButton);
 
-      await waitFor(() => {
-        expect(window.location.reload).toHaveBeenCalled();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(window.location.reload).toHaveBeenCalled();
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should set up fallback timeout when Update Now is clicked', () => {
@@ -310,4 +317,3 @@ describe('UpdateNotification', () => {
     });
   });
 });
-

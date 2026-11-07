@@ -61,7 +61,7 @@ export const AUDIO_CONFIG = {
  */
 export const EMULATOR_CONFIG = {
   /** Default DOSBox cycles */
-  DEFAULT_CYCLES: "auto",
+  DEFAULT_CYCLES: 'auto',
 
   /** Default memory size (MB) */
   DEFAULT_MEMORY: 16,
@@ -101,7 +101,7 @@ export const CACHE_CONFIG = {
   CACHE_EXPIRATION: 7 * 24 * 60 * 60 * 1000, // 7 days
 
   /** Cache name prefix */
-  CACHE_NAME_PREFIX: "doskit",
+  CACHE_NAME_PREFIX: 'doskit',
 } as const;
 
 /**
@@ -148,20 +148,20 @@ export const ERROR_CONFIG = {
  */
 export const APP_METADATA = {
   /** Application name */
-  NAME: "DosKit",
+  NAME: 'DosKit',
 
   /** Application tagline */
-  TAGLINE: "Cross-Platform DOS Emulator",
+  TAGLINE: 'Cross-Platform DOS Emulator',
 
   /** js-dos version */
-  JSDOS_VERSION: "v8.3.20",
+  JSDOS_VERSION: 'v8.3.20',
 
   /** Author name */
-  AUTHOR: "Cameron Rye",
+  AUTHOR: 'Cameron Rye',
 
   /** Author website */
-  AUTHOR_WEBSITE: "https://rye.dev/",
+  AUTHOR_WEBSITE: 'https://rye.dev/',
 
   /** js-dos website */
-  JSDOS_WEBSITE: "https://js-dos.com",
+  JSDOS_WEBSITE: 'https://js-dos.com',
 } as const;

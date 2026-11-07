@@ -35,7 +35,7 @@ function generateVersion() {
     version: `v${hash}`,
     buildDate,
     gitHash,
-    timestamp
+    timestamp,
   };
 }
 
@@ -64,7 +64,7 @@ function extractBundledAssets() {
     const uniqueAssets = [...new Set(assets)].sort();
 
     console.log(`📦 Found ${uniqueAssets.length} bundled assets:`);
-    uniqueAssets.forEach(asset => console.log(`   - ${asset}`));
+    uniqueAssets.forEach((asset) => console.log(`   - ${asset}`));
 
     return uniqueAssets;
   } catch (error) {
@@ -91,7 +91,9 @@ function injectVersionAndAssets() {
     // Inject bundled assets into STATIC_ASSETS array
     // Find the STATIC_ASSETS array and add bundled assets before the closing bracket
     if (bundledAssets.length > 0) {
-      const assetsToInject = bundledAssets.map(asset => `  \`\${BASE_PATH}${asset}\`,`).join('\n');
+      const assetsToInject = bundledAssets
+        .map((asset) => `  \`\${BASE_PATH}${asset}\`,`)
+        .join('\n');
 
       swContent = swContent.replace(
         /(const STATIC_ASSETS = \[[^\]]+)(];)/s,
@@ -111,7 +113,6 @@ function injectVersionAndAssets() {
     console.log(`   Version: ${versionInfo.version}`);
     console.log(`   Build Date: ${versionInfo.buildDate}`);
     console.log(`   Git Hash: ${versionInfo.gitHash}`);
-
   } catch (error) {
     console.error('❌ Failed to inject service worker version:', error.message);
     process.exit(1);
@@ -119,4 +120,3 @@ function injectVersionAndAssets() {
 }
 
 injectVersionAndAssets();
-
