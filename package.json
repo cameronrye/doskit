@@ -31,6 +31,8 @@
     "dev": "vite",
     "build": "node scripts/generate-social-images.js && tsc -b && vite build && node scripts/inject-sw-version.js",
     "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

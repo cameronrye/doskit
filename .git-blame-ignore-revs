@@ -1,0 +1,4 @@
+# One-time prettier formatting of the whole codebase.
+# GitHub skips these in blame views; locally run:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+12581034b5c2a18dce76d64c7b0240f8d4cf3605
