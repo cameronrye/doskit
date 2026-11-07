@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { PWA_CONFIG } from '../constants/app';
+import { PWA_CONFIG, UI_CONFIG } from '../constants/app';
 import './OfflineIndicator.css';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -27,8 +27,8 @@ const STORAGE_KEYS = {
 } as const;
 
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkStatusChange }) => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOfflineMessage, setShowOfflineMessage] = useState(false);
+  const [showOnlineMessage, setShowOnlineMessage] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -100,17 +100,25 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
     setIsInstalled(checkInstalled());
   }, [checkInstalled]);
 
+  // Remove the "Back online" toast once its CSS fade-out has finished. It must
+  // leave the DOM explicitly: prefers-reduced-motion disables the fade.
+  useEffect(() => {
+    if (!showOnlineMessage) return;
+    const timer = setTimeout(() => setShowOnlineMessage(false), UI_CONFIG.TOAST_DURATION);
+    return () => clearTimeout(timer);
+  }, [showOnlineMessage]);
+
   // Set up event listeners
   useEffect(() => {
     // Online/Offline handlers
     const handleOnline = () => {
-      setIsOnline(true);
       setShowOfflineMessage(false);
+      setShowOnlineMessage(true);
       onNetworkStatusChange?.(true);
     };
 
     const handleOffline = () => {
-      setIsOnline(false);
+      setShowOnlineMessage(false);
       setShowOfflineMessage(true);
       onNetworkStatusChange?.(false);
     };
@@ -242,8 +250,8 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
         </div>
       )}
 
-      {/* Online Indicator (brief notification) */}
-      {isOnline && showOfflineMessage === false && (
+      {/* Online Indicator (brief notification after reconnecting) */}
+      {showOnlineMessage && (
         <div className="online-indicator">
           <span className="online-icon">✓</span>
           <span>Back online</span>

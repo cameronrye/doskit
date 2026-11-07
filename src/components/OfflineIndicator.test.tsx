@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { OfflineIndicator } from './OfflineIndicator';
 
 // Type definition for BeforeInstallPromptEvent
@@ -62,6 +62,34 @@ describe('OfflineIndicator', () => {
     it('should not show offline message when online', () => {
       render(<OfflineIndicator />);
       expect(screen.queryByText(/You're offline/i)).not.toBeInTheDocument();
+    });
+
+    it('does not announce "Back online" when the page loads while online', () => {
+      render(<OfflineIndicator />);
+      expect(screen.queryByText('Back online')).not.toBeInTheDocument();
+    });
+
+    it('announces "Back online" after reconnecting, then removes it', () => {
+      vi.useFakeTimers();
+      try {
+        render(<OfflineIndicator />);
+
+        Object.defineProperty(window.navigator, 'onLine', { value: false, writable: true });
+        fireEvent(window, new Event('offline'));
+        Object.defineProperty(window.navigator, 'onLine', { value: true, writable: true });
+        fireEvent(window, new Event('online'));
+
+        expect(screen.getByText('Back online')).toBeInTheDocument();
+
+        // Must leave the DOM on its own: with prefers-reduced-motion the CSS
+        // fade-out animation is disabled and would otherwise never hide it
+        act(() => {
+          vi.advanceTimersByTime(5000);
+        });
+        expect(screen.queryByText('Back online')).not.toBeInTheDocument();
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('should show offline message when offline event fires', async () => {
