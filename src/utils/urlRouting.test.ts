@@ -12,9 +12,45 @@ import {
   getUrlFriendlyId,
   updateDocumentTitle,
   registerAppIdMapping,
+  updateUrlWithApp,
 } from './urlRouting';
 
 describe('urlRouting', () => {
+  describe('updateUrlWithApp', () => {
+    beforeEach(() => {
+      window.history.replaceState({}, '', '/');
+    });
+
+    it('pushes one history entry when switching to a different app', () => {
+      window.history.replaceState({}, '', '/?app=impulsetracker');
+      const lengthBefore = window.history.length;
+
+      updateUrlWithApp('second-reality');
+
+      expect(window.location.search).toBe('?app=secondreality');
+      expect(window.history.length).toBe(lengthBefore + 1);
+    });
+
+    it('does not push a duplicate entry when the URL already shows the app', () => {
+      // Happens after a deep link or back/forward: the app finishes loading
+      // asynchronously and reports itself while the URL already matches.
+      window.history.replaceState({}, '', '/?app=secondreality');
+      const lengthBefore = window.history.length;
+
+      updateUrlWithApp('second-reality');
+
+      expect(window.history.length).toBe(lengthBefore);
+    });
+
+    it('does not push a duplicate entry when clearing an already-empty app param', () => {
+      const lengthBefore = window.history.length;
+
+      updateUrlWithApp(null);
+
+      expect(window.history.length).toBe(lengthBefore);
+    });
+  });
+
   describe('normalizeAppId', () => {
     it('should normalize URL-friendly IDs to internal IDs', () => {
       expect(normalizeAppId('secondreality')).toBe('second-reality');

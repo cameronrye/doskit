@@ -116,6 +116,13 @@ export function updateUrlWithApp(appId: string | null, replace: boolean = false)
     url.searchParams.delete('app');
   }
 
+  // Apps report themselves after loading asynchronously (deep links, back/forward),
+  // when the URL already matches. Pushing again would duplicate the entry and
+  // discard forward history.
+  if (url.href === window.location.href) {
+    return;
+  }
+
   // Update the URL without reloading the page
   if (replace) {
     window.history.replaceState({}, '', url.toString());
