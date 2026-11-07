@@ -331,19 +331,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first strategy for WASM files (immutable, large, expensive to fetch)
-  if (url.pathname.endsWith('.wasm') || url.pathname.endsWith('.wasm.gz')) {
+  // Cache-first for WASM and demo archives: large, and unchanged within a deploy
+  // (each build gets a new CACHE_VERSION, so activation drops stale copies).
+  // Stale-while-revalidate would re-download them in full on every use.
+  if (
+    url.pathname.endsWith('.wasm') ||
+    url.pathname.endsWith('.wasm.gz') ||
+    url.pathname.startsWith(`${BASE_PATH}/demos/`)
+  ) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
         if (cachedResponse) {
-          console.log('[Service Worker] Serving WASM from cache:', request.url);
+          console.log('[Service Worker] Serving from cache (cache-first):', request.url);
           // Update timestamp when serving from cache
           updateCacheMetadata(request.url);
           return cachedResponse;
         }
 
         // Not in cache, fetch from network
-        console.log('[Service Worker] Fetching WASM from network:', request.url);
+        console.log('[Service Worker] Fetching from network (cache-first):', request.url);
         return fetchWithTimeout(request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             const responseToCache = networkResponse.clone();
