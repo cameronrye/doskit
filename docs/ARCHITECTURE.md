@@ -183,18 +183,19 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 
 - **Caching Strategy**:
   - Network-first for pages, revalidated with the server (`cache: 'no-cache'`), with a 5-second timeout. The response is passed on as it came, including the 404 that GitHub Pages answers path-style links with, and is never stored: offline or on a timeout, every URL gets the one `index.html` install stored under `/`
-  - Cache-first for emulator files and demo archives, each from a cache of its own
+  - Cache-first for js-dos's files, its player (`js-dos.js`, `js-dos.css`) and the emulator files it loads, from the cache of the js-dos version the worker installed and never refreshed, so a page gets all of them from one js-dos version
+  - Cache-first for demo archives, from a cache of their own
   - Cache-first for the hashed bundles in `/assets/` and for other WASM files; a miss is fetched and kept as a runtime entry
-  - Stale-while-revalidate for other files, such as `js-dos.js`, `js-dos.css`, the manifest and the icons
+  - Stale-while-revalidate for other files, such as the manifest and the icons
   - Cross-origin requests and the worker script itself are left to the browser
   - Lookups ignore `Vary`, so a host that answers with `Vary: Origin` (such as `vite preview`) cannot make cached files miss
 - **Caches**:
-  - `doskit-<build version>` - Install precaches the app shell (`/`, `/manifest.json`, `/logo.svg`, `/favicon.svg`, `/js-dos.js`, `/js-dos.css`), revalidated with the server so a stale HTTP-cache copy never gets in, and every JS and CSS bundle in `dist/assets`, the lazily imported chunks included. A bundle that an earlier deploy's cache holds under the same name is copied from there instead of downloaded. Assets fetched later, but not pages, are added as runtime entries. Each deploy gets a new one, and activation deletes the previous deploy's.
-  - `doskit-emulators-<js-dos version>` - The default backend's files, precached at install; any other emulator file (the DOSBox-X backend) is stored on first use. Deploys keep this cache until js-dos changes, and an install downloads only the files it lacks.
+  - `doskit-<build version>` - Install precaches the app shell (`/`, `/manifest.json`, `/logo.svg`, `/favicon.svg`), revalidated with the server so a stale HTTP-cache copy never gets in, and every JS and CSS bundle in `dist/assets`, the lazily imported chunks included. A bundle that an earlier deploy's cache holds under the same name is copied from there instead of downloaded. Assets fetched later, but not pages, are added as runtime entries. Each deploy gets a new one, and activation deletes the previous deploy's.
+  - `doskit-emulators-<js-dos version>` - The js-dos player (`js-dos.js`, `js-dos.css`) and the default backend's files, precached at install; any other emulator file (the DOSBox-X backend) is stored on first use. Deploys keep this cache until js-dos changes, and an install downloads only the files it lacks.
   - `doskit-demos-<archive hash>` - Demo archives, stored on first use and never trimmed. Deploys keep this cache until the archives change.
 - **LRU Cache**: The deploy's cache holds at most 100 entries. Trimming removes the least recently used runtime entries, by the timestamps kept in `doskit-<build version>-metadata`, and never a precached file. Nothing expires by age.
 - **Dynamic Timeouts**: File-type-based network timeouts (30 seconds for WASM and archives, 10 for JS/CSS, 5 for everything else)
-- **Offline Support**: Once the worker is installed, the app shell, every bundle and the default emulator are available offline. An app's archive is cached the first time it loads, so an app opens offline once it has been loaded online.
+- **Offline Support**: Once the worker is installed, the app shell, every bundle, and js-dos with its default emulator are available offline. An app's archive is cached the first time it loads, so an app opens offline once it has been loaded online.
 
 **Update Mechanism**:
 
@@ -221,7 +222,7 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 - **Preloading**: `index.html` preloads the default backend's `wdosbox.wasm`, and loads `js-dos.js` deferred at high fetch priority
 - **AbortController**: Cancellable fetch requests
 - **Retry logic**: Automatic retry with exponential backoff
-- **Efficient caching**: Emulator files, demo archives and the bundles a deploy leaves unchanged stay cached across deploys, and runtime entries are trimmed least recently used first
+- **Efficient caching**: js-dos's player and emulator files, the demo archives and the bundles a deploy leaves unchanged stay cached across deploys, and runtime entries are trimmed least recently used first
 
 ### 4. Type Safety
 
@@ -338,7 +339,7 @@ DosKit serves js-dos from its own origin. The npm package is copied into `public
 1. **Stability** - CDN versions can change unexpectedly; `package.json` pins an exact version
 2. **Offline Support** - Required for PWA functionality: the service worker only caches files from DosKit's own origin
 3. **Version Control** - Explicit control over updates: an update is a `package.json` change
-4. **Performance** - Optimized caching with service worker: emulator files stay cached for as long as the js-dos version does
+4. **Performance** - Optimized caching with service worker: js-dos's player and emulator files stay cached for as long as the js-dos version does
 
 ### Files
 
@@ -358,7 +359,7 @@ The copy leaves source maps, debug symbols and type declarations behind, skips f
 5. Update the version where it is written by hand: `git grep` the old one. It is in `public/llm.txt`, `public/llm-full.txt` and comments in `src/main.tsx`, `src/types/js-dos.d.ts`, `src/types/js-dos.test.ts` and `src/config/jsdos.config.test.ts`. The tests that use it only as sample data and `CHANGELOG.md` keep it. `docs/js-dos-llm-reference.md` is a copy of a third-party reference for that version: check its DosKit notes again.
 6. Test thoroughly before deploying
 
-The app itself follows the installed package: the footer's version (`VITE_JSDOS_VERSION`, set in `vite.config.ts`) and the name of the service worker's emulator cache (`JS_DOS_VERSION`, stamped by `scripts/inject-sw-version.js`) both read it, so installing the deploy's worker downloads the new emulator files once, and activating it deletes the old version's cache. If the new version renames or drops one of the default backend's files, update `EMULATOR_ASSETS` in `public/sw.js` (the build fails until it matches) and the `wdosbox.wasm` preload in `index.html` (which nothing checks).
+The app itself follows the installed package: the footer's version (`VITE_JSDOS_VERSION`, set in `vite.config.ts`) and the name of the service worker's emulator cache (`JS_DOS_VERSION`, stamped by `scripts/inject-sw-version.js`) both read it, so installing the deploy's worker downloads the new js-dos player and emulator files once, and activating it deletes the old version's cache. `EMULATOR_ASSETS` in `public/sw.js` lists those files: the player's and the default backend's. If the new version renames or drops one of them, update it (the build fails until it matches) and the `wdosbox.wasm` preload in `index.html` (which nothing checks).
 
 ## Future Improvements
 

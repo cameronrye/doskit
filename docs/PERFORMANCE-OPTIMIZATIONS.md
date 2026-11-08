@@ -261,24 +261,24 @@ Chrome warns in the console that the module "was preloaded using link preload bu
 
 **Status:** ✅ Enabled in production builds
 
-**Performance Gain:** Repeat visits load the bundles, the emulator and every demo already played from Cache Storage, and the app works offline
+**Performance Gain:** Repeat visits load the bundles, js-dos and every demo already played from Cache Storage, and the app works offline
 
 **Implementation:** `public/sw.js`, which `scripts/inject-sw-version.js` completes at build time
 
-**What it does:** Keeps the app, the emulator and the demo archives in caches of their own, each named so that it lasts as long as its contents:
+**What it does:** Keeps the app, js-dos and the demo archives in caches of their own, each named so that it lasts as long as its contents:
 
-| Cache                               | Holds                                                                                                                                                                      | Filled                                                                           | Replaced when                           |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------- |
-| `doskit-<build>`                    | `/` (the app's `index.html`), `manifest.json`, `logo.svg`, `favicon.svg`, `js-dos.js`, `js-dos.css` and every JS and CSS bundle; other files the app fetches, but no pages | On install, copying the bundles an earlier deploy's cache holds, then at runtime | Every deploy                            |
-| `doskit-emulators-<js-dos version>` | The default backend: `wdosbox.wasm`, `wdosbox.js`, `wlibzip.wasm`, `wlibzip.js` and `emulators.js`                                                                         | On install, downloading only what it lacks                                       | js-dos changes                          |
-| `doskit-demos-<hash>`               | Demo archives (`/demos/<id>.zip`), under a hash of every archive in the build                                                                                              | The first time each app loads                                                    | An archive is added, removed or changed |
+| Cache                               | Holds                                                                                                                                                | Filled                                                                           | Replaced when                           |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------- |
+| `doskit-<build>`                    | `/` (the app's `index.html`), `manifest.json`, `logo.svg`, `favicon.svg` and every JS and CSS bundle; other files the app fetches, but no pages      | On install, copying the bundles an earlier deploy's cache holds, then at runtime | Every deploy                            |
+| `doskit-emulators-<js-dos version>` | The js-dos player (`js-dos.js`, `js-dos.css`) and the default backend: `wdosbox.wasm`, `wdosbox.js`, `wlibzip.wasm`, `wlibzip.js` and `emulators.js` | On install, downloading only what it lacks                                       | js-dos changes                          |
+| `doskit-demos-<hash>`               | Demo archives (`/demos/<id>.zip`), under a hash of every archive in the build                                                                        | The first time each app loads                                                    | An archive is added, removed or changed |
 
 Each request is answered by one strategy:
 
 - **Pages** (navigations): network first, revalidated with the server (`cache: 'no-cache'`), with a 5-second timeout. A page is passed on as it came, including the 404 GitHub Pages answers a path-style link with (its `404.html` is a copy of `index.html`), and never stored. When the network fails or times out, the `index.html` install stored answers whatever the URL, so the app opens at any URL.
-- **Emulator files** (`/emulators/`) and **demo archives** (`/demos/*.zip`): cache first. A miss fetches the file revalidated with the server, so an HTTP cache copy from an earlier deploy cannot slip in, and stores it once the whole file has arrived, so a cancelled download never leaves part of one behind. Chromium does not pass the page's cancel on to the worker, so there the download finishes and is stored anyway.
+- **js-dos's files** (`/js-dos.js`, `/js-dos.css` and `/emulators/`) and **demo archives** (`/demos/*.zip`): cache first, each from its own cache. A miss fetches the file revalidated with the server, so an HTTP cache copy from an earlier deploy cannot slip in, and stores it once the whole file has arrived, so a cancelled download never leaves part of one behind. Chromium does not pass the page's cancel on to the worker, so there the download finishes and is stored anyway. js-dos's files are never refreshed: every load gets the player and the emulator files of the js-dos version its worker installed, until an update takes over with its own.
 - **Bundles** (`/assets/`) and **other WebAssembly**: cache first, from any of the worker's caches. A bundle's name changes with its content, so a cached copy never goes stale. A miss is fetched from the network and stored in the build's cache.
-- **Everything else** from the site, such as `js-dos.js`, `js-dos.css`, the manifest, icons and images: stale-while-revalidate, answered from the cache and refreshed in the background.
+- **Everything else** from the site, such as the manifest, icons and images: stale-while-revalidate, answered from the cache and refreshed in the background.
 - The worker script itself, and requests to other sites, are never intercepted.
 
 Details that keep the caches right:
@@ -293,7 +293,7 @@ Details that keep the caches right:
 **Benefits:**
 
 - Repeat visits only wait on the network for the page itself
-- A deploy downloads only the bundles whose names it changed, and one that keeps js-dos, or all the demo archives, does not download them again
+- A deploy downloads only the bundles whose names it changed: one that keeps js-dos does not download its player or emulator files again, and one that keeps every demo archive does not download them again
 - The app opens offline at any URL, and an app plays offline once its archive is cached
 
 ---
