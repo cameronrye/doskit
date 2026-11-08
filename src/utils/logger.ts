@@ -27,6 +27,11 @@ interface LoggerConfig {
 /**
  * Logger class for centralized logging with environment-aware behavior: every level,
  * with timestamps, in development; warnings and errors in production
+ *
+ * Code logs through the {@link logger} instance. The class is exported so that the API
+ * documentation (`npm run docs`) can describe the logger's methods.
+ *
+ * @public
  */
 export class Logger {
   private readonly config: LoggerConfig = {
