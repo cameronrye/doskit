@@ -10,7 +10,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { showUpdateNotification } from './updatePrompt';
 
-const registration = { waiting: null } as unknown as ServiceWorkerRegistration;
+const registration = { waiting: null } as ServiceWorkerRegistration;
 
 describe('showUpdateNotification', () => {
   afterEach(() => {

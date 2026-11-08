@@ -6,23 +6,29 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PWA_CONFIG } from '../constants/app';
 import { register, type ServiceWorkerConfig } from './serviceWorkerRegistration';
 
+// Mock service worker, with only the fields register() reads
+const createMockWorker = (fields: Partial<ServiceWorker>) => fields as ServiceWorker;
+
 // Mock service worker registration
-const createMockRegistration = (): ServiceWorkerRegistration => ({
-  installing: null,
-  waiting: null,
-  active: {
-    postMessage: vi.fn(),
-    state: 'activated',
-  } as Partial<ServiceWorker> as ServiceWorker,
-  scope: '/',
-  updateViaCache: 'imports' as ServiceWorkerUpdateViaCache,
-  onupdatefound: null,
-  update: vi.fn().mockResolvedValue(undefined),
-  unregister: vi.fn().mockResolvedValue(true),
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  dispatchEvent: vi.fn(),
-});
+const createMockRegistration = (
+  overrides: Partial<ServiceWorkerRegistration> = {}
+): ServiceWorkerRegistration => {
+  const registration: Partial<ServiceWorkerRegistration> = {
+    installing: null,
+    waiting: null,
+    active: createMockWorker({ postMessage: vi.fn(), state: 'activated' }),
+    scope: '/',
+    updateViaCache: 'imports',
+    onupdatefound: null,
+    update: vi.fn().mockResolvedValue(undefined),
+    unregister: vi.fn().mockResolvedValue(true),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+    ...overrides,
+  };
+  return registration as ServiceWorkerRegistration;
+};
 
 describe('serviceWorkerRegistration', () => {
   let originalNavigator: typeof navigator;
@@ -30,11 +36,11 @@ describe('serviceWorkerRegistration', () => {
 
   beforeEach(() => {
     // Save originals
-    originalNavigator = global.navigator;
-    originalWindow = global.window;
+    originalNavigator = globalThis.navigator;
+    originalWindow = globalThis.window;
 
     // Mock navigator.serviceWorker
-    Object.defineProperty(global.navigator, 'serviceWorker', {
+    Object.defineProperty(globalThis.navigator, 'serviceWorker', {
       writable: true,
       configurable: true,
       value: {
@@ -45,7 +51,7 @@ describe('serviceWorkerRegistration', () => {
     });
 
     // Mock window.location
-    Object.defineProperty(global.window, 'location', {
+    Object.defineProperty(globalThis.window, 'location', {
       writable: true,
       configurable: true,
       value: {
@@ -69,8 +75,8 @@ describe('serviceWorkerRegistration', () => {
 
   afterEach(() => {
     // Restore originals
-    global.navigator = originalNavigator;
-    global.window = originalWindow;
+    globalThis.navigator = originalNavigator;
+    globalThis.window = originalWindow;
   });
 
   describe('register', () => {
@@ -95,7 +101,7 @@ describe('serviceWorkerRegistration', () => {
     });
 
     it('should not register when service worker is not supported', () => {
-      Object.defineProperty(global.navigator, 'serviceWorker', {
+      Object.defineProperty(globalThis.navigator, 'serviceWorker', {
         writable: true,
         configurable: true,
         value: undefined,
@@ -131,7 +137,7 @@ describe('serviceWorkerRegistration', () => {
         .mockResolvedValue(mockRegistration);
 
       // Mock fetch for localhost check
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         status: 200,
         headers: {
           get: () => 'application/javascript',
@@ -154,16 +160,16 @@ describe('serviceWorkerRegistration', () => {
       const onOfflineReady = vi.fn();
       const config: ServiceWorkerConfig = { onSuccess, onOfflineReady };
 
-      const mockRegistration = createMockRegistration();
       const installingWorker = {
-        state: 'installing',
-        onstatechange: null as ((this: ServiceWorker, ev: Event) => unknown) | null,
+        state: 'installing' as ServiceWorkerState,
+        onstatechange: null as ((ev: Event) => unknown) | null,
       };
-
-      mockRegistration.installing = installingWorker as Partial<ServiceWorker> as ServiceWorker;
+      const mockRegistration = createMockRegistration({
+        installing: createMockWorker(installingWorker),
+      });
 
       // Mock fetch for localhost check
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         status: 200,
         headers: {
           get: () => 'application/javascript',
@@ -215,16 +221,16 @@ describe('serviceWorkerRegistration', () => {
       const onUpdate = vi.fn();
       const config: ServiceWorkerConfig = { onUpdate };
 
-      const mockRegistration = createMockRegistration();
       const installingWorker = {
-        state: 'installing',
-        onstatechange: null as ((this: ServiceWorker, ev: Event) => unknown) | null,
+        state: 'installing' as ServiceWorkerState,
+        onstatechange: null as ((ev: Event) => unknown) | null,
       };
-
-      mockRegistration.installing = installingWorker as Partial<ServiceWorker> as ServiceWorker;
+      const mockRegistration = createMockRegistration({
+        installing: createMockWorker(installingWorker),
+      });
 
       // Mock fetch for localhost check
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         status: 200,
         headers: {
           get: () => 'application/javascript',
@@ -274,11 +280,9 @@ describe('serviceWorkerRegistration', () => {
     it('should call onUpdate for an update already waiting when the page loads', async () => {
       // e.g. the user chose "Later" and reloaded: updatefound does not fire again
       const onUpdate = vi.fn();
-      const mockRegistration = createMockRegistration();
-      mockRegistration.waiting = {
-        state: 'installed',
-        postMessage: vi.fn(),
-      } as Partial<ServiceWorker> as ServiceWorker;
+      const mockRegistration = createMockRegistration({
+        waiting: createMockWorker({ state: 'installed', postMessage: vi.fn() }),
+      });
 
       vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(mockRegistration);
       Object.defineProperty(navigator.serviceWorker, 'controller', {

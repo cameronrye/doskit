@@ -6,7 +6,7 @@
  * Tests for Emulator Adapter
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { JsDosAdapter, getEmulatorAdapter } from './EmulatorAdapter';
 import type { DosProps } from '../types/js-dos';
 
@@ -14,7 +14,7 @@ describe('EmulatorAdapter', () => {
   describe('JsDosAdapter', () => {
     let adapter: JsDosAdapter;
     let mockDosProps: DosProps;
-    let mockDos: ReturnType<typeof vi.fn>;
+    let mockDos: Mock<Window['Dos']>;
 
     beforeEach(() => {
       adapter = new JsDosAdapter();
@@ -40,21 +40,21 @@ describe('EmulatorAdapter', () => {
         setMouseCapture: vi.fn(),
         setMouseSensitivity: vi.fn(),
         setNoCursor: vi.fn(),
-        setSoftKeyboard: vi.fn(),
+        setSoftKeyboardLayout: vi.fn(),
+        setSoftKeyboardSymbols: vi.fn(),
         setVolume: vi.fn(),
         setAutoStart: vi.fn(),
         setCountDownStart: vi.fn(),
         setAutoSave: vi.fn(),
         setKiosk: vi.fn(),
+        setPaused: vi.fn(),
         setNoCloud: vi.fn(),
         setKey: vi.fn(),
-        setSockdrivePreload: vi.fn(),
-        setStartIpxServer: vi.fn(),
-        setConnectIpxAddress: vi.fn(),
-      } as unknown as DosProps;
+        save: vi.fn().mockResolvedValue(true),
+      };
 
-      mockDos = vi.fn().mockReturnValue(mockDosProps);
-      global.window.Dos = mockDos;
+      mockDos = vi.fn<Window['Dos']>().mockReturnValue(mockDosProps);
+      window.Dos = mockDos;
     });
 
     describe('isAvailable', () => {
@@ -63,14 +63,13 @@ describe('EmulatorAdapter', () => {
       });
 
       it('should return false when window.Dos is not available', () => {
-        // @ts-expect-error - Testing undefined case
-        global.window.Dos = undefined;
+        delete (window as Partial<Window>).Dos;
         expect(adapter.isAvailable()).toBe(false);
       });
 
       it('should return false when window.Dos is not a function', () => {
         // @ts-expect-error - Testing invalid type
-        global.window.Dos = 'not a function';
+        window.Dos = 'not a function';
         expect(adapter.isAvailable()).toBe(false);
       });
     });
@@ -90,8 +89,7 @@ describe('EmulatorAdapter', () => {
       });
 
       it('should throw error when js-dos is not available', async () => {
-        // @ts-expect-error - Testing undefined case
-        global.window.Dos = undefined;
+        delete (window as Partial<Window>).Dos;
         const container = document.createElement('div');
 
         await expect(adapter.initialize(container, {})).rejects.toThrow(
@@ -125,8 +123,7 @@ describe('EmulatorAdapter', () => {
       });
 
       it('should return "unknown" when js-dos is not available', () => {
-        // @ts-expect-error - Testing undefined case
-        global.window.Dos = undefined;
+        delete (window as Partial<Window>).Dos;
         expect(adapter.getVersion()).toBe('unknown');
       });
 

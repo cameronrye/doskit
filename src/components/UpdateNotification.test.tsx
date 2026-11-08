@@ -18,10 +18,11 @@ describe('UpdateNotification', () => {
     originalLocation = window.location;
 
     // Mock window.location.reload
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (window as any).location;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    window.location = { ...originalLocation, reload: vi.fn() } as any;
+    Object.defineProperty(window, 'location', {
+      value: { ...originalLocation, reload: vi.fn() },
+      writable: true,
+      configurable: true,
+    });
 
     // Mock ServiceWorker
     mockWaiting = {
@@ -33,10 +34,10 @@ describe('UpdateNotification', () => {
       dispatchEvent: vi.fn(),
       onstatechange: null,
       onerror: null,
-    } as unknown as ServiceWorker;
+    };
 
     // Mock ServiceWorkerRegistration
-    mockRegistration = {
+    const registration: Partial<ServiceWorkerRegistration> = {
       waiting: mockWaiting,
       active: null,
       installing: null,
@@ -48,7 +49,8 @@ describe('UpdateNotification', () => {
       update: vi.fn(),
       unregister: vi.fn(),
       onupdatefound: null,
-    } as unknown as ServiceWorkerRegistration;
+    };
+    mockRegistration = registration as ServiceWorkerRegistration;
 
     // Mock navigator.serviceWorker
     Object.defineProperty(navigator, 'serviceWorker', {
@@ -179,11 +181,7 @@ describe('UpdateNotification', () => {
       const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const registrationWithoutWaiting = { ...mockRegistration, waiting: null };
 
-      render(
-        <UpdateNotification
-          registration={registrationWithoutWaiting as unknown as ServiceWorkerRegistration}
-        />
-      );
+      render(<UpdateNotification registration={registrationWithoutWaiting} />);
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();

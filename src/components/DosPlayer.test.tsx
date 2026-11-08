@@ -16,7 +16,7 @@ describe('DosPlayer', () => {
     mockStop.mockClear();
 
     // Setup window.Dos mock
-    global.window.Dos = mockDos.mockReturnValue({
+    window.Dos = mockDos.mockReturnValue({
       stop: mockStop,
       getVersion: () => ['8.3.20', 'dosbox'],
       getToken: () => null,
@@ -57,7 +57,7 @@ describe('DosPlayer', () => {
 
   describe('Error handling', () => {
     it('should show error when Dos is not available', () => {
-      global.window.Dos = undefined;
+      delete (window as Partial<Window>).Dos;
       render(<DosPlayer />);
 
       expect(screen.getByText(/Error/i)).toBeInTheDocument();
@@ -65,14 +65,14 @@ describe('DosPlayer', () => {
     });
 
     it('should show reload button on error', () => {
-      global.window.Dos = undefined;
+      delete (window as Partial<Window>).Dos;
       render(<DosPlayer />);
 
       expect(screen.getByRole('button', { name: /Reload Page/i })).toBeInTheDocument();
     });
 
     it('should handle initialization errors gracefully', () => {
-      global.window.Dos = vi.fn().mockImplementation(() => {
+      window.Dos = vi.fn().mockImplementation(() => {
         throw new Error('Initialization failed');
       });
 
@@ -212,7 +212,7 @@ describe('DosPlayer', () => {
         save: vi.fn(),
       };
 
-      global.window.Dos = vi.fn((_element, options) => {
+      window.Dos = vi.fn((_element, options) => {
         // Simulate ci-ready event
         setTimeout(() => {
           options?.onEvent?.('ci-ready', mockCi);
@@ -271,7 +271,7 @@ describe('DosPlayer', () => {
         save: vi.fn(),
       };
 
-      global.window.Dos = vi.fn((_element, options) => {
+      window.Dos = vi.fn((_element, options) => {
         // Simulate ci-ready event
         setTimeout(() => {
           options?.onEvent?.('ci-ready', mockCi);
@@ -334,7 +334,7 @@ describe('DosPlayer', () => {
         save: vi.fn(),
       };
 
-      global.window.Dos = vi.fn((_element, options) => {
+      window.Dos = vi.fn((_element, options) => {
         setTimeout(() => {
           options?.onEvent?.('ci-ready', mockCi);
         }, 0);

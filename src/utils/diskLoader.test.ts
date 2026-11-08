@@ -25,12 +25,8 @@ describe('diskLoader', () => {
   describe('loadZipArchive', () => {
     it('should load ZIP archive successfully', async () => {
       const mockData = new Uint8Array([80, 75, 3, 4]); // ZIP header
-      const mockResponse = {
-        ok: true,
-        arrayBuffer: vi.fn().mockResolvedValue(mockData.buffer),
-      };
 
-      vi.mocked(globalThis.fetch).mockResolvedValue(mockResponse as unknown as Response);
+      vi.mocked(globalThis.fetch).mockResolvedValue(new Response(mockData));
 
       const result = await loadZipArchive('http://example.com/archive.zip');
 
@@ -39,11 +35,7 @@ describe('diskLoader', () => {
     });
 
     it('should report progress before and after the download', async () => {
-      const mockResponse = {
-        ok: true,
-        arrayBuffer: vi.fn().mockResolvedValue(new Uint8Array([80, 75, 3, 4]).buffer),
-      };
-      vi.mocked(globalThis.fetch).mockResolvedValue(mockResponse as unknown as Response);
+      vi.mocked(globalThis.fetch).mockResolvedValue(new Response(new Uint8Array([80, 75, 3, 4])));
       const onProgress = vi.fn();
 
       await loadZipArchive('http://example.com/archive.zip', onProgress);
@@ -56,8 +48,9 @@ describe('diskLoader', () => {
 
     it('should reject with the status text when the server returns an error', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      const mockResponse = { ok: false, status: 404, statusText: 'Not Found' };
-      vi.mocked(globalThis.fetch).mockResolvedValue(mockResponse as unknown as Response);
+      vi.mocked(globalThis.fetch).mockResolvedValue(
+        new Response(null, { status: 404, statusText: 'Not Found' })
+      );
 
       await expect(loadZipArchive('http://example.com/missing.zip')).rejects.toThrow(
         'Failed to load ZIP: Not Found'
