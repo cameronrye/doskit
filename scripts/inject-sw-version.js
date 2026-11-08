@@ -7,7 +7,8 @@
  *
  * It also stamps the js-dos version copied into dist/emulators/, which names
  * the worker's emulator cache: emulator files stay cached across deploys
- * until js-dos changes.
+ * until js-dos changes. A hash of the archives in dist/demos/ names the demo
+ * cache the same way, so a deploy that changes none downloads none again.
  *
  * The build fails if dist/sw.js lacks what this replaces, or if it would
  * precache a file that is not in dist/: cache.addAll() rejects on a single
@@ -28,8 +29,12 @@ const jsDosPackage = join(__dirname, '../node_modules/js-dos/package.json');
 
 const CACHE_VERSION_PLACEHOLDER = /const CACHE_VERSION = ['"]v1['"];/;
 const JS_DOS_VERSION_PLACEHOLDER = /const JS_DOS_VERSION = ['"]dev['"];/;
+const DEMOS_HASH_PLACEHOLDER = /const DEMOS_HASH = ['"]dev['"];/;
 // npm versions are semver: letters, digits, dots, hyphens and plus signs
 const PLAIN_VERSION = /^[0-9A-Za-z.+-]+$/;
+const HEX_DIGEST = /^[0-9a-f]+$/;
+// The files in dist/demos/ that the worker's DEMO_ARCHIVE serves from the demo cache
+const DEMO_ARCHIVE = /\.zip$/;
 const STATIC_ASSETS_LIST = /(const STATIC_ASSETS = \[[^\]]+)(];)/;
 const PRECACHE_LISTS = /const (?:STATIC|EMULATOR)_ASSETS = \[([^\]]*)\]/g;
 // JavaScript and CSS, without their source maps (*.js.map)
@@ -85,21 +90,49 @@ export function collectBundledAssets(dir) {
 }
 
 /**
- * Replace the CACHE_VERSION and JS_DOS_VERSION placeholders and append the
- * bundled assets to STATIC_ASSETS
+ * A short hash of the demo archives in dist/demos/, over their sorted names and bytes,
+ * which names the worker's demo cache
  */
-export function injectIntoServiceWorker(swContent, { version, jsDosVersion, assets }) {
+export function hashDemoArchives(dir) {
+  const demosDir = join(dir, 'demos');
+  const archives = readdirSync(demosDir)
+    .filter((name) => DEMO_ARCHIVE.test(name))
+    .sort();
+  if (archives.length === 0) {
+    throw new Error('dist/demos/ has no .zip archives');
+  }
+  const hash = createHash('sha256');
+  for (const name of archives) {
+    const bytes = readFileSync(join(demosDir, name));
+    // Each archive's name and length come first, so bytes cannot move between archives
+    // without changing the hash
+    hash.update(`${name}\0${bytes.length}\0`).update(bytes);
+  }
+  return hash.digest('hex').slice(0, 12);
+}
+
+/**
+ * Replace the CACHE_VERSION, JS_DOS_VERSION and DEMOS_HASH placeholders and append
+ * the bundled assets to STATIC_ASSETS
+ */
+export function injectIntoServiceWorker(swContent, { version, jsDosVersion, demosHash, assets }) {
   if (!CACHE_VERSION_PLACEHOLDER.test(swContent)) {
     throw new Error("sw.js has no `const CACHE_VERSION = 'v1';` placeholder");
   }
   if (!JS_DOS_VERSION_PLACEHOLDER.test(swContent)) {
     throw new Error("sw.js has no `const JS_DOS_VERSION = 'dev';` placeholder");
   }
+  if (!DEMOS_HASH_PLACEHOLDER.test(swContent)) {
+    throw new Error("sw.js has no `const DEMOS_HASH = 'dev';` placeholder");
+  }
   if (!STATIC_ASSETS_LIST.test(swContent)) {
     throw new Error('sw.js has no STATIC_ASSETS list for the bundled assets');
   }
   if (typeof jsDosVersion !== 'string' || !PLAIN_VERSION.test(jsDosVersion)) {
     throw new Error(`js-dos version ${JSON.stringify(jsDosVersion)} is not a version number`);
+  }
+  if (typeof demosHash !== 'string' || !HEX_DIGEST.test(demosHash)) {
+    throw new Error(`demo archive hash ${JSON.stringify(demosHash)} is not a hex digest`);
   }
   if (assets.length === 0) {
     throw new Error('the build has no bundles under /assets/');
@@ -109,6 +142,7 @@ export function injectIntoServiceWorker(swContent, { version, jsDosVersion, asse
   return swContent
     .replace(CACHE_VERSION_PLACEHOLDER, `const CACHE_VERSION = '${version}';`)
     .replace(JS_DOS_VERSION_PLACEHOLDER, `const JS_DOS_VERSION = '${jsDosVersion}';`)
+    .replace(DEMOS_HASH_PLACEHOLDER, `const DEMOS_HASH = '${demosHash}';`)
     .replace(
       STATIC_ASSETS_LIST,
       `$1  // Bundled assets (auto-injected during build)\n${assetsToInject}\n$2`
@@ -138,6 +172,7 @@ function injectVersionAndAssets() {
   try {
     const versionInfo = generateVersion();
     const jsDosVersion = JSON.parse(readFileSync(jsDosPackage, 'utf8')).version;
+    const demosHash = hashDemoArchives(distDir);
     const bundledAssets = collectBundledAssets(distDir);
 
     console.log(`📦 Found ${bundledAssets.length} bundled assets:`);
@@ -146,6 +181,7 @@ function injectVersionAndAssets() {
     let swContent = injectIntoServiceWorker(readFileSync(swPath, 'utf8'), {
       version: versionInfo.version,
       jsDosVersion,
+      demosHash,
       assets: bundledAssets,
     });
 
@@ -164,6 +200,7 @@ function injectVersionAndAssets() {
     console.log('✅ Service worker version injected successfully');
     console.log(`   Version: ${versionInfo.version}`);
     console.log(`   js-dos: ${jsDosVersion} (names the emulator cache)`);
+    console.log(`   Demo archives: ${demosHash} (names the demo cache)`);
     console.log(`   Build Date: ${versionInfo.buildDate}`);
     console.log(`   Git Hash: ${versionInfo.gitHash}`);
   } catch (error) {

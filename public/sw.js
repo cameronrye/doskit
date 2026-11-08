@@ -14,6 +14,14 @@ const METADATA_CACHE_NAME = `${CACHE_NAME}-metadata`;
 const JS_DOS_VERSION = 'dev';
 const EMULATOR_CACHE_NAME = `doskit-emulators-${JS_DOS_VERSION}`;
 
+// Demo archives only change when one is replaced, so deploys keep their cache too. The
+// build replaces this with a hash of the archives in dist/demos, so a deploy that changes
+// any of them starts a new cache.
+const DEMOS_HASH = 'dev';
+const DEMO_CACHE_NAME = `doskit-demos-${DEMOS_HASH}`;
+// The archives that hash covers
+const DEMO_ARCHIVE = /^\/demos\/[^/]+\.zip$/;
+
 // Configuration
 const CONFIG = {
   NETWORK_TIMEOUT_BASE: 5000, // Base timeout: 5 seconds for small files
@@ -104,10 +112,11 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - delete the caches of earlier deploys and of other js-dos versions
+// Activate event - delete the caches of earlier deploys, other js-dos versions and other
+// demo archives
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating service worker...', CACHE_NAME);
-  const currentCaches = [CACHE_NAME, METADATA_CACHE_NAME, EMULATOR_CACHE_NAME];
+  const currentCaches = [CACHE_NAME, METADATA_CACHE_NAME, EMULATOR_CACHE_NAME, DEMO_CACHE_NAME];
 
   event.waitUntil(
     caches
@@ -302,12 +311,15 @@ async function cacheResponse(request, response) {
 }
 
 /**
- * Serve an emulator file cache-first. The files of one js-dos version never change, and
- * deploys keep their cache. A file install did not precache is stored on first use.
+ * Serve a file cache-first from a cache that deploys keep (the emulator files of this
+ * js-dos version, or these demo archives), storing it there on first use. Such a cache is
+ * kept until its name changes, so a file must come from the server: a still-fresh HTTP
+ * cache entry may hold a previous deploy's copy. The copy of the page's request keeps its
+ * signal, so a download the page aborts stops, and Cache.put() then stores nothing of it.
  */
-async function serveEmulatorFile(event) {
+async function serveCacheFirst(event, cacheName) {
   const { request } = event;
-  const cache = await caches.open(EMULATOR_CACHE_NAME);
+  const cache = await caches.open(cacheName);
   const cachedResponse = await cache.match(request);
   if (cachedResponse) {
     console.log('[Service Worker] Serving from cache (cache-first):', request.url);
@@ -315,13 +327,12 @@ async function serveEmulatorFile(event) {
   }
 
   console.log('[Service Worker] Fetching from network (cache-first):', request.url);
-  // From the server, for the same reason as when install precaches the default backend
-  const networkResponse = await fetchWithTimeout(fromServer(request.url));
+  const networkResponse = await fetchWithTimeout(fromServer(request));
   if (networkResponse.status === 200) {
     event.waitUntil(
       cache
         .put(request, networkResponse.clone())
-        .catch((error) => console.error('[Service Worker] Error caching emulator file:', error))
+        .catch((error) => console.error('[Service Worker] Error caching', request.url, error))
     );
   }
   return networkResponse;
@@ -387,18 +398,20 @@ self.addEventListener('fetch', (event) => {
 
   // Cache-first for emulator files, from the cache of this js-dos version
   if (url.pathname.startsWith('/emulators/')) {
-    event.respondWith(serveEmulatorFile(event));
+    event.respondWith(serveCacheFirst(event, EMULATOR_CACHE_NAME));
     return;
   }
 
-  // Cache-first for other WASM and demo archives: large, and unchanged within a
-  // deploy (each build gets a new CACHE_VERSION, so activation drops stale
-  // copies). Stale-while-revalidate would re-download them in full on every use.
-  if (
-    url.pathname.endsWith('.wasm') ||
-    url.pathname.endsWith('.wasm.gz') ||
-    url.pathname.startsWith('/demos/')
-  ) {
+  // Cache-first for demo archives, from the cache of these archives
+  if (DEMO_ARCHIVE.test(url.pathname)) {
+    event.respondWith(serveCacheFirst(event, DEMO_CACHE_NAME));
+    return;
+  }
+
+  // Cache-first for other WASM: large, and unchanged within a deploy (each build gets a
+  // new CACHE_VERSION, so activation drops stale copies). Stale-while-revalidate would
+  // re-download it in full on every use.
+  if (url.pathname.endsWith('.wasm') || url.pathname.endsWith('.wasm.gz')) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
         if (cachedResponse) {

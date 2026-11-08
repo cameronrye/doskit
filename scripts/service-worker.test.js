@@ -4,7 +4,7 @@
  * vm sandbox with an in-memory server and Cache Storage that outlive any one worker.
  */
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
@@ -78,16 +78,39 @@ class CacheMock {
   }
 }
 
-/** A response body that arrives in two halves, the second once `arrived` resolves */
-function bodyOf(bytes, arrived) {
+const CONTENT_TYPES = {
+  '.css': 'text/css',
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.wasm': 'application/wasm',
+  '.zip': 'application/zip',
+};
+
+/**
+ * A response body that arrives in two halves, the second once `arrived` resolves. The
+ * request's signal breaks it off, as when the page aborts a download.
+ */
+function bodyOf(bytes, signal, arrived) {
   const half = Math.ceil(bytes.length / 2);
   return new ReadableStream({
     start(controller) {
+      let ended = false;
+      const end = (finish) => {
+        if (!ended) {
+          ended = true;
+          finish();
+        }
+      };
       controller.enqueue(bytes.slice(0, half));
-      arrived.then(() => {
-        controller.enqueue(bytes.slice(half));
-        controller.close();
-      });
+      signal?.addEventListener('abort', () => end(() => controller.error(signal.reason)));
+      arrived.then(() =>
+        end(() => {
+          controller.enqueue(bytes.slice(half));
+          controller.close();
+        })
+      );
     },
   });
 }
@@ -115,11 +138,18 @@ function createBrowser() {
     if (!server.online) {
       throw new TypeError('Failed to fetch');
     }
+    input.signal?.throwIfAborted();
     // Like GitHub Pages, the server answers / (with any query) with index.html
     const file = urlOf(input).pathname === '/' ? '/index.html' : pathOf(input);
     const bytes = new TextEncoder().encode(`${file} from deploy ${server.deploy}`);
     const arrived = server.held.get(pathOf(input)) ?? Promise.resolve();
-    return new Response(bodyOf(bytes, arrived), { status: 200 });
+    return new Response(bodyOf(bytes, input.signal, arrived), {
+      status: 200,
+      headers: {
+        'Content-Length': String(bytes.length),
+        'Content-Type': CONTENT_TYPES[extname(urlOf(file).pathname)] ?? 'text/plain',
+      },
+    });
   }
 
   const store = new Map(); // cache name -> CacheMock
@@ -196,10 +226,14 @@ async function dispatch(listener, init = {}) {
 }
 
 /** Starts public/sw.js as one build would ship it */
-function startWorker(browser, { cacheVersion = 'vA', jsDosVersion = '8.3.20' } = {}) {
+function startWorker(
+  browser,
+  { cacheVersion = 'vA', jsDosVersion = '8.3.20', demosHash = 'aaaa' } = {}
+) {
   const source = injectIntoServiceWorker(SERVICE_WORKER, {
     version: cacheVersion,
     jsDosVersion,
+    demosHash,
     assets: BUNDLES,
   });
   const listeners = {};
@@ -245,8 +279,9 @@ const navigation = (path) => ({
   mode: 'navigate',
   destination: 'document',
 });
-const subresource = (path) => new Request(new URL(path, ORIGIN));
+const subresource = (path, init) => new Request(new URL(path, ORIGIN), init);
 const requestedPaths = (browser) => browser.server.requests.map(({ path }) => path);
+const isDemo = (path) => path.startsWith('/demos/');
 
 // The shell files whose names carry no content hash, unlike the bundles
 const SHELL_FILES = [
@@ -267,6 +302,8 @@ const DEFAULT_BACKEND = [
   '/emulators/wlibzip.wasm',
 ];
 const DOSBOX_X = ['/emulators/wdosbox-x.js', '/emulators/wdosbox-x.wasm'];
+// Named after the hash of the archives startWorker() stamps by default
+const DEMO_CACHE = 'doskit-demos-aaaa';
 
 describe('install', () => {
   it('precaches the app shell, the bundles and the default DOSBox backend', async () => {
@@ -402,6 +439,122 @@ describe('emulator files', () => {
   });
 });
 
+describe('demo archives', () => {
+  it('stores an archive on first use and serves it from the cache, offline too', async () => {
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    browser.server.requests.length = 0;
+
+    await worker.dispatch('fetch', { request: subresource('/demos/stars.zip') });
+    await worker.dispatch('fetch', { request: subresource('/demos/stars.zip') });
+    browser.server.online = false;
+    const { response } = await worker.dispatch('fetch', {
+      request: subresource('/demos/stars.zip'),
+    });
+
+    expect(await response?.text()).toBe('/demos/stars.zip from deploy A');
+    expect(requestedPaths(browser)).toEqual(['/demos/stars.zip']);
+    expect(browser.contents()[DEMO_CACHE]).toEqual(['/demos/stars.zip']);
+  });
+
+  it('serves a cached archive with the headers it was downloaded with', async () => {
+    // The app shows download progress against Content-Length
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+
+    const { response: downloaded } = await worker.dispatch('fetch', {
+      request: subresource('/demos/stars.zip'),
+    });
+    const { response: cached } = await worker.dispatch('fetch', {
+      request: subresource('/demos/stars.zip'),
+    });
+
+    expect(requestedPaths(browser).filter(isDemo)).toEqual(['/demos/stars.zip']);
+    expect([...cached.headers]).toEqual([...downloaded.headers]);
+    expect(Number(cached.headers.get('Content-Length'))).toBe(
+      (await cached.arrayBuffer()).byteLength
+    );
+  });
+
+  it('keeps them across deploys that leave the archives unchanged', async () => {
+    const browser = createBrowser();
+    const previous = await installAndActivate(browser, { cacheVersion: 'vA' });
+    for (const path of ['/demos/stars.zip', '/demos/panic.zip']) {
+      await previous.dispatch('fetch', { request: subresource(path) });
+    }
+    browser.server.deploy = 'B';
+    browser.server.requests.length = 0;
+
+    const worker = await installAndActivate(browser, { cacheVersion: 'vB' });
+    for (const path of ['/demos/stars.zip', '/demos/panic.zip']) {
+      const { response } = await worker.dispatch('fetch', { request: subresource(path) });
+      expect(await response?.text()).toBe(`${path} from deploy A`);
+    }
+
+    expect(requestedPaths(browser).filter(isDemo)).toEqual([]);
+  });
+
+  it('replaces them when an archive changes, once the new worker activates', async () => {
+    const browser = createBrowser();
+    const previous = await installAndActivate(browser, { cacheVersion: 'vA', demosHash: 'aaaa' });
+    await previous.dispatch('fetch', { request: subresource('/demos/stars.zip') });
+    browser.server.deploy = 'B';
+
+    const worker = startWorker(browser, { cacheVersion: 'vB', demosHash: 'bbbb' });
+    await worker.dispatch('install');
+    // The waiting update must not change the archives under the open page
+    const { response: current } = await previous.dispatch('fetch', {
+      request: subresource('/demos/stars.zip'),
+    });
+    expect(await current?.text()).toBe('/demos/stars.zip from deploy A');
+
+    await worker.dispatch('activate');
+
+    expect(Object.keys(browser.contents()).filter((name) => name.includes('demos'))).toEqual([]);
+    const { response } = await worker.dispatch('fetch', {
+      request: subresource('/demos/stars.zip'),
+    });
+    expect(await response?.text()).toBe('/demos/stars.zip from deploy B');
+    expect(browser.contents()['doskit-demos-bbbb']).toEqual(['/demos/stars.zip']);
+  });
+
+  it('asks the server for them rather than the HTTP cache', async () => {
+    // A cached archive is kept until the archives change, so it must not come from an
+    // HTTP cache entry that is still fresh but holds the previous deploy's archive
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+
+    await worker.dispatch('fetch', { request: subresource('/demos/stars.zip') });
+
+    expect(browser.server.requests.filter(({ path }) => isDemo(path))).toEqual([
+      { path: '/demos/stars.zip', cache: 'no-cache' },
+    ]);
+  });
+
+  it('stores nothing of a download the app aborts, and downloads it whole next time', async () => {
+    // The app aborts the download of an app it no longer loads
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    const release = browser.server.hold('/demos/second-reality.zip');
+    const download = new AbortController();
+
+    const aborted = worker.dispatch('fetch', {
+      request: subresource('/demos/second-reality.zip', { signal: download.signal }),
+    });
+    await vi.waitFor(() => expect(requestedPaths(browser)).toContain('/demos/second-reality.zip'));
+    download.abort();
+    release();
+    await aborted;
+
+    expect(browser.contents()[DEMO_CACHE] ?? []).toEqual([]);
+    const { response } = await worker.dispatch('fetch', {
+      request: subresource('/demos/second-reality.zip'),
+    });
+    expect(await response?.text()).toBe('/demos/second-reality.zip from deploy A');
+    expect(browser.contents()[DEMO_CACHE]).toEqual(['/demos/second-reality.zip']);
+  });
+});
+
 describe('activate', () => {
   it('replaces the caches of the previous deploy', async () => {
     const browser = createBrowser();
@@ -493,6 +646,20 @@ describe('cache trimming', () => {
     browser.server.online = false;
     const { response } = await worker.dispatch('fetch', { request: navigation('/secondreality') });
     expect(await response?.text()).toBe('/index.html from deploy A');
+  });
+
+  it('never evicts a demo archive, however long ago it was used', async () => {
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    await worker.dispatch('fetch', { request: subresource('/demos/stars.zip') });
+
+    await overflowCache(worker);
+
+    browser.server.online = false;
+    const { response } = await worker.dispatch('fetch', {
+      request: subresource('/demos/stars.zip'),
+    });
+    expect(await response?.text()).toBe('/demos/stars.zip from deploy A');
   });
 
   it('evicts the least recently used entries, not the ones it just cached', async () => {
