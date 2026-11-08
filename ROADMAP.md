@@ -612,6 +612,7 @@ interface AppStore {
 **Priority**: MEDIUM | **Timeline**: Ongoing
 
 **Current**: About 89% of lines and statements and 78% of branches (`npm run test:coverage`, November 2026)
+**Floor**: `npm run test:coverage`, which CI runs, fails below the thresholds in `vitest.config.ts`, set about 3 points under these figures
 **Target**: 85%+ coverage (met for lines and statements)
 **Benefit**: Fewer bugs, easier refactoring, better documentation
 
