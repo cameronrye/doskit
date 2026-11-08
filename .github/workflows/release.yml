@@ -20,6 +20,7 @@ jobs:
         id: release
         uses: googleapis/release-please-action@v5
         with:
+          # release-type mode takes all settings from these inputs, not from config files
           release-type: node
           token: ${{ secrets.GITHUB_TOKEN }}
 
