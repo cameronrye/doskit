@@ -12,9 +12,11 @@ DosKit has been optimized to provide the best possible performance for DOS emula
 - js-dos specific optimizations
 - General web performance patterns
 
+Nothing in the repository measures what they gain: there are no benchmarks, and no test times a page load, a player's start or a frame. So the sections below say what each optimization changes, not how much faster it makes DosKit.
+
 ## Key Optimizations Implemented
 
-### 1. Simple CPU Core with Fixed Cycles (HIGH Impact for Audio)
+### 1. Simple CPU Core with Fixed Cycles
 
 **Status:** ✅ Enabled by default
 
@@ -44,7 +46,7 @@ Research from DOSBox community (VOGONS forums, DOSBox Wiki) shows that `cycles=m
 
 ---
 
-### 2. Optimized Audio Configuration (HIGH Impact)
+### 2. Optimized Audio Configuration
 
 **Status:** ✅ Enabled by default
 
@@ -89,7 +91,7 @@ Based on extensive research from:
 
 ---
 
-### 2a. MOD Music Playback Optimization (VERY HIGH Impact for Music)
+### 2a. MOD Music Playback Optimization
 
 **Status:** ✅ Available via `musicTracker` preset
 
@@ -186,11 +188,9 @@ aspect=false
 
 ---
 
-### 4. WebGL Rendering Backend (HIGH Impact)
+### 4. WebGL Rendering Backend
 
 **Status:** ✅ Enabled by default
-
-**Performance Gain:** 2-5x rendering performance vs Canvas 2D
 
 **Configuration:**
 
@@ -203,18 +203,14 @@ renderBackend: 'webgl';
 **Benefits:**
 
 - Hardware-accelerated rendering
-- Faster pixel manipulation and scaling
-- Lower CPU usage
 
 **Fallback:** js-dos falls back to Canvas 2D when its WebGL renderer cannot start, for example when the browser gives it no WebGL context
 
 ---
 
-### 5. Worker Thread Mode (HIGH Impact)
+### 5. Worker Thread Mode
 
 **Status:** ✅ Enabled by default
-
-**Performance Gain:** 20-40% perceived performance improvement
 
 **Configuration:**
 
@@ -222,21 +218,20 @@ renderBackend: 'webgl';
 workerThread: true;
 ```
 
-**What it does:** Runs the emulator in a Web Worker separate from the main UI thread.
+**What it does:** Runs the emulator in a Web Worker separate from the main UI thread: js-dos starts it with its emulators package's `dosboxWorker` rather than `dosboxDirect`.
 
 **Benefits:**
 
-- Prevents UI blocking during heavy emulation
-- Maintains 60 FPS UI even during intensive operations
-- Better overall responsiveness
+- DOSBox's emulation runs off the page's main thread, which keeps the page's own work, such as React's rendering and input handling, from waiting on it
+- js-dos still draws every frame on the page's main thread (section 4)
 
 ---
 
-### 6. WASM Module Preloading (MEDIUM Impact)
+### 6. WASM Module Preloading
 
 **Status:** ✅ Enabled
 
-**Performance Gain:** 200-500ms faster startup
+**Performance Gain:** The default backend's WebAssembly module starts downloading with the page, rather than when the first player asks for it. How much sooner a player starts has not been measured.
 
 **Implementation** (`index.html`):
 
@@ -258,13 +253,11 @@ Chrome warns in the console that the module "was preloaded using link preload bu
 
 **Benefits:**
 
-- Reduces time-to-interactive
-- Faster emulator initialization
-- Better perceived performance
+- By the time the first player asks for the module, it is downloading or already in
 
 ---
 
-### 7. Service Worker Caching (VERY HIGH Impact)
+### 7. Service Worker Caching
 
 **Status:** ✅ Enabled in production builds
 
@@ -305,7 +298,7 @@ Details that keep the caches right:
 
 ---
 
-### 8. Code Splitting (MEDIUM Impact)
+### 8. Code Splitting
 
 **Status:** ✅ Enabled
 
@@ -344,15 +337,7 @@ export default defineConfig({
 
 ## Performance Metrics
 
-Based on the optimizations implemented:
-
-| Metric            | Before    | After                      | Improvement              |
-| ----------------- | --------- | -------------------------- | ------------------------ |
-| Rendering         | Canvas 2D | 2-5x faster                | WebGL rendering backend  |
-| Startup Time      | Baseline  | 200-500ms faster           | WASM preloading          |
-| Repeat Loads      | Network   | Cache Storage, offline too | Service worker caching   |
-| Audio Quality     | Good      | Excellent                  | Optimized mixer settings |
-| UI Responsiveness | Good      | Excellent                  | Worker thread mode       |
+No optimization here has been measured, so this section gives no figures for rendering, startup time, audio quality or responsiveness; [Testing and Validation](#testing-and-validation) describes how to measure them. What needs no measurement is where repeat loads come from: Cache Storage instead of the network, offline too (section 7).
 
 There is no CPU speed gain to list: the default backend has no dynamic core, so DOSBox's interpreting cores emulate the CPU (see section 1).
 
@@ -375,18 +360,20 @@ Every browser DosKit supports, from the minimum versions in the README's [Browse
 
 ## Configuration Reference
 
-### Optimal js-dos Configuration
+### js-dos Options
+
+Four of the options in `defaultJsDosConfig` (`src/config/jsdos.config.ts`), with what each does:
 
 ```typescript
 {
-  backend: 'dosbox',           // 20-40% faster than DOSBox-X
-  workerThread: true,          // Non-blocking UI
-  renderBackend: 'webgl',      // 2-5x rendering performance
-  imageRendering: 'pixelated', // 5-15% performance + authentic look
+  backend: 'dosbox',           // DosKit's DOSBox configs are written for it; sw.js precaches no other
+  workerThread: true,          // The emulator runs in a Web Worker; frames are drawn on the page
+  renderBackend: 'webgl',      // Canvas 2D if WebGL cannot start
+  imageRendering: 'pixelated', // The canvas has the DOS resolution: scaled up without smoothing
 }
 ```
 
-### Optimal DOSBox Configuration
+### DOSBox Configuration
 
 The default DOS prompt's settings, from `src/config/dosbox.conf.ts`:
 
@@ -416,21 +403,21 @@ DOSBox only treats a line that starts with `#` as a comment. A comment after a v
 
 ## Future Optimization Opportunities
 
-These optimizations were researched but not yet implemented:
+These optimizations were researched but not yet implemented. The first two are options for compiling js-dos's emulators, which DosKit does not build: it copies the builds in js-dos's npm package. Which options those builds use, and what either would gain, has not been checked.
 
-### 1. SIMD Support (HIGH Impact - Not Implemented)
+### 1. SIMD Support (Not Implemented)
 
-- **Potential Gain:** 2-4x for SIMD-optimized code paths
+- **Potential Gain:** Not measured
 - **Complexity:** Requires recompilation with `-msimd128`
 - **Risk:** Increases binary size, requires browser support
 
-### 2. Emscripten -O3 Optimization (MEDIUM-HIGH Impact - Not Implemented)
+### 2. Emscripten -O3 Optimization (Not Implemented)
 
-- **Potential Gain:** 10-30% improvement
+- **Potential Gain:** Not measured
 - **Complexity:** Requires recompilation of js-dos
 - **Risk:** May increase binary size
 
-### 3. SharedArrayBuffer Threading (MEDIUM Impact - Not Recommended)
+### 3. SharedArrayBuffer Threading (Not Recommended)
 
 - **Potential Gain:** Limited by DOSBox's single-threaded architecture
 - **Complexity:** Very difficult, requires COOP/COEP headers
