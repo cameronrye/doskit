@@ -88,14 +88,12 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   }, []);
 
   /**
-   * Load an application with optional timeout and cancellation support
-   * Fixed: Now accepts app parameter directly to avoid race condition with state
+   * Load an application with a timeout and cancellation support. Takes the app
+   * rather than reading the selection, which a double-click sets in the same
+   * event and is not visible here until the next render.
    */
   const handleLoadApp = useCallback(
-    async (appToLoad?: DosApp) => {
-      const app = appToLoad || selectedApp;
-      if (!app) return;
-
+    async (app: DosApp) => {
       // Supersede any ongoing load. Each load checks its own controller, so a
       // cancelled or superseded load can never deliver its result.
       abortControllerRef.current?.abort();
@@ -164,7 +162,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
         clearTimeout(timeoutId);
       }
     },
-    [selectedApp, onSelect]
+    [onSelect]
   );
 
   /** Cancel current loading operation */
@@ -382,7 +380,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
                 <>
                   <button
                     className="load-button"
-                    onClick={() => handleLoadApp()}
+                    onClick={() => handleLoadApp(selectedApp)}
                     disabled={isLoading}
                   >
                     Load Application
