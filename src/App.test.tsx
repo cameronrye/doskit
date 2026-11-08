@@ -20,7 +20,9 @@ interface DosPlayerWithAppsProps {
   selectorNotice?: string | null;
 }
 
-const { requests, describeRequest, keysHandledInPlayer } = vi.hoisted(() => ({
+const { requests, describeRequest, keysHandledInPlayer, player } = vi.hoisted(() => ({
+  /** Set to make the mock player throw while rendering, as a render error would */
+  player: { throws: false },
   /** The requestedApp App gave DosPlayerWithApps on each commit, oldest first */
   requests: [] as string[],
   /** How a requestedApp prop shows up: the app's id, 'none' or 'not passed' */
@@ -70,6 +72,9 @@ vi.mock('./components/DosPlayerWithApps', async () => {
       requestedApp,
       selectorNotice,
     }: DosPlayerWithAppsProps) => {
+      if (player.throws) {
+        throw new Error('Player render failed');
+      }
       // Store callbacks in window for test access
       (window as WindowWithTestCallbacks).__dosCallbacks = {
         onReady,
@@ -517,6 +522,23 @@ describe('App', () => {
       fireEvent.click(screen.getByText('Report Loading'));
 
       expect(screen.getByRole('status')).toHaveTextContent(/^Loading/);
+    });
+
+    // App's error boundary has replaced the player, which stopped it
+    it('shows Error once a render error has taken the player down', () => {
+      const { rerender } = render(<App />);
+      fireEvent.click(screen.getByText('Report Ready'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      player.throws = true;
+      try {
+        rerender(<App />);
+      } finally {
+        player.throws = false;
+      }
+
+      expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent(/^Error/);
     });
 
     it('shows Error, not Loading, while the player shows an error', () => {

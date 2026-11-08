@@ -103,6 +103,20 @@ describe('ErrorBoundary', () => {
     expect(ownLines).toEqual([]);
   });
 
+  it('tells its parent the error it caught', () => {
+    const onError = vi.fn();
+
+    render(
+      <ErrorBoundary onError={onError}>
+        <Child />
+      </ErrorBoundary>
+    );
+
+    expect(onError).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ message: 'Render failed' })
+    );
+  });
+
   it('renders the children again on Try Again', () => {
     render(
       <ErrorBoundary>

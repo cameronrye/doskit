@@ -212,7 +212,8 @@ function App() {
       </header>
 
       <main className="app-main">
-        <ErrorBoundary>
+        {/* A render error takes the player down with it, and no status comes from it then */}
+        <ErrorBoundary onError={() => setPlayerStatus('error')}>
           <DosPlayerWithApps
             requestedApp={currentApp}
             showSelector={showAppSelector}

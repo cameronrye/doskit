@@ -16,6 +16,8 @@ interface ErrorBoundaryProps {
    * the error's component stack, so errorInfo is null at first.
    */
   fallback?: (error: Error, errorInfo: ErrorInfo | null, reset: () => void) => ReactNode;
+  /** Called with each error it catches, once its children have been replaced */
+  onError?: (error: Error) => void;
 }
 
 interface ErrorBoundaryState {
@@ -68,6 +70,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       errorMessage: error.message,
       errorName: error.name,
     });
+
+    this.props.onError?.(error);
   }
 
   handleReset = (): void => {
