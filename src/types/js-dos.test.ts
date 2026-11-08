@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expectTypeOf } from 'vitest';
-import type { DosOptions, DosProps } from './js-dos';
+import type { DosOptions, DosProps, InitFs } from './js-dos';
 
 type SoftKeyboardLayout = NonNullable<DosOptions['softKeyboardLayout']>;
 
@@ -120,6 +120,30 @@ describe('js-dos types', () => {
       expectTypeOf<DosProps['setSoftKeyboardLayout']>()
         .parameter(0)
         .toEqualTypeOf<SoftKeyboardLayout>();
+    });
+  });
+
+  describe('initFs', () => {
+    const archive = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
+    const file = { path: 'README.TXT', contents: new TextEncoder().encode('Hello') };
+
+    it('should take one bundle or a list of files', () => {
+      expectTypeOf(archive).toExtend<InitFs>();
+      expectTypeOf([file, file]).toExtend<InitFs>();
+    });
+
+    it('should take several bundles, which js-dos extracts in order', () => {
+      const saved = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
+      expectTypeOf([archive, saved]).toExtend<InitFs>();
+    });
+
+    it('should take a single file, or bundles and files in one list', () => {
+      expectTypeOf(file).toExtend<InitFs>();
+      expectTypeOf([archive, file]).toExtend<InitFs>();
+    });
+
+    it('should be what the initFs option takes', () => {
+      expectTypeOf<DosOptions['initFs']>().toEqualTypeOf<InitFs | undefined>();
     });
   });
 });

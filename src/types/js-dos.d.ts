@@ -85,12 +85,23 @@ export type SoftKeyboardLayout = string[] | string[][][];
  */
 export type SoftKeyboardSymbols = Record<string, string>[];
 
+/** A file to write into the DOS file system, by its path there */
 export interface InitFileEntry {
   path: string;
   contents: Uint8Array;
 }
 
-export type InitFs = Array<InitFileEntry> | Uint8Array;
+/** A bundle (a ZIP archive, such as a .jsdos file), or a single file */
+export type InitFsEntry = Uint8Array | InitFileEntry;
+
+/**
+ * What js-dos puts in the DOS file system before DOS starts: an entry or a list of them.
+ * The emulator writes the files first, then extracts the bundles in list order, so a
+ * bundle's files replace those of the bundles before it, and any file given at the same
+ * path. Changes packed by ci.persist() come back when they follow the archive they were
+ * made in.
+ */
+export type InitFs = InitFsEntry | InitFsEntry[];
 
 export interface DosProps {
   // Version Information
