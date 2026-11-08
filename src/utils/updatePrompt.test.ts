@@ -189,6 +189,25 @@ describe('showUpdateNotification', () => {
     }
   });
 
+  // It takes the focus as it appears, maybe while someone holds a key in DOS: without its
+  // release, DOSBox repeats the key without end
+  it('lets the release of a key pressed in DOS before it appeared reach js-dos', async () => {
+    const reachedWindow = vi.fn();
+    window.addEventListener('keyup', reachedWindow);
+    try {
+      fireEvent.keyDown(document.body, { key: 'a', code: 'KeyA' });
+      await act(async () => {
+        showUpdateNotification(registration);
+      });
+
+      fireEvent.keyUp(screen.getByRole('button', { name: 'Later' }), { key: 'a', code: 'KeyA' });
+
+      expect(reachedWindow).toHaveBeenCalledOnce();
+    } finally {
+      window.removeEventListener('keyup', reachedWindow);
+    }
+  });
+
   it('shows the prompt again after the previous one was dismissed', async () => {
     await act(async () => {
       showUpdateNotification(registration);

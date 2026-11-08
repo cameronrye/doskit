@@ -11,6 +11,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { findAppById } from './config/apps.config';
 import type { DosApp } from './types/dos-app';
 import { getAppRequestFromUrl, updateUrlWithApp, updateDocumentTitle } from './utils/urlRouting';
+import { keepKeyFromDos, watchKeysAroundDos } from './utils/keysAroundDos';
 import './App.css';
 
 /** What the URL asks App to show */
@@ -59,12 +60,12 @@ function describeRelease({ author, year }: DosApp): string | null {
  * js-dos listens for keys on window, sends each one to DOS and cancels the browser's own
  * handling of it. Keys pressed on DosKit's own controls stop here, once React has handled
  * them, so Tab, Enter and Space work on those controls and keys meant for the selector never
- * reach the running program. Keys pressed in the player, or with nothing focused, still
- * reach DOS.
+ * reach the running program; keysAroundDos keeps their releases from it too. Keys pressed
+ * in the player, or with nothing focused, still reach DOS.
  */
 function keepKeysFromDos(event: React.KeyboardEvent) {
   if (!(event.target instanceof Element && event.target.closest('.dos-player-container'))) {
-    event.stopPropagation();
+    keepKeyFromDos(event);
   }
 }
 
@@ -135,6 +136,9 @@ function App() {
     applyUrlRoute(initialRoute);
   }, [initialRoute]);
 
+  // A key's release follows its press, whatever has the focus when it comes up
+  useEffect(() => watchKeysAroundDos(), []);
+
   // Browser back/forward: run what the URL asks for, or the default prompt with the selector
   useEffect(() => {
     const handlePopState = () => {
@@ -180,7 +184,7 @@ function App() {
   const statusBadge = STATUS_BADGES[playerStatus];
 
   return (
-    <div className="app" onKeyDown={keepKeysFromDos} onKeyUp={keepKeysFromDos}>
+    <div className="app" onKeyDown={keepKeysFromDos}>
       {/* PWA Offline Indicator and Install Prompt */}
       <OfflineIndicator onNetworkStatusChange={handleNetworkStatusChange} />
 

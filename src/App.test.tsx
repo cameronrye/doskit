@@ -206,6 +206,33 @@ describe('App', () => {
 
       expect(keysAtWindow).toEqual(['keydown Escape']);
     });
+
+    // A key held in DOS while Change Application is clicked: without its release, DOSBox
+    // repeats the key without end
+    it('gives js-dos the release of a key pressed in the player, even on a control', () => {
+      render(<App />);
+
+      fireEvent.keyDown(screen.getByTestId('dos-screen'), { key: 'a', code: 'KeyA' });
+      fireEvent.keyUp(screen.getByRole('button', { name: 'Select Application' }), {
+        key: 'a',
+        code: 'KeyA',
+      });
+
+      expect(keysAtWindow).toEqual(['keydown a', 'keyup a']);
+    });
+
+    // Escape closes the selector as it goes down, and the focus falls to the page
+    it('keeps from js-dos the release of a key pressed on a control, once the focus is on the page', () => {
+      render(<App />);
+
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Select Application' }), {
+        key: 'Escape',
+        code: 'Escape',
+      });
+      fireEvent.keyUp(document.body, { key: 'Escape', code: 'Escape' });
+
+      expect(keysAtWindow).toEqual([]);
+    });
   });
 
   describe('URL routing', () => {

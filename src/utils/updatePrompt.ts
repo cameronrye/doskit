@@ -10,6 +10,7 @@
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { UpdateNotification } from '../components/UpdateNotification';
+import { keepKeyFromDos, watchKeysAroundDos } from './keysAroundDos';
 
 const CONTAINER_ID = 'update-notification-container';
 
@@ -29,28 +30,9 @@ let prompt: Prompt | null = null;
 // The navigator.serviceWorker whose controllerchange the prompt watches
 let watched: ServiceWorkerContainer | null = null;
 
-// The keys pressed in the prompt that have not come up yet
-const keysDownInPrompt = new Set<string>();
-
-// A running js-dos takes every key that reaches window and cancels it, so Tab, Enter and
-// Space would do nothing in the prompt and be typed into DOS. Keys pressed in the prompt
-// stop at its root, once React, which listens there, has handled them. (The prompt is
-// outside #root, whose keys App keeps from js-dos itself.)
-const keepKeyFromJsDos = (event: KeyboardEvent) => {
-  event.stopPropagation();
-  if (event.type === 'keydown') {
-    keysDownInPrompt.add(event.code);
-  }
-};
-
-// Escape, and Enter on a button, close the prompt as the key goes down, so the key comes
-// up on the page, where js-dos would send DOS the release of a key it never had pressed.
-// Window sees a key's release before anything on the page does, and keeps it from js-dos.
-const keepReleaseFromJsDos = (event: KeyboardEvent) => {
-  if (keysDownInPrompt.delete(event.code)) {
-    event.stopPropagation();
-  }
-};
+// Whether key releases are watched for the prompt. Escape, and Enter on a button, close it
+// as the key goes down, so the watch outlasts each prompt: it keeps the release from DOS.
+let watchingKeys = false;
 
 /**
  * Mount the prompt, or render the one on screen again
@@ -62,10 +44,15 @@ function render(registration: ServiceWorkerRegistration, updatedInAnotherTab: bo
     const container = document.createElement('div');
     container.id = CONTAINER_ID;
     document.body.appendChild(container);
-    container.addEventListener('keydown', keepKeyFromJsDos);
-    container.addEventListener('keyup', keepKeyFromJsDos);
-    // Added once: the same listener again changes nothing
-    window.addEventListener('keyup', keepReleaseFromJsDos, { capture: true });
+    // A running js-dos takes every key that reaches window and cancels it, so Tab, Enter and
+    // Space would do nothing in the prompt and be typed into DOS. Keys pressed in the prompt
+    // stop at its root, once React, which listens there, has handled them. (The prompt is
+    // outside #root, whose keys App keeps from js-dos itself.)
+    container.addEventListener('keydown', keepKeyFromDos);
+    if (!watchingKeys) {
+      watchKeysAroundDos();
+      watchingKeys = true;
+    }
     prompt = { root: createRoot(container), container, updateRequested: false };
   }
 
