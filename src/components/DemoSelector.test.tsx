@@ -322,12 +322,25 @@ describe('DemoSelector', () => {
       });
     });
 
-    it('should not load if no app is selected', () => {
+    it('selects the focused app on Enter rather than loading it', () => {
       render(<DemoSelector onSelect={mockOnSelect} />);
 
-      // Try to trigger load without selecting an app (shouldn't be possible in UI, but test the logic)
-      // This tests the early return in handleLoadApp
-      expect(loadZipArchive).not.toHaveBeenCalled();
+      // The selector opens with keyboard focus on the first app
+      fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
+
+      expect(screen.getByText(`Selected: ${availableApps[0]!.name}`)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Load Application/i })).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
+    it('loads the selected app when Enter is pressed again', async () => {
+      render(<DemoSelector onSelect={mockOnSelect} />);
+
+      fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
+      fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
+
+      await waitFor(() => expect(mockOnSelect).toHaveBeenCalledTimes(1));
+      expect(mockOnSelect.mock.calls[0]?.[0].app.id).toBe(availableApps[0]!.id);
     });
   });
 
