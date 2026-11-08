@@ -585,7 +585,7 @@ for (const item of items) {
 
 ### File Headers
 
-- **Copyright**: At the top of each of the app's modules in `src/`; most tests, the scripts in `scripts/`, the config files at the repository's root and `public/sw.js` begin with their description alone
+- **Copyright**: At the top of each of the app's modules in `src/`; most tests, the scripts in `scripts/` and `public/sw.js` begin with their description alone, and the config files at the repository's root (`vite.config.ts`, `vitest.config.ts`, `eslint.config.js`) begin with their imports
 - **Description**: Brief file purpose
 
 ```typescript
@@ -656,7 +656,7 @@ describe('DosPlayer', () => {
 
 - **ESLint**: Run `npm run lint`, as CI does, to check the TypeScript, the config files, the scripts in `scripts/` and the service worker `public/sw.js`. The scripts are linted as ES modules, with Node's globals but not CommonJS's `require` or `__dirname`, and with Vitest's too in their tests; `public/sw.js` as a classic script with a service worker's globals, through ESLint's own parser, which rejects `import` and `export` there as the browser would. The rest of `public/`, the js-dos copy included, is not linted.
 - **Prettier**: Run `npm run format` to format files; CI runs `npm run format:check` and fails on any file Prettier would change
-- **Husky**: The pre-commit hook runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats what `npm run format:check` checks and skips the rest. Files that tests read from disk rather than import therefore get no tests from the hook: the stylesheets, `index.html`, `public/manifest.json`, the icons, `robots.txt`, the licenses page, `eslint.config.js`, and the archives in `public/demos/` with their `README.md`. Run `npm test` after changing one; CI runs every test. `public/sw.js` is the exception: staging it runs the whole suite, since `vitest.config.ts` lists it among Vitest's force-rerun triggers.
+- **Husky**: The pre-commit hook runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats what `npm run format:check` checks and skips the rest. Files that tests read from disk rather than import therefore get no tests from the hook: the stylesheets, `index.html`, `public/manifest.json`, the icons and `public/og-image.png`, `robots.txt`, the licenses page and its `gpl-2.0.txt`, `eslint.config.js`, and the archives in `public/demos/` with their `README.md`. Run `npm test` after changing one; CI runs every test. `public/sw.js` is the exception: staging it runs the whole suite, since `vitest.config.ts` lists it among Vitest's force-rerun triggers.
 
 ### Before Committing
 
