@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWA_CONFIG } from '../constants/app';
+import { classesIn, keyframesIn, readStylesheets, styles } from '../test/stylesheets';
 
 // Type definition for BeforeInstallPromptEvent
 interface BeforeInstallPromptEvent extends Event {
@@ -621,6 +622,30 @@ describe('OfflineIndicator', () => {
         expect.stringContaining('Error showing install prompt'),
         expect.any(Error)
       );
+    });
+  });
+
+  describe('its stylesheet', () => {
+    const OWN = 'src/components/OfflineIndicator.css';
+
+    it('names its animations so that no other stylesheet replaces them', async () => {
+      // Keyframes are global: of two with one name, the page uses the one it loads last
+      const sheets = await readStylesheets();
+      const own = keyframesIn(sheets.get(OWN)!);
+      const others = [...sheets]
+        .filter(([file]) => file !== OWN)
+        .flatMap(([, css]) => keyframesIn(css));
+
+      expect(own).not.toEqual([]);
+      expect(own.filter((name, i) => others.includes(name) || own.indexOf(name) !== i)).toEqual([]);
+    });
+
+    it("styles no class that js-dos's stylesheet styles too", async () => {
+      const sheets = await readStylesheets();
+
+      expect(
+        classesIn(sheets.get(OWN)!).filter((name) => styles(sheets.get('js-dos.css')!, name))
+      ).toEqual([]);
     });
   });
 

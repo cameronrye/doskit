@@ -17,10 +17,10 @@
   justify-content: center;
   z-index: 10000;
   padding: 1rem;
-  animation: fadeIn 0.3s ease-out;
+  animation: update-notification-fade-in 0.3s ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes update-notification-fade-in {
   from {
     opacity: 0;
   }
@@ -36,11 +36,11 @@
   max-width: 400px;
   width: 100%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease-out;
+  animation: update-notification-slide-up 0.3s ease-out;
   color: white;
 }
 
-@keyframes slideUp {
+@keyframes update-notification-slide-up {
   from {
     transform: translateY(20px);
     opacity: 0;
@@ -63,10 +63,10 @@
 }
 
 .update-notification-icon svg {
-  animation: rotate 2s linear infinite;
+  animation: update-notification-rotate 2s linear infinite;
 }
 
-@keyframes rotate {
+@keyframes update-notification-rotate {
   from {
     transform: rotate(0deg);
   }

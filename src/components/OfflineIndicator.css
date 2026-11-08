@@ -13,7 +13,7 @@
   padding: 1rem;
   z-index: 10000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  animation: slideDown 0.3s ease-out;
+  animation: offline-indicator-slide-down 0.3s ease-out;
 }
 
 .offline-content {
@@ -80,8 +80,8 @@
   align-items: center;
   gap: 0.5rem;
   animation:
-    slideInRight 0.3s ease-out,
-    fadeOut 0.3s ease-out 2.7s forwards;
+    online-indicator-slide-in 0.3s ease-out,
+    online-indicator-fade-out 0.3s ease-out 2.7s forwards;
 }
 
 .online-icon {
@@ -109,7 +109,7 @@
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   z-index: 9999;
-  animation: slideUp 0.4s ease-out;
+  animation: install-prompt-slide-up 0.4s ease-out;
 }
 
 .install-content {
@@ -174,7 +174,7 @@
 }
 
 /* Animations */
-@keyframes slideDown {
+@keyframes offline-indicator-slide-down {
   from {
     transform: translateY(-100%);
     opacity: 0;
@@ -185,7 +185,7 @@
   }
 }
 
-@keyframes slideUp {
+@keyframes install-prompt-slide-up {
   from {
     transform: translateY(100%);
     opacity: 0;
@@ -196,7 +196,7 @@
   }
 }
 
-@keyframes slideInRight {
+@keyframes online-indicator-slide-in {
   from {
     transform: translateX(100%);
     opacity: 0;
@@ -207,7 +207,7 @@
   }
 }
 
-@keyframes fadeOut {
+@keyframes online-indicator-fade-out {
   from {
     opacity: 1;
   }
