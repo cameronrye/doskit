@@ -27,13 +27,15 @@ const withoutComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 function classNames(css: string): Set<string> {
   // Without its declaration blocks, the innermost braces, only selectors and at-rules are left
   const selectors = withoutComments(css).replace(/\{[^{}]*\}/g, ' ');
-  return new Set([...selectors.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)].map((match) => match[1]));
+  return new Set(
+    [...selectors.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)].flatMap((match) => match[1] ?? [])
+  );
 }
 
 /** The names of a stylesheet's keyframes */
 function keyframeNames(css: string): Set<string> {
   const names = withoutComments(css).matchAll(/@keyframes\s+(-?[_a-zA-Z][\w-]*)/g);
-  return new Set([...names].map((match) => match[1]));
+  return new Set([...names].flatMap((match) => match[1] ?? []));
 }
 
 const PLAYER_STYLESHEETS = ['DosPlayer.css', 'DosPlayerWithApps.css'];
