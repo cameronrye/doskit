@@ -120,10 +120,10 @@ In Chrome, Edge and other Chromium browsers, DosKit also shows its own **Install
 
 The service worker (`public/sw.js`) is registered by production builds only, so `npm run dev` runs without it. To try it locally, run `npm run build` and then `npm run preview`.
 
-- **On install**, the worker downloads the app shell (`index.html`, the manifest, the logo and favicon, `js-dos.js`, `js-dos.css`, and every JS and CSS bundle, including the chunks loaded on demand) and the emulator files of js-dos's default DOSBox backend.
+- **On install**, the worker stores the app shell (`index.html`, the manifest, the logo and favicon, `js-dos.js`, `js-dos.css`, and every JS and CSS bundle, including the chunks loaded on demand) and the emulator files of js-dos's default DOSBox backend.
 - **App archives** (`/demos/<id>.zip`) are stored the first time each app is opened while the service worker runs. On a first visit, an app opened before the worker has started, such as a deep link's, is stored the next time it is opened. An app not stored yet fails to load offline with a network error.
-- **Pages** come from the network, and from the cache when the network fails or takes more than 5 seconds. A URL never visited online, such as a new deep link, gets the app shell.
-- **Deploys**: each build has an app shell cache of its own, which replaces the previous one when the new version takes over. Emulator files stay cached until the js-dos version changes, and app archives until an archive is added, changed or removed.
+- **Pages** come from the network. When the network fails or takes more than 5 seconds, every URL gets the `index.html` stored on install, so a URL never visited online, such as a new deep link, opens too. Pages are not stored as they are visited.
+- **Deploys**: each build has an app shell cache of its own, which replaces the previous one when the new version takes over. Bundles are named after their content, and install copies those the previous version's cache holds under the same name, so of the bundles a new version downloads only those it changed. Emulator files stay cached until the js-dos version changes, and app archives until an archive is added, changed or removed.
 
 DOSBox-X is not precached: DosKit starts js-dos without its backend picker, so every app runs on the default backend.
 

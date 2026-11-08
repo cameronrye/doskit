@@ -44,7 +44,7 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 - **Responsive Design**: Optimized layouts for desktop, tablet, and mobile devices
 - **Touch Controls**: Mobile-friendly on-screen keyboard for touch devices
 - **Type-Safe Development**: Full TypeScript support with comprehensive type definitions
-- **Service Worker Caching**: Emulator files and application archives stay cached across deploys until js-dos or the archives change
+- **Service Worker Caching**: Emulator files and application archives stay cached across deploys until js-dos or the archives change, and so do the bundles a deploy leaves unchanged
 
 ### PWA Features
 
@@ -135,11 +135,12 @@ UpdateNotification is not part of this tree: src/utils/updatePrompt.ts mounts it
 
 `public/sw.js` is registered in production builds only:
 
-- **Install**: precaches the app shell (/, /index.html, the manifest, logo and favicon, js-dos.js and js-dos.css), every JS and CSS bundle, including the lazily loaded app configs, and the DOSBox backend (wdosbox, wlibzip and emulators.js)
-- **Pages**: network first with a 5-second timeout, falling back to the cached page or to index.html, so deep links open offline too
+- **Install**: precaches the app shell (/, which serves index.html, the manifest, logo and favicon, js-dos.js and js-dos.css), every JS and CSS bundle, including the lazily loaded app configs, and the DOSBox backend (wdosbox, wlibzip and emulators.js). A bundle that an earlier deploy's cache holds under the same name is copied from there instead of downloaded
+- **Pages**: network first with a 5-second timeout; when the network fails or times out, every URL gets the index.html install stored, so deep links open offline too. Pages fetched online are not stored
+- **Bundles** (`/assets/`): cache first; a bundle's name changes with its content, so a cached copy never goes stale
 - **Emulator files** (`/emulators/`): cache first, from a cache named after the js-dos version, which deploys keep; DOSBox-X is not precached and is stored on first use
 - **Application archives** (`/demos/*.zip`): cache first, from a cache named after a hash of the archives, which deploys keep while the archives stay the same; each is stored on first use
-- **Other assets**: stale-while-revalidate, in a cache of at most 100 entries that trims the least recently used, never the precached files
+- **Other assets** (js-dos.js, js-dos.css, the manifest, the logo and icons): stale-while-revalidate, in a cache of at most 100 entries that trims the least recently used, never the precached files
 - **Updates**: each new build installs as a new worker, which waits until the user accepts the update prompt
 
 ### Error Handling
