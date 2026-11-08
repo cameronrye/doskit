@@ -29,7 +29,9 @@ export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';
  * - Memory: 4MB recommended
  *
  * This configuration uses:
- * - Auto CPU core, type and cycles
+ * - Auto CPU core and type, at maximum cycles. CD2.EXE unpacks itself in real mode, where
+ *   'auto' cycles would hold it at 3,000 cycles/ms for about 46 s before its setup appears;
+ *   at a fixed 30000 cycles the demo stops with "System overloaded!"
  * - Sound Blaster 16 for audio
  * - Standard VGA graphics
  * - DOSBox's default 16 MB of memory
@@ -44,7 +46,7 @@ export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';
  */
 export const crystalDream2DosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'max' })
   .setSoundBlaster({
     sbtype: 'sb16',
     sbbase: 220,
@@ -65,7 +67,7 @@ export const crystalDream2DosboxConf = presets
     'echo 1st Place at The Computer Crossroads 1993',
     'echo.',
     'echo Audio: Sound Blaster 16',
-    'echo CPU: Auto Cycles',
+    'echo CPU: Maximum Cycles',
     'echo Graphics: VGA',
     'echo.',
     'echo Features:',

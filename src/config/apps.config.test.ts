@@ -73,6 +73,16 @@ describe('availableApps', () => {
       expect(conf).not.toMatch(/^echo CPU: .*(486|pentium)/im);
     });
 
+    it('should name in its banner the cycles it runs at', async () => {
+      const conf = await dosboxConfOf(app);
+      const cycles = /^cycles=(.*)$/m.exec(conf)?.[1] ?? '';
+      const names: Record<string, string> = { max: 'Maximum Cycles', auto: 'Auto Cycles' };
+
+      for (const [, banner] of conf.matchAll(/^echo CPU: (.*)$/gm)) {
+        expect(banner).toBe(names[cycles] ?? `${cycles} cycles`);
+      }
+    });
+
     it('should not claim a GUS memory size or stereo sound in its banner', async () => {
       // The backend's GUS always has 1 MB, which no setting changes, and js-dos mixes the
       // sound down to one channel for the page
@@ -103,6 +113,14 @@ describe('availableApps', () => {
       expect(findAppById(id)?.year).toBe(release.year);
     }
   );
+
+  it('should run Crystal Dream 2 at max cycles', async () => {
+    // Its packed loader runs in real mode, where 'auto' gives it 3,000 cycles/ms and its setup
+    // appears only after about 46 s; at a fixed 30000 the demo stops: "System overloaded!"
+    const conf = await findAppById('crystal-dream-2')?.loadDosboxConf?.();
+
+    expect(conf).toMatch(/^cycles=max$/m);
+  });
 
   it.each(['3drotate', 'stars'])('should credit %s to Draeden of VLA, who wrote it', async (id) => {
     // Its VLA.NFO names Draeden as the writer; Grumpy's source pack only collected it
