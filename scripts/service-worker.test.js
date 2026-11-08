@@ -216,7 +216,8 @@ const navigation = (path) => ({
 const subresource = (path) => new Request(new URL(path, ORIGIN));
 const requestedPaths = (browser) => browser.server.requests.map(({ path }) => path);
 
-const APP_SHELL = [
+// The shell files whose names carry no content hash, unlike the bundles
+const SHELL_FILES = [
   '/',
   '/index.html',
   '/manifest.json',
@@ -224,8 +225,8 @@ const APP_SHELL = [
   '/favicon.svg',
   '/js-dos.js',
   '/js-dos.css',
-  ...BUNDLES,
 ];
+const APP_SHELL = [...SHELL_FILES, ...BUNDLES];
 const DEFAULT_BACKEND = [
   '/emulators/emulators.js',
   '/emulators/wdosbox.js',
@@ -245,6 +246,22 @@ describe('install', () => {
       expect.arrayContaining([...APP_SHELL, ...DEFAULT_BACKEND])
     );
     expect(browser.cachedPaths().filter((path) => DOSBOX_X.includes(path))).toEqual([]);
+  });
+
+  it('asks the server for the shell files whose names carry no content hash', async () => {
+    // GitHub Pages lets browsers reuse a file for 10 minutes, so an install that soon
+    // after a visit could take the previous deploy's index.html from the HTTP cache. A
+    // bundle's name changes with its content, so a copy from the HTTP cache is current.
+    const browser = createBrowser();
+
+    await startWorker(browser).dispatch('install');
+
+    const modeOf = (path) =>
+      browser.server.requests.find((request) => request.path === path)?.cache;
+    expect(Object.fromEntries(APP_SHELL.map((path) => [path, modeOf(path)]))).toEqual({
+      ...Object.fromEntries(SHELL_FILES.map((path) => [path, 'no-cache'])),
+      ...Object.fromEntries(BUNDLES.map((path) => [path, 'default'])),
+    });
   });
 });
 

@@ -50,13 +50,19 @@ const absoluteUrl = (path) => new URL(path, self.location.origin).href;
 // offline fallback for every navigation and the app cannot start without the rest
 const PRECACHED_URLS = new Set(STATIC_ASSETS.map(absoluteUrl));
 
-// A cached emulator file is kept until js-dos changes, so it must come from the server:
-// an HTTP cache entry that is still fresh may hold the previous js-dos version's file
-const emulatorRequest = (url) => new Request(url, { cache: 'no-cache' });
+// A request the browser sends to the server even when its HTTP cache holds a fresh copy;
+// the server answers 304 when the file has not changed
+const fromServer = (input) => new Request(input, { cache: 'no-cache' });
 
 async function precacheAppShell() {
   const cache = await caches.open(CACHE_NAME);
-  await cache.addAll(STATIC_ASSETS);
+  // GitHub Pages lets browsers reuse a file for 10 minutes, so a worker installed that
+  // soon after a visit could store the previous deploy's index.html, which loads bundles
+  // this deploy no longer has. A bundle's name changes with its content, so whatever the
+  // HTTP cache holds under that name is current, and saves downloading it again.
+  await cache.addAll(
+    STATIC_ASSETS.map((path) => (path.startsWith('/assets/') ? path : fromServer(path)))
+  );
   console.log(`[Service Worker] ✅ Static assets cached (${STATIC_ASSETS.length} files)`);
 }
 
@@ -68,7 +74,9 @@ async function precacheEmulator() {
   const cache = await caches.open(EMULATOR_CACHE_NAME);
   const cachedUrls = new Set((await cache.keys()).map((request) => request.url));
   const missing = EMULATOR_ASSETS.filter((path) => !cachedUrls.has(absoluteUrl(path)));
-  await cache.addAll(missing.map(emulatorRequest));
+  // A cached emulator file is kept until js-dos changes, so it must come from the server:
+  // an HTTP cache entry that is still fresh may hold the previous js-dos version's file
+  await cache.addAll(missing.map(fromServer));
   console.log(
     `[Service Worker] ✅ Emulator assets cached in ${EMULATOR_CACHE_NAME} ` +
       `(${missing.length} downloaded, ${EMULATOR_ASSETS.length - missing.length} kept)`
@@ -288,7 +296,8 @@ async function serveEmulatorFile(event) {
   }
 
   console.log('[Service Worker] Fetching from network (cache-first):', request.url);
-  const networkResponse = await fetchWithTimeout(emulatorRequest(request.url));
+  // From the server, for the same reason as when install precaches the default backend
+  const networkResponse = await fetchWithTimeout(fromServer(request.url));
   if (networkResponse.status === 200) {
     event.waitUntil(
       cache
