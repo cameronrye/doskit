@@ -175,9 +175,9 @@ Location: `/public/humans.txt`
 Includes:
 
 - Team information (developer, contact, social links)
-- Acknowledgments (js-dos, DOSBox, React, Vite teams)
-- Technology colophon (complete tech stack)
-- Project information (version, license, repository)
+- Acknowledgments (the js-dos, DOSBox, React and Vite teams, and the authors of the productions DosKit runs)
+- Technology colophon (the tools DosKit is built with, named without versions)
+- Project information (license, repository, website, the year it started and the date of its last update)
 - Site details (standards, accessibility, SEO)
 - Feature list
 - Browser support
@@ -317,7 +317,7 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 1. **index.html**: Update meta tags as needed; the build fills in the JSON-LD's `softwareVersion`
 2. **sitemap.xml**: Update lastmod dates when content changes
 3. **llm.txt / llm-full.txt**: Update when features or documentation changes
-4. **humans.txt**: Update when team or technology changes; nothing fills in its version numbers or dates, so update them with releases and upgrades
+4. **humans.txt**: Update when the team, the tools or the bundled productions change, and set its "Last update" date by hand when you do. It names no versions of DosKit or of its tools, so releases and upgrades need no edit there. Its browser list is written by hand too: keep it to the minimums in the README's [Browser Compatibility](../README.md#browser-compatibility).
 5. **.well-known/security.txt**: Renew `Expires` before it passes, keeping it less than a year ahead
 
 ## Best Practices
