@@ -6,7 +6,6 @@
  * DOS Application Type Definitions
  */
 
-import type { InitFileEntry } from './js-dos';
 import type { LoadProgress } from '../utils/diskLoader';
 
 /**
@@ -23,22 +22,20 @@ export interface DosApp {
   author?: string;
   /** Year of release */
   year?: number;
-  /** URL to thumbnail image */
-  thumbnail?: string;
-  /** Method used to load the application files */
-  loadMethod: 'files' | 'zip' | 'disk-image';
+  /** How the application's files arrive, shown on its disk in the selector: every app is a ZIP */
+  loadMethod: 'zip';
   /** DOSBox configuration string */
   dosboxConf: string;
   /**
    * Function to load the application files
    * @param onProgress - Optional callback for progress updates
    * @param signal - Optional AbortSignal that cancels the download
-   * @returns Promise resolving to file entries or disk image data
+   * @returns Promise resolving to the bytes of the app's ZIP archive
    */
   loader: (
     onProgress?: (progress: LoadProgress) => void,
     signal?: AbortSignal
-  ) => Promise<InitFileEntry[] | Uint8Array>;
+  ) => Promise<Uint8Array>;
   /**
    * Lazy load the DOSBox configuration
    * @returns Promise resolving to DOSBox configuration string
