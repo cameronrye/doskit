@@ -24,13 +24,13 @@ The plan no longer carries target dates: the quarters it first set, Q2 2025 to Q
 - 10 DOS applications configured:
   - **Second Reality** (1993 demo by Future Crew)
   - **Unreal** (1992 demo by Future Crew)
-  - **Panic** (1992 demo by Future Crew)
+  - **Panic** (1993 demo by Future Crew)
   - **Crystal Dream 2** (1993 demo by Triton)
   - **Starport BBS Intro II** (1993 BBS intro by Future Crew)
   - **Squid BBS Intro** (1994 BBS intro by cld & The Doctor)
-  - **3D Rotation Demo** (classic effect from Grumpy's Collection)
-  - **Starfield Effect** (classic effect from Grumpy's Collection)
-  - **Impulse Tracker** (1995 music tracker by Jeffrey Lim)
+  - **3D Rotation Demo** (1993 tutorial example by Draeden of VLA)
+  - **Starfield Effect** (1993 tutorial example by Draeden of VLA)
+  - **Impulse Tracker** (music tracker by Jeffrey Lim, in its 1997 release)
   - **Scream Tracker 3** (1994 music tracker by Future Crew)
 
 ### 🎯 Key Opportunities
@@ -57,7 +57,7 @@ DosKit runs DOS programs only, so an entry below that was released for another p
 
 #### Legendary Demos to Add
 
-- **Future Crew**: Unreal (1992), Panic (1992) ✅
+- **Future Crew**: Unreal (1992), Panic (1993) ✅
 - **Triton**: Crystal Dream 2 (1993) ✅
 - **Orange**: X14 (1995)
 - **Farbrausch**: fr-08: .the .product (2000)

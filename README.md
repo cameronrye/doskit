@@ -172,7 +172,7 @@ doskit/
 │   ├── *.md                       # Error handling, performance, SEO, style guide, sceners
 │   └── js-dos-llm-reference.md    # Comprehensive js-dos API reference
 ├── public/                        # Static files, copied into the build as they are
-│   ├── demos/                     # The apps' ZIP archives (sources and licenses in its README)
+│   ├── demos/                     # The apps' ZIP archives (sources and terms in its README)
 │   ├── icons/                     # PWA icons
 │   ├── manifest.json              # PWA manifest
 │   ├── sw.js                      # Service worker
@@ -762,7 +762,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **React**: MIT License
 - **retro-floppy**: MIT License
 - **DOSBox**: GPL-2.0 License
-- **Demos and trackers**: each archive in `public/demos/` keeps its own license, listed in [public/demos/README.md](public/demos/README.md)
+- **Demos and trackers**: [public/demos/README.md](public/demos/README.md) records each archive's source and the terms its authors gave it, or that none were found
 
 ## Contributing
 

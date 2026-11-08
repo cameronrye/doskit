@@ -345,14 +345,14 @@ Visit https://doskit.net/ to use the emulator directly in your browser. DosKit b
 `src/config/apps.config.ts` registers these, and each opens at its link:
 
 - Second Reality (Future Crew, 1993): https://doskit.net/?app=secondreality
-- Impulse Tracker (Jeffrey Lim, 1995): https://doskit.net/?app=impulsetracker
+- Impulse Tracker (Jeffrey Lim, 1997): https://doskit.net/?app=impulsetracker
 - Starport BBS Intro II (Future Crew, 1993): https://doskit.net/?app=starportbbstro
 - Scream Tracker 3 (Future Crew, 1994): https://doskit.net/?app=screamtracker
 - Unreal (Future Crew, 1992): https://doskit.net/?app=unreal
-- Panic (Future Crew, 1992): https://doskit.net/?app=panic
+- Panic (Future Crew, 1993): https://doskit.net/?app=panic
 - Squid BBS Intro (cld & The Doctor, 1994): https://doskit.net/?app=squidbbstro
-- 3D Rotation Demo (Grumpy's Collection, 1990): https://doskit.net/?app=3drotate
-- Starfield Effect (Grumpy's Collection, 1990): https://doskit.net/?app=stars
+- 3D Rotation Demo (Draeden of VLA, 1993): https://doskit.net/?app=3drotate
+- Starfield Effect (Draeden of VLA, 1993): https://doskit.net/?app=stars
 - Crystal Dream 2 (Triton, 1993): https://doskit.net/?app=crystaldream2
 
 ### Deep Linking
@@ -379,7 +379,9 @@ An application in the selector is three pieces, and `src/dos-apps/README.md` wal
 2. A config module, `src/dos-apps/<id>.config.ts`, with the archive's URL and the DOSBox configuration, built from a preset in `src/utils/dosboxConfigBuilder.ts`
 3. An entry in `availableApps` in `src/config/apps.config.ts`, which imports the config module lazily
 
-`npx vitest run src/config/apps.config.test.ts` checks every registered application. Only add programs you may redistribute.
+The guide also has the application recorded in two more places: an entry in `public/demos/README.md` with the archive's source, year, authors and terms, and a line in this file's Bundled Applications list (and in `docs/SCENERS.md` for a program from the sceners organization).
+
+`npx vitest run src/config/apps.config.test.ts` checks every registered application, including that its description and banner give no other release year than its registry entry. Only add programs you may redistribute.
 
 ### Programmatic Control
 

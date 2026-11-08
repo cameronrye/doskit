@@ -30,7 +30,8 @@
 
     The demosceners and tracker authors
     For the productions DosKit runs: Future Crew, Triton,
-    Jeffrey Lim, cld & The Doctor, and the sceners archive
+    Jeffrey Lim, cld & The Doctor and Draeden of VLA,
+    and the sceners archive
     GitHub: github.com/sceners
 
 # TECHNOLOGY COLOPHON
