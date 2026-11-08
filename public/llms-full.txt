@@ -144,7 +144,7 @@ In development, StrictMode mounts every component twice at once, so each DosPlay
 - **Install**: precaches the app shell (/, which serves index.html, the manifest, logo and favicon), every JS and CSS bundle, including the lazily loaded app configs, and js-dos: its player (js-dos.js, js-dos.css) and the DOSBox backend (wdosbox, wlibzip and emulators.js). A bundle that an earlier deploy's cache holds under the same name is copied from there instead of downloaded, and only the js-dos files missing from the cache of their version are downloaded
 - **Pages**: network first with a 5-second timeout; when the network fails or times out, every URL gets the index.html install stored, so deep links open offline too. Pages fetched online are not stored
 - **Bundles** (`/assets/`): cache first; a bundle's name changes with its content, so a cached copy never goes stale
-- **js-dos's files** (`/js-dos.js`, `/js-dos.css` and `/emulators/`): cache first, from a cache named after the js-dos version, which deploys keep, and never refreshed, so a page always gets the player and the emulator files of the js-dos its worker installed; DOSBox-X is not precached and is stored on first use
+- **js-dos's files** (`/js-dos.js`, `/js-dos.css` and `/emulators/`): cache first, from a cache named after the js-dos version, which deploys keep, and never refreshed, so a page gets the player and the emulator files of the js-dos its worker installed until a worker with another js-dos version takes over, after which its next player can get that version's emulator files until it reloads; DOSBox-X is not precached and is stored on first use
 - **Application archives** (`/demos/*.zip`): cache first, from a cache named after a hash of the archives, which deploys keep while the archives stay the same; each is stored on first use
 - **Other assets** (the manifest, the logo and icons): stale-while-revalidate, in a cache of at most 100 entries that trims the least recently used, never the precached files
 - **Updates**: a build that changes a file the site serves, or the worker, installs as a new worker, which waits until the user accepts the update prompt or every tab of the app has closed. The worker's cache version is a hash of the built site, so a build that changes neither, such as one after a change to the README alone, writes the same worker and offers no update
@@ -154,7 +154,7 @@ In development, StrictMode mounts every component twice at once, so each DosPlay
 - **Error boundaries** around the whole app (main.tsx) and around the player (App.tsx), which report to the error tracker; the one around the player also sets the footer's badge to Error
 - **Global handler** (src/utils/globalErrorHandler.ts): reports uncaught errors and unhandled promise rejections to the error tracker, whose report is the one line logged for each (the browser still reports the error itself), and keeps known harmless ones out of the console: js-dos's keyboard lock calls that fail without a user gesture, keyboard lock requests that a newer one superseded (two players starting milliseconds apart), ResizeObserver loop notices and browser extension errors
 - **Error tracking** (src/utils/errorTracking.ts): a console tracker; no remote service is set up
-- **Downloads**: application archives retry network failures and 408, 429, 500, 502, 503 and 504 responses up to three times with exponential backoff, but a network failure while the browser reports being offline fails at once. A download fails as a timeout when no data arrives for 20 seconds, counted from the request, from each retry, from the response and from each chunk of the archive, so one that keeps receiving data has no time limit; and a response that is not a ZIP archive is refused (Vite's dev and preview servers answer a missing archive with index.html). A download the user cancels, or a newer navigation supersedes, is not reported as an error
+- **Downloads**: the request for an application archive retries network failures and 408, 429, 500, 502, 503 and 504 responses up to three times with exponential backoff, but a network failure while the browser reports being offline fails at once, and so does one while the archive itself arrives. A download fails as a timeout when no data arrives for 20 seconds, counted from the request, from each retry, from the response and from each chunk of the archive, so one that keeps receiving data has no time limit; and a response that is not a ZIP archive is refused (Vite's dev and preview servers answer a missing archive with index.html). A download the user cancels, or a newer navigation supersedes, is not reported as an error
 - **Messages**: the selector and the error box of an application the URL asks for (a deep link, or Back and Forward) explain a failed load with the same messages (cannot connect, not available offline yet, file not found, too many requests, server unavailable, took too long, unable to load the application archive), with the technical message under a collapsed Details line; an `?app=` value that names no app opens the selector with a notice above the disks that the application was not found; the loading overlay's Cancel stops the download and does what Choose Another Application does; the error box's Try Again, which has the keyboard focus, downloads the application again, and its Choose Another Application opens the selector over the DOS prompt; and the player shows why, with a Reload Page button, when js-dos cannot start, such as when js-dos.js did not load, or emulators.js, which js-dos loads when the first player starts, failed to download or did not set up the emulator. The next player to start, such as one for an application picked in the selector, downloads emulators.js again
 
 ## Project Structure
@@ -600,10 +600,8 @@ The social media images are not part of the build: after editing their SVG sourc
 
 ### Mobile Browsers
 
-- Chrome Mobile (Android)
-- Safari Mobile (iOS 15.4+)
-- Firefox Mobile
-- Samsung Internet
+- Safari on iOS and iPadOS 15.4+
+- Chrome and Firefox on Android, from the same versions as on the desktop
 
 These are the first versions with `structuredClone()`, which js-dos's player calls once a second while it runs; in older browsers each call ends in an error. The build writes DosKit's JavaScript and CSS for these versions (build.target in vite.config.ts), and CI checks the built CSS against them.
 
@@ -663,7 +661,6 @@ DosKit's fullscreen is js-dos's soft fullscreen, which makes the player fill the
 #### Keyboard Not Working
 - Click the DOS screen: keys pressed while one of DosKit's controls has the focus, such as the selector, the header's button or a footer link (also after it has opened a tab), go to that control, not to DOS
 - Check browser has focus
-- Try clicking Play button
 - Use on-screen keyboard on mobile
 - Check console for errors
 
@@ -675,7 +672,7 @@ DosKit's fullscreen is js-dos's soft fullscreen, which makes the player fill the
 - Check DOSBox sound card configuration
 
 #### Application Fails to Load
-- Check internet connection: while the browser reports being online, downloads retry network failures up to three times, and a download fails when no data arrives for 20 seconds ("The request took too long to complete"); while it reports being offline, they fail at once
+- Check internet connection: while the browser reports being online, downloads retry network failures up to three times, though not one while the archive itself arrives, and a download fails when no data arrives for 20 seconds ("The request took too long to complete"); while it reports being offline, they fail at once
 - Offline, only applications that have been opened online before can load; any other shows "This application isn't available offline yet", and opening it once online stores it
 - After a failed deep link or Back and Forward, Try Again downloads the application again (offline, for one not stored yet, it fails again at once), and Choose Another Application opens the selector over the DOS prompt
 
