@@ -10,25 +10,35 @@
 import type { DosOptions } from '../types/js-dos';
 
 /**
- * Default js-dos configuration
- * Optimized for performance and audio quality
- * Based on research of WebAssembly, DOSBox, and browser optimization techniques
+ * The options DosKit gives js-dos's Dos() on desktop browsers. mobileJsDosConfig adds
+ * on-screen keyboard layouts to them for phones and tablets.
  */
 export const defaultJsDosConfig: Partial<DosOptions> = {
   // Emulator Settings
   // The DOSBox configs in src/config/dosbox.conf.ts and src/dos-apps/ are written for this
-  // backend: they only use settings it applies
-  backend: 'dosbox', // Use DOSBox for better performance (20-40% faster than DOSBox-X)
+  // backend: they only use settings it applies. It is also the only backend whose files
+  // public/sw.js precaches for offline use.
+  backend: 'dosbox',
   backendLocked: false, // js-dos shows its backend picker only before a run; autoStart skips that
-  workerThread: true, // Use worker thread for non-blocking UI (HIGH impact)
+  // Run the emulator in a Web Worker rather than on the page's main thread. js-dos still draws
+  // every frame on the page.
+  workerThread: true,
 
   // Display Settings
   theme: 'dark',
-  imageRendering: 'pixelated', // Authentic DOS look + 5-15% performance gain
-  renderBackend: 'webgl', // WebGL for 2-5x rendering performance vs Canvas 2D
+  // The emulator's canvas has the DOS screen's resolution, and js-dos sets its CSS
+  // image-rendering to this, so the browser scales it up without smoothing the pixels
+  // ('smooth' leaves the browser's default smoothing)
+  imageRendering: 'pixelated',
+  renderBackend: 'webgl', // Draw frames with WebGL; js-dos uses Canvas 2D if WebGL cannot start
   renderAspect: '4/3', // Classic DOS aspect ratio
   fullScreen: false,
-  softFullscreen: true, // Better cross-platform fullscreen support
+  // With this, js-dos's fullscreen button makes the player fill the window with CSS instead of
+  // the browser's Fullscreen API, adding the class jsdos-fullscreen-workaround to the player's
+  // element. js-dos 8.3.20 styles that class only inside its root
+  // (.jsdos-rso .jsdos-fullscreen-workaround), and the root is the player's element itself,
+  // so the rule that does it is DosPlayer.css's.
+  softFullscreen: true,
 
   // Input Settings
   mouseCapture: false, // Don't auto-capture mouse
@@ -143,7 +153,8 @@ const softKeyboardSymbols: Record<string, string>[] = [
 ];
 
 /**
- * Mobile-optimized configuration
+ * The options for phones and tablets, as isMobileDevice() tells them: the desktop ones, with
+ * the on-screen keyboard layouts above
  */
 export const mobileJsDosConfig: Partial<DosOptions> = {
   ...defaultJsDosConfig,
