@@ -54,16 +54,15 @@ DosKit now includes a complete suite of web metadata, SEO optimizations, and dis
    - `social-preview.svg` (1200x630 viewBox)
    - `github-social-preview.svg` (1280x640 viewBox)
 
-2. Automated conversion using Sharp:
+2. Conversion using Sharp:
    - Script: `scripts/generate-social-images.js`
    - Converts SVG to high-quality PNG
-   - Runs automatically during build process
-   - Can be run manually: `npm run generate-social-images`
+   - Writes `og-image.png` and `github-social.png` into `public/`
+   - Run by hand after editing an SVG: `npm run generate-social-images`
 
 3. Build Integration:
-   - Added to `package.json` build script
-   - Runs before TypeScript compilation
-   - Copies images to both `public/` and `dist/` directories
+   - The build does not regenerate the images: the PNGs only change when an SVG does, and their bytes depend on the local Sharp build, so they are committed
+   - Vite copies them from `public/` into `dist/` like any other static file
 
 ### 3. SEO and Structured Data
 
@@ -215,7 +214,7 @@ public/
 
 ### Build Output
 
-All files are automatically copied to `dist/` during the build process.
+Vite copies every file in `public/` into `dist/` as it is. The build also writes `dist/404.html`, a copy of the built `index.html`.
 
 ## Build Process
 
@@ -227,25 +226,24 @@ All files are automatically copied to `dist/` during the build process.
    npm run generate-social-images
    ```
 
-   Converts SVG source files to PNG images.
+   Converts SVG source files to PNG images. Run it by hand after editing an SVG; the build does not run it.
 
 2. **Build**
    ```bash
    npm run build
    ```
    Full build process:
-   - Generate social images
+   - Copy js-dos into `public/` (the `prebuild` script)
    - TypeScript compilation
    - Vite production build
    - Service worker version injection
 
 ### Automated Steps
 
-1. `generate-social-images.js` runs first
-2. Creates PNG images from SVG sources
-3. Copies images to both `public/` and `dist/`
-4. Vite copies all public files to dist
-5. Service worker is updated with new assets
+1. `copy-js-dos.js` copies the js-dos player and emulator files from `node_modules/js-dos` into `public/` (the copies are gitignored)
+2. `tsc -b` type-checks the project
+3. Vite builds the app and copies `public/` into `dist/`, replacing `%VITE_APP_VERSION%` in `index.html` with the version in `package.json` and writing `dist/404.html`
+4. `inject-sw-version.js` gives the service worker a new cache version, the list of bundles to precache, and the js-dos version and demo archive hash that name its other caches
 
 ## Validation
 
@@ -297,7 +295,7 @@ All files are automatically copied to `dist/` during the build process.
    - `social-preview.svg`
    - `github-social-preview.svg`
 
-2. Run image generation:
+2. Run image generation (the build does not):
 
    ```bash
    npm run generate-social-images
