@@ -39,7 +39,6 @@ export const myDemoZipUrl = '/demos/my-demo.zip';
 
 export const myDemoDosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
   .addAutoexec('@echo off', 'mount c .', 'c:', 'MYDEMO.EXE')
   .build();
 ```
@@ -47,6 +46,22 @@ export const myDemoDosboxConf = presets
 Start from a preset in `src/utils/dosboxConfigBuilder.ts` (`demo()` for demos and intros,
 `musicTracker()` for trackers) and override what the program needs with the builder's setters.
 The autoexec has to mount the archive (`mount c .`), switch to it (`c:`) and start the program.
+
+The `demo()` preset runs the CPU at a fixed 30000 cycles per millisecond, and the
+`musicTracker()` preset at 18000. js-dos's sidebar shows the speed DOSBox reaches, in thousands of
+cycles per millisecond ("30 KC"). Open the app and watch its effects before you change the speed
+with `setCPU({ cycles })`:
+
+- A number runs the program at that speed throughout. StarPort, 3drotate, Unreal and Panic run at
+  30000: below it, their effects stutter or fall behind.
+- `'max'` gives the program as many cycles as the device can run. Second Reality and Crystal
+  Dream 2 run at it (at 30000, Crystal Dream 2 stops with "System overloaded!"), but not every
+  program copes with it: Panic plays no sound at `'max'`.
+- `'auto'` runs a program at 3,000 cycles per millisecond until it switches the CPU to protected
+  mode, and at `'max'` from then on, until it exits. A program that stays in real mode, as most
+  of the apps here do, gets a tenth of the preset's speed: enough for the starfield and the Squid
+  intro, but Crystal Dream 2's packed loader needed 46 seconds at it before the demo's setup
+  appeared.
 
 Every app runs on js-dos's default `dosbox` backend, set in `src/config/jsdos.config.ts`, and
 DOSBox ignores settings that backend does not have without a warning. The builder only has
@@ -130,12 +145,14 @@ table in [`docs/SCENERS.md`](../../docs/SCENERS.md) as well.
 - `npx vitest run src/config/apps.config.test.ts` checks every registered app: its loader must
   download `/demos/<id>.zip`, which must be a ZIP archive in `public/demos`, its DOSBox
   configuration must leave out the settings the default backend ignores, and its description and
-  autoexec banner must not give another year for the release than its `year`. It also checks that
-  every archive in `public/demos` belongs to an app and that `public/demos/README.md` lists it and
-  records its size and MD5 as they are.
+  autoexec banner must not give another year for the release than its `year`. A banner's `CPU:`
+  line must name the cycles the app runs at, and its `Audio:` line the Gravis UltraSound only
+  when the app has one. It also checks that every archive in `public/demos` belongs to an app and
+  that `public/demos/README.md` lists it and records its size and MD5 as they are.
 - Run `npm run dev` and open `http://localhost:5173/?app=my-demo` (Vite takes the next free port
   if 5173 is in use, and prints the address). The program should start on its own, not stop at a
-  DOS prompt or an error.
+  DOS prompt or an error, and its effects should keep their speed (see the CPU speed notes in
+  step 2).
 
 ## Legal considerations
 

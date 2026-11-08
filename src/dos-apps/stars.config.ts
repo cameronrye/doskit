@@ -28,7 +28,8 @@ export const starsZipUrl = '/demos/stars.zip';
  * - Memory: Minimal (runs in 640KB)
  *
  * This configuration uses:
- * - Auto CPU core, type and cycles
+ * - Auto CPU core, type and cycles. 'auto' gives it 3,000 cycles/ms, at which its stars still
+ *   move at full speed.
  * - Standard VGA graphics
  */
 export const starsDosboxConf = presets

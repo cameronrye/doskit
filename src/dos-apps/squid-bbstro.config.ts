@@ -29,7 +29,8 @@ export const squidBbstroZipUrl = '/demos/squid-bbstro.zip';
  * - Memory: Minimal (runs in 640KB)
  *
  * This configuration uses:
- * - Auto CPU core, type and cycles (more than enough)
+ * - Auto CPU core, type and cycles. 'auto' gives it 3,000 cycles/ms, at which it still draws
+ *   all 70 frames a second.
  * - AdLib for audio (as specified in the source)
  * - Standard VGA graphics
  *
