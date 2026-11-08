@@ -85,15 +85,18 @@ Location: `index.html` (in `<head>`)
 Implements Schema.org types:
 
 - **WebSite**: Site-level information
-- **SoftwareApplication**: Application details, features, ratings
+- **SoftwareApplication**: Application details, version and features
 - **Person**: Author/developer information
 - **WebPage**: Page-specific metadata
 - **ImageObject**: Primary image information
 
+`softwareVersion` is `%VITE_APP_VERSION%` in `index.html`; the build replaces it with the version in `package.json`, so a release needs no edit here.
+
+There is no `aggregateRating`: the five-star rating the markup once carried came from no real reviews. Google only shows its software app rich result for markup with an `aggregateRating` or a `review`, so DosKit's markup describes the site without earning that result. Add a rating only once real reviews exist.
+
 Benefits:
 
 - Enhanced search engine understanding
-- Rich snippets in search results
 - Better indexing of application features
 - Improved knowledge graph representation
 
@@ -265,6 +268,7 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
    - URL: https://search.google.com/test/rich-results
    - Enter URL: https://doskit.net/
    - Verify structured data is valid
+   - Expect it to flag the SoftwareApplication for having no `aggregateRating` or `review` (see JSON-LD Structured Data)
 
 2. **Schema.org Validator**
    - URL: https://validator.schema.org/
@@ -300,7 +304,7 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 
 ### Updating Metadata
 
-1. **index.html**: Update meta tags as needed
+1. **index.html**: Update meta tags as needed; the build fills in the JSON-LD's `softwareVersion`
 2. **sitemap.xml**: Update lastmod dates when content changes
 3. **llm.txt / llm-full.txt**: Update when features or documentation changes
 4. **humans.txt**: Update when team or technology changes
@@ -322,7 +326,8 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 
 3. **Structured Data**
    - Validate after changes
-   - Keep version numbers updated
+   - Leave `softwareVersion` as `%VITE_APP_VERSION%`: the build fills it in from `package.json`
+   - Only add ratings or reviews that real users left
    - Ensure URLs are absolute
    - Use proper Schema.org types
 
