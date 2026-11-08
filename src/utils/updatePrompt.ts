@@ -29,6 +29,14 @@ export function showUpdateNotification(registration: ServiceWorkerRegistration):
   notificationContainer.id = CONTAINER_ID;
   document.body.appendChild(notificationContainer);
 
+  // A running js-dos takes every key that reaches window and cancels it, so Tab, Enter and
+  // Space would do nothing in the prompt and be typed into DOS. Keys pressed in the prompt
+  // stop at its root, once React, which listens there, has handled them. (The prompt is
+  // outside #root, whose keys App keeps from js-dos itself.)
+  const keepKeyFromJsDos = (event: KeyboardEvent) => event.stopPropagation();
+  notificationContainer.addEventListener('keydown', keepKeyFromJsDos);
+  notificationContainer.addEventListener('keyup', keepKeyFromJsDos);
+
   // Render the update notification
   const notificationRoot = createRoot(notificationContainer);
   notificationRoot.render(
