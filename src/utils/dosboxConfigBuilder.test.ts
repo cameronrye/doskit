@@ -78,8 +78,13 @@ describe('DOSBoxConfigBuilder', () => {
       builder.setCPU({ cputype: 'pentium' });
       // @ts-expect-error: there is no Pentium MMX type; DOSBox would use auto
       builder.setCPU({ cputype: 'pentium_mmx' });
-      // @ts-expect-error: there are no scalers, only none
-      builder.setRender({ scaler: 'normal2x' });
+      // @ts-expect-error: there is no hq2x scaler; DOSBox would use normal2x
+      builder.setRender({ scaler: 'hq2x' });
+    });
+
+    it('should accept only the scaler that says what happens', () => {
+      // @ts-expect-error: the backend has normal2x too, but frames reach js-dos unscaled either way
+      createDOSBoxConfig().setRender({ scaler: 'normal2x' });
     });
 
     it('should not accept properties the backend would drop', () => {

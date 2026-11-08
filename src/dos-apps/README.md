@@ -65,8 +65,9 @@ with `setCPU({ cycles })`:
 
 Every app runs on js-dos's default `dosbox` backend, set in `src/config/jsdos.config.ts`, and
 DOSBox ignores settings that backend does not have without a warning. The builder only has
-options for settings that backend applies, and only accepts the CPU cores, CPU types, scaler,
-sample rates and prebuffer values it has. That rules out a few settings DOSBox guides suggest:
+options for settings that backend applies, and only accepts the CPU cores, CPU types, sample rates
+and prebuffer values it has. Its only scaler is `none`: the backend also accepts `normal2x`, but
+frames reach js-dos unscaled either way. That rules out a few settings DOSBox guides suggest:
 
 - There is no dynamic core: `core` is `auto`, `normal` or `simple`.
 - There is no `486` or `pentium` CPU type: `cputype` `auto` is the usual choice.
