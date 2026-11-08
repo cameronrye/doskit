@@ -25,7 +25,8 @@ interface DosPlayerWithAppsProps {
   showSelector?: boolean;
   /**
    * App to run, such as the one a URL names. Each new value loads that app unless it is
-   * already running. Apps picked in the selector run without it.
+   * already running; null runs the default DOS prompt. Apps picked in the selector run
+   * without it.
    */
   requestedApp?: DosApp | null;
   /** Called when an app starts running (picked or requested), and with null after a reset */
@@ -64,7 +65,9 @@ export function DosPlayerWithApps({
   if ((requestedApp?.id ?? null) !== requestedId) {
     setRequestedId(requestedApp?.id ?? null);
     setError(null);
-    if (requestedApp && requestedApp.id !== session?.app?.id) {
+    if (!requestedApp) {
+      setSession(DEFAULT_PROMPT);
+    } else if (requestedApp.id !== session?.app?.id) {
       setLoadingApp(requestedApp);
     }
   }

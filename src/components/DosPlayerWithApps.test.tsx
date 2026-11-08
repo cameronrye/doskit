@@ -561,6 +561,28 @@ describe('DosPlayerWithApps', () => {
       expect(onSelectorVisibilityChange).not.toHaveBeenCalledWith(false);
     });
 
+    it('stops the running app and boots the default prompt when no app is requested', async () => {
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      await stars.finish();
+
+      rerender(<DosPlayerWithApps requestedApp={null} />);
+
+      expect(boots).toEqual(['conf:stars', 'default']);
+      expect(screen.getByTestId('dos-player-mock')).toHaveAttribute('data-dosbox-conf', 'default');
+    });
+
+    it('replaces a load error with the default prompt when no app is requested', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { rerender } = render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+      expect(await screen.findByText('Error Loading Application')).toBeInTheDocument();
+
+      rerender(<DosPlayerWithApps requestedApp={null} />);
+
+      expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+      expect(boots).toEqual(['default']);
+    });
+
     it('clears an earlier load error when another app is requested', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       const stars = deferredApp('stars');
