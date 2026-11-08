@@ -49,7 +49,7 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 
 ### PWA Features
 
-- **Installable**: Install DosKit as a native app on desktop and mobile. Where the browser offers installation, DosKit suggests it 5 seconds after load, waits 7 days after each dismissal, and stops asking after the third
+- **Installable**: Install DosKit as a native app on desktop and mobile; Firefox on Windows runs it as a web app pinned to the taskbar, from the web apps icon in its address bar. In Chromium browsers, which tell the page when it can be installed, DosKit suggests it 5 seconds after that, waits 7 days after each dismissal, and stops asking after the third
 - **Offline Support**: After the first visit the app works offline (see Service Worker under Architecture)
 - **Fast Loading**: Service worker caches assets for instant loading
 - **Native Experience**: Standalone mode without browser UI
@@ -596,7 +596,7 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 |---------|------------|-------------|--------------|----------|--------|
 | WebAssembly | Yes | Yes | Yes | Yes | Yes |
 | Service Workers | Yes | Yes | Yes | Yes | Yes |
-| PWA Install | Yes | No | 17+ | Yes | Yes |
+| PWA Install | Yes | 143+ on Windows | 17+ | Yes | Yes |
 | Fullscreen API | Yes | Yes | Yes | Yes | Partial |
 | Keyboard Lock | Yes | No | No | Yes | No |
 | Audio | Yes | Yes | Yes | Yes | Yes |

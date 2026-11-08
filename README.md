@@ -103,6 +103,12 @@ DosKit is a fully-featured **Progressive Web App** that can be installed on your
 2. Click the install icon (⊕) in the address bar
 3. Click "Install" to add to your desktop
 
+**Desktop (Firefox on Windows):**
+
+1. Visit the live demo
+2. Click the web apps icon in the address bar
+3. DosKit is added to the taskbar, and opens in a window of its own
+
 **Mobile (Android):**
 
 1. Visit the live demo in Chrome
@@ -575,16 +581,16 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 
 ### Detailed Compatibility Matrix
 
-| Feature         | Chrome 98+ | Firefox 94+ | Safari 15.4+ | Edge 98+ | Mobile  |
-| --------------- | ---------- | ----------- | ------------ | -------- | ------- |
-| WebAssembly     | Yes        | Yes         | Yes          | Yes      | Yes     |
-| Service Workers | Yes        | Yes         | Yes          | Yes      | Yes     |
-| PWA Install     | Yes        | No          | 17+          | Yes      | Yes     |
-| Fullscreen API  | Yes        | Yes         | Yes          | Yes      | Partial |
-| Keyboard Lock   | Yes        | No          | No           | Yes      | No      |
-| Audio           | Yes        | Yes         | Yes          | Yes      | Yes     |
-| Touch Controls  | N/A        | N/A         | N/A          | N/A      | Partial |
-| Offline Mode    | Yes        | Yes         | Yes          | Yes      | Yes     |
+| Feature         | Chrome 98+ | Firefox 94+     | Safari 15.4+ | Edge 98+ | Mobile  |
+| --------------- | ---------- | --------------- | ------------ | -------- | ------- |
+| WebAssembly     | Yes        | Yes             | Yes          | Yes      | Yes     |
+| Service Workers | Yes        | Yes             | Yes          | Yes      | Yes     |
+| PWA Install     | Yes        | 143+ on Windows | 17+          | Yes      | Yes     |
+| Fullscreen API  | Yes        | Yes             | Yes          | Yes      | Partial |
+| Keyboard Lock   | Yes        | No              | No           | Yes      | No      |
+| Audio           | Yes        | Yes             | Yes          | Yes      | Yes     |
+| Touch Controls  | N/A        | N/A             | N/A          | N/A      | Partial |
+| Offline Mode    | Yes        | Yes             | Yes          | Yes      | Yes     |
 
 ### Known Limitations
 
