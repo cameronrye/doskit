@@ -119,7 +119,7 @@ StrictMode (main.tsx)
 
 UpdateNotification is not part of this tree: src/utils/updatePrompt.ts mounts it in a React root of its own when a new service worker is waiting, or another tab has let one take over.
 
-DosPlayerWithApps reports its status to App, which shows it in the footer's badge: Loading while an application downloads or the emulator starts, Ready once js-dos reports the emulator ready, and Error while the load error or the player's start error shows, or once the ErrorBoundary around the player has caught an error. js-dos sends no event when its own download of the emulator's files fails after it has started, so the badge stays at Loading then, while js-dos shows the failure in its own panel. Screen readers announce the badges' changes (a status region).
+DosPlayerWithApps reports its status to App, which shows it in the footer's badge: Loading while an application the URL asks for (a deep link, Back and Forward, or Try Again) downloads and while an emulator starts (while the selector downloads an application, the badge keeps the status of the player still running behind it), Ready once js-dos reports the emulator ready, and Error while the load error or the player's start error shows, or once the ErrorBoundary around the player has caught an error. js-dos sends no event when its own download of the emulator's files fails after it has started, so the badge stays at Loading then, while js-dos shows the failure in its own panel. Screen readers announce the badges' changes (a status region).
 
 In development, StrictMode mounts every component twice at once, so each DosPlayer starts js-dos twice in its element: useDosEmulator stops the first start's player and ignores its events, and on a fresh page the adapter holds the second start back until emulators.js, which the first one loads, has run. Production builds mount each component once.
 
@@ -129,7 +129,7 @@ In development, StrictMode mounts every component twice at once, so each DosPlay
 2. **Emulator Initialization**: DosPlayer component mounts → useDosEmulator starts js-dos with the merged options (DosKit's, then the settings saved from js-dos's settings panel, then the player's own) → js-dos loads the DOSBox backend from /emulators/ → DOSBox initializes with the DOSBox configuration
 3. **User Interaction**: User types commands → js-dos processes input → DOSBox executes → Screen updates
 4. **Deep Linking**: App id read from `?app=` or the path → URL rewritten to `/?app=<id>` → DosPlayerWithApps downloads the app's ZIP archive and DOSBox configuration → Emulator starts with app, without booting the default prompt first
-5. **Selecting an App**: User picks an app in DemoSelector → its archive downloads, with its progress in percent (or in megabytes when the response gives no size), cancellable, and fails if nothing arrives for 20 seconds → DosPlayerWithApps starts a new DosPlayer with the files, also for the app already running, which starts again → the URL becomes `/?app=<id>` in a new history entry
+5. **Selecting an App**: User picks an app in DemoSelector → its archive downloads, with its progress in percent (or in megabytes when the response gives no size), cancellable, and fails if nothing arrives for 20 seconds → DosPlayerWithApps starts a new DosPlayer with the files, also for the app already running, which starts again → the URL becomes `/?app=<id>`, in a new history entry unless it already is (as when the running app is picked again)
 
 ### State Management
 
@@ -370,7 +370,7 @@ Keys pressed on DosKit's own controls (the selector, the header's button, the no
 - Starfield Effect (Draeden of VLA, 1993): https://doskit.net/?app=stars
 - Crystal Dream 2 (Triton, 1993): https://doskit.net/?app=crystaldream2
 
-While Impulse Tracker or Scream Tracker 3 runs, closing or reloading the page asks first. A song in progress lives only in the emulator's memory, as does any file saved inside an application, and is gone once another player starts or the page reloads; and browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, so Scream Tracker 3's Ctrl-W (save) would close the tab.
+While Impulse Tracker or Scream Tracker 3 runs, closing or reloading the page asks first. A song in progress lives only in the emulator's memory, as does any file saved inside an application, and is gone once another player starts or the page reloads; and on Windows, Linux and ChromeOS browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, so there Scream Tracker 3's Ctrl-W (save) would close the tab (macOS browsers use ⌘ for these, and Ctrl+W reaches DOS).
 
 ### Deep Linking
 
@@ -396,7 +396,7 @@ An application in the selector is three pieces, and `src/dos-apps/README.md` wal
 2. A config module, `src/dos-apps/<id>.config.ts`, with the archive's URL and the DOSBox configuration, built from a preset in `src/utils/dosboxConfigBuilder.ts`
 3. An entry in `availableApps` in `src/config/apps.config.ts`, which imports the config module lazily
 
-The guide also has the application recorded in more places: a row in the table of `public/demos/README.md`, with the ZIP's size and MD5, and an entry there with the archive's source, year, authors and terms; a line in this file's Bundled Applications list; ROADMAP.md's list of the applications and its three counts of them; and `docs/SCENERS.md`, for a program from the sceners organization.
+The guide also has the application recorded in more places: a row in the table of `public/demos/README.md`, and an entry there with what the ZIP holds, its size in bytes and MD5, and the archive's source, year, authors and terms; a line in this file's Bundled Applications list; ROADMAP.md's list of the applications and its three counts of them; and `docs/SCENERS.md`, for a program from the sceners organization.
 
 `npx vitest run src/config/apps.config.test.ts` checks every registered application: that its archive is a ZIP in `public/demos`, that its DOSBox configuration leaves out the settings the default backend ignores, and that its description and banner give no other release year than its registry entry. It also checks that every archive in `public/demos` belongs to an application and that `public/demos/README.md` records the archive's size and MD5 as they are. Only add programs you may redistribute.
 
@@ -625,9 +625,9 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 | Touch Controls | N/A | N/A | N/A | N/A | Partial |
 | Offline Mode | Yes | Yes | Yes | Yes | Yes |
 
-Touch Controls are partial on mobile because js-dos draws the on-screen keyboard inside the player, under the DOS screen, without scrolling, so on a short player the bottom rows of a layout are cut off: on an upright phone the size of an iPhone 13, the last rows of the function-key layout's keypad, and held sideways, the bottom rows of the compact layout too. The fullscreen button in the js-dos sidebar gives the player the whole window, where every layout fits on such a phone. js-dos's own layouts, which desktop browsers and iPads in Safari get, press nothing for their \ and / keys and keypad 0 for `.
+Touch Controls are partial on mobile because js-dos draws the on-screen keyboard inside the player, under the DOS screen, without scrolling, so on a short player the bottom rows of a layout are cut off: on an upright phone the size of an iPhone 13, the function-key layout's keypad, all four of its rows while an app runs (at the DOS prompt, whose header is shorter, the last three, one of them partly), and held sideways, the compact layout's bottom row, its ← ↓ → keys. The fullscreen button in the js-dos sidebar gives the player the whole window, where every layout fits on such a phone. js-dos's own layouts, which desktop browsers and iPads in Safari get, press nothing for their \ and / keys and keypad 0 for `.
 
-DosKit's fullscreen is js-dos's soft fullscreen, which makes the player fill the window with CSS and calls no Fullscreen API. js-dos also asks for a keyboard lock (of W and Escape) at every start, but the browsers that have the Keyboard Lock API, Chromium ones such as Chrome and Edge, apply a lock only in the fullscreen the Fullscreen API starts, so it never takes effect in DosKit: browsers keep shortcuts such as Ctrl+W, Ctrl+N and Ctrl+T for themselves.
+DosKit's fullscreen is js-dos's soft fullscreen, which makes the player fill the window with CSS and calls no Fullscreen API. js-dos also asks for a keyboard lock (of W and Escape) at every start, but the browsers that have the Keyboard Lock API, Chromium ones such as Chrome and Edge, apply a lock only in the fullscreen the Fullscreen API starts, so it never takes effect in DosKit: browsers keep their shortcuts for themselves, such as Ctrl+W, Ctrl+N and Ctrl+T on Windows and Linux (⌘W, ⌘N and ⌘T on macOS).
 
 ## Troubleshooting
 
