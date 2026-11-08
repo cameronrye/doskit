@@ -110,7 +110,8 @@ function tabStopsIn(root: HTMLElement | null): HTMLElement[] {
  * or else the megabytes received, with no percentage for the bar
  */
 function describeProgress(progress: LoadProgress | null): { percent: number | null; text: string } {
-  if (!progress) {
+  // Nothing yet, or a download that has only started, or an answer that gives no size
+  if (!progress || (progress.loadedBytes === 0 && progress.totalBytes === null)) {
     return { percent: null, text: 'Starting download…' };
   }
   const { loadedBytes, totalBytes } = progress;
@@ -202,8 +203,9 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
   /**
    * Load an application, with cancellation support. Takes the app rather than reading
    * the selection, which a double-click sets in the same event and is not visible here
-   * until the next render. There is no time limit here: the download fails by itself
-   * when no data arrives for a while, however long one that keeps going takes.
+   * until the next render. The only time limit here is on the start of the download, which
+   * then fails by itself when no data arrives for a while, however long one that keeps
+   * going takes.
    */
   const handleLoadApp = useCallback(
     async (app: DosApp) => {
@@ -223,8 +225,9 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
       setLoadProgress(null);
 
       // An app's loader imports its config chunk before its download starts, and only the
-      // download times itself out, from its request on: a load that has reported nothing for
-      // as long gives up here, so that a chunk that never arrives fails as a stall does
+      // download times itself out, from its request on, retries included: a load whose
+      // download has not reported its start for as long gives up here, so that a chunk that
+      // never arrives fails as a stall does
       const startTimer = setTimeout(() => {
         if (loadRef.current?.controller !== controller) return;
         controller.abort();

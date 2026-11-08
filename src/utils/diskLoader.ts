@@ -14,8 +14,8 @@ export interface LoadProgress {
   /** Bytes received so far */
   loadedBytes: number;
   /**
-   * The archive's size from the response's Content-Length, or null when it gives none
-   * that can be read, or once more bytes have arrived than it said
+   * The archive's size from the response's Content-Length, or null before the response,
+   * when it gives none that can be read, or once more bytes have arrived than it said
    */
   totalBytes: number | null;
 }
@@ -90,8 +90,8 @@ function joinChunks(chunks: Uint8Array[], length: number): Uint8Array {
  * Load a ZIP archive for js-dos
  * js-dos can automatically extract ZIP files
  * @param zipUrl URL to the ZIP file
- * @param onProgress Optional progress callback: once the response arrives, and after each
- *   chunk of the archive, but never once the download is aborted
+ * @param onProgress Optional progress callback: as the request starts, once the response
+ *   arrives, and after each chunk of the archive, but never once the download is aborted
  * @param signal Optional AbortSignal to cancel the operation
  * @returns Uint8Array of the ZIP file
  * @throws {Error} A "TimeoutError" when no data arrives for 20 seconds
@@ -129,6 +129,8 @@ export async function loadZipArchive(
 
   try {
     restartStallTimer();
+    // From here on the download times itself out, which its caller may want to know
+    report({ loadedBytes: 0, totalBytes: null });
     const response = await untilAborted(
       fetchWithRetry(
         zipUrl,

@@ -99,6 +99,25 @@ describe('diskLoader', () => {
         return onProgress.mock.calls.map(([progress]) => progress);
       };
 
+      // The download times itself out from its request on, retries included, so a caller
+      // that times the steps before it, as the selector does, can stop once it has started
+      it('reports its start before any answer arrives', async () => {
+        answerLater();
+        const controller = new AbortController();
+        const onProgress = vi.fn();
+        const download = loadZipArchive(
+          'http://example.com/archive.zip',
+          onProgress,
+          controller.signal
+        );
+        await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+
+        expect(onProgress.mock.calls).toEqual([[{ loadedBytes: 0, totalBytes: null }]]);
+
+        controller.abort();
+        await expect(download).rejects.toBe(controller.signal.reason);
+      });
+
       it('reports the bytes received, against the size the response gives', async () => {
         const response = chunkedResponse(
           [
@@ -111,6 +130,7 @@ describe('diskLoader', () => {
         );
 
         expect(await progressOf(response)).toEqual([
+          { loadedBytes: 0, totalBytes: null },
           { loadedBytes: 0, totalBytes: 10 },
           { loadedBytes: 4, totalBytes: 10 },
           { loadedBytes: 10, totalBytes: 10 },
@@ -124,6 +144,7 @@ describe('diskLoader', () => {
         const response = chunkedResponse([[80, 75, 3, 4]], headers);
 
         expect(await progressOf(response)).toEqual([
+          { loadedBytes: 0, totalBytes: null },
           { loadedBytes: 0, totalBytes: null },
           { loadedBytes: 4, totalBytes: null },
         ]);
@@ -141,6 +162,7 @@ describe('diskLoader', () => {
         );
 
         expect(await progressOf(response)).toEqual([
+          { loadedBytes: 0, totalBytes: null },
           { loadedBytes: 0, totalBytes: 4 },
           { loadedBytes: 4, totalBytes: 4 },
           { loadedBytes: 6, totalBytes: null },
@@ -265,7 +287,8 @@ describe('diskLoader', () => {
           onProgress,
           controller.signal
         );
-        await vi.waitFor(() => expect(onProgress).toHaveBeenCalled());
+        // Its start, then its response
+        await vi.waitFor(() => expect(onProgress).toHaveBeenCalledTimes(2));
 
         controller.abort();
 
@@ -284,14 +307,15 @@ describe('diskLoader', () => {
           onProgress,
           controller.signal
         );
-        await vi.waitFor(() => expect(onProgress).toHaveBeenCalledTimes(1));
+        // Its start, then its response
+        await vi.waitFor(() => expect(onProgress).toHaveBeenCalledTimes(2));
 
         // The chunk is in, but the loader has not handled it yet when the caller aborts
         send([80, 75, 3, 4]);
         queueMicrotask(() => controller.abort());
 
         await expect(download).rejects.toBeDefined();
-        expect(onProgress).toHaveBeenCalledTimes(1);
+        expect(onProgress).toHaveBeenCalledTimes(2);
       });
     });
 

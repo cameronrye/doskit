@@ -380,6 +380,14 @@ describe('DemoSelector', () => {
         expect(bar).not.toHaveAttribute('aria-valuenow');
       });
 
+      // As loadZipArchive reports at its request, and for an answer that gives no size
+      it('says the download is starting while neither bytes nor a size have arrived', async () => {
+        const bar = await loadReporting({ loadedBytes: 0, totalBytes: null });
+
+        expect(screen.getByText('Starting download…')).toBeInTheDocument();
+        expect(bar).not.toHaveAttribute('aria-valuenow');
+      });
+
       it('shows the share downloaded when the size is known', async () => {
         const bar = await loadReporting(
           { loadedBytes: 0, totalBytes: 2_000_000 },
@@ -558,14 +566,15 @@ describe('DemoSelector', () => {
       expect(loadZipArchive).toHaveBeenCalledTimes(2);
     });
 
-    // loadZipArchive gives up on a download that stalls; one that keeps going may take
-    // minutes on a slow connection
-    it('sets no time limit of its own on a download', async () => {
+    // loadZipArchive gives up on a download that stalls, from its request on, retries
+    // included; one that keeps going may take minutes on a slow connection
+    it('sets no time limit of its own on a download that has started', async () => {
       vi.useFakeTimers();
       try {
-        // A download that has its response, as loadZipArchive reports, and goes on and on
+        // A download that has reported its start, as loadZipArchive does at its request, and
+        // gets no answer for minutes, as from a server whose slow errors it retries
         vi.mocked(loadZipArchive).mockImplementation((_url, onProgress) => {
-          onProgress?.({ loadedBytes: 0, totalBytes: 2_000_000 });
+          onProgress?.({ loadedBytes: 0, totalBytes: null });
           return new Promise(() => {});
         });
         render(<DemoSelector onSelect={mockOnSelect} />);
@@ -589,6 +598,7 @@ describe('DemoSelector', () => {
       vi.useFakeTimers();
       vi.spyOn(console, 'error').mockImplementation(() => {});
       try {
+        // It never reports its start, as for a loader whose config chunk never arrives
         vi.mocked(loadZipArchive).mockImplementation(() => new Promise(() => {}));
         render(<DemoSelector onSelect={mockOnSelect} />);
         fireEvent.click(getFloppyDiskByName('Second Reality')!);
