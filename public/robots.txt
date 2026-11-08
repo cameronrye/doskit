@@ -14,66 +14,66 @@ Disallow: /*.map$
 # OpenAI: https://developers.openai.com/api/docs/bots
 User-agent: GPTBot
 Allow: /
-Allow: /llm.txt
-Allow: /llm-full.txt
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /*.map$
 
 User-agent: OAI-SearchBot
 Allow: /
-Allow: /llm.txt
-Allow: /llm-full.txt
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /*.map$
 
 User-agent: ChatGPT-User
 Allow: /
-Allow: /llm.txt
-Allow: /llm-full.txt
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /*.map$
 
 # Common Crawl: https://commoncrawl.org/ccbot
 User-agent: CCBot
 Allow: /
-Allow: /llm.txt
-Allow: /llm-full.txt
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /*.map$
 
 # Anthropic: https://support.claude.com/en/articles/8896518
 User-agent: ClaudeBot
 Allow: /
-Allow: /llm.txt
-Allow: /llm-full.txt
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /*.map$
 
 User-agent: Claude-SearchBot
 Allow: /
-Allow: /llm.txt
-Allow: /llm-full.txt
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /*.map$
 
 User-agent: Claude-User
 Allow: /
-Allow: /llm.txt
-Allow: /llm-full.txt
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /*.map$
 
 # Google: https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers
 User-agent: Google-Extended
 Allow: /
-Allow: /llm.txt
-Allow: /llm-full.txt
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /*.map$
 
 # Perplexity: https://docs.perplexity.ai/docs/resources/perplexity-crawlers
 User-agent: PerplexityBot
 Allow: /
-Allow: /llm.txt
-Allow: /llm-full.txt
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /*.map$
 
 User-agent: Perplexity-User
 Allow: /
-Allow: /llm.txt
-Allow: /llm-full.txt
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /*.map$
 
 # Sitemap location

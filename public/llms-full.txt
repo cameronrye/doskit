@@ -184,8 +184,9 @@ doskit/
 │   ├── sitemap.xml            # SEO sitemap
 │   ├── robots.txt             # Crawler rules
 │   ├── humans.txt             # Team credits
-│   ├── llm.txt                # LLM discovery (concise)
-│   └── llm-full.txt           # LLM discovery (comprehensive)
+│   ├── llms.txt               # LLM discovery (concise), in the llms.txt proposal's format
+│   ├── llms-full.txt          # LLM discovery (comprehensive): this file
+│   └── llm.txt, llm-full.txt  # The old names, pointing to the two above
 ├── scripts/                   # Build and utility scripts, and tests of the build
 │   ├── copy-js-dos.js         # Copies js-dos into public/ before dev and build
 │   ├── inject-sw-version.js   # Stamps the built service worker
@@ -715,5 +716,5 @@ DOS, emulator, DOSBox, WebAssembly, WASM, js-dos, demoscene, music trackers, cro
 
 ---
 
-Last updated: 2026-11-07
+Last updated: 2026-11-08
 

@@ -64,7 +64,7 @@ MIT License - Copyright (c) 2025 Cameron Rye
 - GitHub: https://github.com/cameronrye/doskit
 - Author: Cameron Rye <cameron@rye.dev>
 - Documentation: https://github.com/cameronrye/doskit/tree/main/docs
-- Full documentation for LLMs: https://doskit.net/llm-full.txt
+- Full documentation for LLMs: https://doskit.net/llms-full.txt
 
 ## Browser Compatibility
 

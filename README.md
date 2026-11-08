@@ -176,6 +176,8 @@ doskit/
 │   ├── icons/                     # PWA icons
 │   ├── manifest.json              # PWA manifest
 │   ├── sw.js                      # Service worker
+│   ├── llms.txt                   # Summary and links for language models (llmstxt.org)
+│   ├── llms-full.txt              # The full documentation, in one file, for language models
 │   ├── emulators/                 # js-dos emulator files (generated)
 │   ├── js-dos.js                  # js-dos player (generated)
 │   └── js-dos.css                 # js-dos styles (generated)

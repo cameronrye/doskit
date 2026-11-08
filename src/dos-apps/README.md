@@ -107,7 +107,7 @@ its own files, or that none were found. The registry entry's `author` and `year`
 
 ### 5. List it
 
-[`public/llm-full.txt`](../../public/llm-full.txt) repeats the registry under "Bundled
+[`public/llms-full.txt`](../../public/llms-full.txt) repeats the registry under "Bundled
 Applications", for readers that only fetch that file. Add the app there in the same form:
 
 ```text
