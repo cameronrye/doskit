@@ -57,6 +57,93 @@ export const defaultJsDosConfig: Partial<DosOptions> = {
 };
 
 /**
+ * The on-screen keyboard's layouts, each a list of columns of rows of key names separated by
+ * spaces (see SoftKeyboardLayout in src/types/js-dos.d.ts for the names). Its {layout} key,
+ * labelled ⎘, switches to the next layout, and from the last back to the first.
+ */
+const softKeyboardLayout: string[][][] = [
+  // DosKit's compact layout, which fits upright phones: the keys most programs need
+  [
+    [
+      '{esc} {f1} {f2} {f3} {f5}',
+      '1 2 3 4 5 {bksp}',
+      'q w e r t',
+      'a s d f g',
+      'z x c v b',
+      '{layout} {ctrl} {alt} {space} {enter}',
+      '{up}',
+      '{left} {down} {right}',
+    ],
+  ],
+  // js-dos 8.3.20's own two layouts, which its keyboard shows unless given others
+  // (softKeyboardLayout in its src/store/dos.ts): the full keyboard first, then function keys
+  // and a keypad. Three of its keys do not press what they show: js-dos presses nothing for \
+  // and / and keypad 0 for `. It reads a one-character name as the browser key code equal to
+  // its character code, and the browser's codes for those keys are those of Ü, ¿ and À, so
+  // here those are their names, which the labels below show as \ / and `. Its {symbols} key,
+  // which switches to its labels in Russian, is left out: DosKit gives one set of labels.
+  [
+    [
+      '{esc} À 1 2 3 4 5 6 7 8 9 0 ( ) - = {bksp} {enter}',
+      '{tab} q w e r t y u i o p { } Ü [ ] {up}',
+      "{shift} {left} {right} a s d f g h j k l : ; ' [ {down}",
+      '{layout} {alt} {ctrl} z x c v b n m , . ¿ ] {space}',
+    ],
+  ],
+  [
+    [
+      '{esc} {f1} {f2} {f3} {f4}',
+      '0 1 2 3 4',
+      '5 6 7 8 9',
+      '{ } ( ) {shift}',
+      '{layout} {ctrl} {alt} {space}',
+    ],
+    ['{f5} {f6} {f7} {f8}', '{pgup} {pgdown} {bksp}', '', '{up}', '{left} {down} {right}'],
+    [
+      '{f9} {f10} {f11} {f12}',
+      '{del} {kp7} {kp8} {kp9}',
+      '{tab} {kp4} {kp5} {kp6}',
+      '- {kp1} {kp2} {kp3}',
+      '+ {kp0} . {enter}',
+    ],
+  ],
+];
+
+/**
+ * Labels for the keys, by key name: js-dos 8.3.20's own (the first of its two sets, in its
+ * src/store/dos.ts) but for {symbols}, and \ / and ` for the keys named Ü, ¿ and À. A key
+ * without one shows its name, capitalised and without braces ({ctrl} shows Ctrl).
+ */
+const softKeyboardSymbols: Record<string, string>[] = [
+  {
+    '{esc}': '␛',
+    '{bksp}': '⌫',
+    '{enter}': '↵',
+    '{up}': '↑',
+    '{down}': '↓',
+    '{left}': '←',
+    '{right}': '→',
+    '{shift}': '⇑',
+    '{layout}': '⎘',
+    '{pgup}': 'PgUp',
+    '{pgdown}': 'PgDown',
+    '{kp7}': '↖',
+    '{kp8}': '↑',
+    '{kp9}': '↗',
+    '{kp5}': '5',
+    '{kp4}': '←',
+    '{kp6}': '→',
+    '{kp1}': '↙',
+    '{kp2}': '↓',
+    '{kp3}': '↘',
+    '{kp0}': '0',
+    Ü: '\\',
+    '¿': '/',
+    À: '`',
+  },
+];
+
+/**
  * Mobile-optimized configuration
  */
 export const mobileJsDosConfig: Partial<DosOptions> = {
@@ -64,21 +151,10 @@ export const mobileJsDosConfig: Partial<DosOptions> = {
   softFullscreen: true,
   scaleControls: 0.4, // Larger controls for touch
   mouseCapture: false,
-  // The on-screen keyboard behind the keyboard button in the js-dos sidebar, in place of
-  // js-dos's own: rows of key names separated by spaces (see SoftKeyboardLayout in
-  // src/types/js-dos.d.ts for the names)
-  softKeyboardLayout: [
-    '{esc} {f1} {f2} {f3} {f5}',
-    '1 2 3 4 5',
-    'q w e r t',
-    'a s d f g',
-    'z x c v b',
-    '{ctrl} {alt} {space} {enter}',
-    '{up}',
-    '{left} {down} {right}',
-  ],
-  // Arrows for the arrow keys, which would otherwise read Up, Down, Left and Right
-  softKeyboardSymbols: [{ '{up}': '↑', '{down}': '↓', '{left}': '←', '{right}': '→' }],
+  // The on-screen keyboard behind the keyboard button in the js-dos sidebar: DosKit's compact
+  // layout first, then js-dos's own two
+  softKeyboardLayout,
+  softKeyboardSymbols,
 };
 
 /**
