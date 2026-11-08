@@ -29,10 +29,14 @@ export default defineConfig({
         'public/**',
         'scripts/**',
       ],
+      // About 3 points under the coverage measured in November 2026 (statements 89.19%,
+      // branches 78.21%, functions 91.19%, lines 89.44%): room for small shifts as tests
+      // change, while a real drop fails CI. Raise them as coverage grows.
       thresholds: {
-        lines: 69,
-        branches: 50,
-        statements: 69,
+        statements: 86,
+        branches: 75,
+        functions: 88,
+        lines: 86,
       },
     },
   },
