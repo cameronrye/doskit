@@ -145,7 +145,7 @@ In development, StrictMode mounts every component twice at once, so each DosPlay
 - **js-dos's files** (`/js-dos.js`, `/js-dos.css` and `/emulators/`): cache first, from a cache named after the js-dos version, which deploys keep, and never refreshed, so a page always gets the player and the emulator files of the js-dos its worker installed; DOSBox-X is not precached and is stored on first use
 - **Application archives** (`/demos/*.zip`): cache first, from a cache named after a hash of the archives, which deploys keep while the archives stay the same; each is stored on first use
 - **Other assets** (the manifest, the logo and icons): stale-while-revalidate, in a cache of at most 100 entries that trims the least recently used, never the precached files
-- **Updates**: each new build installs as a new worker, which waits until the user accepts the update prompt
+- **Updates**: a build that changes a file the site serves, or the worker, installs as a new worker, which waits until the user accepts the update prompt or every tab of the app has closed. The worker's cache version is a hash of the built site, so a build that changes neither, such as one after a change to the README alone, writes the same worker and offers no update
 
 ### Error Handling
 
@@ -172,9 +172,10 @@ doskit/
 │   ├── demos/                 # ZIP archives of the bundled applications
 │   ├── emulators/             # js-dos emulator files (copied by scripts/copy-js-dos.js, not committed)
 │   ├── icons/                 # PWA icons
+│   ├── licenses/              # Licenses of what the site serves (see License); the build adds third-party-licenses.txt
 │   ├── .well-known/           # Well-known URIs (security.txt)
 │   ├── .nojekyll              # Serve files as they are on GitHub Pages
-│   ├── CNAME                  # Custom domain configuration
+│   ├── CNAME                  # The custom domain, doskit.net; GitHub Actions deploys ignore it (see Custom Domain Setup)
 │   ├── favicon.svg            # Favicon
 │   ├── logo.svg               # Logo
 │   ├── js-dos.js              # js-dos player (copied by scripts/copy-js-dos.js, not committed)
@@ -194,6 +195,7 @@ doskit/
 ├── scripts/                   # Build and utility scripts, and tests of the build
 │   ├── copy-js-dos.js         # Copies js-dos into public/ before dev and build
 │   ├── inject-sw-version.js   # Stamps the built service worker
+│   ├── check-built-css.js     # CI check that the built CSS works in the oldest supported browsers
 │   ├── generate-icons.js      # Icon generation (run by hand)
 │   ├── generate-social-images.js # Social media image generation (run by hand)
 │   └── help.js                # CLI help
@@ -514,7 +516,7 @@ npm run docs:watch
 
 ### Testing
 
-DosKit uses Vitest for unit testing, with jsdom and React Testing Library. Tests sit next to the code they cover, `src/integration/` holds integration tests that render the whole app with js-dos faked, and `scripts/*.test.js` test the build scripts and run the service worker in a sandbox. `tsc -b` type-checks the tests too (tsconfig.test.json).
+DosKit uses Vitest for unit testing, with jsdom and React Testing Library. Tests sit next to the code they cover, `src/integration/` holds integration tests that render the whole app with js-dos faked, and `scripts/*.test.js` test the build scripts, run the service worker in a sandbox, and check 404.html, robots.txt, the licenses page, the icons, index.html's metadata and the ESLint configuration. `tsc -b` type-checks the tests too (tsconfig.test.json).
 
 ```bash
 # Run tests once
@@ -552,7 +554,7 @@ DosKit is configured for automatic deployment to GitHub Pages with custom domain
 3. Monitor deployment: Check the Actions tab
 4. Visit your site: `https://doskit.net/`
 
-The site automatically rebuilds and deploys on every push to `main`, once the CI jobs (lint, format check, type check, tests and build) pass.
+The site automatically rebuilds and deploys on every push to `main`, once the CI jobs pass: lint, format check, type check, tests, the build with a check of its CSS against the oldest supported browsers (scripts/check-built-css.js), and an audit that fails on a high or critical advisory in a production dependency (`npm audit --omit=dev --audit-level=high`; the audit of all dependencies only reports).
 
 ### Releases
 
@@ -560,18 +562,18 @@ release-please keeps a release pull request open from the conventional commits o
 
 ### Custom Domain Setup
 
-1. Add CNAME file to public/ directory with your domain
+1. Enter your domain under Settings → Pages → Custom domain. With GitHub Actions as the source, GitHub ignores any CNAME file, so `public/CNAME` does not set the domain
 2. Configure DNS records to point to GitHub Pages
-3. Enable HTTPS in GitHub Pages settings
+3. Enable HTTPS in GitHub Pages settings (Enforce HTTPS, once GitHub offers it)
 
 ### Build Process
 
 The build process (`npm run build`) includes:
 1. Copying the js-dos runtime from node_modules into public/ (scripts/copy-js-dos.js, run as prebuild)
 2. TypeScript type checking of the app, the config files and the tests (`tsc -b`)
-3. Vite production build with code splitting (each application's config module is a chunk of its own, and so is React), asset optimization and minification
+3. Vite production build with code splitting (each application's config module is a chunk of its own, and so is React), asset optimization and minification, for the oldest supported browsers (build.target in vite.config.ts); the licenses of the packages it bundles go to licenses/third-party-licenses.txt
 4. 404.html, written as a copy of index.html, so that GitHub Pages boots the app for path-style deep links such as /secondreality
-5. Service worker version injection (scripts/inject-sw-version.js): a new cache version for every build, the js-dos version and a hash of the application archives, which name the caches deploys keep, and the list of bundles to precache. The build fails if the worker would precache a file that is not in dist/.
+5. Service worker version injection (scripts/inject-sw-version.js): a cache version that is a hash of the built site and the worker, so it changes only when they do; the js-dos version and a hash of the application archives, which name the caches deploys keep; and the list of bundles to precache. The build fails if the worker would precache a file that is not in dist/.
 
 The social media images are not part of the build: after editing their SVG sources, run `npm run generate-social-images` and commit the PNGs.
 
@@ -591,7 +593,7 @@ The social media images are not part of the build: after editing their SVG sourc
 - Firefox Mobile
 - Samsung Internet
 
-These are the first versions with `structuredClone()`, which js-dos's player calls once a second while it runs; in older browsers each call ends in an error.
+These are the first versions with `structuredClone()`, which js-dos's player calls once a second while it runs; in older browsers each call ends in an error. The build writes DosKit's JavaScript and CSS for these versions (build.target in vite.config.ts), and CI checks the built CSS against them.
 
 ### Requirements
 
@@ -702,9 +704,13 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ### Third-Party Licenses
 
 - js-dos: GPL-2.0 License - https://github.com/caiiiycuk/js-dos
+- DOSBox: GPL-2.0 or later, compiled to WebAssembly in js-dos's emulators package
+- DOSBox-X: GPL-2.0 or later, in the same package
+- libzip: BSD-3-Clause License, built into the emulators
 - React: MIT License
 - retro-floppy: MIT License
-- DOSBox: GPL-2.0 License
+
+https://doskit.net/licenses/ gives these licenses, links the source code of the exact versions the site serves (js-dos 8.3.20, and emulators 8.3.8 with the DOSBox and DOSBox-X it builds), and gives the notices of the packages bundled in js-dos's files; the footer's Licenses link opens it. The build writes the licenses of the packages in DosKit's own bundles, React among them, to https://doskit.net/licenses/third-party-licenses.txt.
 
 ## Contact & Links
 
