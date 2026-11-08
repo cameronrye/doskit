@@ -108,11 +108,15 @@
   color: #aaa;
 }
 
-/* Error Message. Scoped: App's URL error banner has an .error-message of its own. */
+/*
+ * Error Message. Scoped: App's URL error banner has an .error-message of its own. Dark in
+ * either color scheme, like the rest of the selector. Its text needs 4.5:1 contrast (WCAG
+ * AA) on this background: it has 6.7:1, and the details 5.3:1 at their opacity.
+ */
 .demo-selector .error-message {
-  background: var(--color-error-bg, #3a1a1a);
-  border: 1px solid var(--color-error, #ff4444);
-  color: var(--color-error, #ff4444);
+  background: #3a1a1a;
+  border: 1px solid #ff4444;
+  color: #ff8787;
   padding: 0.75rem;
   border-radius: 4px;
   margin-bottom: 1rem;
@@ -294,7 +298,6 @@
   --color-accent: #4a9eff;
   --color-accent-hover: #3a8eef;
   --color-error: #ff4444;
-  --color-error-bg: #3a1a1a;
 }
 
 /* Light Mode (optional) */
@@ -311,6 +314,5 @@
     --color-accent: #2196f3;
     --color-accent-hover: #1976d2;
     --color-error: #d32f2f;
-    --color-error-bg: #ffebee;
   }
 }
