@@ -6,6 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { DemoSelector, type DosApp } from './DemoSelector';
 import { loadZipArchive, type LoadProgress } from '../utils/diskLoader';
 import { availableApps } from '../config/apps.config';
@@ -888,6 +889,164 @@ describe('DemoSelector', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+  });
+
+  describe('as a modal dialog', () => {
+    it('is a modal dialog named by its heading', () => {
+      render(<DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />);
+
+      const dialog = screen.getByRole('dialog', { name: 'Select DOS Application' });
+      expect(dialog).toHaveAttribute('aria-modal', 'true');
+      expect(document.getElementById(dialog.getAttribute('aria-labelledby')!)).toBe(
+        screen.getByRole('heading', { name: 'Select DOS Application' })
+      );
+    });
+
+    describe('Tab', () => {
+      it('goes from the last control back to the first', async () => {
+        const user = userEvent.setup();
+        render(<DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />);
+        fireEvent.click(getFloppyDiskByName('Panic'));
+        act(() => screen.getByRole('button', { name: 'Cancel' }).focus());
+
+        await user.tab();
+
+        expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+      });
+
+      it('goes back from the first control to the last with Shift', async () => {
+        const user = userEvent.setup();
+        render(<DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />);
+        fireEvent.click(getFloppyDiskByName('Panic'));
+        act(() => screen.getByRole('button', { name: 'Close' }).focus());
+
+        await user.tab({ shift: true });
+
+        expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+      });
+
+      it('moves through the controls in between as usual', async () => {
+        const user = userEvent.setup();
+        render(<DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />);
+        fireEvent.click(getFloppyDiskByName('Panic'));
+        act(() => screen.getByRole('button', { name: 'Close' }).focus());
+
+        await user.tab();
+        expect(getFloppyDiskByName('Panic')).toHaveFocus();
+        await user.tab();
+        expect(screen.getByRole('button', { name: 'Load Application' })).toHaveFocus();
+      });
+
+      it('stays on the list when it is all there is to focus', async () => {
+        const user = userEvent.setup();
+        render(<DemoSelector onSelect={mockOnSelect} />);
+
+        await user.tab();
+
+        expect(getFloppyDiskByName(availableApps[0]!.name)).toHaveFocus();
+      });
+    });
+
+    // DosPlayerWithApps closes the selector when it is cancelled or an app is picked
+    describe('closing', () => {
+      interface PageOptions {
+        /** Whether the button that opens the selector stays on the page while it is open */
+        keepOpener?: boolean;
+        /** Whether cancelling closes the selector */
+        closeOnCancel?: boolean;
+      }
+
+      /** The header's Change Application button, which opens the selector */
+      function Page({ keepOpener = true, closeOnCancel = true }: PageOptions) {
+        const [open, setOpen] = useState(false);
+        return (
+          <>
+            {(keepOpener || !open) && (
+              <button onClick={() => setOpen(true)}>Change Application</button>
+            )}
+            {open && (
+              <DemoSelector
+                onSelect={() => setOpen(false)}
+                onCancel={() => setOpen(!closeOnCancel)}
+              />
+            )}
+          </>
+        );
+      }
+
+      const openFromButton = async (options: PageOptions = {}) => {
+        const user = userEvent.setup();
+        render(<Page {...options} />);
+        const opener = screen.getByRole('button', { name: 'Change Application' });
+        act(() => opener.focus());
+        await user.keyboard('{Enter}');
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        return { user, opener };
+      };
+
+      it('gives the focus back to the button that opened it on Escape', async () => {
+        const { user, opener } = await openFromButton();
+
+        await user.keyboard('{Escape}');
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(opener).toHaveFocus();
+      });
+
+      it.each(['Close', 'Cancel'])('gives the focus back on %s from the keyboard', async (name) => {
+        const { user, opener } = await openFromButton();
+        fireEvent.click(getFloppyDiskByName('Panic'));
+        act(() => screen.getByRole('button', { name }).focus());
+
+        await user.keyboard('{Enter}');
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(opener).toHaveFocus();
+      });
+
+      // js-dos gives DOS the keys pressed on the page itself
+      it.each(['Close', 'Cancel'])(
+        'leaves the focus on the page after a click on %s',
+        async (name) => {
+          const { user } = await openFromButton();
+          fireEvent.click(getFloppyDiskByName('Panic'));
+
+          await user.click(screen.getByRole('button', { name }));
+
+          expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+          expect(document.body).toHaveFocus();
+        }
+      );
+
+      it('leaves the focus on the page after an app is picked', async () => {
+        const { user } = await openFromButton();
+
+        await user.keyboard('{Enter}');
+
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+        expect(document.body).toHaveFocus();
+      });
+
+      it('leaves the focus on the page after a pick that follows an ignored Escape', async () => {
+        const { user } = await openFromButton({ closeOnCancel: false });
+        await user.keyboard('{Escape}');
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+        await user.keyboard('{Enter}');
+
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+        expect(document.body).toHaveFocus();
+      });
+
+      it('leaves the focus on the page when the button that opened it is gone', async () => {
+        const { user } = await openFromButton({ keepOpener: false });
+
+        await user.keyboard('{Escape}');
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(document.body).toHaveFocus();
+      });
     });
   });
 

@@ -8,7 +8,7 @@
  * Styled with retro-floppy for authentic retro aesthetic
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useId } from 'react';
 import { FloppyDisk, LIGHT_FLOPPY_THEME } from 'retro-floppy';
 import 'retro-floppy/dist/retro-floppy.css';
 import type { DosApp } from '../types/dos-app';
@@ -69,6 +69,18 @@ function quietFloppyDisk(option: HTMLElement | null) {
 }
 
 /**
+ * The controls in an element that Tab stops at, in Tab order: the dialog gives none a
+ * tabindex above 0, so that is their order on the page
+ */
+function tabStopsIn(root: HTMLElement | null): HTMLElement[] {
+  const focusable = root?.querySelectorAll<HTMLElement>('button, summary, [href], [tabindex]');
+  return Array.from(focusable ?? []).filter(
+    (element) =>
+      element.tabIndex >= 0 && !(element instanceof HTMLButtonElement && element.disabled)
+  );
+}
+
+/**
  * What the progress bar shows: the share of the archive downloaded when its size is known,
  * or else the megabytes received, with no percentage for the bar
  */
@@ -92,8 +104,14 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   const [loadProgress, setLoadProgress] = useState<LoadProgress | null>(null);
   const [error, setError] = useState<FriendlyError | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const headingId = useId();
+  // What had the focus when the selector opened, such as the header's Change Application
+  const [opener] = useState(() => document.activeElement);
+  // Whether the selector is closing from the keyboard, which gives the opener its focus back
+  const closedByKeyboardRef = useRef(false);
   /**
    * DOSBox configs preloaded on hover, by app id. Only shares a preload with
    * the load that follows it: the module loader keeps the config chunks for
@@ -175,7 +193,9 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
           return;
         }
 
-        // Notify parent component with loaded data
+        // Notify parent component with loaded data. The focus stays on the page as the
+        // selector closes: js-dos gives DOS the keys pressed there.
+        closedByKeyboardRef.current = false;
         onSelect({
           app,
           files,
@@ -207,11 +227,21 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
     setError(null);
   }, []);
 
-  const handleCancel = useCallback(() => {
-    handleCancelLoading();
-    setSelectedApp(null);
-    onCancel?.();
-  }, [handleCancelLoading, onCancel]);
+  /**
+   * Close the selector. From the keyboard, the focus then goes back to what had it before:
+   * Escape, or Close and Cancel activated by a key, whose click has no click count.
+   */
+  const handleCancel = useCallback(
+    (fromKeyboard: boolean) => {
+      handleCancelLoading();
+      setSelectedApp(null);
+      if (onCancel) {
+        closedByKeyboardRef.current = fromKeyboard;
+        onCancel();
+      }
+    },
+    [handleCancelLoading, onCancel]
+  );
 
   /**
    * Keys on a disk. The arrow keys, Home and End move to another disk and select it,
@@ -275,9 +305,30 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
     [handleLoadApp, handleSelectApp]
   );
 
-  /** Escape, anywhere in the dialog: cancel the download, or else close the selector */
+  /**
+   * Keys anywhere in the dialog. Escape cancels the download, or else closes the selector.
+   * Tab and Shift+Tab go round the dialog's controls without leaving it, as it covers the
+   * page.
+   */
   const handleDialogKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
+      if (event.key === 'Tab') {
+        const stops = tabStopsIn(dialogRef.current);
+        const first = stops[0];
+        const last = stops[stops.length - 1];
+        const focused = document.activeElement;
+        if (!first || !last) {
+          return;
+        }
+        if (event.shiftKey && (focused === first || focused === dialogRef.current)) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && focused === last) {
+          event.preventDefault();
+          first.focus();
+        }
+        return;
+      }
       if (event.key !== 'Escape') {
         return;
       }
@@ -285,13 +336,15 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
       if (isLoading) {
         handleCancelLoading();
       } else {
-        handleCancel();
+        handleCancel(true);
       }
     },
     [isLoading, handleCancelLoading, handleCancel]
   );
 
-  // On unmount, cancel the load in progress and any pending hover preload
+  // On unmount, cancel the load in progress and any pending hover preload. Closed from
+  // the keyboard, give the focus back to what had it (focus() does nothing for an element
+  // no longer on the page); otherwise it stays on the page, where js-dos gives DOS the keys.
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -300,8 +353,15 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
+      if (
+        closedByKeyboardRef.current &&
+        opener instanceof HTMLElement &&
+        opener !== document.body
+      ) {
+        opener.focus();
+      }
     };
-  }, []);
+  }, [opener]);
 
   // Focus management for keyboard navigation
   useEffect(() => {
@@ -317,16 +377,24 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   const progress = describeProgress(loadProgress);
 
   return (
+    // tabIndex -1: a click on the dialog's background keeps the focus in it
     <div
+      ref={dialogRef}
       className="demo-selector"
       onKeyDown={handleDialogKeyDown}
       role="dialog"
-      aria-label="Select DOS Application"
+      aria-modal="true"
+      aria-labelledby={headingId}
+      tabIndex={-1}
     >
       <div className="demo-selector-header">
-        <h2>Select DOS Application</h2>
+        <h2 id={headingId}>Select DOS Application</h2>
         {onCancel && (
-          <button className="close-button" onClick={handleCancel} aria-label="Close">
+          <button
+            className="close-button"
+            onClick={(event) => handleCancel(event.detail === 0)}
+            aria-label="Close"
+          >
             ✕
           </button>
         )}
@@ -447,7 +515,10 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
                   >
                     Load Application
                   </button>
-                  <button className="cancel-button" onClick={handleCancel}>
+                  <button
+                    className="cancel-button"
+                    onClick={(event) => handleCancel(event.detail === 0)}
+                  >
                     Cancel
                   </button>
                 </>
