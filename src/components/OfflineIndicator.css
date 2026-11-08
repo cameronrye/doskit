@@ -9,7 +9,8 @@
   left: 0;
   right: 0;
   background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-  color: white;
+  /* 6.1:1 or more on the orange; white was 2.2 to 2.9:1 */
+  color: #1a1a1a;
   padding: 1rem;
   z-index: 10000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -46,9 +47,9 @@
 }
 
 .offline-close {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.12);
   border: none;
-  color: white;
+  color: #1a1a1a;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -62,7 +63,13 @@
 }
 
 .offline-close:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Dark on orange: the page's own focus ring, #646cff, was 1.5:1 against it */
+.offline-close:focus,
+.offline-close:focus-visible {
+  outline-color: #1a1a1a;
 }
 
 /*
