@@ -22,13 +22,15 @@ The sceners organization (curated by Defacto2) contains 157 repositories of hist
 | Starfield Effect | `stars`           | Grumpy's Collection | 1990s | ✅ Working |
 | Crystal Dream 2  | `crystal-dream-2` | Triton              | 1993  | ✅ Working |
 
+The IDs are the app IDs in `src/config/apps.config.ts`. App URLs drop the hyphens (`/?app=squidbbstro`), which is the form DosKit shows in the address bar; links with the hyphenated ID still open the app and are rewritten to that form.
+
 ### Demo Details
 
 #### Squid BBS Intro (1994)
 
 - **Size**: 1899 bytes
 - **Features**: Character smoother, mini AdLib player, 8x16 custom charset
-- **URL**: `https://doskit.net/?app=squid-bbstro`
+- **URL**: `https://doskit.net/?app=squidbbstro`
 - **Source**: https://github.com/sceners/squid-bbstro
 
 #### 3D Rotation Demo
@@ -48,7 +50,7 @@ The sceners organization (curated by Defacto2) contains 157 repositories of hist
 - **Ranking**: 1st place at The Computer Crossroads 1993
 - **Features**: 3D vector graphics, fractal zoomer, vector slime, raytraced scenes
 - **Music**: Lizardking ("Trans Atlantic"), Vogue
-- **URL**: `https://doskit.net/?app=crystal-dream-2`
+- **URL**: `https://doskit.net/?app=crystaldream2`
 - **Source**: https://files.scene.org/get/demos/groups/triton/cd2-trn.zip
 
 ### Not Compatible
