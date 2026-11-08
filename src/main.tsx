@@ -13,6 +13,7 @@ import { showUpdateNotification } from './utils/updatePrompt';
 import * as serviceWorkerRegistration from './utils/serviceWorkerRegistration';
 import { initializeErrorTracking } from './utils/errorTracking';
 import { initializeGlobalErrorHandler } from './utils/globalErrorHandler';
+import { logger } from './utils/logger';
 
 // Initialize error tracking (swap in a remote service here when one is set up)
 initializeErrorTracking();
@@ -42,13 +43,13 @@ root.render(
 // Register service worker for PWA functionality
 serviceWorkerRegistration.register({
   onSuccess: () => {
-    console.log('[PWA] Content is cached for offline use.');
+    logger.info('PWA', 'The app and the default emulator are cached for offline use');
   },
   onUpdate: (registration) => {
-    console.log('[PWA] New content is available; please refresh.');
+    logger.info('PWA', 'An update is waiting: showing the update prompt');
     showUpdateNotification(registration);
   },
   onOfflineReady: () => {
-    console.log('[PWA] App is ready for offline use.');
+    logger.info('PWA', 'Ready for offline use, with each app once it has been opened online');
   },
 });
