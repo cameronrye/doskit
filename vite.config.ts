@@ -24,15 +24,12 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: 'hidden', // Generate source maps but don't reference them in production bundles
-    // Optimize chunk splitting
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react-vendor';
-            }
-          }
+        // React changes far less often than the app, so its own chunk stays cached across
+        // releases. A group also pulls in what its modules import (scheduler).
+        codeSplitting: {
+          groups: [{ name: 'react-vendor', test: /node_modules[\\/]react(-dom)?[\\/]/ }],
         },
       },
     },
