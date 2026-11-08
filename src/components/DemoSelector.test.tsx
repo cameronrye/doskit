@@ -19,7 +19,7 @@ import { impulseTrackerZipUrl } from '../dos-apps/impulse-tracker.config';
 // of a factory-mocked module the real module. Loads would mix the mock's DOSBox
 // config with the real ZIP URL, or use the mock's URL after a hover preload.
 vi.mock('../utils/diskLoader', () => ({
-  loadZipArchive: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
+  loadZipArchive: vi.fn(async () => new Uint8Array([1, 2, 3])),
 }));
 
 /**
@@ -40,7 +40,14 @@ describe('DemoSelector', () => {
   const mockOnCancel = vi.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    // Also drops implementations and queued once-values that a test set, so
+    // loadZipArchive starts every test with the factory's download again
+    vi.resetAllMocks();
+  });
+
+  afterEach(() => {
+    // Spies on the shared app configs must not outlive the test that set them
+    vi.restoreAllMocks();
   });
 
   describe('Rendering', () => {
@@ -272,9 +279,6 @@ describe('DemoSelector', () => {
 
     it('should handle loading errors', async () => {
       const errorMessage = 'Load failed';
-
-      // Reset and set up the mock to reject
-      vi.mocked(loadZipArchive).mockReset();
       vi.mocked(loadZipArchive).mockRejectedValue(new Error(errorMessage));
 
       render(<DemoSelector onSelect={mockOnSelect} />);
@@ -340,11 +344,6 @@ describe('DemoSelector', () => {
       return pending;
     };
 
-    afterEach(() => {
-      // clearAllMocks keeps implementations; don't leak never-settling downloads
-      vi.mocked(loadZipArchive).mockResolvedValue(new Uint8Array([1, 2, 3]));
-    });
-
     const startLoadingSecondReality = async (pending: Map<string, unknown>) => {
       fireEvent.click(getFloppyDiskByName('Second Reality')!);
       fireEvent.click(screen.getByRole('button', { name: /Load Application/i }));
@@ -400,7 +399,6 @@ describe('DemoSelector', () => {
 
   describe('Config preloading', () => {
     it('loads the app after a hover preload of its DOSBox config failed', async () => {
-      vi.mocked(loadZipArchive).mockResolvedValue(new Uint8Array([1]));
       const app = availableApps.find((a) => a.id === 'second-reality')!;
       const preload = vi
         .spyOn(app, 'loadDosboxConf')
@@ -415,7 +413,6 @@ describe('DemoSelector', () => {
       fireEvent.click(screen.getByRole('button', { name: /Load Application/i }));
 
       await waitFor(() => expect(mockOnSelect).toHaveBeenCalledTimes(1));
-      preload.mockRestore();
     });
   });
 
