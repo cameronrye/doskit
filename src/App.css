@@ -27,11 +27,16 @@
   /*
    * index.html lets iOS draw the page under the status bar, the notch and the home indicator
    * (viewport-fit=cover, and black-translucent once installed), so the header and footer
-   * reach the edges and pad their content clear of them by the safe-area insets
+   * reach the edges and pad their content clear of them by the safe-area insets. The offline
+   * banner covers the top of the window while it shows, and OfflineIndicator keeps its height
+   * in --offline-banner-height: the header's content then moves down below it.
    */
   --header-padding-y: 0.5rem;
   --header-padding-x: 2rem;
-  padding: calc(var(--header-padding-y) + env(safe-area-inset-top, 0px))
+  padding: calc(
+      var(--header-padding-y) +
+        max(env(safe-area-inset-top, 0px), var(--offline-banner-height, 0px))
+    )
     calc(var(--header-padding-x) + env(safe-area-inset-right, 0px)) var(--header-padding-y)
     calc(var(--header-padding-x) + env(safe-area-inset-left, 0px));
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
