@@ -144,26 +144,6 @@ export class Logger {
       console.error(formatted, ...args);
     }
   }
-
-  /**
-   * Create a scoped logger with a specific context
-   * @param context - The context/module name to use for all log messages
-   * @returns An object with debug, info, warn, and error methods bound to the context
-   * @example
-   * ```typescript
-   * const log = logger.scope('MyModule');
-   * log.info('Module initialized');
-   * log.error('Something went wrong');
-   * ```
-   */
-  scope(context: string) {
-    return {
-      debug: (message: string, ...args: unknown[]) => this.debug(context, message, ...args),
-      info: (message: string, ...args: unknown[]) => this.info(context, message, ...args),
-      warn: (message: string, ...args: unknown[]) => this.warn(context, message, ...args),
-      error: (message: string, ...args: unknown[]) => this.error(context, message, ...args),
-    };
-  }
 }
 
 /**
@@ -171,49 +151,6 @@ export class Logger {
  * Use this for general logging throughout the application
  */
 export const logger = new Logger();
-
-/**
- * Create a scoped logger with a specific context
- * Convenience function for creating context-bound loggers
- * @param context - The context/module name
- * @returns A scoped logger object with debug, info, warn, and error methods
- * @example
- * ```typescript
- * const log = createLogger('MyComponent');
- * log.info('Component mounted');
- * ```
- */
-export const createLogger = (context: string) => logger.scope(context);
-
-/**
- * Production-safe console wrapper
- * Only logs in development mode, no-op in production
- */
-export const devConsole = {
-  log: (...args: unknown[]) => {
-    if (import.meta.env.DEV) {
-      console.log(...args);
-    }
-  },
-  debug: (...args: unknown[]) => {
-    if (import.meta.env.DEV) {
-      console.debug(...args);
-    }
-  },
-  info: (...args: unknown[]) => {
-    if (import.meta.env.DEV) {
-      console.info(...args);
-    }
-  },
-  warn: (...args: unknown[]) => {
-    // Warnings are shown in both dev and production
-    console.warn(...args);
-  },
-  error: (...args: unknown[]) => {
-    // Errors are shown in both dev and production
-    console.error(...args);
-  },
-};
 
 // Export default logger
 export default logger;

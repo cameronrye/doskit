@@ -152,22 +152,3 @@ export function getUserFriendlyError(error: unknown): {
     originalError: import.meta.env.DEV ? errorMessage : undefined,
   };
 }
-
-/**
- * Format error for display
- * @param error - The error object or message
- * @returns Formatted error string
- */
-export function formatErrorForDisplay(error: unknown): string {
-  const { message, suggestion, originalError } = getUserFriendlyError(error);
-
-  let formatted = message;
-  if (suggestion) {
-    formatted += `\n\n${suggestion}`;
-  }
-  if (originalError && import.meta.env.DEV) {
-    formatted += `\n\nTechnical details: ${originalError}`;
-  }
-
-  return formatted;
-}
