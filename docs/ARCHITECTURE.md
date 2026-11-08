@@ -293,17 +293,18 @@ export const starsDosboxConf = presets
 
 ## Security Considerations
 
-1. **Input Sanitization**: URL parameters validated and sanitized
-2. **XSS Prevention**: Only alphanumeric characters, hyphens, underscores allowed
-3. **Content Security Policy**: Configured in service worker
+1. **Input Sanitization**: URL parameters validated and sanitized: the `?app=` value and the first path segment
+2. **XSS Prevention**: Only alphanumeric characters, hyphens, underscores allowed, at most 100 of them
+3. **Content Security Policy**: None is set. `index.html` has no CSP meta tag, and GitHub Pages cannot send response headers.
 4. **HTTPS**: Required for service worker and PWA features
 
 ## Browser Compatibility
 
-- **Modern browsers**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+- **Modern browsers**: Current Chrome, Edge, Firefox and Safari. The build targets `esnext`, so nothing is transpiled for older engines, and js-dos itself relies on recent APIs: it calls `structuredClone` (Chrome 98, Firefox 94, Safari 15.4) once a second while a player runs.
 - **WebAssembly**: Required for js-dos emulator
+- **Web Workers**: js-dos runs DOSBox in one (`workerThread: true`)
 - **Service Workers**: Required for PWA features
-- **IndexedDB/Cache API**: Required for offline support
+- **Cache API**: Required for offline support. js-dos also keeps a cache of its own in IndexedDB, and does without it where IndexedDB is unavailable.
 
 ## Build Process
 
