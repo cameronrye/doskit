@@ -32,7 +32,8 @@ interface DosPlayerWithAppsProps {
   requestedApp?: DosApp | null;
   /**
    * Called when an app starts running (picked or requested), and with null when Choose
-   * Another Application returns to the default DOS prompt after a failed load
+   * Another Application after a failed load, or Cancel during one, returns to the default
+   * DOS prompt
    */
   onAppChange?: (app: DosApp | null) => void;
   onSelectorVisibilityChange?: (visible: boolean) => void;
