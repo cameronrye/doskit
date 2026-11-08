@@ -543,7 +543,7 @@ function MyApp() {
 - `ci.screenshot()` - Capture screen
 - `ci.fsReadFile()` / `ci.fsWriteFile()` - File system access
 - `ci.simulateKeyPress()` / `ci.sendKeyEvent()` - Keyboard input, in js-dos key codes rather than the browser's: Enter is 257 and Esc 256, while letters (uppercase) and digits keep their ASCII codes
-- See `src/types/js-dos.d.ts` for complete API
+- See `src/types/js-dos.d.ts` for the whole command interface, as js-dos's emulators package declares it
 
 ## Browser Compatibility
 

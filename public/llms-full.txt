@@ -428,7 +428,7 @@ Props:
 
 ### CommandInterface
 
-Interface for controlling the DOS emulator programmatically (the full interface is in `src/types/js-dos.d.ts`).
+Interface for controlling the DOS emulator programmatically (the full interface, as js-dos's emulators package declares it, is in `src/types/js-dos.d.ts`).
 
 Methods:
 - `pause(): void` - Pause emulation
@@ -438,7 +438,7 @@ Methods:
 - `screenshot(): Promise<ImageData>` - Capture screenshot
 - `fsReadFile(file: string): Promise<Uint8Array>` - Read file from DOS filesystem
 - `fsWriteFile(file: string, contents: ReadableStream<Uint8Array> | Uint8Array): Promise<void>` - Write file to DOS filesystem
-- `persist(onlyChanges?: boolean): Promise<Uint8Array | null>` - Pack the DOS filesystem's changes (or, with `false`, all of it) into a bundle
+- `persist(onlyChanges?: boolean): Promise<Uint8Array | PersistedSockdrives | null>` - Pack the DOS filesystem's changes (or, with `false`, all of it) into a bundle, or null when nothing is packed. With `onlyChanges`, the default, a bundle that mounts sockdrives resolves to `{ drives: { url, persist }[] }` instead, the changes of each drive
 - `simulateKeyPress(...keyCodes: number[]): void` - Simulate key presses, in js-dos key codes rather than the browser's: Enter is 257 and Esc 256, while letters (uppercase) and digits keep their ASCII codes
 - `exit(): Promise<void>` - Exit emulator
 
