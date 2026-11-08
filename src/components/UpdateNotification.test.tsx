@@ -4,6 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { UpdateNotification } from './UpdateNotification';
 import { classesIn, keyframesIn, readStylesheets, styles } from '../test/stylesheets';
 
@@ -125,6 +126,93 @@ describe('UpdateNotification', () => {
     });
   });
 
+  // It covers the page, so it is a modal dialog for keyboards and screen readers too
+  describe('as a dialog', () => {
+    /** The prompt, with a control of the page behind it */
+    const renderOverPage = (onDismiss?: () => void) =>
+      render(
+        <>
+          <button>Change Application</button>
+          <UpdateNotification registration={mockRegistration} onDismiss={onDismiss} />
+        </>
+      );
+    const updateNow = () => screen.getByRole('button', { name: 'Update Now' });
+    const later = () => screen.getByRole('button', { name: 'Later' });
+
+    it('is a modal alert dialog, named by its title and described by its message', () => {
+      render(<UpdateNotification registration={mockRegistration} />);
+
+      const dialog = screen.getByRole('alertdialog', { name: 'Update Available' });
+      expect(dialog).toHaveAttribute('aria-modal', 'true');
+      expect(dialog).toHaveAccessibleDescription(
+        'A new version of DosKit is ready to install. Update now to get the latest features and improvements.'
+      );
+      expect(dialog.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('takes the focus to Update Now when it appears', () => {
+      renderOverPage();
+
+      expect(updateNow()).toHaveFocus();
+    });
+
+    it('answers Escape as it does Later', async () => {
+      const user = userEvent.setup();
+      const onDismiss = vi.fn();
+      renderOverPage(onDismiss);
+
+      await user.keyboard('{Escape}');
+
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+      expect(onDismiss).toHaveBeenCalledOnce();
+      expect(mockWaiting.postMessage).not.toHaveBeenCalled();
+    });
+
+    it('keeps Tab and Shift+Tab to its buttons', async () => {
+      const user = userEvent.setup();
+      renderOverPage();
+
+      await user.tab();
+      expect(later()).toHaveFocus();
+      await user.tab();
+      expect(updateNow()).toHaveFocus();
+      await user.tab({ shift: true });
+      expect(later()).toHaveFocus();
+    });
+
+    it('keeps the focus when it is clicked outside its buttons', async () => {
+      const user = userEvent.setup();
+      renderOverPage();
+
+      await user.click(screen.getByText(/A new version of DosKit/));
+      await user.tab();
+      expect(updateNow()).toHaveFocus();
+
+      // The backdrop, which covers the page around the prompt
+      await user.click(document.querySelector('.update-notification-overlay')!);
+      await user.tab();
+      expect(later()).toHaveFocus();
+    });
+
+    it('gives the focus back to where it was once it closes', async () => {
+      const user = userEvent.setup();
+      const { rerender } = render(<button>Change Application</button>);
+      const behind = screen.getByRole('button', { name: 'Change Application' });
+      behind.focus();
+      rerender(
+        <>
+          <button>Change Application</button>
+          <UpdateNotification registration={mockRegistration} />
+        </>
+      );
+      expect(updateNow()).toHaveFocus();
+
+      await user.click(later());
+
+      expect(behind).toHaveFocus();
+    });
+  });
+
   // With fake timers, which the fallback reload waits on. No waitFor: it waits on a
   // timer itself, and Vitest's fake timers would keep it waiting
   describe('Update functionality', () => {
@@ -155,8 +243,8 @@ describe('UpdateNotification', () => {
       takeControl();
 
       expect(window.location.reload).toHaveBeenCalledOnce();
-      // Its fallback reload is called off
-      expect(vi.getTimerCount()).toBe(0);
+      // Its fallback reload is called off. (Pending timers are not counted: focusing a
+      // button makes jsdom schedule a selectionchange event.)
       vi.advanceTimersByTime(10_000);
       expect(window.location.reload).toHaveBeenCalledOnce();
     });
@@ -188,7 +276,6 @@ describe('UpdateNotification', () => {
 
       unmount();
 
-      expect(vi.getTimerCount()).toBe(0);
       vi.advanceTimersByTime(10_000);
       expect(window.location.reload).not.toHaveBeenCalled();
     });
@@ -200,7 +287,8 @@ describe('UpdateNotification', () => {
       clickUpdateNow();
 
       expect(window.location.reload).toHaveBeenCalledOnce();
-      expect(vi.getTimerCount()).toBe(0);
+      vi.advanceTimersByTime(10_000);
+      expect(window.location.reload).toHaveBeenCalledOnce();
     });
 
     it('reloads at once when it cannot message the waiting worker', () => {
@@ -217,7 +305,8 @@ describe('UpdateNotification', () => {
         expect.any(Error)
       );
       expect(window.location.reload).toHaveBeenCalledOnce();
-      expect(vi.getTimerCount()).toBe(0);
+      vi.advanceTimersByTime(10_000);
+      expect(window.location.reload).toHaveBeenCalledOnce();
     });
   });
 

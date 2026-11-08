@@ -7,7 +7,7 @@
  * Works reliably across all platforms including iOS Safari
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { PWA_CONFIG } from '../constants/app';
 import { logger } from '../utils/logger';
 import './UpdateNotification.css';
@@ -35,6 +35,24 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
       timeouts.forEach(clearTimeout);
     };
   }, []);
+
+  const titleId = useId();
+  const messageId = useId();
+  const updateButton = useRef<HTMLButtonElement>(null);
+  const laterButton = useRef<HTMLButtonElement>(null);
+
+  // It covers the page, so like any modal dialog it takes the focus when it appears, and
+  // gives it back when it goes to whatever had it, which may be the page itself
+  useEffect(() => {
+    if (!show) return;
+    const previous = document.activeElement;
+    updateButton.current?.focus();
+    return () => {
+      if (previous instanceof HTMLElement) {
+        previous.focus();
+      }
+    };
+  }, [show]);
 
   const handleUpdate = () => {
     if (registration?.waiting) {
@@ -118,13 +136,48 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
     onDismiss?.();
   };
 
+  // Escape answers Later, and Tab and Shift+Tab go round the two buttons
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      handleDismiss();
+    } else if (event.key === 'Tab') {
+      const buttons = [updateButton.current, laterButton.current];
+      const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+      // Back from the first button, on from the last, or either way from the dialog itself
+      if (event.shiftKey ? at <= 0 : at === -1 || at === buttons.length - 1) {
+        event.preventDefault();
+        buttons.at(event.shiftKey ? -1 : 0)?.focus();
+      }
+    }
+  };
+
+  // A click on the backdrop leaves the focus where it is, in the prompt
+  const handleBackdropMouseDown = (event: React.MouseEvent) => {
+    if (event.target === event.currentTarget) {
+      event.preventDefault();
+    }
+  };
+
   if (!show) {
     return null;
   }
 
   return (
-    <div className="update-notification-overlay">
-      <div className="update-notification">
+    <div
+      className="update-notification-overlay"
+      onKeyDown={handleKeyDown}
+      onMouseDown={handleBackdropMouseDown}
+    >
+      {/* Focusable, so that a click on its text keeps the focus in it */}
+      <div
+        className="update-notification"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={messageId}
+        tabIndex={-1}
+      >
         <div className="update-notification-icon">
           <svg
             width="24"
@@ -133,6 +186,7 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            aria-hidden="true"
           >
             <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
             <path d="M21 3v5h-5" />
@@ -140,8 +194,10 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
         </div>
 
         <div className="update-notification-content">
-          <h3 className="update-notification-title">Update Available</h3>
-          <p className="update-notification-message">
+          <h2 id={titleId} className="update-notification-title">
+            Update Available
+          </h2>
+          <p id={messageId} className="update-notification-message">
             A new version of DosKit is ready to install. Update now to get the latest features and
             improvements.
           </p>
@@ -149,12 +205,14 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
 
         <div className="update-notification-actions">
           <button
+            ref={updateButton}
             className="update-notification-button update-notification-button-primary"
             onClick={handleUpdate}
           >
             Update Now
           </button>
           <button
+            ref={laterButton}
             className="update-notification-button update-notification-button-secondary"
             onClick={handleDismiss}
           >
