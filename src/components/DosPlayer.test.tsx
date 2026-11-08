@@ -244,6 +244,35 @@ describe('DosPlayer', () => {
       // Should not throw
       expect(player.stop).toHaveBeenCalled();
     });
+
+    // window.Dos() returns the player at once, but the adapter's promise hands it to the
+    // hook a microtask later. Unmounting right after mounting, as React StrictMode does,
+    // lands in between.
+    describe('when unmounted before js-dos hands the player back', () => {
+      it('stops the player once it arrives', async () => {
+        const { unmount } = render(<DosPlayer />);
+
+        unmount();
+        await act(async () => {});
+
+        expect(player.stop).toHaveBeenCalledTimes(1);
+      });
+
+      it('never reports that player ready', async () => {
+        const onReady = vi.fn();
+        const { ci, unmute } = createMockCommandInterface();
+        const { unmount } = render(<DosPlayer onReady={onReady} />);
+
+        unmount();
+        await act(async () => {});
+        // js-dos goes on to fire the events of the start it began
+        emit('emu-ready');
+        emit('ci-ready', ci);
+
+        expect(onReady).not.toHaveBeenCalled();
+        expect(unmute).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe('Container element', () => {

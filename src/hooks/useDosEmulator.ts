@@ -35,6 +35,16 @@ export interface UseDosEmulatorReturn {
 }
 
 /**
+ * Stop a js-dos player. Its emulator worker logs an "ExitStatus" error (exit code 0) as it
+ * shuts down: that is its normal exit, logged to the worker's own console.
+ */
+function stopPlayer(player: DosProps): void {
+  player.stop().catch((err: unknown) => {
+    console.error('[useDosEmulator] Error stopping player:', err);
+  });
+}
+
+/**
  * Custom hook for managing js-dos emulator lifecycle
  * Handles initialization, event handling, and cleanup
  */
@@ -45,9 +55,7 @@ export const useDosEmulator = ({
   onExit,
 }: UseDosEmulatorOptions): UseDosEmulatorReturn => {
   const dosContainerRef = useRef<HTMLDivElement>(null);
-  const dosPlayerRef = useRef<DosProps | null>(null);
   const ciRef = useRef<CommandInterface | null>(null);
-  const isInitializedRef = useRef(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -124,16 +132,10 @@ export const useDosEmulator = ({
     }
   }, []);
 
-  // Initialize emulator (only once)
+  // Start js-dos once per mount, and stop it on unmount
   useEffect(() => {
-    if (isInitializedRef.current) {
-      if (import.meta.env.DEV) {
-        console.log('[useDosEmulator] Already initialized, skipping');
-      }
-      return;
-    }
-
-    if (!dosContainerRef.current) {
+    const container = dosContainerRef.current;
+    if (!container) {
       console.error('[useDosEmulator] Container ref is null');
       return;
     }
@@ -150,9 +152,13 @@ export const useDosEmulator = ({
     if (import.meta.env.DEV) {
       console.log(`[useDosEmulator] Initializing ${adapter.getName()}...`);
     }
-    isInitializedRef.current = true;
-    setIsLoading(true);
-    setError(null);
+
+    // Cleared on cleanup. js-dos can hand the player back after this mount is gone
+    // (React StrictMode unmounts every first mount at once), and goes on firing the
+    // events of a start it began, so a late player is stopped and nothing it fires
+    // reaches the callbacks.
+    let mounted = true;
+    let player: DosProps | null = null;
 
     // Initialize emulator asynchronously
     const initializeEmulator = async () => {
@@ -162,23 +168,30 @@ export const useDosEmulator = ({
           ...config,
           ...options,
           dosboxConf,
-          onEvent: handleDosEvent,
+          onEvent: (event, arg) => {
+            if (mounted) handleDosEvent(event, arg);
+          },
         };
 
         if (import.meta.env.DEV) {
           console.log('[useDosEmulator] Configuration:', mergedOptions);
         }
 
-        dosPlayerRef.current = await adapter.initialize(dosContainerRef.current!, mergedOptions);
+        const dosPlayer = await adapter.initialize(container, mergedOptions);
+        if (!mounted) {
+          stopPlayer(dosPlayer);
+          return;
+        }
+        player = dosPlayer;
 
         if (import.meta.env.DEV) {
           console.log('[useDosEmulator] Emulator initialized successfully');
         }
       } catch (err) {
+        if (!mounted) return;
         console.error('[useDosEmulator] Failed to initialize emulator:', err);
         setError(err instanceof Error ? err.message : 'Failed to initialize DOS emulator');
         setIsLoading(false);
-        isInitializedRef.current = false;
       }
     };
 
@@ -188,16 +201,11 @@ export const useDosEmulator = ({
       if (import.meta.env.DEV) {
         console.log('[useDosEmulator] Cleaning up...');
       }
-      if (dosPlayerRef.current) {
-        // js-dos's emulator worker logs an "ExitStatus" error (exit code 0) as it
-        // shuts down. That is its normal exit, logged to the worker's own console.
-        dosPlayerRef.current.stop().catch((err: unknown) => {
-          console.error('[useDosEmulator] Error stopping player:', err);
-        });
-        dosPlayerRef.current = null;
+      mounted = false;
+      if (player) {
+        stopPlayer(player);
       }
       ciRef.current = null;
-      isInitializedRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
