@@ -322,6 +322,26 @@ describe('App', () => {
       expect(window.history.length).toBe(lengthBefore);
     });
 
+    it.each([
+      ['no safe characters', '/?app=%E2%9C%93'],
+      ['over 100 characters', `/?app=${'a'.repeat(150)}`],
+      ['an empty value', '/?app='],
+    ])('drops an ?app= value with %s and says the link names no app', (_, url) => {
+      window.history.replaceState({}, '', url);
+      const lengthBefore = window.history.length;
+
+      render(<App />);
+
+      // The value is left out of the message
+      expect(
+        screen.getByText('Application not found. Please select from available applications.')
+      ).toBeInTheDocument();
+      expect(screen.getByTestId('requested-app')).toHaveTextContent('none');
+      expect(screen.getByTestId('selector-state')).toHaveTextContent('visible');
+      expect(window.location.search).toBe('');
+      expect(window.history.length).toBe(lengthBefore);
+    });
+
     it('shows the URL error banner when going forward lands on an unknown app', async () => {
       window.history.pushState({}, '', '/?app=bogus');
       window.history.back();

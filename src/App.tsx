@@ -17,16 +17,18 @@ import './App.css';
 interface UrlRoute {
   /** The app to run, or null for the start page */
   app: DosApp | null;
-  /** Error banner text when the URL names an app that does not exist */
+  /** Error banner text when the URL's ?app= parameter names no app */
   error: string | null;
 }
 
 function readUrlRoute(): UrlRoute {
-  const { appId, unknownAppId } = getAppRequestFromUrl();
+  const { appId, unknownApp, unknownAppId } = getAppRequestFromUrl();
+  // A value with no safe characters, or too long to show, is left out of the message
+  const named = unknownAppId ? ` "${unknownAppId}"` : '';
   return {
     app: appId ? (findAppById(appId) ?? null) : null,
-    error: unknownAppId
-      ? `Application "${unknownAppId}" not found. Please select from available applications.`
+    error: unknownApp
+      ? `Application${named} not found. Please select from available applications.`
       : null,
   };
 }

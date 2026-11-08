@@ -25,29 +25,60 @@ describe('urlRouting', () => {
     ])('reads the app %s asks for', (url, appId) => {
       window.history.replaceState({}, '', url);
 
-      expect(getAppRequestFromUrl()).toEqual({ appId, unknownAppId: null });
+      expect(getAppRequestFromUrl()).toEqual({ appId, unknownApp: false, unknownAppId: null });
     });
 
     it('reports an ?app= value that names no app', () => {
       window.history.replaceState({}, '', '/?app=bogus');
 
-      expect(getAppRequestFromUrl()).toEqual({ appId: null, unknownAppId: 'bogus' });
+      expect(getAppRequestFromUrl()).toEqual({
+        appId: null,
+        unknownApp: true,
+        unknownAppId: 'bogus',
+      });
     });
 
     it('reports an unknown app with only its safe characters', () => {
       window.history.replaceState({}, '', '/?app=%3Cimg%20src%3Dx%3E');
 
-      expect(getAppRequestFromUrl()).toEqual({ appId: null, unknownAppId: 'imgsrcx' });
+      expect(getAppRequestFromUrl()).toEqual({
+        appId: null,
+        unknownApp: true,
+        unknownAppId: 'imgsrcx',
+      });
     });
 
-    it.each(['/', '/index.html', '/no-such-page', '/?app=%3C%3E'])(
-      'treats %s as the start page',
-      (url) => {
-        window.history.replaceState({}, '', url);
+    it('reports an unknown app of 100 characters in full', () => {
+      window.history.replaceState({}, '', `/?app=${'a'.repeat(100)}`);
 
-        expect(getAppRequestFromUrl()).toEqual({ appId: null, unknownAppId: null });
-      }
-    );
+      expect(getAppRequestFromUrl()).toEqual({
+        appId: null,
+        unknownApp: true,
+        unknownAppId: 'a'.repeat(100),
+      });
+    });
+
+    it.each([
+      ['no safe characters', '/?app=%3C%3E'],
+      ['only characters outside ASCII', '/?app=%E2%9C%93'],
+      ['a malformed escape', '/?app=%%%'],
+      ['an empty value', '/?app='],
+      ['over 100 characters', `/?app=${'a'.repeat(101)}`],
+    ])('reports an ?app= value with %s as naming no app, without the value', (_, url) => {
+      window.history.replaceState({}, '', url);
+
+      expect(getAppRequestFromUrl()).toEqual({ appId: null, unknownApp: true, unknownAppId: null });
+    });
+
+    it.each(['/', '/index.html', '/no-such-page'])('treats %s as the start page', (url) => {
+      window.history.replaceState({}, '', url);
+
+      expect(getAppRequestFromUrl()).toEqual({
+        appId: null,
+        unknownApp: false,
+        unknownAppId: null,
+      });
+    });
   });
 
   describe('updateUrlWithApp', () => {

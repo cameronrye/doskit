@@ -19,26 +19,38 @@ import {
 export interface AppRequest {
   /** Internal ID of the app the URL names, or null for the start page */
   appId: string | null;
-  /** The ?app= value, reduced to safe characters, when it names no known app */
+  /** Whether the URL has an ?app= parameter that names no known app */
+  unknownApp: boolean;
+  /**
+   * That parameter's value reduced to safe characters, or null when none are left or there
+   * are more than 100 to show
+   */
   unknownAppId: string | null;
 }
 
 /**
  * Read the app the current URL asks for
  * Supports both query parameter (?app=secondreality) and path-based routing (/secondreality).
- * A path that names no app, such as /index.html, is the start page.
+ * An ?app= parameter decides when present, even an empty one. A path that names no app,
+ * such as /index.html, is the start page.
  */
 export function getAppRequestFromUrl(): AppRequest {
   const appParam = new URLSearchParams(window.location.search).get('app');
-  const fromQuery = appParam ? sanitizeInput(appParam) : null;
-  if (fromQuery) {
-    const appId = normalizeAppId(fromQuery);
-    return { appId, unknownAppId: appId ? null : fromQuery };
+  if (appParam !== null) {
+    const fromQuery = sanitizeInput(appParam);
+    const appId = fromQuery ? normalizeAppId(fromQuery) : null;
+    return appId
+      ? { appId, unknownApp: false, unknownAppId: null }
+      : { appId: null, unknownApp: true, unknownAppId: fromQuery };
   }
 
   const firstSegment = window.location.pathname.split('/').find((segment) => segment.length > 0);
   const fromPath = firstSegment ? sanitizeInput(firstSegment) : null;
-  return { appId: fromPath ? normalizeAppId(fromPath) : null, unknownAppId: null };
+  return {
+    appId: fromPath ? normalizeAppId(fromPath) : null,
+    unknownApp: false,
+    unknownAppId: null,
+  };
 }
 
 /**
