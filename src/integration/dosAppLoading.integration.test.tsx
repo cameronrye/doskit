@@ -78,6 +78,9 @@ describe('DOS Application Loading Integration Tests', () => {
   let triggerExit: () => void;
   let mockDosInstance: ReturnType<typeof createMockDosInstance>;
   let onEventCallback: ((event: string, ci?: unknown) => void) | null = null;
+  // Event timers of players a test left behind; cleared after each test so
+  // they cannot fire into the next test's player.
+  let pendingTimers: ReturnType<typeof setTimeout>[] = [];
 
   beforeEach(() => {
     // Reset mocks
@@ -90,25 +93,20 @@ describe('DOS Application Loading Integration Tests', () => {
 
     // Mock window.Dos
     mockDos = vi.fn<Window['Dos']>((_container, options) => {
-      // Store the onEvent callback
-      if (options?.onEvent) {
-        onEventCallback = options.onEvent as (event: string, ci?: unknown) => void;
-      }
+      // Each player gets the events of its own onEvent callback
+      const onEvent = options?.onEvent as ((event: string, ci?: unknown) => void) | undefined;
+      onEventCallback = onEvent ?? null;
 
       // Simulate async initialization - trigger events after a delay
       // This gives the component time to set up its event handlers
-      setTimeout(() => {
-        if (onEventCallback) {
+      pendingTimers.push(
+        setTimeout(() => {
           // First trigger emu-ready
-          onEventCallback('emu-ready');
+          onEvent?.('emu-ready');
           // Then trigger ci-ready with command interface
-          setTimeout(() => {
-            if (onEventCallback) {
-              onEventCallback('ci-ready', mockCommandInterface);
-            }
-          }, 10);
-        }
-      }, 50);
+          pendingTimers.push(setTimeout(() => onEvent?.('ci-ready', mockCommandInterface), 10));
+        }, 50)
+      );
 
       // Like js-dos, return the player synchronously
       return mockDosInstance;
@@ -118,6 +116,8 @@ describe('DOS Application Loading Integration Tests', () => {
   });
 
   afterEach(() => {
+    pendingTimers.forEach(clearTimeout);
+    pendingTimers = [];
     delete (window as Partial<Window>).Dos;
     vi.restoreAllMocks();
   });
