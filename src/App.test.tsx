@@ -194,6 +194,66 @@ describe('App', () => {
       expect(screen.getByTestId('requested-app')).toHaveTextContent('3drotate');
     });
 
+    it('shows the URL error banner for a deep link to an unknown app', () => {
+      window.history.replaceState({}, '', '/?app=bogus');
+      const lengthBefore = window.history.length;
+
+      render(<App />);
+
+      expect(screen.getByText(/Application "bogus" not found/)).toBeInTheDocument();
+      expect(screen.getByTestId('requested-app')).toHaveTextContent('none');
+      expect(screen.getByTestId('selector-state')).toHaveTextContent('visible');
+      // The unknown app is dropped from the URL without a new history entry
+      expect(window.location.search).toBe('');
+      expect(window.history.length).toBe(lengthBefore);
+    });
+
+    it('shows the URL error banner when going forward lands on an unknown app', async () => {
+      window.history.pushState({}, '', '/?app=bogus');
+      window.history.back();
+      await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
+      render(<App />);
+      expect(screen.queryByText(/not found/)).not.toBeInTheDocument();
+
+      await traverse('forward');
+
+      expect(screen.getByText(/Application "bogus" not found/)).toBeInTheDocument();
+      expect(screen.getByTestId('requested-app')).toHaveTextContent('none');
+      expect(screen.getByTestId('selector-state')).toHaveTextContent('visible');
+      expect(window.location.search).toBe('');
+    });
+
+    it('stops the running app when going back lands on an unknown app', async () => {
+      window.history.replaceState({}, '', '/?app=bogus');
+      window.history.pushState({}, '', '/?app=stars');
+      render(<App />);
+
+      await traverse('back');
+
+      expect(screen.getByText(/Application "bogus" not found/)).toBeInTheDocument();
+      expect(screen.getByTestId('requested-app')).toHaveTextContent('none');
+      expect(screen.queryByText('Starfield Effect')).not.toBeInTheDocument();
+    });
+
+    it('clears the URL error banner once an app loads', () => {
+      window.history.replaceState({}, '', '/?app=bogus');
+      render(<App />);
+      expect(screen.getByText(/not found/)).toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('Load App'));
+
+      expect(screen.queryByText(/not found/)).not.toBeInTheDocument();
+    });
+
+    it('dismisses the URL error banner', () => {
+      window.history.replaceState({}, '', '/?app=bogus');
+      render(<App />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss error' }));
+
+      expect(screen.queryByText(/not found/)).not.toBeInTheDocument();
+    });
+
     it('records an app picked right after going back in the URL', async () => {
       window.history.pushState({}, '', '/?app=stars');
       render(<App />);

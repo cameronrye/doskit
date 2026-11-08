@@ -8,6 +8,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
+  getAppRequestFromUrl,
   normalizeAppId,
   getUrlFriendlyId,
   updateDocumentTitle,
@@ -15,6 +16,40 @@ import {
 } from './urlRouting';
 
 describe('urlRouting', () => {
+  describe('getAppRequestFromUrl', () => {
+    it.each([
+      ['/?app=secondreality', 'second-reality'],
+      ['/?app=Second-Reality', 'second-reality'],
+      ['/secondreality', 'second-reality'],
+      ['/3drotate/', '3drotate'],
+    ])('reads the app %s asks for', (url, appId) => {
+      window.history.replaceState({}, '', url);
+
+      expect(getAppRequestFromUrl()).toEqual({ appId, unknownAppId: null });
+    });
+
+    it('reports an ?app= value that names no app', () => {
+      window.history.replaceState({}, '', '/?app=bogus');
+
+      expect(getAppRequestFromUrl()).toEqual({ appId: null, unknownAppId: 'bogus' });
+    });
+
+    it('reports an unknown app with only its safe characters', () => {
+      window.history.replaceState({}, '', '/?app=%3Cimg%20src%3Dx%3E');
+
+      expect(getAppRequestFromUrl()).toEqual({ appId: null, unknownAppId: 'imgsrcx' });
+    });
+
+    it.each(['/', '/index.html', '/no-such-page', '/?app=%3C%3E'])(
+      'treats %s as the start page',
+      (url) => {
+        window.history.replaceState({}, '', url);
+
+        expect(getAppRequestFromUrl()).toEqual({ appId: null, unknownAppId: null });
+      }
+    );
+  });
+
   describe('updateUrlWithApp', () => {
     beforeEach(() => {
       window.history.replaceState({}, '', '/');

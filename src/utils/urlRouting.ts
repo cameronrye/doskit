@@ -14,43 +14,31 @@ import {
 } from '../config/apps.config';
 
 /**
- * Get the app ID from the current URL
- * Supports both query parameter (?app=secondreality) and path-based routing (/secondreality)
- * @returns The internal app ID if found, null otherwise
+ * The application a URL asks for
  */
-export function getAppIdFromUrl(): string | null {
-  // First, try query parameter
-  const params = new URLSearchParams(window.location.search);
-  const appParam = params.get('app');
+export interface AppRequest {
+  /** Internal ID of the app the URL names, or null for the start page */
+  appId: string | null;
+  /** The ?app= value, reduced to safe characters, when it names no known app */
+  unknownAppId: string | null;
+}
 
-  if (appParam) {
-    const sanitized = sanitizeInput(appParam);
-    if (sanitized) {
-      return normalizeAppId(sanitized);
-    }
+/**
+ * Read the app the current URL asks for
+ * Supports both query parameter (?app=secondreality) and path-based routing (/secondreality).
+ * A path that names no app, such as /index.html, is the start page.
+ */
+export function getAppRequestFromUrl(): AppRequest {
+  const appParam = new URLSearchParams(window.location.search).get('app');
+  const fromQuery = appParam ? sanitizeInput(appParam) : null;
+  if (fromQuery) {
+    const appId = normalizeAppId(fromQuery);
+    return { appId, unknownAppId: appId ? null : fromQuery };
   }
 
-  // Then, try path-based routing (e.g., /secondreality)
-  const path = window.location.pathname;
-  const pathSegments = path.split('/').filter((segment) => segment.length > 0);
-
-  // If there's a path segment, try to use it as an app ID
-  if (pathSegments.length > 0) {
-    const potentialAppId = pathSegments[0];
-    if (potentialAppId) {
-      const sanitized = sanitizeInput(potentialAppId);
-      if (sanitized) {
-        const normalizedId = normalizeAppId(sanitized);
-
-        // Only return if it's a valid app ID (exists in mapping)
-        if (normalizedId) {
-          return normalizedId;
-        }
-      }
-    }
-  }
-
-  return null;
+  const firstSegment = window.location.pathname.split('/').find((segment) => segment.length > 0);
+  const fromPath = firstSegment ? sanitizeInput(firstSegment) : null;
+  return { appId: fromPath ? normalizeAppId(fromPath) : null, unknownAppId: null };
 }
 
 /**

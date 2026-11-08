@@ -4,40 +4,50 @@
  * Licensed under the MIT License
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { DosPlayerWithApps, type DosApp } from './components/DosPlayerWithApps';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { findAppById } from './components/DemoSelector';
-import { getAppIdFromUrl, updateUrlWithApp, updateDocumentTitle } from './utils/urlRouting';
+import { getAppRequestFromUrl, updateUrlWithApp, updateDocumentTitle } from './utils/urlRouting';
 import './App.css';
+
+/** What the URL asks App to show */
+interface UrlRoute {
+  /** The app to run, or null for the start page */
+  app: DosApp | null;
+  /** Error banner text when the URL names an app that does not exist */
+  error: string | null;
+}
+
+function readUrlRoute(): UrlRoute {
+  const { appId, unknownAppId } = getAppRequestFromUrl();
+  return {
+    app: appId ? (findAppById(appId) ?? null) : null,
+    error: unknownAppId
+      ? `Application "${unknownAppId}" not found. Please select from available applications.`
+      : null,
+  };
+}
+
+/** Set the title for a route, and drop an unknown app from the URL (no new history entry) */
+function applyUrlRoute(route: UrlRoute): void {
+  if (route.error) {
+    updateUrlWithApp(null, true);
+  }
+  updateDocumentTitle(route.app?.name);
+}
 
 function App() {
   const [isReady, setIsReady] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Initialize state based on URL on first render
-  const [currentApp, setCurrentApp] = useState<DosApp | null>(() => {
-    const appIdFromUrl = getAppIdFromUrl();
-    return appIdFromUrl ? (findAppById(appIdFromUrl) ?? null) : null;
-  });
-
-  const [showAppSelector, setShowAppSelector] = useState(() => {
-    // Hide selector if there's a valid app in URL
-    const appIdFromUrl = getAppIdFromUrl();
-    const app = appIdFromUrl ? findAppById(appIdFromUrl) : null;
-    return !app;
-  });
-
-  const [urlError, setUrlError] = useState<string | null>(() => {
-    // Check for invalid app ID on initial render
-    const appIdFromUrl = getAppIdFromUrl();
-    if (appIdFromUrl && !findAppById(appIdFromUrl)) {
-      return `Application "${appIdFromUrl}" not found. Please select from available applications.`;
-    }
-    return null;
-  });
-  const isInitialMount = useRef(true);
+  // The route the page was loaded with
+  const [initialRoute] = useState(readUrlRoute);
+  // The app the URL asks for: DosPlayerWithApps runs it, and reports apps picked in the selector
+  const [currentApp, setCurrentApp] = useState(initialRoute.app);
+  const [showAppSelector, setShowAppSelector] = useState(!initialRoute.app);
+  const [urlError, setUrlError] = useState(initialRoute.error);
 
   const handleDosReady = () => {
     if (import.meta.env.DEV) {
@@ -90,63 +100,24 @@ function App() {
     setShowAppSelector(true);
   };
 
-  // Handle initial URL-based app loading on mount
   useEffect(() => {
-    if (!isInitialMount.current) return;
-    isInitialMount.current = false;
+    applyUrlRoute(initialRoute);
+  }, [initialRoute]);
 
-    const appIdFromUrl = getAppIdFromUrl();
-
-    if (appIdFromUrl) {
-      if (import.meta.env.DEV) {
-        console.log('[App] Loading app from URL:', appIdFromUrl);
-      }
-
-      const app = findAppById(appIdFromUrl);
-
-      if (app) {
-        // Valid app ID in URL: DosPlayerWithApps already loads it as currentApp
-        updateDocumentTitle(app.name);
-      } else {
-        // Invalid app ID in URL - error already set in state initializer
-        if (import.meta.env.DEV) {
-          console.warn('[App] Invalid app ID in URL:', appIdFromUrl);
-        }
-        // Clear the invalid app parameter from URL
-        updateUrlWithApp(null, true);
-      }
-    } else {
-      // No app in URL - show selector (default behavior)
-      updateDocumentTitle();
-    }
-  }, []);
-
-  // Handle browser back/forward navigation
+  // Browser back/forward: run what the URL asks for, or the default prompt with the selector
   useEffect(() => {
     const handlePopState = () => {
-      const appIdFromUrl = getAppIdFromUrl();
+      const route = readUrlRoute();
 
       if (import.meta.env.DEV) {
-        console.log('[App] Popstate event - app ID from URL:', appIdFromUrl);
+        console.log('[App] Popstate event - app from URL:', route.app?.id ?? null);
       }
 
-      if (appIdFromUrl) {
-        const app = findAppById(appIdFromUrl);
-
-        if (app) {
-          // DosPlayerWithApps loads it as the requested app
-          setCurrentApp(app);
-          setShowAppSelector(false);
-          updateDocumentTitle(app.name);
-        } else {
-          setUrlError(`Application "${appIdFromUrl}" not found.`);
-          setShowAppSelector(true);
-        }
-      } else {
-        // No app in URL - show selector
-        setCurrentApp(null);
-        setShowAppSelector(true);
-        updateDocumentTitle();
+      applyUrlRoute(route);
+      setCurrentApp(route.app);
+      setShowAppSelector(!route.app);
+      if (route.error) {
+        setUrlError(route.error);
       }
     };
 
