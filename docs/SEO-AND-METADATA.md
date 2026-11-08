@@ -179,18 +179,14 @@ Location: `/public/.well-known/security.txt`
 
 Follows RFC 9116 standard:
 
-- Contact information (email and GitHub)
-- Expiration date
+- Contact information (email, the reporting channel `SECURITY.md` documents)
+- Expiration date, kept less than a year ahead as RFC 9116 recommends
 - Preferred languages
 - Canonical URL
-- Security policy link
-- Acknowledgments link
+- Security policy link (`SECURITY.md`)
+- Acknowledgments link (the repository's published security advisories, which credit reporters)
 
-#### .well-known/change-password
-
-Location: `/public/.well-known/change-password`
-
-Note: DosKit doesn't have user accounts, but this file is provided for completeness and redirects to the home page.
+DosKit has no user accounts, so it serves no `.well-known/change-password`: that URL is meant to redirect to a site's page for changing a password.
 
 ## File Locations
 
@@ -199,8 +195,7 @@ Note: DosKit doesn't have user accounts, but this file is provided for completen
 ```
 public/
 ├── .well-known/
-│   ├── security.txt
-│   └── change-password
+│   └── security.txt
 ├── social-preview.svg
 ├── github-social-preview.svg
 ├── og-image.png (generated)
@@ -309,7 +304,7 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 2. **sitemap.xml**: Update lastmod dates when content changes
 3. **llm.txt / llm-full.txt**: Update when features or documentation changes
 4. **humans.txt**: Update when team or technology changes
-5. **.well-known/security.txt**: Update expiration date annually
+5. **.well-known/security.txt**: Renew `Expires` before it passes, keeping it less than a year ahead
 
 ## Best Practices
 
