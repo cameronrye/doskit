@@ -412,10 +412,15 @@ describe('cache trimming', () => {
     return visited;
   }
 
-  it('never evicts what install precached', async () => {
+  it('never evicts what install precached, however long ago it was used', async () => {
     const browser = createBrowser();
     const worker = await installAndActivate(browser);
     const precached = browser.cachedPaths();
+    // Loading the app records a use of each shell file, older than any visit below
+    await worker.dispatch('fetch', { request: navigation('/') });
+    for (const path of APP_SHELL.filter((path) => path !== '/')) {
+      await worker.dispatch('fetch', { request: subresource(path) });
+    }
 
     await overflowCache(worker);
 
