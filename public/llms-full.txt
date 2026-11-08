@@ -54,7 +54,7 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 - **Fast Loading**: Service worker caches assets for instant loading
 - **Native Experience**: Standalone mode without browser UI
 - **Update Prompt**: DosKit checks for a new version every hour and whenever the tab becomes visible again. Once one has installed, it offers to reload into it ("Update Now") or to wait ("Later"); an update put off is offered again on the next visit
-- **Connection Status**: Real-time online/offline indicator
+- **Connection Status**: An Online/Offline badge in the footer. When the connection drops while DosKit is open, a banner at the top says that the applications opened while online still work and the others need a connection to load; it can be closed, and goes when the connection returns, with a "Back online" notice for 3 seconds
 
 ## Technology Stack
 
