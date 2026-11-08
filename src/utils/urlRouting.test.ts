@@ -48,6 +48,20 @@ describe('urlRouting', () => {
       });
     });
 
+    // Names every plain object inherits, which a lookup by key must not take for apps
+    it.each(['constructor', '__proto__', 'toString', 'CONSTRUCTOR', 'hasOwnProperty'])(
+      'reports ?app=%s as naming no app',
+      (name) => {
+        window.history.replaceState({}, '', `/?app=${name}`);
+
+        expect(getAppRequestFromUrl()).toEqual({
+          appId: null,
+          unknownApp: true,
+          unknownAppId: name,
+        });
+      }
+    );
+
     it('reports an unknown app of 100 characters in full', () => {
       window.history.replaceState({}, '', `/?app=${'a'.repeat(100)}`);
 
