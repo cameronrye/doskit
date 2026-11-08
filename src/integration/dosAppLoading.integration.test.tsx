@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
-import { render, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import App from '../App';
 import { DosPlayer } from '../components/DosPlayer';
 import type {
@@ -387,7 +387,49 @@ describe('Status badge as players come and go', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     delete (window as Partial<Window>).Dos;
+    document.getElementById('emulators-js')?.remove();
+    delete window.emulators;
     window.history.replaceState({}, '', '/');
+  });
+
+  // js-dos's first Dos() call adds the script tag that loads emulators.js, and a later call
+  // that finds the tag reads the emulators global at once: before the script has run, that
+  // player never boots
+  it('boots an app picked while emulators.js loads, once the script has run', async () => {
+    const emulatorsFound: unknown[] = [];
+    mockDos.mockImplementation(() => {
+      if (document.getElementById('emulators-js')) {
+        emulatorsFound.push(window.emulators);
+      } else {
+        const script = document.createElement('script');
+        script.id = 'emulators-js';
+        document.head.append(script);
+      }
+      return createMockDosInstance();
+    });
+    render(<App />);
+    expect(mockDos).toHaveBeenCalledTimes(1);
+
+    // The start page's selector is open over its player
+    fireEvent.doubleClick(screen.getByRole('button', { name: /^Starfield Effect by/ }));
+
+    // Once the selector has its files, the app's player replaces the start page's
+    await waitFor(() =>
+      expect(document.querySelector('.header-app-name')).toHaveTextContent('Starfield Effect')
+    );
+    await act(async () => {});
+    expect(mockDos).toHaveBeenCalledTimes(1);
+    expect(badge()).toHaveTextContent('Loading');
+
+    await act(async () => {
+      window.emulators = { version: '8.3.8' };
+      document.getElementById('emulators-js')?.dispatchEvent(new Event('load'));
+    });
+
+    expect(mockDos).toHaveBeenCalledTimes(2);
+    expect(emulatorsFound).toEqual([window.emulators]);
+    reportReady();
+    expect(badge()).toHaveTextContent('Ready');
   });
 
   it('says Loading from the moment a new player mounts until that player is ready', async () => {

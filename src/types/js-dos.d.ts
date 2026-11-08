@@ -235,5 +235,10 @@ export function Dos(element: HTMLDivElement, options?: Partial<DosOptions>): Dos
 declare global {
   interface Window {
     Dos: typeof Dos;
+    /**
+     * js-dos's emulators package, which emulators.js defines when it runs. DosKit only
+     * checks that it is there.
+     */
+    emulators?: unknown;
   }
 }
