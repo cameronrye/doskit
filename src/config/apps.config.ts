@@ -8,10 +8,12 @@
  */
 
 import type { DosApp } from '../types/dos-app';
+import { loadZipArchive } from '../utils/diskLoader';
 
 /**
  * Available DOS applications and demos
- * Uses lazy loading to reduce initial bundle size
+ * Each app's config module (src/dos-apps) is imported lazily, so its code is only
+ * downloaded when the app is loaded or its config preloaded
  */
 export const availableApps: DosApp[] = [
   {
@@ -24,7 +26,6 @@ export const availableApps: DosApp[] = [
     dosboxConf: '', // Loaded dynamically
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/second-reality.config');
-      const { loadZipArchive } = await import('../utils/diskLoader');
       return loadZipArchive(config.secondRealityZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
@@ -42,7 +43,7 @@ export const availableApps: DosApp[] = [
     dosboxConf: '',
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/impulse-tracker.config');
-      return config.loadZipArchive(config.impulseTrackerZipUrl, onProgress, signal);
+      return loadZipArchive(config.impulseTrackerZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/impulse-tracker.config');
@@ -59,7 +60,7 @@ export const availableApps: DosApp[] = [
     dosboxConf: '',
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/starport-bbstro.config');
-      return config.loadZipArchive(config.starportBbstroZipUrl, onProgress, signal);
+      return loadZipArchive(config.starportBbstroZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/starport-bbstro.config');
@@ -76,7 +77,7 @@ export const availableApps: DosApp[] = [
     dosboxConf: '',
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/scream-tracker.config');
-      return config.loadZipArchive(config.screamTrackerZipUrl, onProgress, signal);
+      return loadZipArchive(config.screamTrackerZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/scream-tracker.config');
@@ -93,7 +94,7 @@ export const availableApps: DosApp[] = [
     dosboxConf: '',
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/unreal.config');
-      return config.loadZipArchive(config.unrealZipUrl, onProgress, signal);
+      return loadZipArchive(config.unrealZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/unreal.config');
@@ -110,7 +111,7 @@ export const availableApps: DosApp[] = [
     dosboxConf: '',
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/panic.config');
-      return config.loadZipArchive(config.panicZipUrl, onProgress, signal);
+      return loadZipArchive(config.panicZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/panic.config');
@@ -127,7 +128,7 @@ export const availableApps: DosApp[] = [
     dosboxConf: '',
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/squid-bbstro.config');
-      return config.loadZipArchive(config.squidBbstroZipUrl, onProgress, signal);
+      return loadZipArchive(config.squidBbstroZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/squid-bbstro.config');
@@ -144,7 +145,7 @@ export const availableApps: DosApp[] = [
     dosboxConf: '',
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/3drotate.config');
-      return config.loadZipArchive(config.rotate3dZipUrl, onProgress, signal);
+      return loadZipArchive(config.rotate3dZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/3drotate.config');
@@ -161,7 +162,7 @@ export const availableApps: DosApp[] = [
     dosboxConf: '',
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/stars.config');
-      return config.loadZipArchive(config.starsZipUrl, onProgress, signal);
+      return loadZipArchive(config.starsZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/stars.config');
@@ -178,7 +179,7 @@ export const availableApps: DosApp[] = [
     dosboxConf: '',
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/crystal-dream-2.config');
-      return config.loadZipArchive(config.crystalDream2ZipUrl, onProgress, signal);
+      return loadZipArchive(config.crystalDream2ZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/crystal-dream-2.config');

@@ -7,11 +7,7 @@
  * Configuration for running Impulse Tracker, a music tracker for DOS (1997)
  */
 
-import { loadZipArchive as loadZip } from '../utils/diskLoader';
 import { presets } from '../utils/dosboxConfigBuilder';
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
 
 /**
  * Impulse Tracker compiled application (hosted locally)

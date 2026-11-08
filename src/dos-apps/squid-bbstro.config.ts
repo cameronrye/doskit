@@ -7,11 +7,7 @@
  * Configuration for running the Squid BBS intro by cld & The Doctor (1994)
  */
 
-import { loadZipArchive as loadZip } from '../utils/diskLoader';
 import { presets } from '../utils/dosboxConfigBuilder';
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
 
 /**
  * Squid BBS Intro (hosted locally)

@@ -7,11 +7,7 @@
  * Configuration for running the Panic demo by Future Crew (1992)
  */
 
-import { loadZipArchive as loadZip } from '../utils/diskLoader';
 import { presets } from '../utils/dosboxConfigBuilder';
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
 
 /**
  * Panic demo (hosted locally)

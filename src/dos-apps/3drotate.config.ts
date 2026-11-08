@@ -7,11 +7,7 @@
  * Configuration for running the 3D rotation demo from Grumpy's collection
  */
 
-import { loadZipArchive as loadZip } from '../utils/diskLoader';
 import { presets } from '../utils/dosboxConfigBuilder';
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
 
 /**
  * 3D Rotate Demo (hosted locally)

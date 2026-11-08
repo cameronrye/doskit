@@ -2,9 +2,14 @@
  * Tests for the DOS application registry
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { availableApps } from './apps.config';
+import { loadZipArchive } from '../utils/diskLoader';
 import type { DosApp } from '../types/dos-app';
+
+vi.mock('../utils/diskLoader', () => ({
+  loadZipArchive: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
+}));
 
 /** The DOSBox config an app runs with, as DemoSelector resolves it */
 const dosboxConfOf = async (app: DosApp): Promise<string> =>
@@ -20,7 +25,23 @@ const IGNORED_BY_DEFAULT_BACKEND = [
 ];
 
 describe('availableApps', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe.each(availableApps)('$name', (app) => {
+    it('should download its ZIP archive with the progress callback and abort signal', async () => {
+      const onProgress = vi.fn();
+      const { signal } = new AbortController();
+
+      await expect(app.loader(onProgress, signal)).resolves.toEqual(new Uint8Array([1, 2, 3]));
+      expect(loadZipArchive).toHaveBeenCalledExactlyOnceWith(
+        `/demos/${app.id}.zip`,
+        onProgress,
+        signal
+      );
+    });
+
     it('should only state DOSBox settings the default backend applies', async () => {
       const conf = await dosboxConfOf(app);
 

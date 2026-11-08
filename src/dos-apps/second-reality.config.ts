@@ -7,11 +7,7 @@
  * Configuration for running the famous Second Reality demo by Future Crew (1993)
  */
 
-import { loadZipArchive as loadZip } from '../utils/diskLoader';
 import { presets } from '../utils/dosboxConfigBuilder';
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
 
 /**
  * DOSBox configuration optimized for Second Reality

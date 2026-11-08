@@ -7,11 +7,7 @@
  * Configuration for running the starfield demo from Grumpy's collection
  */
 
-import { loadZipArchive as loadZip } from '../utils/diskLoader';
 import { presets } from '../utils/dosboxConfigBuilder';
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
 
 /**
  * Starfield Effect Demo (hosted locally)

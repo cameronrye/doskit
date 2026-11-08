@@ -7,11 +7,7 @@
  * Configuration for running Crystal Dream 2 by Triton (1993)
  */
 
-import { loadZipArchive as loadZip } from '../utils/diskLoader';
 import { presets } from '../utils/dosboxConfigBuilder';
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
 
 /**
  * Crystal Dream 2 by Triton (hosted locally)

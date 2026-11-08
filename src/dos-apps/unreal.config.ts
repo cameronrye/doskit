@@ -7,11 +7,7 @@
  * Configuration for running the Unreal demo by Future Crew (1992)
  */
 
-import { loadZipArchive as loadZip } from '../utils/diskLoader';
 import { presets } from '../utils/dosboxConfigBuilder';
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
 
 /**
  * Unreal demo (hosted locally)

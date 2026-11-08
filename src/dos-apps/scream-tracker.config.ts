@@ -7,11 +7,7 @@
  * Configuration for running Scream Tracker 3.21, a music tracker for DOS (1994)
  */
 
-import { loadZipArchive as loadZip } from '../utils/diskLoader';
 import { presets } from '../utils/dosboxConfigBuilder';
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
 
 /**
  * Scream Tracker 3.21 (hosted locally)
