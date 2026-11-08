@@ -127,7 +127,7 @@ In Chrome, Edge and other Chromium browsers, DosKit also shows its own **Install
 
 The service worker (`public/sw.js`) is registered by production builds only, so `npm run dev` runs without it. To try it locally, run `npm run build` and then `npm run preview`.
 
-- **On install**, the worker stores the app shell (`index.html`, the manifest, the logo and favicon, and every JS and CSS bundle, including the chunks loaded on demand) and, in a cache of their own, js-dos's player (`js-dos.js`, `js-dos.css`) and the emulator files of its default DOSBox backend. It serves js-dos's files from there and never refreshes them, so a page always gets the player and the emulator files of the same js-dos version.
+- **On install**, the worker stores the app shell (`index.html`, the manifest, the logo and favicon, and every JS and CSS bundle, including the chunks loaded on demand) and, in a cache of their own, js-dos's player (`js-dos.js`, `js-dos.css`) and the emulator files of its default DOSBox backend. It serves js-dos's files from there and never refreshes them, so a page gets the player and the emulator files of the js-dos version its worker installed. A page still open when a worker with another js-dos version takes over, such as after **Update Now** in another tab, can mix them: until it reloads, its next player can get that version's emulator files.
 - **App archives** (`/demos/<id>.zip`) are stored the first time each app is opened while the service worker runs. On a first visit, an app opened before the worker has started, such as a deep link's, is stored the next time it is opened. An app not stored yet cannot start offline: while the browser reports being offline, it fails at once with "This application isn't available offline yet", and opening it once online stores it.
 - **While offline**, a banner at the top says so, and screen readers announce it: the applications you have opened while online still work, and the others need a connection to load. It appears when the connection drops while DosKit is open and on a page opened offline, moves the header down below it, can be closed, and goes away when the connection returns, with a **Back online** notice at the top for 3 seconds. In windows under 500px tall it keeps to one line.
 - **Pages** come from the network. When the network fails or takes more than 5 seconds, every URL gets the `index.html` stored on install, so a URL never visited online, such as a new deep link, opens too. Pages are not stored as they are visited.
@@ -197,7 +197,7 @@ doskit/
 │   ├── help.js                    # npm run help
 │   ├── generate-icons.js          # PWA icons from logo.svg
 │   ├── generate-social-images.js  # Social preview PNGs from their SVGs
-│   └── *.test.js                  # Tests of these scripts, the service worker, 404.html, robots.txt,
+│   └── *.test.js                  # Tests of the first three scripts, the service worker, 404.html, robots.txt,
 │                                  # the licenses page, the icons, index.html's metadata and the ESLint config
 ├── src/
 │   ├── adapters/                  # Emulator adapter around js-dos's window.Dos()
@@ -443,7 +443,7 @@ This will start a DOS prompt that you can interact with directly in your browser
 
 On the start page, the app selector opens over the prompt. Click an app to see its details and **Load Application** below the disks, or double-click it to load it at once. Picking the app that is running starts it again, such as a demo that has ended at the DOS prompt. The header's **Change Application** (or **Select Application**) button opens the selector again.
 
-With the keyboard, the list of apps is a single Tab stop: the arrow keys, Home and End move between the apps and select them, Space selects the app with the focus, and Enter loads it. Tab and Shift+Tab go round the selector's controls without leaving it. While an app downloads, the arrow keys only move the focus: Space or a click on another app cancels the download and selects that app, and Enter or a double-click on it loads it instead. Escape cancels a download, or else closes the selector. Closed from the keyboard, the selector gives the focus back to what had it when it opened, such as the header's button; after a pick, a close with the mouse, or a close of the selector the start page opened with, the focus is on the page.
+With the keyboard, the list of apps is a single Tab stop: the arrow keys, Home and End move between the apps and select them, Space selects the app with the focus, and Enter loads it. Tab and Shift+Tab go round the selector's controls without leaving it. While an app downloads, the arrow keys only move the focus: Space or a click on another app cancels the download and selects that app, and Enter or a double-click on it loads it instead. Escape cancels a download, or else closes the selector. Closed from the keyboard, the selector gives the focus back to what had it when it opened, such as the header's button; after a pick, a close with the mouse, or a close of the selector the start page opened with, the focus is on the page. Closed over the **Error Loading Application** box, from the keyboard or with the mouse, it gives the focus to the box's **Try Again** instead.
 
 Keys pressed on DosKit's own controls, such as the selector, the header's button, the notices and the footer's links, stay with them and never reach the running program. While the page itself has the focus, as after a pick or a click on the DOS screen, DOS gets every key, Tab included, so the keyboard alone cannot get back to DosKit's controls: click one of them (see [Known Limitations](#known-limitations)).
 
@@ -493,7 +493,7 @@ myprog.exe
 `;
 ```
 
-2. **Package your DOS files in a ZIP archive** in the public directory, for example as `public/demos/myprog.zip`, where the service worker caches it for offline use like the apps' archives. js-dos only sees the files passed in its `initFs` option.
+2. **Package your DOS files in a ZIP archive** in the public directory, for example as `public/myprog.zip`. Keep it out of `public/demos/`: `src/config/apps.config.test.ts` fails for an archive there that no app in the selector loads. js-dos only sees the files passed in its `initFs` option.
 
 3. **Download the archive and hand it to DosPlayer:**
 
@@ -507,7 +507,7 @@ function MyProgram() {
 
   useEffect(() => {
     const controller = new AbortController();
-    loadZipArchive('/demos/myprog.zip', undefined, controller.signal).then(setZip, () => {
+    loadZipArchive('/myprog.zip', undefined, controller.signal).then(setZip, () => {
       // Aborted on unmount, or failed: loadZipArchive logs failures
     });
     return () => controller.abort();
@@ -725,7 +725,7 @@ Fullscreen is the button in the js-dos sidebar, which makes the player fill the 
 
 The selector, or the **Error Loading Application** box of an app the URL asks for, by a link or by Back and Forward, says what went wrong. **Details**, under the explanation, shows the technical error for bug reports, such as `Failed to fetch` or `Failed to load ZIP: HTTP 404`. In the box, **Try Again**, which has the keyboard focus, downloads the same app again, and **Choose Another Application** returns to the DOS prompt with the selector open; in the selector, **Load Application** tries again. A download that is still running can be given up with **Cancel Loading** in the selector, or with **Cancel** under "Loading application...".
 
-- **Unable to connect to the server**: a network error while the browser reported being online, after the retries
+- **Unable to connect to the server**: a network error while the browser reported being online, after the retries, or at once if the download broke off while the archive arrived
 - **This application isn't available offline yet**: a network error while the browser reports being offline, for an app whose archive the service worker has not stored (see [How Offline Works](#how-offline-works))
 - **The requested file was not found**: the server answered 404; an update of DosKit may have moved the file, so reload the page
 - **The server is temporarily unavailable**: the server answered with an error status (5xx); try again in a few minutes
@@ -737,7 +737,7 @@ The selector, or the **Error Loading Application** box of an app the URL asks fo
 1. Check internet connection
 2. Offline, only apps whose archives the service worker has stored can start: see [How Offline Works](#how-offline-works)
 3. Check the browser console and Network tab: each app downloads `/demos/<id>.zip` from the site itself
-4. Try again later. Failed downloads are retried three times, with growing delays, after network errors and 408, 429, 500, 502, 503 and 504 responses, except a network error while the browser reports being offline, which fails at once
+4. Try again later. Failed requests for an archive are retried three times, with growing delays, after network errors and 408, 429, 500, 502, 503 and 504 responses, except a network error while the browser reports being offline, which fails at once; a download that breaks off once the archive is arriving is not retried
 5. Check if using VPN or proxy that might block requests
 
 #### High Memory Usage
@@ -766,7 +766,7 @@ import { logger } from './utils/logger';
 logger.debug('MyComponent', 'Debug message', { details: 'any extra values' });
 ```
 
-Stopping a player, as every app switch does, also logs an error that just says `ExitStatus`. That is js-dos's emulator worker reporting its normal exit (code 0) in its own console, and nothing to fix.
+Stopping a player, as every app switch does, also logs an `ExitStatus` error (`Program terminated with exit(0)`). That is js-dos's emulator worker reporting its normal exit (code 0) in its own console, and nothing to fix.
 
 ### Performance Tips
 
