@@ -401,13 +401,23 @@ function MyApp() {
 
   const handleReady = (commandInterface: CommandInterface) => {
     setCi(commandInterface);
-    // Control DOS programmatically
+
+    // Now you can control DOS programmatically
     commandInterface.simulateKeyPress(257); // Press Enter (257 in js-dos key codes)
   };
 
-  return <DosPlayer onReady={handleReady} />;
+  return (
+    <>
+      <DosPlayer onReady={handleReady} onExit={() => setCi(null)} />
+      <button onClick={() => ci?.pause()} disabled={!ci}>
+        Pause
+      </button>
+    </>
+  );
 }
 ```
+
+`onExit` is called once for each `onReady`: when DOS exits, or when the player is unmounted.
 
 Available commands:
 - `ci.pause()` / `ci.resume()` - Control emulation
@@ -450,7 +460,7 @@ Methods:
 ### Available Scripts
 
 ```bash
-# Show all available scripts with descriptions
+# List all scripts by category, with the command each one runs
 npm run help
 
 # Start development server (copies js-dos into public/ first)
