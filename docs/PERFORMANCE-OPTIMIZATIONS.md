@@ -1,16 +1,14 @@
 # Performance Optimizations
 
-This document details the performance optimizations implemented in DosKit based on comprehensive research of WebAssembly, DOSBox, and browser optimization techniques.
+This document details the performance optimizations implemented in DosKit: how it sets up DOSBox, js-dos and the browser for DOS emulation, and what each setting does.
 
 ## Overview
 
-DosKit has been optimized to provide the best possible performance for DOS emulation in the browser while maintaining high audio quality and visual fidelity. These optimizations are based on research into:
+The optimizations cover three layers:
 
-- WebAssembly (WASM) optimization techniques
-- DOSBox configuration best practices
-- Browser-level performance improvements
-- js-dos specific optimizations
-- General web performance patterns
+- The DOSBox configuration each app runs with (sections 1 to 3)
+- The options DosKit gives js-dos (sections 4 and 5)
+- How the browser loads and caches the site (sections 6 to 8)
 
 Nothing in the repository measures what they gain: there are no benchmarks, and no test times a page load, a player's start or a frame. So the sections below say what each optimization changes, not how much faster it makes DosKit.
 
@@ -20,7 +18,7 @@ Nothing in the repository measures what they gain: there are no benchmarks, and 
 
 **Status:** ✅ Enabled by default
 
-**Performance Gain:** Stable audio timing. The core itself brings no speed-up: the default backend has no dynamic core.
+**Performance Gain:** No speed-up: the default backend has no dynamic core (below). What fixed cycles give is a steady emulated speed (Benefits).
 
 **Configuration:**
 
@@ -31,18 +29,17 @@ cputype=auto
 cycles=25000
 ```
 
-**What it does:** Emulates a fixed number of instructions per millisecond (`cycles`) on DOSBox's simple core. This is the default DOS prompt's configuration (`src/config/dosbox.conf.ts`); the `musicTracker()` and `demo()` presets in `src/utils/dosboxConfigBuilder.ts` use the same core with 18000 and 30000 cycles. Each app's config in `src/dos-apps/` can override them: the trackers keep fixed cycles on the simple core, Second Reality runs `cycles=max` on it, and the other demos and intros use `core=auto`, `cputype=auto` and `cycles=auto`.
+**What it does:** Emulates a fixed number of instructions per millisecond (`cycles`) on DOSBox's simple core. This is the default DOS prompt's configuration (`src/config/dosbox.conf.ts`); the `musicTracker()` and `demo()` presets in `src/utils/dosboxConfigBuilder.ts` use the same core with 18000 and 30000 cycles. Each app's config in `src/dos-apps/` can override them: the two trackers keep fixed cycles on the simple core, Impulse Tracker the preset's 18000 and Scream Tracker 3 12000. Second Reality runs `cycles=max` on the simple core, and Crystal Dream 2 `cycles=max` on `core=auto`. StarPort BBS Intro II, Unreal, Panic and the 3D rotation demo run a fixed 30000 on `core=auto`, and only the Squid intro and the starfield keep `cycles=auto`, which holds a program in real mode at 3,000 cycles a millisecond.
 
 **No dynamic core:** js-dos's default backend (`dosbox`, `wdosbox.wasm`), which every app runs on, only has the `auto`, `normal` and `simple` cores. DOSBox resets a value it does not accept to the setting's default without a warning, and this backend's default core is `simple`, so the `core=dynamic` these configs used to ask for always ran the simple core: nothing was ever recompiled. `core=auto` cannot switch to a dynamic core either.
 
 **Benefits:**
 
-- **Fixed cycles prevent audio stuttering** (cycles=max causes timing issues)
-- Stable timing for programs that synchronize audio and video
+- A program runs at the speed its config gives it, whatever the device, as long as the device keeps up
 
-**Why Fixed Cycles?**
+**Fixed, `max` or `auto`?**
 
-Research from DOSBox community (VOGONS forums, DOSBox Wiki) shows that `cycles=max` can cause audio stuttering and crackling because it allocates as many cycles as the host CPU can handle, leading to inconsistent timing. Fixed cycles provide stable, predictable performance that's essential for smooth audio playback.
+A fixed number runs the program at that speed throughout. `max` gives it as many cycles as the device can run, and `auto` gives a program 3,000 cycles a millisecond until it switches the CPU to protected mode, and `max` from then on. Which one an app needs depends on the program, not on a general rule: Second Reality and Crystal Dream 2 run at `max`, while Panic plays no sound there, and at `auto` Unreal's and Panic's effects fall seconds behind their music. [`src/dos-apps/README.md`](../src/dos-apps/README.md) says how to choose for a new app.
 
 ---
 
@@ -50,7 +47,7 @@ Research from DOSBox community (VOGONS forums, DOSBox Wiki) shows that `cycles=m
 
 **Status:** ✅ Enabled by default
 
-**Performance Gain:** Eliminates audio artifacts, stuttering, and crackling
+**Performance Gain:** Not measured. A larger prebuffer keeps more audio in hand inside DOSBox, at the cost of latency (see Trade-offs).
 
 **Configuration:**
 
@@ -62,32 +59,21 @@ prebuffer=64
 
 **What it does:**
 
-- Maintains high audio quality (44.1kHz CD-quality sample rate)
-- Increased prebuffer (64 ms of audio on top of the mixer's block) to prevent audio dropouts and crackling (DOSBox accepts up to 100)
+- Mixes at 44.1 kHz, the backend's default rate
+- Keeps 64 ms of audio on top of the mixer's block, where DOSBox's default is 40 (it accepts up to 100)
 - Sets no `blocksize`, which this backend's mixer ignores: it always works in blocks of 2048 samples
 
 **Benefits:**
 
-- No skips or artifacts
-- Smooth audio playback for music, sound effects, and speech
-- Eliminates crackling/popping sounds common with lower prebuffer values
+- Every app mixes its sound as the DOS prompt does: both presets use these settings, and no app's config changes them
 
-**Research-Based Optimizations:**
-
-Based on extensive research from:
-
-- DOSBox Wiki Performance Guide
-- VOGONS forum discussions on audio optimization
-- DOSBox Staging audio recommendations
-- Community feedback on MOD/tracker music playback
-
-**Key Findings:**
+**Key Findings**, from booting the backend with these settings:
 
 - `blocksize` changes nothing on this backend: booted with `blocksize` 256, 2048 or 8192, it sends the page the same pushes of sound, 512 samples or more each, at 44,100 samples a second
-- `prebuffer=64` prevents audio stuttering in most scenarios (it can go up to 100 for problematic cases). DOSBox lowers anything higher to 100 and raises a negative value to 0, without a warning; left out, it is 40
+- `prebuffer` goes from 0 to 100: DOSBox lowers anything higher to 100 and raises a negative value to 0, without a warning; left out, it is 40
 - `rate=44100` is CD quality, and the backend's default. The backend has eight rates (8000, 11025, 16000, 22050, 32000, 44100, 48000 and 49716 Hz) and resets any other to 44100 without a warning, for `oplrate`, `pcrate` and `tandyrate` too
 
-**Trade-offs:** Higher audio latency, from buffers in two places. Inside DOSBox, the mixer keeps the prebuffer, 64 ms or 2,822 samples at 44.1 kHz, on top of its 2048-sample block. On the page, js-dos queues the samples it receives, starts playing once 2048 have arrived, and plays them through a `ScriptProcessorNode` in 2048-sample buffers; it drops pushes that arrive while 6144 samples or more (about 139 ms) are waiting. How much latency that adds up to has not been measured. js-dos plays a single channel, so the sound is mono. For demos and music playback the latency is outweighed by the elimination of audio artifacts
+**Trade-offs:** Higher audio latency, from buffers in two places. Inside DOSBox, the mixer keeps the prebuffer, 64 ms or 2,822 samples at 44.1 kHz, on top of its 2048-sample block. On the page, js-dos queues the samples it receives, starts playing once 2048 have arrived, and plays them through a `ScriptProcessorNode` in 2048-sample buffers; it drops pushes that arrive while 6144 samples or more (about 139 ms) are waiting. How much latency that adds up to has not been measured, nor whether the larger prebuffer spares any dropout on this backend. js-dos plays a single channel, so the sound is mono.
 
 ---
 
@@ -95,7 +81,7 @@ Based on extensive research from:
 
 **Status:** ✅ Available via `musicTracker` preset
 
-**Performance Gain:** Eliminates stuttering, crackling, and timing issues in MOD/tracker music
+**Performance Gain:** Not measured
 
 **Configuration:**
 
@@ -128,40 +114,20 @@ The preset also configures a Sound Blaster 16 and the PC speaker, and turns off 
 
 **What it does:**
 
-- Uses **fixed cycles (18000)** specifically tuned for music tracker applications
+- Runs at a **fixed 18000 cycles**, which Impulse Tracker keeps; Scream Tracker 3's config lowers it to 12000
 - Runs on the **simple CPU core** with the **auto CPU type**: the default backend has no Pentium type and resets `cputype=pentium` to `auto`
-- **Increased prebuffer (64)** for ultra-smooth MOD playback without dropouts (DOSBox accepts up to 100)
-- **EMS and XMS**, so large sample sets can use DOSBox's default 16 MB of memory (the backend has no `[memory]` section; its memory setting is `memsize` in `[dosbox]`)
-
-**Why This Matters for MOD Music:**
-
-MOD files (and related formats like IT, XM, S3M) require precise timing for sample playback. Unlike MIDI or digital audio, MOD files contain raw audio samples that are played back at specific intervals. Any timing inconsistency causes:
-
-- Audio crackling/popping
-- Sample playback stuttering
-- Tempo drift
-- Channel desynchronization
+- Keeps the same **64 ms prebuffer** as the DOS prompt (DOSBox accepts up to 100)
+- **EMS and XMS**, where trackers keep their samples, out of DOSBox's default 16 MB of memory (the backend has no `[memory]` section; its memory setting is `memsize` in `[dosbox]`)
 
 **Benefits:**
 
-- Crystal-clear MOD/IT/XM/S3M playback
-- No audio artifacts during complex multi-channel compositions
-- Stable timing for synchronized audio/visual demos
-- Optimal performance for music tracker applications (Impulse Tracker, FastTracker, etc.)
-
-**Research Sources:**
-
-- Community feedback from demoscene enthusiasts
-- Impulse Tracker documentation and requirements
-- DOSBox configuration guides for music trackers
-- Testing with various MOD formats and complexity levels
+- A tracker gets the memory it keeps its samples in: Impulse Tracker's `IT.TXT` asks for an EMM driver for EMS, and Scream Tracker 3's `ST3.DOC` for some EMS, even with a Gravis UltraSound
+- One starting point for every tracker, which an app's config adjusts: Scream Tracker 3 adds a Gravis UltraSound, the card it plays through
 
 **Use Cases:**
 
-- Playing MOD music files
-- Running music tracker applications (Impulse Tracker, FastTracker, ScreamTracker)
-- Demoscene productions with synchronized audio
-- Any DOS application with sample-based audio
+- The two trackers DosKit runs, Impulse Tracker and Scream Tracker 3
+- Other trackers and music programs added later: [`src/dos-apps/README.md`](../src/dos-apps/README.md) describes how to add an app
 
 ---
 
@@ -179,7 +145,7 @@ scaler=none
 aspect=false
 ```
 
-**What it does:** States what the backend does anyway. `none` is the only scaler it accepts and aspect correction is off by default, so DOSBox hands js-dos each frame at the program's own resolution. Only the default DOS prompt's configuration states these lines; the presets leave `[render]` at the same defaults. js-dos draws each frame into a canvas of that same size (section 4), and the browser scales the canvas to the player: js-dos sets its CSS width and height to fit the player at the aspect ratio of its `renderAspect` option, `'4/3'` in `src/config/jsdos.config.ts`, and its CSS `image-rendering` to the `imageRendering` option, `'pixelated'`, so the pixels are not smoothed.
+**What it does:** States what the backend does anyway. `none` is the only scaler it accepts, and the one it has when the line is left out; aspect correction is off by default too, so DOSBox hands js-dos each frame at the program's own resolution. js-dos's DOSBox lists no other scaler: `normal2x` and `normal3x` sit behind `#ifndef JSDOS` in its `src/dosbox.cpp`, and the backend's WebAssembly holds none of the advanced scalers' names. DOSBox resets a value it refuses, `normal2x` included, to the defaults of the setting's parts, so `config -get render scaler` then reports `normal2x`, a name this backend only keeps as that default; the frames keep the program's resolution either way. Only the default DOS prompt's configuration states these lines; the presets leave `[render]` at the same defaults. js-dos draws each frame into a canvas of that same size (section 4), and the browser scales the canvas to the player: js-dos sets its CSS width and height to fit the player at the aspect ratio of its `renderAspect` option, `'4/3'` in `src/config/jsdos.config.ts`, and its CSS `image-rendering` to the `imageRendering` option, `'pixelated'`, so the pixels are not smoothed. A user who picks another aspect ratio or image rendering in js-dos's settings panel keeps that choice instead.
 
 **Benefits:**
 
@@ -205,6 +171,8 @@ renderBackend: 'webgl';
 - At most one draw per display frame, however many frames arrive
 
 **Fallback:** js-dos falls back to Canvas 2D when its WebGL renderer cannot start, for example when the browser gives it no WebGL context
+
+**Releasing contexts:** js-dos's `stop()` leaves the canvas's WebGL context alive, and the document listeners it never removes keep the canvas reachable, so every app switch used to leave a live context behind, and from the 17th Chrome lost the oldest with "WARNING: Too many active WebGL contexts. Oldest context will be lost." `useDosEmulator` now loses each canvas's context through `WEBGL_lose_context` before it stops a player, and Chrome no longer warns, checked over 20 switches. Safari still counts a lost context until it is garbage-collected, and a stopped player stays reachable, so from the 17th player in a page it logs "There are too many active WebGL contexts" and "loseContext: context already lost" at each switch.
 
 ---
 
@@ -243,7 +211,7 @@ workerThread: true;
 <script src="/js-dos.js" defer fetchpriority="high"></script>
 ```
 
-**What it does:** Starts downloading the default backend's WebAssembly module while the page is still loading. When a player starts, js-dos's `emulators.js` requests the same file from the page with an `XMLHttpRequest`, which matches the preload's `as="fetch"` and `crossorigin`, so it gets the preloaded response; it compiles the module and hands it to the emulator's Web Worker. DOSBox-X (`wdosbox-x.wasm`, several times larger) is not preloaded: every app runs on the default backend.
+**What it does:** Starts downloading the default backend's WebAssembly module while the page is still loading. When a player starts, js-dos's `emulators.js` requests the same file from the page with an `XMLHttpRequest`, which matches the preload's `as="fetch"` and `crossorigin`, so Chromium answers it with the preloaded response; it compiles the module and hands it to the emulator's Web Worker. DOSBox-X (`wdosbox-x.wasm`, several times larger) is not preloaded: every app runs on the default backend.
 
 `js-dos.js` is a classic script, loaded with `defer` so that it does not block the HTML parser. Deferred scripts run in document order, so it still runs before the app's module script, which comes later in the document (at the end of `<head>` in the build, of `<body>` on the dev server), and `window.Dos` exists when the first player mounts. Chrome fetches deferred scripts at low priority, and the app has to wait for this one, so `fetchpriority="high"` keeps the priority it had as a blocking script.
 
@@ -251,9 +219,11 @@ The built `index.html` also gets `<link rel="modulepreload">` tags from Vite, fo
 
 Chrome warns in the console that the module "was preloaded using link preload but not used within a few seconds" when no player starts that soon after the page loads, such as a deep link whose archive is still downloading, or a load that failed. A player that starts later still uses the preloaded response; the file is not downloaded twice.
 
+Safari (WebKit) does not answer `emulators.js`'s request from the preload, and logs that the file was preloaded but not used on every page load, even when a player starts at once. Under `vite preview`, which sends `Cache-Control: no-cache`, a first visit in WebKit downloaded the 1.46 MB file twice, once for the preload and once for the player; whether GitHub Pages' caching headers spare the second download has not been checked. Once the service worker is installed, it answers both requests from its emulator cache (section 7). The preload stays for Chromium's sake, where the first player gets the module sooner.
+
 **Benefits:**
 
-- By the time the first player asks for the module, it is downloading or already in
+- In Chromium, by the time the first player asks for the module, it is downloading or already in
 
 ---
 
@@ -269,7 +239,7 @@ Chrome warns in the console that the module "was preloaded using link preload bu
 
 | Cache                               | Holds                                                                                                                                                | Filled                                                                           | Replaced when                           |
 | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------- |
-| `doskit-<build>`                    | `/` (the app's `index.html`), `manifest.json`, `logo.svg`, `favicon.svg` and every JS and CSS bundle; other files the app fetches, but no pages      | On install, copying the bundles an earlier deploy's cache holds, then at runtime | Every deploy                            |
+| `doskit-<build>`                    | `/` (the app's `index.html`), `manifest.json`, `logo.svg`, `favicon.svg` and every JS and CSS bundle; other files the app fetches, but no pages      | On install, copying the bundles an earlier deploy's cache holds, then at runtime | A deploy changes the site or the worker |
 | `doskit-emulators-<js-dos version>` | The js-dos player (`js-dos.js`, `js-dos.css`) and the default backend: `wdosbox.wasm`, `wdosbox.js`, `wlibzip.wasm`, `wlibzip.js` and `emulators.js` | On install, downloading only what it lacks                                       | js-dos changes                          |
 | `doskit-demos-<hash>`               | Demo archives (`/demos/<id>.zip`), under a hash of every archive in the build                                                                        | The first time each app loads                                                    | An archive is added, removed or changed |
 
@@ -286,14 +256,15 @@ Details that keep the caches right:
 - Install revalidates the files whose names never change (`cache: 'no-cache'`), so a worker installed within the 10 minutes GitHub Pages lets browsers reuse a file cannot store the previous deploy's `index.html`. A hashed name always means the same content, so install first copies each bundle an earlier deploy's cache holds under the same name, and downloads only the rest, from the HTTP cache where it has them. That seldom helps across deploys: GitHub Pages gives every file a new ETag on each deploy, so once the 10 minutes are up, a bundle is downloaded again in full.
 - The build lists every JS and CSS file in `dist/assets` for install, the lazily imported chunks too (section 8), so an app opened offline finds its config; source maps are left out. The build fails when the worker would precache a file that is not in `dist/`, because a single 404 stops `cache.addAll()` and the worker would never install.
 - The build's cache is trimmed to 100 entries by removing the runtime entries used least recently (their last use is recorded in `doskit-<build>-metadata`); what install stored is never removed. The emulator and demo caches are not trimmed.
-- Activating a new worker deletes every other `doskit-*` cache: earlier deploys, other js-dos versions and replaced demo archives. An updated worker waits until the user accepts the update prompt.
+- The build names the deploy's cache after a hash of the site it made: every file in `dist/` but `sw.js`, and the worker with what is injected into it. A deploy that changes neither the site nor the worker, such as one of docs alone, so writes the same `sw.js`, and browsers install no new worker and offer no update.
+- Activating a new worker deletes every other `doskit-*` cache: earlier deploys, other js-dos versions and replaced demo archives. An updated worker waits until the user picks Update Now in the update prompt, or until every tab of the app has closed; a reload alone does not let it take over.
 - Lookups ignore `Vary`. Chrome sends `Origin` with `index.html`'s crossorigin requests (its module scripts, its stylesheet and the wasm preload) while install's requests carry none, so on a host that answers `Vary: Origin`, such as `vite preview`, every precached bundle would miss. GitHub Pages only sends `Vary: Accept-Encoding`.
 - DOSBox-X is not precached: js-dos offers its backend picker only before a run, which `autoStart` skips, so users cannot switch to it. If anything requests it, it is cached on first use like any emulator file.
 
 **Benefits:**
 
 - Repeat visits only wait on the network for the page itself
-- A deploy downloads only the bundles whose names it changed: one that keeps js-dos does not download its player or emulator files again, and one that keeps every demo archive does not download them again
+- A deploy downloads only the bundles whose names it changed: one that keeps js-dos does not download its player or emulator files again, and one that keeps every demo archive does not download them again. One that changes nothing the site serves installs no worker at all.
 - The app opens offline at any URL, and an app plays offline once its archive is cached
 
 ---
@@ -324,7 +295,7 @@ export default defineConfig({
 
 - React and React DOM, with the scheduler they import, get a chunk of their own, `react-vendor-<hash>.js`. Its name follows its content: React itself, the file name of the Rolldown runtime chunk it imports, and the short names Rolldown gives its exports. A release that leaves these alone need not download it again: the service worker's install copies it from the previous release's cache (section 7).
 - `src/config/apps.config.ts` loads each app's config module (`src/dos-apps/<id>.config.ts`) with `import()`, so each is a small chunk of its own, downloaded when the app loads or when the selector preloads it after a 150 ms hover. The DOSBox config builder is a chunk they share.
-- The archive loader (`src/utils/diskLoader.ts`) is imported statically by `apps.config.ts`, so it is part of the entry chunk, like the default DOS prompt's config: an app needs no chunk beyond its own config to start downloading its archive.
+- The archive loader (`src/utils/diskLoader.ts`) is imported statically by `apps.config.ts`, so it is part of the entry chunk, like the default DOS prompt's config. Before its archive starts downloading, an app needs two chunks, its own config and the DOSBox config builder's, which Vite fetches in parallel; the builder's comes once per page.
 - The service worker precaches every chunk (section 7), so an app can still load its config offline.
 
 **Benefits:**
@@ -354,6 +325,8 @@ Every browser DosKit supports, from the minimum versions in the README's [Browse
 | WASM Preload   | ✅     | ✅      | ✅     | ✅   |
 | Service Worker | ✅     | ✅      | ✅     | ✅   |
 
+Safari has the preload, but js-dos's request for the module does not use it (section 6).
+
 **Fallback Strategy:** Where WebGL cannot start, js-dos draws with Canvas 2D (section 4). Older browsers are not supported: they lack `structuredClone()`, which js-dos's player calls once a second while it runs, so each of those calls fails with an error.
 
 ---
@@ -382,7 +355,7 @@ The default DOS prompt's settings, from `src/config/dosbox.conf.ts`:
 # The default backend has no dynamic core
 core=simple
 cputype=auto
-# Fixed cycles keep audio stable
+# A fixed speed, in cycles per millisecond
 cycles=25000
 
 [render]
@@ -391,9 +364,9 @@ scaler=none
 aspect=false
 
 [mixer]
-# High-quality audio
+# The backend's default rate
 rate=44100
-# Prevent audio dropouts (up to 100)
+# Milliseconds of audio on top of each block: 40 by default, up to 100
 prebuffer=64
 ```
 
@@ -403,7 +376,7 @@ DOSBox only treats a line that starts with `#` as a comment. A comment after a v
 
 ## Future Optimization Opportunities
 
-These optimizations were researched but not yet implemented. The first two are options for compiling js-dos's emulators, which DosKit does not build: it copies the builds in js-dos's npm package. Which options those builds use, and what either would gain, has not been checked.
+These have been considered but not implemented. The first two are options for compiling js-dos's emulators, which DosKit does not build: it copies the builds in js-dos's npm package. Which options those builds use, and what either would gain, has not been checked.
 
 ### 1. SIMD Support (Not Implemented)
 
@@ -466,13 +439,14 @@ To validate these optimizations:
 
 ## References
 
-This optimization work is based on research from:
+Background on the techniques above:
 
 - [Emscripten Optimization Documentation](https://emscripten.org/docs/optimizing/Optimizing-Code.html)
 - [DOSBox Performance Wiki](https://www.dosbox.com/wiki/Performance)
 - [WebAssembly Performance Patterns](https://web.dev/articles/webassembly-performance-patterns-for-web-apps)
 - [js-dos Documentation](https://js-dos.com)
-- Browser vendor documentation (Chrome, Firefox, Safari)
+
+DOSBox's own builds have settings that js-dos's default backend lacks, such as the dynamic core (section 1), so advice written for them does not always apply to DosKit.
 
 ---
 
