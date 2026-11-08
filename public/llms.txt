@@ -1,76 +1,25 @@
 # DosKit
 
-> A robust, cross-platform DOS emulator powered by js-dos WebAssembly technology
+> DosKit runs DOS applications and demoscene demos in the browser: a progressive web app built with React 19, TypeScript and Vite 8 around js-dos 8.3.20, which runs DOSBox as WebAssembly in a worker thread. It is live at https://doskit.net/, and its source is at https://github.com/cameronrye/doskit.
 
-## Overview
+The start page boots a DOS prompt and opens an application selector over it. DosKit comes with demoscene productions and music trackers, among them Second Reality, Crystal Dream 2, Impulse Tracker and Scream Tracker 3, and each opens at a link of its own, such as https://doskit.net/?app=secondreality.
 
-DosKit is a modern web application that enables users to run classic DOS applications and demos directly in their browser. Built with React 19, TypeScript, and Vite, it leverages js-dos v8.3.20 for high-performance DOS emulation through WebAssembly.
+- **Offline**: Installable; after the first visit the DOS prompt works offline, and each application does once it has been opened online
+- **Input and sound**: The keyboard, Sound Blaster and AdLib sound, and the on-screen keyboard in the js-dos sidebar, which phones and tablets open on a compact layout of DosKit's
+- **Browsers**: WebAssembly and `structuredClone()`, which js-dos's player calls once a second: Chrome and Edge 98+, Firefox 94+ and Safari 15.4+, on iOS 15.4+ too
+- **Code**: The components are in `src/components/`, the application registry and the DOSBox and js-dos settings in `src/config/`, each application's config module in `src/dos-apps/` and its archive in `public/demos/`. Run `npm install`, then `npm run dev`, `npm run build` or `npm test`
+- **License**: MIT, copyright (c) 2025 Cameron Rye (cameron@rye.dev)
 
-It comes with a library of demoscene productions and music trackers, among them Second Reality, Crystal Dream 2, Impulse Tracker and Scream Tracker 3.
+## Docs
 
-## Key Features
+- [Full documentation](https://doskit.net/llms-full.txt): Features, architecture, configuration, every bundled application with its link, development and troubleshooting, in one file
+- [README](https://raw.githubusercontent.com/cameronrye/doskit/main/README.md): Setup, configuration, deep links, browser support and troubleshooting
+- [Architecture](https://raw.githubusercontent.com/cameronrye/doskit/main/docs/ARCHITECTURE.md): Components, data flow, the service worker, the design patterns and how js-dos is updated
+- [Adding an application](https://raw.githubusercontent.com/cameronrye/doskit/main/src/dos-apps/README.md): The archive, config module and registry entry each application needs
+- [Application archives](https://raw.githubusercontent.com/cameronrye/doskit/main/public/demos/README.md): Where each bundled program comes from, and the terms its authors gave it
 
-- **Interactive DOS Prompt**: The start page boots a fully functional DOS command prompt, with the application selector open over it
-- **Cross-Platform**: Works on Windows, macOS, Linux, iOS, and Android
-- **Progressive Web App**: Installable; after the first visit the app works offline, and each application does once it has been opened online
-- **Deep Linking**: Load specific applications via URL parameters
-- **WebAssembly Performance**: DOSBox compiled to WebAssembly, running in a worker thread
-- **Full Keyboard & Audio Support**: Complete DOS experience including Sound Blaster emulation
-- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
-- **Type-Safe**: Full TypeScript support with comprehensive type definitions
+## Optional
 
-## Technology Stack
-
-- React 19 - Modern UI framework
-- TypeScript 5 - Type-safe JavaScript
-- Vite 8 - Next-generation frontend tooling, bundling with Rolldown
-- js-dos 8.3.20 - WebAssembly DOS emulator (DosKit runs its DOSBox backend)
-- Sharp - Image processing for the icons and social media previews
-
-## Project Structure
-
-- `/src/components/` - React components including DosPlayer
-- `/src/config/` - Application registry, DOSBox and js-dos configuration files
-- `/src/dos-apps/` - DOS application configurations
-- `/src/hooks/` - Custom React hooks
-- `/src/types/` - TypeScript type definitions
-- `/src/utils/` - Utility functions
-- `/public/` - Static assets, the service worker and the application archives (`/public/demos/`)
-- `/scripts/` - Build scripts
-- `/docs/` - Documentation
-
-## Usage
-
-Visit https://doskit.net/ to use the emulator directly in your browser. The application can be installed as a PWA for offline use.
-
-Deep linking example: `https://doskit.net/?app=secondreality`
-
-## Development
-
-```bash
-npm install
-npm run dev
-npm run build
-npm run test
-```
-
-## License
-
-MIT License - Copyright (c) 2025 Cameron Rye
-
-## Links
-
-- Website: https://doskit.net/
-- GitHub: https://github.com/cameronrye/doskit
-- Author: Cameron Rye <cameron@rye.dev>
-- Documentation: https://github.com/cameronrye/doskit/tree/main/docs
-- Full documentation for LLMs: https://doskit.net/llms-full.txt
-
-## Browser Compatibility
-
-Requires a browser with WebAssembly and `structuredClone()`, which js-dos's player calls once a second:
-- Chrome/Edge 98+
-- Firefox 94+
-- Safari 15.4+
-- Mobile browsers (iOS 15.4+, Android Chrome)
-
+- [Contributing](https://raw.githubusercontent.com/cameronrye/doskit/main/CONTRIBUTING.md): Development setup, tests and commit messages
+- [Roadmap](https://raw.githubusercontent.com/cameronrye/doskit/main/ROADMAP.md): The applications and features planned
+- [Changelog](https://raw.githubusercontent.com/cameronrye/doskit/main/CHANGELOG.md): The releases
