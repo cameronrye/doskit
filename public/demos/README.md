@@ -174,21 +174,33 @@ the graphics and Abyss with the 3D objects.
 ## `squid-bbstro.zip`
 
 **Squid BBS intro** (`SQUID1.COM`) by cld & The Doctor: a 1,899-byte BBS advert with an AdLib music
-player, whose source is commented in Portuguese.
+player, with its source, commented in Portuguese.
 
 - **Year**: 1994. Its source, SQUID1.ASM, is headed "SQUID1.ASM by cld & The Doctor 31-Jan-1994",
-  and in `squid_bbs1a.zip` on scene.org the program and its source are dated 7 February 1994.
-- **Contents** (2 files; the ZIP is 2,240): `SQUID1.COM` (1,899) and `FILE_ID.DIZ` (507), whose text
-  has Unix line endings where the original's has CR LF. The file dates (19 November 2025) are not
-  the originals'.
-- **Source**: [github.com/sceners/squid-bbstro](https://github.com/sceners/squid-bbstro), which also
-  has the source. `SQUID1.COM` is byte for byte the one in
+  and the program and its source are dated 7 February 1994.
+- **Contents** (6 files; the ZIP is 21,014): `SQUID1.COM` (1,899), its source `SQUID1.ASM`
+  (44,819), `MAKE.BAT` (37) and `FILE_ID.DIZ` (524), all dated 7 February 1994; `FILE_ID_.DIZ`
+  (198), a plain-text description of 22 March 1994, which gives that day as the archive's last
+  revision; and `ADLIBFM2.DOC` (22,101), Jeffrey S. Lee's "Programming the AdLib/Sound Blaster FM
+  Music Chips", version 2.0 of 24 February 1992, where SQUID1.ASM says its AdLib programming
+  information came from.
+- **Source**:
   [`squid_bbs1a.zip`](https://files.scene.org/view/demos/compilations/lost_found_and_more/bbs/squid_bbs1a.zip)
-  on scene.org; `squid_bbs1b.zip`, next to it, is a later 1,800-byte version.
+  in scene.org's lost_found_and_more collection, byte for byte (MD5
+  `ca75130553ba812a8b5fa7db75fcea19`). scene.org dates it 26 June 2022, and five of its entries
+  record Windows creation times of 25 May 2019, so the ZIP itself was written then or later; the
+  files in it keep their 1994 dates. `squid_bbs1b.zip`, next to it, is a later 1,800-byte version. The
+  program and its source are also in
+  [github.com/sceners/squid-bbstro](https://github.com/sceners/squid-bbstro).
 - **Terms**: SQUID1.ASM: "This code is freeware, and you are free to use it as you want - but DO NOT
   make another small addy just changing the text and few bytes of code! If you use any portion of
   this code in your programs (e.g. the Adlib mini-player) remember to give the proper credits to the
-  authors."
+  authors." ADLIBFM2.DOC: "This file may be used and copied freely so long as the applicable
+  copyright notices are retained, and no modifications are made to the text of the document. No
+  money shall be charged for its distribution beyond reasonable shipping, handling and duplication
+  costs, nor shall proprietary changes be made to this document so that it cannot be distributed
+  freely. This document may not be included in published material or commercial packages without
+  the written consent of its author."
 - **More**: [pouet.net](https://www.pouet.net/prod.php?which=52530)
 
 ## `3drotate.zip`

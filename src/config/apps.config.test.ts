@@ -34,7 +34,7 @@ const RELEASES: Record<string, { year: number }> = {
   'scream-tracker': { year: 1994 }, // 3.21, whose ST3.EXE is dated 25 December 1994
   unreal: { year: 1992 }, // README.NOW: "Copyright (C) 1992"; UNREAL.EXE is dated 8 August 1992
   panic: { year: 1993 }, // FILE_ID.DIZ: "Released 4th Feb 1993", after The Party 1992
-  'squid-bbstro': { year: 1994 }, // SQUID1.ASM, in its source repo: "31-Jan-1994"
+  'squid-bbstro': { year: 1994 }, // SQUID1.ASM: "31-Jan-1994"; SQUID1.COM is dated 7 Feb 1994
   '3drotate': { year: 1993 }, // 3DROTATE.TXT, in its source repo: "DATE: 02/22/93"
   stars: { year: 1993 }, // STARS.TXT, in its source repo: "DATE: 03/15/93"
   'crystal-dream-2': { year: 1993 }, // CD2.EXE is dated 31 May 1993

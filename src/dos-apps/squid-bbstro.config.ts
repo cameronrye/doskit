@@ -13,7 +13,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
  * Squid BBS Intro (hosted locally)
  * A tiny BBS intro by cld & The Doctor (1994)
  *
- * Source: https://github.com/sceners/squid-bbstro
+ * Source: https://files.scene.org/view/demos/compilations/lost_found_and_more/bbs/squid_bbs1a.zip
  * License: Freeware (SQUID1.ASM; see public/demos/README.md)
  * Size: 1899 bytes
  */
