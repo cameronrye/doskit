@@ -2,7 +2,8 @@
  * Inject build version and bundled assets into service worker
  * This ensures the service worker file changes on every build,
  * triggering browser update detection, and includes all bundled assets
- * for proper offline functionality
+ * for proper offline functionality: every JS and CSS file in dist/assets,
+ * so that the chunks the app imports lazily load offline too.
  *
  * It also stamps the js-dos version copied into dist/emulators/, which names
  * the worker's emulator cache: emulator files stay cached across deploys
@@ -13,11 +14,11 @@
  * 404, and the service worker would then never install.
  */
 
-import { existsSync, readFileSync, realpathSync, writeFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'fs';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, sep } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,6 +32,8 @@ const JS_DOS_VERSION_PLACEHOLDER = /const JS_DOS_VERSION = ['"]dev['"];/;
 const PLAIN_VERSION = /^[0-9A-Za-z.+-]+$/;
 const STATIC_ASSETS_LIST = /(const STATIC_ASSETS = \[[^\]]+)(];)/;
 const PRECACHE_LISTS = /const (?:STATIC|EMULATOR)_ASSETS = \[([^\]]*)\]/g;
+// JavaScript and CSS, without their source maps (*.js.map)
+const BUNDLE_FILE = /\.(?:js|css)$/;
 
 // Generate version based on current timestamp and git commit (if available)
 function generateVersion() {
@@ -68,6 +71,20 @@ export function extractBundledAssets(indexHtml) {
 }
 
 /**
+ * What install precaches from dist/assets: every JS and CSS file there, including the
+ * chunks the app imports lazily (each app's config and the DOSBox config builder), which
+ * an app opened offline needs although index.html does not name them. What index.html
+ * references is listed too, so that a bundle missing from dist/ fails the build.
+ */
+export function collectBundledAssets(dir) {
+  const emitted = readdirSync(join(dir, 'assets'), { recursive: true })
+    .filter((file) => BUNDLE_FILE.test(file))
+    .map((file) => `/assets/${file.split(sep).join('/')}`);
+  const referenced = extractBundledAssets(readFileSync(join(dir, 'index.html'), 'utf8'));
+  return [...new Set([...referenced, ...emitted])].sort();
+}
+
+/**
  * Replace the CACHE_VERSION and JS_DOS_VERSION placeholders and append the
  * bundled assets to STATIC_ASSETS
  */
@@ -85,7 +102,7 @@ export function injectIntoServiceWorker(swContent, { version, jsDosVersion, asse
     throw new Error(`js-dos version ${JSON.stringify(jsDosVersion)} is not a version number`);
   }
   if (assets.length === 0) {
-    throw new Error('index.html references no bundles under /assets/');
+    throw new Error('the build has no bundles under /assets/');
   }
 
   const assetsToInject = assets.map((asset) => `  '${asset}',`).join('\n');
@@ -121,7 +138,7 @@ function injectVersionAndAssets() {
   try {
     const versionInfo = generateVersion();
     const jsDosVersion = JSON.parse(readFileSync(jsDosPackage, 'utf8')).version;
-    const bundledAssets = extractBundledAssets(readFileSync(join(distDir, 'index.html'), 'utf8'));
+    const bundledAssets = collectBundledAssets(distDir);
 
     console.log(`📦 Found ${bundledAssets.length} bundled assets:`);
     bundledAssets.forEach((asset) => console.log(`   - ${asset}`));

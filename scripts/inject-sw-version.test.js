@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  collectBundledAssets,
   extractBundledAssets,
   findMissingFiles,
   injectIntoServiceWorker,
@@ -40,11 +41,69 @@ function evaluate(source) {
   return listeners;
 }
 
+/** A build output directory with the given files, empty unless given contents */
+function createDist(files) {
+  const dist = mkdtempSync(join(tmpdir(), 'inject-sw-version-'));
+  for (const [file, contents] of Object.entries(files)) {
+    mkdirSync(dirname(join(dist, file)), { recursive: true });
+    writeFileSync(join(dist, file), contents);
+  }
+  return dist;
+}
+
 describe('extractBundledAssets', () => {
   it('returns each bundle under /assets/ once, sorted', () => {
     expect(extractBundledAssets(BUILT_INDEX_HTML)).toEqual([
       '/assets/index-789xyz.css',
       '/assets/index-abc123.js',
+      '/assets/react-vendor-def456.js',
+    ]);
+  });
+});
+
+describe('collectBundledAssets', () => {
+  let dist;
+
+  afterEach(() => {
+    rmSync(dist, { recursive: true, force: true });
+  });
+
+  it('lists every JS and CSS file in dist/assets, lazily imported chunks too', () => {
+    // An app opened offline imports its config chunk, which index.html does not name
+    dist = createDist({
+      'index.html': BUILT_INDEX_HTML,
+      'assets/index-abc123.js': '',
+      'assets/index-abc123.js.map': '',
+      'assets/index-789xyz.css': '',
+      'assets/react-vendor-def456.js': '',
+      'assets/react-vendor-def456.js.map': '',
+      'assets/stars.config-jFmm8M_d.js': '',
+      'assets/stars.config-jFmm8M_d.js.map': '',
+      'assets/dosboxConfigBuilder-D22AmzC0.js': '',
+      'assets/dosboxConfigBuilder-D22AmzC0.js.map': '',
+    });
+
+    expect(collectBundledAssets(dist)).toEqual([
+      '/assets/dosboxConfigBuilder-D22AmzC0.js',
+      '/assets/index-789xyz.css',
+      '/assets/index-abc123.js',
+      '/assets/react-vendor-def456.js',
+      '/assets/stars.config-jFmm8M_d.js',
+    ]);
+  });
+
+  it('keeps what index.html references under /assets/, so a missing bundle fails the build', () => {
+    dist = createDist({ 'index.html': BUILT_INDEX_HTML, 'assets/index-abc123.js': '' });
+
+    const assets = collectBundledAssets(dist);
+
+    expect(assets).toEqual([
+      '/assets/index-789xyz.css',
+      '/assets/index-abc123.js',
+      '/assets/react-vendor-def456.js',
+    ]);
+    expect(findMissingFiles(assets, dist)).toEqual([
+      '/assets/index-789xyz.css',
       '/assets/react-vendor-def456.js',
     ]);
   });

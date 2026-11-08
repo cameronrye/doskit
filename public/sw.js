@@ -21,7 +21,8 @@ const CONFIG = {
   MAX_CACHE_SIZE: 100, // Entry limit of CACHE_NAME; trimming removes runtime entries only
 };
 
-// Assets to cache on install (the build appends the bundles from dist/index.html)
+// Assets to cache on install. The build appends every JS and CSS file in dist/assets,
+// the chunks imported lazily too: offline, an app needs its config chunk to start.
 const STATIC_ASSETS = [
   '/',
   '/index.html',
