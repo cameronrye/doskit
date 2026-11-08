@@ -45,6 +45,23 @@ describe('globalErrorHandler', () => {
 
       expect(isGlobalErrorHandlerInitialized()).toBe(true);
     });
+
+    it('applies its options over the defaults, not over an earlier setup', () => {
+      initializeGlobalErrorHandler({ suppressHarmlessErrors: false });
+      cleanupGlobalErrorHandler();
+
+      const onError = vi.fn();
+      initializeGlobalErrorHandler({ onError });
+      window.dispatchEvent(
+        new ErrorEvent('error', {
+          error: new Error('exitFullscreen is not available'),
+          message: 'exitFullscreen is not available',
+        })
+      );
+
+      // Suppressing harmless errors is the default
+      expect(onError).not.toHaveBeenCalled();
+    });
   });
 
   describe('cleanupGlobalErrorHandler', () => {
@@ -99,7 +116,7 @@ describe('globalErrorHandler', () => {
 
     it('tracks a promise rejected without a reason', () => {
       const onError = vi.fn();
-      // Production config (main.tsx); config persists across init calls
+      // Production config (main.tsx)
       initializeGlobalErrorHandler({ onError, suppressHarmlessErrors: true });
 
       const rejectedPromise = Promise.reject();

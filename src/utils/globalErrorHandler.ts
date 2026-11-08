@@ -72,11 +72,13 @@ export interface GlobalErrorHandlerConfig {
   onError?: (error: Error, context: ErrorContext) => void;
 }
 
-let isInitialized = false;
-let config: GlobalErrorHandlerConfig = {
+const DEFAULT_CONFIG: GlobalErrorHandlerConfig = {
   showUserFriendlyErrors: true,
   suppressHarmlessErrors: true,
 };
+
+let isInitialized = false;
+let config = DEFAULT_CONFIG;
 
 /**
  * Handle uncaught errors
@@ -207,7 +209,7 @@ export function initializeGlobalErrorHandler(options: GlobalErrorHandlerConfig =
     return;
   }
 
-  config = { ...config, ...options };
+  config = { ...DEFAULT_CONFIG, ...options };
 
   // Register global error handler
   window.addEventListener('error', handleUncaughtError);
