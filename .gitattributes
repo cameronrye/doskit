@@ -12,7 +12,6 @@
 *.jpeg binary
 *.gif binary
 *.ico binary
-*.svg binary
 *.webp binary
 
 # Ensure font files are treated as binary
@@ -32,6 +31,8 @@
 *.md text eol=lf
 *.css text eol=lf
 *.html text eol=lf
+# SVG is XML, so its changes show in diffs and merge like other text
+*.svg text eol=lf
 *.sh text eol=lf
 *.bat text eol=crlf
 
