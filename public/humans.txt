@@ -119,11 +119,11 @@
 
 # BROWSER SUPPORT
 
-    Chrome/Edge 90+
-    Firefox 88+
-    Safari 15+
-    Opera 76+
-    Mobile browsers (iOS 15+, Android)
+    Chrome/Edge 98+
+    Firefox 94+
+    Safari 15.4+
+    Opera 84+
+    Mobile browsers (iOS 15.4+, Android)
 
 # CONTACT
 

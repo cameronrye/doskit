@@ -68,9 +68,9 @@ MIT License - Copyright (c) 2025 Cameron Rye
 
 ## Browser Compatibility
 
-Requires modern browsers with WebAssembly support:
-- Chrome/Edge 90+
-- Firefox 88+
-- Safari 15+
-- Mobile browsers (iOS 15+, Android Chrome)
+Requires a browser with WebAssembly and `structuredClone()`, which js-dos's player calls once a second:
+- Chrome/Edge 98+
+- Firefox 94+
+- Safari 15.4+
+- Mobile browsers (iOS 15.4+, Android Chrome)
 

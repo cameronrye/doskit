@@ -565,17 +565,19 @@ The social media images are not part of the build: after editing their SVG sourc
 
 ### Desktop Browsers
 
-- Chrome/Edge 90+ (Recommended)
-- Firefox 88+
-- Safari 15+
-- Opera 76+
+- Chrome/Edge 98+ (Recommended)
+- Firefox 94+
+- Safari 15.4+
+- Opera 84+
 
 ### Mobile Browsers
 
 - Chrome Mobile (Android)
-- Safari Mobile (iOS 15+)
+- Safari Mobile (iOS 15.4+)
 - Firefox Mobile
 - Samsung Internet
+
+These are the first versions with `structuredClone()`, which js-dos's player calls once a second while it runs; in older browsers each call ends in an error.
 
 ### Requirements
 
@@ -586,16 +588,18 @@ The social media images are not part of the build: after editing their SVG sourc
 
 ### Feature Support Matrix
 
-| Feature | Chrome 90+ | Firefox 88+ | Safari 15+ | Edge 90+ | Mobile |
-|---------|------------|-------------|------------|----------|--------|
+| Feature | Chrome 98+ | Firefox 94+ | Safari 15.4+ | Edge 98+ | Mobile |
+|---------|------------|-------------|--------------|----------|--------|
 | WebAssembly | Yes | Yes | Yes | Yes | Yes |
 | Service Workers | Yes | Yes | Yes | Yes | Yes |
-| PWA Install | Yes | Yes | Yes | Yes | Yes |
+| PWA Install | Yes | No | 17+ | Yes | Yes |
 | Fullscreen API | Yes | Yes | Yes | Yes | Partial |
 | Keyboard Lock | Yes | No | No | Yes | No |
 | Audio | Yes | Yes | Yes | Yes | Yes |
-| Touch Controls | N/A | N/A | N/A | N/A | Yes |
+| Touch Controls | N/A | N/A | N/A | N/A | Partial |
 | Offline Mode | Yes | Yes | Yes | Yes | Yes |
+
+Touch Controls are partial on mobile because DosKit's on-screen keyboard layout there has only some of the keys (see Mobile Configuration).
 
 ## Troubleshooting
 
