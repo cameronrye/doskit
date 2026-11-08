@@ -16,6 +16,7 @@ interface DosPlayerWithAppsProps {
   onSelectorVisibilityChange?: (visible: boolean) => void;
   showSelector?: boolean;
   requestedApp?: DosApp | null;
+  selectorNotice?: string | null;
 }
 
 const { requests, describeRequest, keysHandledInPlayer } = vi.hoisted(() => ({
@@ -65,6 +66,7 @@ vi.mock('./components/DosPlayerWithApps', async () => {
       onSelectorVisibilityChange,
       showSelector,
       requestedApp,
+      selectorNotice,
     }: DosPlayerWithAppsProps) => {
       // Store callbacks in window for test access
       (window as WindowWithTestCallbacks).__dosCallbacks = {
@@ -97,6 +99,7 @@ vi.mock('./components/DosPlayerWithApps', async () => {
           <button onClick={() => onAppChange?.(requestedApp ?? null)}>Report Requested App</button>
           <div data-testid="selector-state">{showSelector ? 'visible' : 'hidden'}</div>
           <div data-testid="requested-app">{request}</div>
+          {selectorNotice && <div data-testid="selector-notice">{selectorNotice}</div>}
         </div>
       );
     },
@@ -308,13 +311,17 @@ describe('App', () => {
       expect(screen.getByTestId('requested-app')).toHaveTextContent('stars');
     });
 
-    it('shows the URL error banner for a deep link to an unknown app', () => {
+    it('tells the selector that a deep link named an unknown app', () => {
       window.history.replaceState({}, '', '/?app=bogus');
       const lengthBefore = window.history.length;
 
       render(<App />);
 
-      expect(screen.getByText(/Application "bogus" not found/)).toBeInTheDocument();
+      // In the selector that opens with it, and nowhere else: a banner under it went unseen
+      expect(screen.getByTestId('selector-notice')).toHaveTextContent(
+        'Application "bogus" not found. Please select from available applications.'
+      );
+      expect(screen.getAllByText(/not found/)).toHaveLength(1);
       expect(screen.getByTestId('requested-app')).toHaveTextContent('none');
       expect(screen.getByTestId('selector-state')).toHaveTextContent('visible');
       // The unknown app is dropped from the URL without a new history entry
@@ -333,16 +340,16 @@ describe('App', () => {
       render(<App />);
 
       // The value is left out of the message
-      expect(
-        screen.getByText('Application not found. Please select from available applications.')
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('selector-notice')).toHaveTextContent(
+        /^Application not found\. Please select from available applications\.$/
+      );
       expect(screen.getByTestId('requested-app')).toHaveTextContent('none');
       expect(screen.getByTestId('selector-state')).toHaveTextContent('visible');
       expect(window.location.search).toBe('');
       expect(window.history.length).toBe(lengthBefore);
     });
 
-    it('shows the URL error banner when going forward lands on an unknown app', async () => {
+    it('tells the selector when going forward lands on an unknown app', async () => {
       window.history.pushState({}, '', '/?app=bogus');
       window.history.back();
       await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
@@ -351,7 +358,9 @@ describe('App', () => {
 
       await traverse('forward');
 
-      expect(screen.getByText(/Application "bogus" not found/)).toBeInTheDocument();
+      expect(screen.getByTestId('selector-notice')).toHaveTextContent(
+        /Application "bogus" not found/
+      );
       expect(screen.getByTestId('requested-app')).toHaveTextContent('none');
       expect(screen.getByTestId('selector-state')).toHaveTextContent('visible');
       expect(window.location.search).toBe('');
@@ -364,27 +373,31 @@ describe('App', () => {
 
       await traverse('back');
 
-      expect(screen.getByText(/Application "bogus" not found/)).toBeInTheDocument();
+      expect(screen.getByTestId('selector-notice')).toHaveTextContent(
+        /Application "bogus" not found/
+      );
       expect(screen.getByTestId('requested-app')).toHaveTextContent('none');
       expect(screen.queryByText('Starfield Effect')).not.toBeInTheDocument();
     });
 
-    it('clears the URL error banner once an app loads', () => {
+    it('drops the notice once an app loads', () => {
       window.history.replaceState({}, '', '/?app=bogus');
       render(<App />);
-      expect(screen.getByText(/not found/)).toBeInTheDocument();
+      expect(screen.getByTestId('selector-notice')).toBeInTheDocument();
 
       fireEvent.click(screen.getByText('Load App'));
 
       expect(screen.queryByText(/not found/)).not.toBeInTheDocument();
     });
 
-    it('dismisses the URL error banner', () => {
+    it('drops the notice once the selector closes, so it does not come back with it', () => {
       window.history.replaceState({}, '', '/?app=bogus');
       render(<App />);
 
-      fireEvent.click(screen.getByRole('button', { name: 'Dismiss error' }));
+      fireEvent.click(screen.getByText('Hide Selector'));
+      fireEvent.click(screen.getByText('Select Application'));
 
+      expect(screen.getByTestId('selector-state')).toHaveTextContent('visible');
       expect(screen.queryByText(/not found/)).not.toBeInTheDocument();
     });
 

@@ -39,6 +39,8 @@ interface DosPlayerWithAppsProps {
   onSelectorVisibilityChange?: (visible: boolean) => void;
   /** Called with the status on mount, and again whenever it changes */
   onStatusChange?: (status: PlayerStatus) => void;
+  /** A notice for the selector to show above the disks, such as a link that named no app */
+  selectorNotice?: string | null;
 }
 
 /**
@@ -85,6 +87,7 @@ export function DosPlayerWithApps({
   onAppChange,
   onSelectorVisibilityChange,
   onStatusChange,
+  selectorNotice = null,
 }: DosPlayerWithAppsProps) {
   // Nothing runs while a requested app loads: a deep link never boots the default prompt
   // first, and the app or prompt that was running stops, sound and all, as the load starts
@@ -230,6 +233,7 @@ export function DosPlayerWithApps({
             key={requestedId ?? 'none'}
             onSelect={handleSelectApp}
             onCancel={handleCancelSelector}
+            notice={selectorNotice}
           />
         </>
       )}

@@ -14,6 +14,7 @@ import type { LoadedApp } from './DemoSelector';
 interface DemoSelectorProps {
   onSelect: (loadedApp: LoadedApp) => void;
   onCancel: () => void;
+  notice?: string | null;
 }
 
 interface WindowWithMockApp extends Window {
@@ -100,7 +101,7 @@ const selectorDownload = vi.hoisted(() => ({
 vi.mock('./DemoSelector', async () => {
   const { useEffect, useState } = await import('react');
   return {
-    DemoSelector: ({ onSelect, onCancel }: DemoSelectorProps) => {
+    DemoSelector: ({ onSelect, onCancel, notice }: DemoSelectorProps) => {
       // Like the real selector, a download still running when it unmounts is aborted
       // and never delivered
       const [controller] = useState(() => new AbortController());
@@ -114,6 +115,7 @@ vi.mock('./DemoSelector', async () => {
       };
       return (
         <div data-testid="demo-selector-mock">
+          {notice && <p data-testid="selector-notice">{notice}</p>}
           <button onClick={() => onSelect((window as WindowWithMockApp).__mockLoadedApp!)}>
             Select App
           </button>
@@ -216,6 +218,12 @@ describe('DosPlayerWithApps', () => {
     it('should show selector when showSelector prop is true', () => {
       render(<DosPlayerWithApps showSelector={true} />);
       expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+    });
+
+    it('gives the selector the notice its parent passes, such as a link that named no app', () => {
+      render(<DosPlayerWithApps showSelector={true} selectorNotice='Application "x" not found.' />);
+
+      expect(screen.getByTestId('selector-notice')).toHaveTextContent('Application "x" not found.');
     });
   });
 

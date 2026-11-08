@@ -17,7 +17,7 @@ import './App.css';
 interface UrlRoute {
   /** The app to run, or null for the start page */
   app: DosApp | null;
-  /** Error banner text when the URL's ?app= parameter names no app */
+  /** What the selector tells the user when the URL's ?app= parameter names no app */
   error: string | null;
 }
 
@@ -124,6 +124,10 @@ function App() {
       console.log('[App] Selector visibility changed:', visible);
     }
     setShowAppSelector(visible);
+    // The selector showed the URL's error: it has been seen once the selector closes
+    if (!visible) {
+      setUrlError(null);
+    }
   };
 
   const handleChangeAppClick = () => {
@@ -205,21 +209,6 @@ function App() {
       </header>
 
       <main className="app-main">
-        {/* URL Error Message */}
-        {urlError && (
-          <div className="url-error-banner">
-            <span className="error-icon">⚠️</span>
-            <span className="error-message">{urlError}</span>
-            <button
-              className="error-dismiss"
-              onClick={() => setUrlError(null)}
-              aria-label="Dismiss error"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
         <ErrorBoundary>
           <DosPlayerWithApps
             onReady={handleDosReady}
@@ -228,6 +217,8 @@ function App() {
             showSelector={showAppSelector}
             onAppChange={handleAppChange}
             onSelectorVisibilityChange={handleSelectorVisibilityChange}
+            // An unknown app in the URL opens the selector, which says so above the disks
+            selectorNotice={urlError}
             className="dos-player"
           />
         </ErrorBoundary>
