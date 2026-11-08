@@ -47,13 +47,12 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "*.{js,ts,tsx}": [
       "eslint --fix",
+      "prettier --write",
       "vitest related --run"
     ],
-    "*.{ts,tsx,css,md,json}": [
-      "prettier --write"
-    ]
+    "!(*.js|*.ts|*.tsx)": "prettier --write --ignore-unknown"
   },
   "dependencies": {
     "js-dos": "8.3.20",
