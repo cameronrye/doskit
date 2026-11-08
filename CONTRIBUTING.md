@@ -90,9 +90,9 @@ Example: `feature/add-screenshot-capture`
 
 When you commit, the pre-commit hook (Husky) runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats the CSS, HTML, JSON, Markdown and YAML files that `npm run format:check` checks, and skips files Prettier has no parser for or that `.gitignore` or `.prettierignore` lists.
 
-The service worker, `public/sw.js`, gets no tests from the hook: its tests, `scripts/service-worker.test.js` and `scripts/inject-sw-version.test.js`, read it as text instead of importing it, so `vitest related` finds none. After changing it, run them yourself with `npx vitest run scripts/service-worker.test.js scripts/inject-sw-version.test.js`; CI runs them on every pull request.
+A staged service worker, `public/sw.js`, makes the hook run every test: its tests, `scripts/service-worker.test.js` and `scripts/inject-sw-version.test.js`, read it as text instead of importing it, so `vitest.config.ts` makes it one of Vitest's force-rerun triggers. Other files that tests read from disk rather than import get no tests from the hook: the stylesheets, `index.html`, the manifest and the icons, `public/robots.txt`, `public/licenses/`, the archives and `README.md` in `public/demos/` (which `src/config/apps.config.test.ts` checks) and `eslint.config.js`. After changing one of them, run `npm test`; CI runs every test on every pull request.
 
-Pull requests to `main` run CI (`.github/workflows/ci.yml`): ESLint, the format check, the tests with coverage, the build and the type check.
+Pull requests to `main` run CI (`.github/workflows/ci.yml`): ESLint, the format check, the tests with coverage, the build and a check that its CSS works in the oldest supported browsers (`scripts/check-built-css.js`), the type check, and `npm audit`, which fails on a high or critical advisory in a production dependency.
 
 ### Commit Messages
 
@@ -363,8 +363,8 @@ Releases are **fully automated** using [release-please](https://github.com/googl
 After merging PRs to main, release-please automatically creates a **Release PR**:
 
 1. **Check for Release PR** - Look for a PR titled "chore(main): release X.Y.Z"
-2. **Review the Release PR** - Check version number and auto-generated changelog
-3. **Merge the Release PR** - This triggers the GitHub release creation
+2. **Review the Release PR** - Check version number and auto-generated changelog. CI does not run on it: release-please opens it with the workflow's `GITHUB_TOKEN`, and GitHub starts no workflows for what that token does
+3. **Merge the Release PR** - This triggers the GitHub release creation, and, as any push to `main` does, CI and the deploy
 
 ### Versioning
 
