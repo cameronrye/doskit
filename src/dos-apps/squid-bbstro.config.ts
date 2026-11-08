@@ -33,7 +33,7 @@ export const squidBbstroZipUrl = '/demos/squid-bbstro.zip';
  * - Memory: Minimal (runs in 640KB)
  *
  * This configuration uses:
- * - 486 CPU with auto cycles (more than enough)
+ * - Auto CPU core, type and cycles (more than enough)
  * - AdLib for audio (as specified in the source)
  * - Standard VGA graphics
  *
@@ -44,8 +44,7 @@ export const squidBbstroZipUrl = '/demos/squid-bbstro.zip';
  */
 export const squidBbstroDosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: '486', cycles: 'auto' })
-  .setMemory({ memsize: 4 })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
   .setSoundBlaster({
     sbtype: 'sb16',
     sbbase: 220,
@@ -64,7 +63,7 @@ export const squidBbstroDosboxConf = presets
     'echo ========================================',
     'echo.',
     'echo Audio: AdLib FM',
-    'echo CPU: 486 (Auto Cycles)',
+    'echo CPU: Auto Cycles',
     'echo Size: 1899 bytes!',
     'echo.',
     'echo Features:',

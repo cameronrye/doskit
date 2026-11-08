@@ -24,19 +24,17 @@ export { loadZip as loadZipArchive };
  *
  * This configuration uses:
  * - Gravis UltraSound with 512KB stereo memory (optimal audio quality)
- * - Pentium CPU with maximum cycles (best performance)
- * - 16MB RAM with EMS/XMS enabled
+ * - Maximum cycles (best performance) on the simple CPU core
+ * - DOSBox's default 16 MB of memory, with EMS/XMS enabled
  * - Sound Blaster as fallback
  *
  * Based on Archive.org's working configuration and Second Reality README.1ST
  */
 export const secondRealityDosboxConf = presets
   .demo()
-  .setCPU({ core: 'dynamic', cputype: 'pentium', cycles: 'max' })
-  .setMemory({ memsize: 16 })
+  .setCPU({ core: 'simple', cputype: 'auto', cycles: 'max' })
   .setGUS({
     gus: true,
-    gusrate: 44100,
     gusbase: 240,
     gusirq: 5,
     gusdma: 3,
@@ -51,7 +49,7 @@ export const secondRealityDosboxConf = presets
     'echo ========================================',
     'echo.',
     'echo Audio: Gravis UltraSound (512KB Stereo)',
-    'echo CPU: Pentium (Maximum Cycles)',
+    'echo CPU: Maximum Cycles',
     'echo.',
     'echo Mounting C: drive...',
     'mount c .',

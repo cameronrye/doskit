@@ -18,23 +18,23 @@
  * - DOSBox Wiki Performance Guide
  * - Community feedback on cycles=max causing audio issues
  * - DOSBox Staging audio optimization recommendations
+ *
+ * Every setting here is one the default js-dos backend ("dosbox", see jsdos.config.ts)
+ * applies; it drops or resets anything else without a warning. That backend has no
+ * dynamic core, reports DOS 5.00 and runs with 16 MB of memory (its default memsize).
  */
 
 export const defaultDosboxConfig = `
 [cpu]
-core=dynamic
+core=simple
 cputype=auto
 cycles=25000
-
-[video]
-vmemsize=8
 
 [render]
 scaler=none
 aspect=false
 
 [dos]
-ver=7.1
 umb=true
 ems=true
 xms=true

@@ -31,13 +31,12 @@ export const rotate3dZipUrl = '/demos/3drotate.zip';
  * - Memory: Minimal (runs in 640KB)
  *
  * This configuration uses:
- * - 486 CPU with auto cycles
+ * - Auto CPU core, type and cycles
  * - Standard VGA graphics
  */
 export const rotate3dDosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: '486', cycles: 'auto' })
-  .setMemory({ memsize: 4 })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
   .setJoystick({ joysticktype: 'none' })
   .addAutoexec(
     '@echo off',
@@ -47,7 +46,7 @@ export const rotate3dDosboxConf = presets
     "echo   From Grumpy's Source Pack Collection",
     'echo ========================================',
     'echo.',
-    'echo CPU: 486 (Auto Cycles)',
+    'echo CPU: Auto Cycles',
     'echo Graphics: VGA',
     'echo.',
     'echo Mounting C: drive...',

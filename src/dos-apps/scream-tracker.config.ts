@@ -33,11 +33,10 @@ export const screamTrackerZipUrl = '/demos/scream-tracker.zip';
  * - Memory: 640KB RAM minimum, 2MB+ recommended
  *
  * This configuration uses:
- * - 486 CPU with fixed cycles (12000) for stable audio playback
- * - Dynamic core for better performance
+ * - Fixed cycles (12000) on the simple CPU core, for stable audio playback
  * - Sound Blaster 16 for digital audio
  * - Gravis UltraSound for superior wavetable playback
- * - 8MB RAM with EMS/XMS enabled
+ * - DOSBox's default 16 MB of memory, with EMS/XMS enabled
  * - Text mode display
  *
  * ST3 is famous for its excellent GUS support, so we enable both
@@ -47,8 +46,7 @@ export const screamTrackerZipUrl = '/demos/scream-tracker.zip';
  */
 export const screamTrackerDosboxConf = presets
   .musicTracker()
-  .setCPU({ core: 'dynamic', cputype: '486', cycles: 12000 })
-  .setMemory({ memsize: 8 })
+  .setCPU({ core: 'simple', cputype: 'auto', cycles: 12000 })
   .setSoundBlaster({
     sbtype: 'sb16',
     sbbase: 220,
@@ -59,7 +57,6 @@ export const screamTrackerDosboxConf = presets
   })
   .setGUS({
     gus: true,
-    gusrate: 44100,
     gusbase: 240,
     gusirq: 5,
     gusdma: 3,
@@ -76,7 +73,7 @@ export const screamTrackerDosboxConf = presets
     'echo The legendary S3M tracker',
     'echo Code by Psi (Sami Tammilehto)',
     'echo.',
-    'echo CPU: 486 (12000 cycles)',
+    'echo CPU: 12000 cycles',
     'echo Audio: Sound Blaster 16 + Gravis UltraSound',
     'echo.',
     'echo Mounting C: drive...',

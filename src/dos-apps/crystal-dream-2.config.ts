@@ -33,9 +33,10 @@ export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';
  * - Memory: 4MB recommended
  *
  * This configuration uses:
- * - 486 CPU with auto cycles
+ * - Auto CPU core, type and cycles
  * - Sound Blaster 16 for audio
  * - Standard VGA graphics
+ * - DOSBox's default 16 MB of memory
  *
  * Features:
  * - 3D wireframe and filled vector graphics
@@ -47,8 +48,7 @@ export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';
  */
 export const crystalDream2DosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: '486', cycles: 'auto' })
-  .setMemory({ memsize: 4 })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
   .setSoundBlaster({
     sbtype: 'sb16',
     sbbase: 220,
@@ -69,7 +69,7 @@ export const crystalDream2DosboxConf = presets
     'echo 1st Place at The Computer Crossroads 1993',
     'echo.',
     'echo Audio: Sound Blaster 16',
-    'echo CPU: 486 (Auto Cycles)',
+    'echo CPU: Auto Cycles',
     'echo Graphics: VGA',
     'echo.',
     'echo Features:',

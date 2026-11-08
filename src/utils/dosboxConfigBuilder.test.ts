@@ -14,29 +14,19 @@ describe('DOSBoxConfigBuilder', () => {
 
     it('should create CPU configuration', () => {
       const config = createDOSBoxConfig()
-        .setCPU({ core: 'auto', cputype: 'pentium', cycles: 15000 })
+        .setCPU({ core: 'normal', cputype: '486_slow', cycles: 15000 })
         .build();
 
       expect(config).toContain('[cpu]');
-      expect(config).toContain('core=auto');
-      expect(config).toContain('cputype=pentium');
+      expect(config).toContain('core=normal');
+      expect(config).toContain('cputype=486_slow');
       expect(config).toContain('cycles=15000');
     });
 
-    it('should create video configuration', () => {
-      const config = createDOSBoxConfig().setVideo({ vmemsize: 8 }).build();
-
-      expect(config).toContain('[video]');
-      expect(config).toContain('vmemsize=8');
-    });
-
     it('should create DOS configuration', () => {
-      const config = createDOSBoxConfig()
-        .setDOS({ ver: '7.1', umb: true, ems: true, xms: true })
-        .build();
+      const config = createDOSBoxConfig().setDOS({ umb: true, ems: true, xms: true }).build();
 
       expect(config).toContain('[dos]');
-      expect(config).toContain('ver=7.1');
       expect(config).toContain('umb=true');
       expect(config).toContain('ems=true');
       expect(config).toContain('xms=true');
@@ -74,17 +64,53 @@ describe('DOSBoxConfigBuilder', () => {
     });
   });
 
+  describe('Settings the default js-dos backend does not have', () => {
+    // DOSBox drops or resets these without a warning, so the setting types refuse them.
+    // The @ts-expect-error lines are checked by `tsc -b`, which fails if one compiles again.
+    it('should not accept values the backend would reset', () => {
+      const builder = createDOSBoxConfig();
+
+      // @ts-expect-error: there is no dynamic core; DOSBox would run the simple core
+      builder.setCPU({ core: 'dynamic' });
+      // @ts-expect-error: there is no plain 486 type; DOSBox would use auto
+      builder.setCPU({ cputype: '486' });
+      // @ts-expect-error: there is no plain Pentium type; DOSBox would use auto
+      builder.setCPU({ cputype: 'pentium' });
+      // @ts-expect-error: there is no Pentium MMX type; DOSBox would use auto
+      builder.setCPU({ cputype: 'pentium_mmx' });
+      // @ts-expect-error: there are no scalers, only none
+      builder.setRender({ scaler: 'normal2x' });
+    });
+
+    it('should not accept properties the backend would drop', () => {
+      const builder = createDOSBoxConfig();
+
+      // @ts-expect-error: [dos] has no ver; DOS reports 5.00 (VER SET 7 10 in the autoexec changes that)
+      builder.setDOS({ ver: '7.1' });
+      // @ts-expect-error: [gus] has no gusrate
+      builder.setGUS({ gusrate: 44100 });
+    });
+
+    it('should have no setters for sections the backend does not have', () => {
+      const builder = createDOSBoxConfig();
+
+      // No [video] section (vmemsize) and no [memory] section (memsize lives in [dosbox])
+      expect(builder).not.toHaveProperty('setVideo');
+      expect(builder).not.toHaveProperty('setMemory');
+    });
+  });
+
   describe('Chaining', () => {
     it('should support method chaining', () => {
       const config = createDOSBoxConfig()
         .setCPU({ core: 'auto' })
-        .setVideo({ vmemsize: 8 })
-        .setDOS({ ver: '7.1' })
+        .setRender({ aspect: false })
+        .setDOS({ umb: true })
         .addAutoexec('@echo off')
         .build();
 
       expect(config).toContain('[cpu]');
-      expect(config).toContain('[video]');
+      expect(config).toContain('[render]');
       expect(config).toContain('[dos]');
       expect(config).toContain('[autoexec]');
     });
@@ -105,10 +131,9 @@ describe('DOSBoxConfigBuilder', () => {
       const config = presets.default().build();
 
       expect(config).toContain('[cpu]');
-      expect(config).toContain('core=dynamic');
+      expect(config).toContain('core=simple');
+      expect(config).toContain('cputype=auto');
       expect(config).toContain('cycles=25000');
-      expect(config).toContain('[video]');
-      expect(config).toContain('vmemsize=8');
       expect(config).toContain('[render]');
       expect(config).toContain('scaler=none');
       expect(config).toContain('[mixer]');
@@ -122,23 +147,31 @@ describe('DOSBoxConfigBuilder', () => {
       const config = presets.musicTracker().build();
 
       expect(config).toContain('[cpu]');
-      expect(config).toContain('core=dynamic');
-      expect(config).toContain('cputype=pentium');
+      expect(config).toContain('core=simple');
+      expect(config).toContain('cputype=auto');
       expect(config).toContain('cycles=18000');
       expect(config).toContain('[mixer]');
       expect(config).toContain('blocksize=2048');
-      expect(config).toContain('[memory]');
-      expect(config).toContain('memsize=16');
     });
 
     it('should create demo preset', () => {
       const config = presets.demo().build();
 
       expect(config).toContain('[cpu]');
+      expect(config).toContain('core=simple');
+      expect(config).toContain('cputype=auto');
       expect(config).toContain('cycles=30000');
-      expect(config).toContain('[video]');
-      expect(config).toContain('vmemsize=8');
     });
+
+    it.each(Object.keys(presets) as (keyof typeof presets)[])(
+      'should leave out of the %s preset what the default backend ignores',
+      (name) => {
+        const config = presets[name]().build();
+
+        expect(config).not.toMatch(/^\[(video|memory)\]$/m);
+        expect(config).not.toMatch(/^(vmemsize|memsize|ver|gusrate)=/m);
+      }
+    );
 
     it('should allow customizing presets', () => {
       const config = presets

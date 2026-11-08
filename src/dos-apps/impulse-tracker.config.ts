@@ -34,18 +34,15 @@ export const impulseTrackerZipUrl = '/demos/impulse-tracker.zip';
  * - Memory: 4MB RAM recommended
  *
  * This configuration uses:
- * - Pentium CPU with fixed cycles (18000) for stable audio playback
- * - Dynamic core for better performance
+ * - Fixed cycles (18000) on the simple CPU core, for stable audio playback
  * - Sound Blaster 16 for audio output with optimized mixer settings
- * - 16MB RAM with EMS/XMS enabled
- * - Text mode display (minimal video memory needed)
+ * - DOSBox's default 16 MB of memory, with EMS/XMS enabled
+ * - Text mode display
  * - Optimized mixer settings to prevent audio stuttering
  *
  * Performance optimizations:
  * - Fixed cycles prevent audio timing issues common with auto/max cycles
  * - Mixer blocksize=2048 and prebuffer=64 provide smooth audio buffering (max 8192)
- * - Pentium CPU type provides better instruction set for audio processing
- * - Dynamic core offers best balance of speed and compatibility
  *
  * Based on community recommendations for music tracker applications
  */
@@ -61,7 +58,7 @@ export const impulseTrackerDosboxConf = presets
     'echo.',
     'echo A music tracker for creating MOD/IT music',
     'echo.',
-    'echo CPU: Pentium (18000 cycles)',
+    'echo CPU: 18000 cycles',
     'echo Audio: Sound Blaster 16 (44.1kHz, prebuffer=64)',
     'echo.',
     'echo Mounting C: drive...',

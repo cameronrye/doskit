@@ -6,32 +6,39 @@
  * DOSBox Configuration Builder
  * Provides a fluent API for building DOSBox configuration strings
  * Reduces duplication across dos-apps config files
+ *
+ * The settings and values here are the ones the default js-dos backend ("dosbox",
+ * wdosbox.wasm, chosen in src/config/jsdos.config.ts) applies. DOSBox drops sections and
+ * properties it does not have, and resets values it does not accept to the default,
+ * without a warning, so a setting this backend lacks would only make a config claim
+ * something that never runs.
  */
 
 export interface CPUConfig {
-  core?: 'auto' | 'dynamic' | 'normal' | 'simple';
-  cputype?: 'auto' | '386' | '486' | 'pentium' | 'pentium_mmx';
+  /** The backend has no dynamic core */
+  core?: 'auto' | 'normal' | 'simple';
+  /**
+   * The backend has no plain 486, Pentium or Pentium MMX type.
+   * `386_prefetch` needs core `normal` or `auto`; with `simple` the backend stops.
+   */
+  cputype?: 'auto' | '386' | '386_slow' | '486_slow' | 'pentium_slow' | '386_prefetch';
   cycles?: number | 'auto' | 'max';
 }
 
-export interface VideoConfig {
-  vmemsize?: number;
-}
-
 export interface RenderConfig {
-  scaler?: 'none' | 'normal2x' | 'normal3x' | 'hardware2x' | 'advmame2x' | 'advmame3x';
+  /** The backend has no scalers */
+  scaler?: 'none';
   aspect?: boolean;
 }
 
+/**
+ * The backend has no `ver` setting: DOS reports version 5.00. To report another
+ * version, run `VER SET 7 10` (major, minor) in the autoexec.
+ */
 export interface DOSConfig {
-  ver?: string;
   umb?: boolean;
   ems?: boolean;
   xms?: boolean;
-}
-
-export interface MemoryConfig {
-  memsize?: number;
 }
 
 export interface MixerConfig {
@@ -43,6 +50,7 @@ export interface MixerConfig {
 
 export interface SoundBlasterConfig {
   sbtype?: 'none' | 'sb1' | 'sb2' | 'sbpro1' | 'sbpro2' | 'sb16';
+  /** I/O port, read as hex: 220 means 220h */
   sbbase?: number;
   irq?: number;
   dma?: number;
@@ -55,7 +63,7 @@ export interface SoundBlasterConfig {
 
 export interface GUSConfig {
   gus?: boolean;
-  gusrate?: number;
+  /** I/O port, read as hex: 240 means 240h */
   gusbase?: number;
   gusirq?: number;
   gusdma?: number;
@@ -87,10 +95,8 @@ export interface SerialConfig {
  */
 export class DOSBoxConfigBuilder {
   private cpu: CPUConfig = {};
-  private video: VideoConfig = {};
   private render: RenderConfig = {};
   private dos: DOSConfig = {};
-  private memory: MemoryConfig = {};
   private mixer: MixerConfig = {};
   private soundBlaster: SoundBlasterConfig = {};
   private gus: GUSConfig = {};
@@ -110,16 +116,6 @@ export class DOSBoxConfigBuilder {
   }
 
   /**
-   * Set video configuration
-   * @param config - Video configuration options (vmemsize)
-   * @returns This builder instance for method chaining
-   */
-  setVideo(config: VideoConfig): this {
-    this.video = { ...this.video, ...config };
-    return this;
-  }
-
-  /**
    * Set render configuration
    * @param config - Render configuration options (scaler, aspect)
    * @returns This builder instance for method chaining
@@ -131,21 +127,11 @@ export class DOSBoxConfigBuilder {
 
   /**
    * Set DOS configuration
-   * @param config - DOS configuration options (ver, umb, ems, xms)
+   * @param config - DOS configuration options (umb, ems, xms)
    * @returns This builder instance for method chaining
    */
   setDOS(config: DOSConfig): this {
     this.dos = { ...this.dos, ...config };
-    return this;
-  }
-
-  /**
-   * Set memory configuration
-   * @param config - Memory configuration options (memsize)
-   * @returns This builder instance for method chaining
-   */
-  setMemory(config: MemoryConfig): this {
-    this.memory = { ...this.memory, ...config };
     return this;
   }
 
@@ -171,7 +157,7 @@ export class DOSBoxConfigBuilder {
 
   /**
    * Set Gravis UltraSound configuration
-   * @param config - GUS configuration options (gus, gusrate, gusbase, etc.)
+   * @param config - GUS configuration options (gus, gusbase, gusirq, etc.)
    * @returns This builder instance for method chaining
    */
   setGUS(config: GUSConfig): this {
@@ -221,7 +207,7 @@ export class DOSBoxConfigBuilder {
 
   /**
    * Build a configuration section from a config object
-   * @param name - The section name (e.g., 'cpu', 'video')
+   * @param name - The section name (e.g., 'cpu', 'dos')
    * @param config - The configuration object with key-value pairs
    * @returns The formatted configuration section string, or empty string if no entries
    * @private
@@ -246,20 +232,12 @@ export class DOSBoxConfigBuilder {
       sections.push(this.buildSection('cpu', this.cpu));
     }
 
-    if (Object.keys(this.video).length > 0) {
-      sections.push(this.buildSection('video', this.video));
-    }
-
     if (Object.keys(this.render).length > 0) {
       sections.push(this.buildSection('render', this.render));
     }
 
     if (Object.keys(this.dos).length > 0) {
       sections.push(this.buildSection('dos', this.dos));
-    }
-
-    if (Object.keys(this.memory).length > 0) {
-      sections.push(this.buildSection('memory', this.memory));
     }
 
     if (Object.keys(this.mixer).length > 0) {
@@ -301,7 +279,7 @@ export class DOSBoxConfigBuilder {
  * ```typescript
  * const config = createDOSBoxConfig()
  *   .setCPU({ core: 'auto', cycles: 'max' })
- *   .setVideo({ vmemsize: 8 })
+ *   .setDOS({ ems: true })
  *   .build();
  * ```
  */
@@ -323,6 +301,9 @@ export function createDOSBoxConfig(): DOSBoxConfigBuilder {
  * - DOSBox Wiki Performance Guide
  * - VOGONS forum discussions on audio optimization
  * - DOSBox Staging audio recommendations
+ *
+ * Every preset runs on the simple CPU core with the auto CPU type, and leaves memory at
+ * DOSBox's default of 16 MB.
  */
 export const presets = {
   /**
@@ -332,10 +313,9 @@ export const presets = {
    */
   default: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: 'dynamic', cputype: 'auto', cycles: 25000 })
-      .setVideo({ vmemsize: 8 })
+      .setCPU({ core: 'simple', cputype: 'auto', cycles: 25000 })
       .setRender({ scaler: 'none', aspect: false })
-      .setDOS({ ver: '7.1', umb: true, ems: true, xms: true })
+      .setDOS({ umb: true, ems: true, xms: true })
       .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 64 })
       .setSoundBlaster({
         sbtype: 'sb16',
@@ -370,17 +350,14 @@ export const presets = {
    *
    * Optimizations:
    * - Fixed cycles (18000) for stable audio timing
-   * - Pentium CPU for better instruction set support
    * - Increased prebuffer (64) for smooth MOD playback (max 8192 if needed)
    * - Blocksize 2048 for optimal buffering
-   * - 16MB RAM for loading large samples
+   * - EMS and XMS, so large samples can use DOSBox's default 16 MB of RAM
    */
   musicTracker: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: 'dynamic', cputype: 'pentium', cycles: 18000 })
-      .setVideo({ vmemsize: 2 })
-      .setDOS({ ver: '7.1', umb: true, ems: true, xms: true })
-      .setMemory({ memsize: 16 })
+      .setCPU({ core: 'simple', cputype: 'auto', cycles: 18000 })
+      .setDOS({ umb: true, ems: true, xms: true })
       .setMixer({ nosound: false, rate: 44100, blocksize: 2048, prebuffer: 64 })
       .setSoundBlaster({
         sbtype: 'sb16',
@@ -410,9 +387,8 @@ export const presets = {
    */
   demo: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: 'dynamic', cputype: 'auto', cycles: 30000 })
-      .setVideo({ vmemsize: 8 })
-      .setDOS({ ver: '7.1', umb: true, ems: true, xms: true })
+      .setCPU({ core: 'simple', cputype: 'auto', cycles: 30000 })
+      .setDOS({ umb: true, ems: true, xms: true })
       .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 64 })
       .setSoundBlaster({
         sbtype: 'sb16',

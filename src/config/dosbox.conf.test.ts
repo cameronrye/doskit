@@ -14,7 +14,8 @@ describe('dosbox.conf', () => {
 
     it('should contain CPU configuration', () => {
       expect(defaultDosboxConfig).toContain('[cpu]');
-      expect(defaultDosboxConfig).toContain('core=dynamic');
+      expect(defaultDosboxConfig).toContain('core=simple');
+      expect(defaultDosboxConfig).toContain('cputype=auto');
       expect(defaultDosboxConfig).toContain('cycles=25000');
     });
 
@@ -31,17 +32,18 @@ describe('dosbox.conf', () => {
       expect(defaultDosboxConfig).toContain('prebuffer=64');
     });
 
-    it('should contain video configuration', () => {
-      expect(defaultDosboxConfig).toContain('[video]');
-      expect(defaultDosboxConfig).toContain('vmemsize=8');
-    });
-
     it('should contain DOS configuration', () => {
       expect(defaultDosboxConfig).toContain('[dos]');
-      expect(defaultDosboxConfig).toContain('ver=7.1');
       expect(defaultDosboxConfig).toContain('umb=true');
       expect(defaultDosboxConfig).toContain('ems=true');
       expect(defaultDosboxConfig).toContain('xms=true');
+    });
+
+    it('should leave out what the default js-dos backend ignores', () => {
+      // That backend has no [video] section and no [dos] ver; DOSBox drops both silently
+      expect(defaultDosboxConfig).not.toContain('[video]');
+      expect(defaultDosboxConfig).not.toContain('vmemsize');
+      expect(defaultDosboxConfig).not.toMatch(/^ver=/m);
     });
 
     it('should contain Sound Blaster configuration', () => {

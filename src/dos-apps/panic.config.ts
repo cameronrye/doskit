@@ -34,17 +34,16 @@ export const panicZipUrl = '/demos/panic.zip';
  * - Requires EMS memory
  *
  * This configuration uses:
- * - 486 CPU with auto cycles
+ * - Auto CPU core, type and cycles
  * - Sound Blaster 16 for audio
  * - Standard VGA graphics
- * - 4MB memory with EMS enabled
+ * - DOSBox's default 16 MB of memory, with EMS enabled
  *
  * Based on the original demo requirements
  */
 export const panicDosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: '486', cycles: 'auto' })
-  .setMemory({ memsize: 4 })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
   .setSoundBlaster({
     sbtype: 'sb16',
     sbbase: 220,
@@ -69,7 +68,7 @@ export const panicDosboxConf = presets
     'echo - Dark atmosphere',
     'echo.',
     'echo Audio: Sound Blaster 16',
-    'echo CPU: 486 (Auto Cycles)',
+    'echo CPU: Auto Cycles',
     'echo.',
     'echo Mounting C: drive...',
     'mount c .',

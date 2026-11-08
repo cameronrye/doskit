@@ -33,7 +33,7 @@ export const starportBbstroZipUrl = '/demos/starport-bbstro.zip';
  * - Memory: Minimal (runs in 640KB)
  *
  * This configuration uses:
- * - 486 CPU with auto cycles (more than enough)
+ * - Auto CPU core, type and cycles (more than enough)
  * - Sound Blaster 16 for audio
  * - Standard VGA graphics
  *
@@ -41,8 +41,7 @@ export const starportBbstroZipUrl = '/demos/starport-bbstro.zip';
  */
 export const starportBbstroDosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: '486', cycles: 'auto' })
-  .setMemory({ memsize: 4 })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
   .setSoundBlaster({
     sbtype: 'sb16',
     sbbase: 220,
@@ -61,7 +60,7 @@ export const starportBbstroDosboxConf = presets
     'echo ========================================',
     'echo.',
     'echo Audio: Sound Blaster 16',
-    'echo CPU: 486 (Auto Cycles)',
+    'echo CPU: Auto Cycles',
     'echo Size: 1993 bytes!',
     'echo.',
     'echo Mounting C: drive...',
