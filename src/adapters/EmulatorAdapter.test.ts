@@ -171,6 +171,22 @@ describe('EmulatorAdapter', () => {
         expect(emulatorsFound).toEqual([window.emulators]);
       });
 
+      // js-dos would add document listeners for it that it never removes, and take the
+      // keyboard lock from the player that stays
+      it('never starts js-dos for a start aborted while it waits for emulators.js', async () => {
+        const startPage = start();
+        const controller = new AbortController();
+        const pick = adapter.initialize(document.createElement('div'), {}, controller.signal);
+        await settle();
+
+        controller.abort();
+        runEmulatorsJs();
+
+        await expect(pick).rejects.toThrow(expect.objectContaining({ name: 'AbortError' }));
+        await expect(startPage).resolves.toBe(mockDosProps);
+        expect(mockDos).toHaveBeenCalledTimes(1);
+      });
+
       it('starts js-dos at once when emulators.js has already run', async () => {
         const startPage = start();
         runEmulatorsJs();

@@ -406,6 +406,28 @@ describe('DosPlayer', () => {
         expect(player.stop).toHaveBeenCalledTimes(1);
       });
 
+      it('never starts js-dos for it while emulators.js loads', async () => {
+        // Like js-dos, the first start, the start page's, adds the script tag that loads
+        // emulators.js; the next start waits for the script to run
+        const script = document.createElement('script');
+        script.id = 'emulators-js';
+        mockDos.mockImplementationOnce(() => {
+          document.head.append(script);
+          return player;
+        });
+        render(<DosPlayer />);
+        const { unmount } = render(<DosPlayer />);
+        await act(async () => {});
+
+        unmount();
+        await act(async () => {
+          window.emulators = { version: '8.3.8' };
+          script.dispatchEvent(new Event('load'));
+        });
+
+        expect(mockDos).toHaveBeenCalledTimes(1);
+      });
+
       it('never reports that player ready', async () => {
         const onReady = vi.fn();
         const { ci, unmute } = createMockCommandInterface();

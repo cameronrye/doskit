@@ -171,12 +171,12 @@ export const useDosEmulator = ({
       console.log(`[useDosEmulator] Initializing ${adapter.getName()}...`);
     }
 
-    // Cleared on cleanup. The adapter can hand the player back after this mount is gone:
+    // Aborted on cleanup. The adapter can hand the player back after this mount is gone:
     // React StrictMode unmounts every first mount at once, and on a fresh page the player
     // comes once emulators.js has run, which can take seconds. js-dos also goes on firing
-    // the events of a start it began. So a late player is stopped, and nothing it fires
-    // reaches the callbacks.
-    let mounted = true;
+    // the events of a start it began. So a start still waiting for emulators.js is never
+    // made, a late player is stopped, and nothing it fires reaches the callbacks.
+    const unmounted = new AbortController();
     let player: DosProps | null = null;
 
     // Initialize emulator asynchronously
@@ -188,7 +188,7 @@ export const useDosEmulator = ({
           ...options,
           dosboxConf,
           onEvent: (event, arg) => {
-            if (mounted) handleDosEvent(event, arg);
+            if (!unmounted.signal.aborted) handleDosEvent(event, arg);
           },
         };
 
@@ -196,8 +196,8 @@ export const useDosEmulator = ({
           console.log('[useDosEmulator] Configuration:', mergedOptions);
         }
 
-        const dosPlayer = await adapter.initialize(container, mergedOptions);
-        if (!mounted) {
+        const dosPlayer = await adapter.initialize(container, mergedOptions, unmounted.signal);
+        if (unmounted.signal.aborted) {
           stopPlayer(dosPlayer);
           return;
         }
@@ -207,7 +207,7 @@ export const useDosEmulator = ({
           console.log('[useDosEmulator] Emulator initialized successfully');
         }
       } catch (err) {
-        if (!mounted) return;
+        if (unmounted.signal.aborted) return;
         console.error('[useDosEmulator] Failed to initialize emulator:', err);
         fail(err instanceof Error ? err.message : 'Failed to initialize DOS emulator');
       }
@@ -219,7 +219,7 @@ export const useDosEmulator = ({
       if (import.meta.env.DEV) {
         console.log('[useDosEmulator] Cleaning up...');
       }
-      mounted = false;
+      unmounted.abort();
       if (player) {
         stopPlayer(player);
       }

@@ -25,9 +25,15 @@ export interface EmulatorAdapter {
    * Initialize the emulator
    * @param container - The HTML element to render the emulator into
    * @param options - Configuration options for the emulator
+   * @param signal - Aborted when the emulator is no longer wanted: a start that has not
+   *   begun yet then never begins, and rejects with the signal's reason
    * @returns A promise that resolves to the emulator instance
    */
-  initialize(container: HTMLDivElement, options: Partial<DosOptions>): Promise<DosProps>;
+  initialize(
+    container: HTMLDivElement,
+    options: Partial<DosOptions>,
+    signal?: AbortSignal
+  ): Promise<DosProps>;
 
   /**
    * Get the name of the emulator implementation
@@ -103,11 +109,15 @@ export class JsDosAdapter implements EmulatorAdapter {
 
   /**
    * Start js-dos in the container, and hand back its player once emulators.js has run. A
-   * start made while emulators.js loads waits for it before calling Dos(); any other start
-   * calls Dos() at once. If emulators.js cannot load, every start that needs it fails, and
-   * one that has called Dos() stops its player.
+   * start made while emulators.js loads waits for it before calling Dos(), and one aborted
+   * by then never calls it; any other start calls Dos() at once. If emulators.js cannot
+   * load, every start that needs it fails, and one that has called Dos() stops its player.
    */
-  async initialize(container: HTMLDivElement, options: Partial<DosOptions>): Promise<DosProps> {
+  async initialize(
+    container: HTMLDivElement,
+    options: Partial<DosOptions>,
+    signal?: AbortSignal
+  ): Promise<DosProps> {
     const Dos = jsDos();
     if (!Dos) {
       throw new Error('js-dos library is not loaded. Please ensure the script is included.');
@@ -115,6 +125,9 @@ export class JsDosAdapter implements EmulatorAdapter {
 
     const loading = emulatorsLoad();
     if (loading) await loading;
+    // Each Dos() call adds document listeners that js-dos never removes, and takes the
+    // keyboard lock from the player before it, so none is made for a player no one wants
+    signal?.throwIfAborted();
 
     let dosProps: DosProps;
     try {
