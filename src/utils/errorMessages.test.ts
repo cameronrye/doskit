@@ -129,6 +129,20 @@ describe('getUserFriendlyError', () => {
     expect(getUserFriendlyError(new Error(technical)).message).toBe(friendly);
   });
 
+  // js-dos asks for a keyboard lock at every start, and browsers grant one without a click
+  // or a key press: a lock that fails, as one from a frame inside another page, has another
+  // cause
+  it('does not blame a failed keyboard lock on a missing user interaction', () => {
+    const explained = getUserFriendlyError(
+      new Error(
+        "Failed to execute 'lock' on 'Keyboard': lock() must be called from a primary top-level browsing context."
+      )
+    );
+
+    expect(explained.message).toBe('Keyboard lock is not available');
+    expect(explained.suggestion).not.toMatch(/user interaction/i);
+  });
+
   it('accepts a bare message', () => {
     expect(getUserFriendlyError('Failed to fetch')).toMatchObject(CONNECTION);
   });

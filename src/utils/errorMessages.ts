@@ -151,7 +151,7 @@ const ERROR_MAPPINGS: ErrorMapping[] = [
     pattern: /keyboard.*lock/i,
     message: 'Keyboard lock is not available',
     suggestion:
-      'This feature requires user interaction and might not be supported in your browser.',
+      'DOS programs still get every key but the shortcuts your browser keeps for itself, such as the one that closes the tab.',
   },
 
   // Permission errors
