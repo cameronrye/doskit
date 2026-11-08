@@ -7,21 +7,15 @@
  */
 
 import sharp from 'sharp';
-import { readFileSync, mkdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Where the SVG sources are, and where their PNGs go
 const publicDir = join(__dirname, '..', 'public');
-
-// Ensure directories exist
-try {
-  mkdirSync(publicDir, { recursive: true });
-} catch {
-  // Directory already exists
-}
 
 /**
  * Convert SVG to PNG
