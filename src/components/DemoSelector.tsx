@@ -36,9 +36,6 @@ interface DemoSelectorProps {
 /** Default loading timeout in milliseconds (30 seconds) */
 const LOADING_TIMEOUT_MS = 30000;
 
-/** Cache for preloaded app configurations */
-const preloadedConfigs = new Map<string, Promise<string>>();
-
 export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   const [selectedApp, setSelectedApp] = useState<DosApp | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
@@ -48,6 +45,12 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   const abortControllerRef = useRef<AbortController | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * DOSBox configs preloaded on hover, by app id. Only shares a preload with
+   * the load that follows it: the module loader keeps the config chunks for
+   * later selectors anyway.
+   */
+  const preloadedConfigsRef = useRef(new Map<string, Promise<string>>());
 
   const handleSelectApp = useCallback((app: DosApp) => {
     setSelectedApp(app);
@@ -66,6 +69,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
 
     // Delay preload to avoid unnecessary requests on quick mouse movements
     hoverTimeoutRef.current = setTimeout(() => {
+      const preloadedConfigs = preloadedConfigsRef.current;
       if (!preloadedConfigs.has(app.id) && app.loadDosboxConf) {
         // Start preloading the config (don't await, just start the promise).
         // Evict failures so a later load retries instead of reusing the rejection.
@@ -114,7 +118,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
       try {
         // Use preloaded config if available, otherwise load it
         const configPromise =
-          preloadedConfigs.get(app.id) ||
+          preloadedConfigsRef.current.get(app.id) ||
           (app.loadDosboxConf ? app.loadDosboxConf() : Promise.resolve(app.dosboxConf));
 
         // Load the application files and dosbox config in parallel with progress tracking
@@ -243,11 +247,14 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
     ]
   );
 
-  // Clean up abort controller on unmount
+  // On unmount, cancel the load in progress and any pending hover preload
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+      }
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
       }
     };
   }, []);

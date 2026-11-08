@@ -414,6 +414,40 @@ describe('DemoSelector', () => {
 
       await waitFor(() => expect(mockOnSelect).toHaveBeenCalledTimes(1));
     });
+
+    it('does not reuse a config preloaded by an earlier selector', async () => {
+      const app = availableApps.find((a) => a.id === 'second-reality')!;
+      const preload = vi.spyOn(app, 'loadDosboxConf').mockResolvedValueOnce('[cpu]\ncycles=1');
+
+      const earlier = render(<DemoSelector onSelect={mockOnSelect} />);
+      fireEvent.mouseEnter(document.querySelector('[data-app-id="second-reality"]')!);
+      await waitFor(() => expect(preload).toHaveBeenCalledTimes(1));
+      earlier.unmount();
+
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      fireEvent.click(getFloppyDiskByName('Second Reality')!);
+      fireEvent.click(screen.getByRole('button', { name: /Load Application/i }));
+
+      await waitFor(() => expect(mockOnSelect).toHaveBeenCalledTimes(1));
+      expect(mockOnSelect.mock.calls[0]?.[0].dosboxConf).toBe(secondRealityDosboxConf);
+    });
+
+    it('does not start a preload once the selector has closed', () => {
+      vi.useFakeTimers();
+      try {
+        const app = availableApps.find((a) => a.id === 'impulse-tracker')!;
+        const preload = vi.spyOn(app, 'loadDosboxConf');
+
+        const { unmount } = render(<DemoSelector onSelect={mockOnSelect} />);
+        fireEvent.mouseEnter(document.querySelector('[data-app-id="impulse-tracker"]')!);
+        unmount();
+        vi.advanceTimersByTime(1000);
+
+        expect(preload).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   describe('Cancel functionality', () => {
