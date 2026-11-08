@@ -308,34 +308,46 @@ export const starsDosboxConf = presets
 
 ## Build Process
 
-1. **TypeScript compilation**: `tsc -b`
-2. **Vite build**: Bundle optimization with Rolldown
-3. **Service worker versioning**: Inject build timestamp
-4. **Asset optimization**: Minification and tree-shaking
+`npm run build` runs:
+
+1. **js-dos copy**: `prebuild` runs `scripts/copy-js-dos.js`, which copies js-dos from `node_modules` into `public/`
+2. **TypeScript check**: `tsc -b` type-checks the app, the Vite and Vitest configs and the tests; it emits nothing
+3. **Vite build**: Rolldown bundles the app into hashed files in `dist/assets`, with hidden source maps, and `public/` is copied as it is. A plugin adds `404.html` for path-style deep links.
+4. **Service worker versioning**: `scripts/inject-sw-version.js` stamps `dist/sw.js` with a new cache version (a hash of the build time and git commit), the installed js-dos version and a hash of the demo archives, and appends every JS and CSS bundle to its precache list. It fails the build if `sw.js` lacks a placeholder or would precache a file that is not in `dist/`, since one missing file stops the worker from installing.
+5. **Asset optimization**: Minification and tree-shaking
+
+Pushes to `main` deploy `dist/` to GitHub Pages once CI passes.
 
 ## js-dos Dependency Strategy
 
-DosKit uses a **local copy strategy** for the js-dos library:
+DosKit serves js-dos from its own origin. The npm package is copied into `public/` before every dev server start and build (`predev` and `prebuild` run `scripts/copy-js-dos.js`), rather than loaded from a CDN or committed to the repository.
 
 ### Why Local Copy?
 
-1. **Stability** - CDN versions can change unexpectedly
-2. **Offline Support** - Required for PWA functionality
-3. **Version Control** - Explicit control over updates
-4. **Performance** - Optimized caching with service worker
+1. **Stability** - CDN versions can change unexpectedly; `package.json` pins an exact version
+2. **Offline Support** - Required for PWA functionality: the service worker only caches files from DosKit's own origin
+3. **Version Control** - Explicit control over updates: an update is a `package.json` change
+4. **Performance** - Optimized caching with service worker: emulator files stay cached for as long as the js-dos version does
 
 ### Files
 
 - `public/js-dos.js` - Main js-dos library
 - `public/js-dos.css` - js-dos styles
-- `src/types/js-dos.d.ts` - TypeScript declarations
+- `public/emulators/` - The backends' JavaScript and WASM files
+- `src/types/js-dos.d.ts` - TypeScript declarations, written by hand
+
+The copy leaves source maps, debug symbols and type declarations behind, skips files that are already up to date, and removes emulator files the installed js-dos no longer ships. Only `src/types/js-dos.d.ts` is committed.
 
 ### Updating js-dos
 
-1. Download new version from [js-dos releases](https://github.com/nicholasday/js-dos/releases)
-2. Replace files in `public/`
-3. Update types in `src/types/js-dos.d.ts` if API changed
-4. Test thoroughly before deploying
+1. Read the new version's notes in [js-dos releases](https://github.com/caiiiycuk/js-dos/releases)
+2. Bump `js-dos` in `package.json` and run `npm install`
+3. Run `npm run build` (or `npm run dev`), which copies the new files into `public/`
+4. Update types in `src/types/js-dos.d.ts` if API changed
+5. Update the version where it is written by hand: `git grep` the old one (the README, `public/humans.txt`, `public/llm.txt`, `public/llm-full.txt`, the header of `src/types/js-dos.d.ts`)
+6. Test thoroughly before deploying
+
+The app itself follows the installed package: the footer's version (`VITE_JSDOS_VERSION`, set in `vite.config.ts`) and the name of the service worker's emulator cache (`JS_DOS_VERSION`, stamped by `scripts/inject-sw-version.js`) both read it, so installing the deploy's worker downloads the new emulator files once, and activating it deletes the old version's cache. If the new version renames or drops one of the default backend's files, update `EMULATOR_ASSETS` in `public/sw.js` (the build fails until it matches) and the `wdosbox.wasm` preload in `index.html` (which nothing checks).
 
 ## Future Improvements
 
