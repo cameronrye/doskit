@@ -72,10 +72,6 @@ describe('jsdos.config', () => {
       expect(defaultJsDosConfig.workerThread).toBe(true);
     });
 
-    it('should have offscreen canvas enabled for performance', () => {
-      expect(defaultJsDosConfig.offscreenCanvas).toBe(true);
-    });
-
     it('should have correct aspect ratio', () => {
       expect(defaultJsDosConfig.renderAspect).toBe('4/3');
     });

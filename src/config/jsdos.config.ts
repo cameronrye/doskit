@@ -21,7 +21,6 @@ export const defaultJsDosConfig: Partial<DosOptions> = {
   backend: 'dosbox', // Use DOSBox for better performance (20-40% faster than DOSBox-X)
   backendLocked: false, // js-dos shows its backend picker only before a run; autoStart skips that
   workerThread: true, // Use worker thread for non-blocking UI (HIGH impact)
-  offscreenCanvas: true, // Enable for 10-30% FPS improvement (Chrome 69+, Firefox 105+, Safari 16.4+)
 
   // Display Settings
   theme: 'dark',

@@ -28,7 +28,6 @@ describe('EmulatorAdapter', () => {
         setBackend: vi.fn(),
         setBackendLocked: vi.fn(),
         setWorkerThread: vi.fn(),
-        setOffscreenCanvas: vi.fn(),
         setBackground: vi.fn(),
         setFullScreen: vi.fn(),
         setImageRendering: vi.fn(),

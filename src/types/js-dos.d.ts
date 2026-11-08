@@ -18,7 +18,6 @@ export interface DosOptions {
   backend?: 'dosbox' | 'dosboxX';
   backendLocked?: boolean;
   workerThread?: boolean;
-  offscreenCanvas?: boolean;
 
   // Display Settings
   theme?: string;
@@ -105,7 +104,6 @@ export interface DosProps {
   setBackend(backend: 'dosbox' | 'dosboxX'): void;
   setBackendLocked(locked: boolean): void;
   setWorkerThread(workerThread: boolean): void;
-  setOffscreenCanvas(offscreenCanvas: boolean): void;
 
   // Display Methods
   setBackground(background: string | null): void;
