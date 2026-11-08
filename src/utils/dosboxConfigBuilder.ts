@@ -27,9 +27,10 @@ export interface CPUConfig {
 
 export interface RenderConfig {
   /**
-   * Only `none`. The backend also accepts `normal2x`, its default, and resets any other scaler
-   * to it, but frames reach js-dos at the program's own resolution either way: `none` is the
-   * value that says so.
+   * Only `none`, the backend's one scaler. It resets any other value, `normal2x` included, to
+   * the setting's default, `normal2x`, which `config -get render scaler` then reports, but
+   * frames reach js-dos at the program's own resolution either way: `none` is the value that
+   * says so.
    */
   scaler?: 'none';
   aspect?: boolean;

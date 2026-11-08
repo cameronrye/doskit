@@ -17,9 +17,9 @@ import { initializeGlobalErrorHandler } from './utils/globalErrorHandler';
 // Initialize error tracking (swap in a remote service here when one is set up)
 initializeErrorTracking();
 
-// Initialize global error handler. It logs and tracks errors itself, and keeps
-// known harmless ones, such as js-dos's keyboard lock calls that fail without a
-// user gesture, out of the console.
+// Initialize global error handler. It hands uncaught errors to the error tracker,
+// whose report is the one line logged for each, and keeps known harmless ones, such
+// as js-dos's keyboard lock calls that fail without a user gesture, out of the console.
 initializeGlobalErrorHandler({
   showUserFriendlyErrors: true,
   suppressHarmlessErrors: true,

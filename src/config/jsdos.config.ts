@@ -33,8 +33,9 @@ export const defaultJsDosConfig: Partial<DosOptions> = {
   imageRendering: 'pixelated',
   renderBackend: 'webgl', // Draw frames with WebGL; js-dos uses Canvas 2D if WebGL cannot start
   renderAspect: '4/3', // Classic DOS aspect ratio
-  // fullScreen is left unset: set, even to false, it has js-dos call document.exitFullscreen()
-  // at every start, which rejects outside fullscreen and leaves the rejection unhandled.
+  // fullScreen is left unset, which keeps js-dos off the Fullscreen API at a start: set to
+  // false, it has js-dos call document.exitFullscreen() at every start, which rejects outside
+  // fullscreen and leaves the rejection unhandled, and set to true, requestFullscreen().
   // With softFullscreen, js-dos's fullscreen button makes the player fill the window with CSS
   // instead of the browser's Fullscreen API, adding the class jsdos-fullscreen-workaround to
   // the player's element. js-dos 8.3.20 styles that class only inside its root

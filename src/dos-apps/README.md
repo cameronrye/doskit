@@ -66,8 +66,9 @@ with `setCPU({ cycles })`:
 Every app runs on js-dos's default `dosbox` backend, set in `src/config/jsdos.config.ts`, and
 DOSBox ignores settings that backend does not have without a warning. The builder only has
 options for settings that backend applies, and only accepts the CPU cores, CPU types, sample rates
-and prebuffer values it has. Its only scaler is `none`: the backend also accepts `normal2x`, but
-frames reach js-dos unscaled either way. That rules out a few settings DOSBox guides suggest:
+and prebuffer values it has. Its only scaler is `none`, the one the backend has: it resets any
+other value to its default, `normal2x`, and frames reach js-dos unscaled either way. That rules
+out a few settings DOSBox guides suggest:
 
 - There is no dynamic core: `core` is `auto`, `normal` or `simple`.
 - There is no `486` or `pentium` CPU type: `cputype` `auto` is the usual choice.
@@ -111,12 +112,14 @@ own that is only downloaded when the app is loaded, or when the selector preload
 
 `author` and `year` are the release's, from the archive's own files where they say; the header
 shows them as "Some Group (1994)", or whichever of the two the app has, and the selector names
-its disk "My Demo by Some Group (1994)" for screen readers, leaving out a missing author or year.
+its disk "My Demo by Some Group (1994). Press Enter to load." for screen readers, leaving out a
+missing author or year.
 Both are optional: leave out a year that nothing establishes rather than guess one.
 
 For a program people make things in, such as a tracker, add `warnBeforeLeaving: true`: the page
-then asks before it is closed or reloaded while the app runs. Browsers keep Ctrl+W, Ctrl+N and
-Ctrl+T for themselves, so a DOS program's Ctrl-W closes the tab at once.
+then asks before it is closed or reloaded while the app runs. On Windows, Linux and ChromeOS,
+browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, so a DOS program's Ctrl-W would close the
+tab at once (macOS browsers use ⌘ for these, and Ctrl+W reaches DOS).
 
 The app now appears in the selector and opens at `/?app=my-demo`. The address bar shows the id
 without hyphens (`/?app=mydemo`); both forms work.
