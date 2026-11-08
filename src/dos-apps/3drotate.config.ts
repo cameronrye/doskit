@@ -4,14 +4,15 @@
  * Licensed under the MIT License
  *
  * 3D Rotate Demo Configuration
- * Configuration for running the 3D rotation demo from Grumpy's collection
+ * Configuration for running Draeden of VLA's 3D rotation demo (1993), from Grumpy's
+ * source pack collection
  */
 
 import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * 3D Rotate Demo (hosted locally)
- * A classic 3D rotation demo effect
+ * A classic 3D rotation demo effect, from VLA's "Intro To 3d Rotations" by Draeden
  *
  * Source: https://github.com/sceners/grumpys-source-pack-collection
  * License: Scene/Historical
@@ -39,6 +40,7 @@ export const rotate3dDosboxConf = presets
     'echo.',
     'echo ========================================',
     'echo   3D Rotation Demo',
+    'echo   by Draeden of VLA (1993)',
     "echo   From Grumpy's Source Pack Collection",
     'echo ========================================',
     'echo.',

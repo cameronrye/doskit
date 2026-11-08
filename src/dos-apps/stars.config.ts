@@ -4,14 +4,15 @@
  * Licensed under the MIT License
  *
  * Starfield Effect Configuration
- * Configuration for running the starfield demo from Grumpy's collection
+ * Configuration for running Draeden of VLA's starfield demo (1993), from Grumpy's source
+ * pack collection
  */
 
 import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * Starfield Effect Demo (hosted locally)
- * A classic starfield effect demo
+ * A classic starfield effect demo, from VLA's "Intro To Starfields" by Draeden
  *
  * Source: https://github.com/sceners/grumpys-source-pack-collection
  * License: Scene/Historical
@@ -39,6 +40,7 @@ export const starsDosboxConf = presets
     'echo.',
     'echo ========================================',
     'echo   Starfield Effect Demo',
+    'echo   by Draeden of VLA (1993)',
     "echo   From Grumpy's Source Pack Collection",
     'echo ========================================',
     'echo.',

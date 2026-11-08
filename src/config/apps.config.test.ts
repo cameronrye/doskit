@@ -95,4 +95,12 @@ describe('availableApps', () => {
       expect(findAppById(id)?.year).toBe(release.year);
     }
   );
+
+  it.each(['3drotate', 'stars'])('should credit %s to Draeden of VLA, who wrote it', async (id) => {
+    // Its VLA.NFO says "Written By: Draeden"; Grumpy's source pack only collected it
+    const app = findAppById(id);
+
+    expect(app?.author).toBe('Draeden of VLA');
+    expect(await app?.loadDosboxConf?.()).toMatch(/^echo +by Draeden of VLA \(1993\)$/m);
+  });
 });
