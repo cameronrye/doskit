@@ -85,7 +85,9 @@
 # PROJECT
 
     Project: DosKit
-    License: MIT
+    License: MIT, for DosKit's own code
+    Also served: js-dos, DOSBox and DOSBox-X (GPL-2.0), libzip (BSD-3-Clause)
+    Licenses: doskit.net/licenses/
     Repository: github.com/cameronrye/doskit
     Website: doskit.net
     Started: 2025
@@ -112,7 +114,7 @@
     ✓ Offline Functionality
     ✓ WebAssembly Performance
     ✓ Full Keyboard Support
-    ✓ Audio Support (Sound Blaster, AdLib)
+    ✓ Audio Support (Sound Blaster, Gravis UltraSound, AdLib)
     ✓ Responsive Design
     ✓ Touch Controls
     ✓ Type-Safe Development
