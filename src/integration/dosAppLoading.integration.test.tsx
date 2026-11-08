@@ -194,6 +194,7 @@ describe('DOS Application Loading Integration Tests', () => {
   });
 
   it('should handle emulator initialization errors', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     // Mock Dos to throw error
     const errorDos = vi.fn<DosFn>(() => {
       throw new Error('Emulator initialization failed');
@@ -220,6 +221,12 @@ describe('DOS Application Loading Integration Tests', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
     });
     expect(onReady).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith(
+      '[useDosEmulator] Failed to initialize emulator:',
+      expect.objectContaining({
+        message: 'Failed to initialize js-dos: Emulator initialization failed',
+      })
+    );
   });
 
   it('should handle emulator exit event', async () => {
@@ -295,6 +302,7 @@ describe('DOS Application Loading Integration Tests', () => {
   });
 
   it('should handle missing window.Dos gracefully', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     // Remove window.Dos
     delete window.Dos;
 
@@ -305,6 +313,7 @@ describe('DOS Application Loading Integration Tests', () => {
       const errorElement = container.querySelector('.dos-player-error');
       expect(errorElement).not.toBeNull();
     });
+    expect(consoleError).toHaveBeenCalledWith('[useDosEmulator] Emulator not available');
   });
 
   it('should trigger all emulator lifecycle events in correct order', async () => {

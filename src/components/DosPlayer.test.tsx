@@ -133,18 +133,22 @@ describe('DosPlayer', () => {
 
   describe('Error handling', () => {
     it('should show error when Dos is not available', () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       delete window.Dos;
       render(<DosPlayer />);
 
       expect(screen.getByText(/Error/i)).toBeInTheDocument();
       expect(screen.getByText(/DOS emulator library not loaded/i)).toBeInTheDocument();
+      expect(consoleError).toHaveBeenCalledWith('[useDosEmulator] Emulator not available');
     });
 
     it('should show reload button on error', () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       delete window.Dos;
       render(<DosPlayer />);
 
       expect(screen.getByRole('button', { name: /Reload Page/i })).toBeInTheDocument();
+      expect(consoleError).toHaveBeenCalledWith('[useDosEmulator] Emulator not available');
     });
 
     it('shows why the emulator failed to start', async () => {
