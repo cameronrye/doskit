@@ -160,7 +160,7 @@ This document defines the coding standards and naming conventions for the DosKit
   ```typescript
   // Good
   export type DosEvent = 'emu-ready' | 'ci-ready' | 'bnd-play' | 'open-key' | 'fullscreen-change';
-  export type InitFs = Array<InitFileEntry> | Uint8Array;
+  export type InitFsEntry = Uint8Array | InitFileEntry;
   ```
 
 ### Acronyms in Names
@@ -335,7 +335,7 @@ interface DosPlayerProps {
 }
 
 type DosEvent = 'emu-ready' | 'ci-ready' | 'bnd-play' | 'open-key' | 'fullscreen-change';
-type InitFs = Array<InitFileEntry> | Uint8Array;
+type InitFs = InitFsEntry | InitFsEntry[];
 
 // Acceptable but less preferred
 type DosPlayerProps = {
