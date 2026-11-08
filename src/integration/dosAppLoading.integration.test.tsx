@@ -222,29 +222,18 @@ describe('DOS Application Loading Integration Tests', () => {
   });
 
   it('should handle emulator exit event', async () => {
+    const onReady = vi.fn();
     const onExit = vi.fn();
 
-    render(<DosPlayer onExit={onExit} />);
+    render(<DosPlayer onReady={onReady} onExit={onExit} />);
 
-    // Wait for emulator to be ready and ci-ready event
-    await waitFor(() => {
-      expect(mockDos).toHaveBeenCalled();
-    });
+    // The player listens for the exit once js-dos reports its command interface ready,
+    // however long that takes on a busy machine
+    await waitFor(() => expect(onReady).toHaveBeenCalled(), { timeout: 2000 });
 
-    // Wait for ci-ready event to be processed wrapped in act
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    });
+    act(() => triggerExit());
 
-    // Trigger exit through command interface wrapped in act
-    await act(async () => {
-      triggerExit();
-    });
-
-    // Verify onExit callback
-    await waitFor(() => {
-      expect(onExit).toHaveBeenCalled();
-    });
+    expect(onExit).toHaveBeenCalledOnce();
   });
 
   it('should handle emulator error event', async () => {
