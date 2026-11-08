@@ -160,9 +160,10 @@ export const useDosEmulator = ({
       console.log(`[useDosEmulator] Initializing ${adapter.getName()}...`);
     }
 
-    // Cleared on cleanup. js-dos can hand the player back after this mount is gone
-    // (React StrictMode unmounts every first mount at once), and goes on firing the
-    // events of a start it began, so a late player is stopped and nothing it fires
+    // Cleared on cleanup. The adapter can hand the player back after this mount is gone:
+    // React StrictMode unmounts every first mount at once, and on a fresh page the player
+    // comes once emulators.js has run, which can take seconds. js-dos also goes on firing
+    // the events of a start it began. So a late player is stopped, and nothing it fires
     // reaches the callbacks.
     let mounted = true;
     let player: DosProps | null = null;
