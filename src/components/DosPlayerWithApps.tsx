@@ -234,11 +234,11 @@ export function DosPlayerWithApps({
         </>
       )}
 
-      {/* Loading State, which screen readers announce */}
+      {/* Loading State: screen readers announce its message, not the button with it */}
       {loadingApp && (
-        <div className="loading-overlay" role="status">
-          <div className="dos-app-loading-spinner" />
-          <p>Loading application...</p>
+        <div className="loading-overlay">
+          <div className="dos-app-loading-spinner" aria-hidden="true" />
+          <p role="status">Loading application...</p>
           <button onClick={handleChooseAnother}>Cancel</button>
         </div>
       )}

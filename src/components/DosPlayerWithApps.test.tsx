@@ -947,7 +947,8 @@ describe('DosPlayerWithApps', () => {
     it('tells screen readers that the app is loading', () => {
       render(<DosPlayerWithApps requestedApp={deferredApp('stars').app} />);
 
-      expect(screen.getByRole('status')).toHaveTextContent('Loading application...');
+      // Only the message: the Cancel button is no part of what is announced
+      expect(screen.getByRole('status')).toHaveTextContent(/^Loading application\.\.\.$/);
     });
 
     it('stops the load on Cancel and runs the default DOS prompt under the selector', async () => {
