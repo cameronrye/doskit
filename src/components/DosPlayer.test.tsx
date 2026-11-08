@@ -2,25 +2,83 @@
  * Tests for DosPlayer component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { DosPlayer } from './DosPlayer';
+import type { CommandInterface, CommandInterfaceEvents, DosEvent, DosProps } from '../types/js-dos';
 
-// Mock window.Dos
-const mockDos = vi.fn();
-const mockStop = vi.fn().mockResolvedValue(undefined);
+/** A js-dos player as window.Dos() returns it, every method a mock */
+function createMockPlayer() {
+  return {
+    stop: vi.fn<DosProps['stop']>().mockResolvedValue(undefined),
+    getVersion: vi.fn<DosProps['getVersion']>().mockReturnValue(['8.3.20', 'dosbox']),
+    getToken: vi.fn<DosProps['getToken']>().mockReturnValue(null),
+    setTheme: vi.fn(),
+    setLang: vi.fn(),
+    setBackend: vi.fn(),
+    setBackendLocked: vi.fn(),
+    setWorkerThread: vi.fn(),
+    setOffscreenCanvas: vi.fn(),
+    setBackground: vi.fn(),
+    setFullScreen: vi.fn(),
+    setImageRendering: vi.fn(),
+    setRenderBackend: vi.fn(),
+    setRenderAspect: vi.fn(),
+    setSoftFullscreen: vi.fn(),
+    setThinSidebar: vi.fn(),
+    setMouseCapture: vi.fn(),
+    setMouseSensitivity: vi.fn(),
+    setNoCursor: vi.fn(),
+    setSoftKeyboardLayout: vi.fn(),
+    setSoftKeyboardSymbols: vi.fn(),
+    setVolume: vi.fn(),
+    setAutoStart: vi.fn(),
+    setCountDownStart: vi.fn(),
+    setAutoSave: vi.fn(),
+    setKiosk: vi.fn(),
+    setPaused: vi.fn(),
+    setScaleControls: vi.fn(),
+    setNoCloud: vi.fn(),
+    setKey: vi.fn(),
+    save: vi.fn<DosProps['save']>().mockResolvedValue(true),
+  } satisfies DosProps;
+}
+
+/** A command interface with what DosPlayer uses, and a trigger for its exit event */
+function createMockCommandInterface() {
+  let exitConsumer: (() => void) | undefined;
+  const unmute = vi.fn<CommandInterface['unmute']>();
+  // Only what DosPlayer calls; the rest of the interface is left out
+  const events: Partial<CommandInterfaceEvents> = {
+    onExit: vi.fn((consumer: () => void) => {
+      exitConsumer = consumer;
+    }),
+    onStdout: vi.fn(),
+  };
+  const ci: Partial<CommandInterface> = {
+    events: () => events as CommandInterfaceEvents,
+    unmute,
+  };
+  return { ci: ci as CommandInterface, unmute, exit: () => exitConsumer?.() };
+}
 
 describe('DosPlayer', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockStop.mockClear();
+  let player: ReturnType<typeof createMockPlayer>;
+  let mockDos: Mock<Window['Dos']>;
 
-    // Setup window.Dos mock
-    window.Dos = mockDos.mockReturnValue({
-      stop: mockStop,
-      getVersion: () => ['8.3.20', 'dosbox'],
-      getToken: () => null,
-    });
+  /** Fire a js-dos event at the player that the last window.Dos() call started */
+  const emit = (event: DosEvent, arg?: unknown) =>
+    act(() => mockDos.mock.lastCall?.[1]?.onEvent?.(event, arg));
+
+  beforeEach(() => {
+    player = createMockPlayer();
+    // Like js-dos, return the player synchronously
+    mockDos = vi.fn<Window['Dos']>(() => player);
+    window.Dos = mockDos;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('Rendering', () => {
@@ -72,7 +130,8 @@ describe('DosPlayer', () => {
     });
 
     it('shows why the emulator failed to start', async () => {
-      window.Dos = vi.fn().mockImplementation(() => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockDos.mockImplementation(() => {
         throw new Error('Initialization failed');
       });
 
@@ -124,187 +183,33 @@ describe('DosPlayer', () => {
   });
 
   describe('Callbacks', () => {
-    it('should call onReady when provided', async () => {
+    it('should call onReady when provided', () => {
       const onReady = vi.fn();
-      const mockCi = {
-        events: () => ({
-          onExit: vi.fn(),
-          onStdout: vi.fn(),
-        }),
-        unmute: vi.fn(),
-      };
-
-      const mockDosProps = {
-        stop: mockStop,
-        getVersion: vi.fn(),
-        getToken: vi.fn(),
-        setTheme: vi.fn(),
-        setLang: vi.fn(),
-        setBackend: vi.fn(),
-        setBackendLocked: vi.fn(),
-        setWorkerThread: vi.fn(),
-        setOffscreenCanvas: vi.fn(),
-        setBackground: vi.fn(),
-        setFullScreen: vi.fn(),
-        setImageRendering: vi.fn(),
-        setRenderBackend: vi.fn(),
-        setRenderAspect: vi.fn(),
-        setSoftFullscreen: vi.fn(),
-        setThinSidebar: vi.fn(),
-        setMouseCapture: vi.fn(),
-        setMouseSensitivity: vi.fn(),
-        setNoCursor: vi.fn(),
-        setSoftKeyboardLayout: vi.fn(),
-        setSoftKeyboardSymbols: vi.fn(),
-        setVolume: vi.fn(),
-        setAutoStart: vi.fn(),
-        setCountDownStart: vi.fn(),
-        setAutoSave: vi.fn(),
-        setKiosk: vi.fn(),
-        setPaused: vi.fn(),
-        setScaleControls: vi.fn(),
-        setNoCloud: vi.fn(),
-        setKey: vi.fn(),
-        save: vi.fn(),
-      };
-
-      window.Dos = vi.fn((_element, options) => {
-        // Simulate ci-ready event
-        setTimeout(() => {
-          options?.onEvent?.('ci-ready', mockCi);
-        }, 0);
-        return mockDosProps;
-      });
+      const { ci } = createMockCommandInterface();
 
       render(<DosPlayer onReady={onReady} />);
+      emit('ci-ready', ci);
 
-      await waitFor(() => {
-        expect(onReady).toHaveBeenCalledWith(mockCi);
-      });
+      expect(onReady).toHaveBeenCalledWith(ci);
     });
 
-    it('should unmute audio when Command Interface is ready', async () => {
-      const mockUnmute = vi.fn();
-      const mockCi = {
-        events: () => ({
-          onExit: vi.fn(),
-          onStdout: vi.fn(),
-        }),
-        unmute: mockUnmute,
-      };
-
-      const mockDosProps = {
-        stop: mockStop,
-        getVersion: vi.fn(),
-        getToken: vi.fn(),
-        setTheme: vi.fn(),
-        setLang: vi.fn(),
-        setBackend: vi.fn(),
-        setBackendLocked: vi.fn(),
-        setWorkerThread: vi.fn(),
-        setOffscreenCanvas: vi.fn(),
-        setBackground: vi.fn(),
-        setFullScreen: vi.fn(),
-        setImageRendering: vi.fn(),
-        setRenderBackend: vi.fn(),
-        setRenderAspect: vi.fn(),
-        setSoftFullscreen: vi.fn(),
-        setThinSidebar: vi.fn(),
-        setMouseCapture: vi.fn(),
-        setMouseSensitivity: vi.fn(),
-        setNoCursor: vi.fn(),
-        setSoftKeyboardLayout: vi.fn(),
-        setSoftKeyboardSymbols: vi.fn(),
-        setVolume: vi.fn(),
-        setAutoStart: vi.fn(),
-        setCountDownStart: vi.fn(),
-        setAutoSave: vi.fn(),
-        setKiosk: vi.fn(),
-        setPaused: vi.fn(),
-        setScaleControls: vi.fn(),
-        setNoCloud: vi.fn(),
-        setKey: vi.fn(),
-        save: vi.fn(),
-      };
-
-      window.Dos = vi.fn((_element, options) => {
-        // Simulate ci-ready event
-        setTimeout(() => {
-          options?.onEvent?.('ci-ready', mockCi);
-        }, 0);
-        return mockDosProps;
-      });
+    it('should unmute audio when Command Interface is ready', () => {
+      const { ci, unmute } = createMockCommandInterface();
 
       render(<DosPlayer />);
+      emit('ci-ready', ci);
 
-      await waitFor(() => {
-        expect(mockUnmute).toHaveBeenCalled();
-      });
+      expect(unmute).toHaveBeenCalled();
     });
 
-    it('should call onExit when DOS exits', async () => {
+    it('should call onExit when DOS exits', () => {
       const onExit = vi.fn();
-      let exitCallback: (() => void) | undefined;
-
-      const mockCi = {
-        events: () => ({
-          onExit: (cb: () => void) => {
-            exitCallback = cb;
-          },
-          onStdout: vi.fn(),
-        }),
-        unmute: vi.fn(),
-      };
-
-      const mockDosProps = {
-        stop: mockStop,
-        getVersion: vi.fn(),
-        getToken: vi.fn(),
-        setTheme: vi.fn(),
-        setLang: vi.fn(),
-        setBackend: vi.fn(),
-        setBackendLocked: vi.fn(),
-        setWorkerThread: vi.fn(),
-        setOffscreenCanvas: vi.fn(),
-        setBackground: vi.fn(),
-        setFullScreen: vi.fn(),
-        setImageRendering: vi.fn(),
-        setRenderBackend: vi.fn(),
-        setRenderAspect: vi.fn(),
-        setSoftFullscreen: vi.fn(),
-        setThinSidebar: vi.fn(),
-        setMouseCapture: vi.fn(),
-        setMouseSensitivity: vi.fn(),
-        setNoCursor: vi.fn(),
-        setSoftKeyboardLayout: vi.fn(),
-        setSoftKeyboardSymbols: vi.fn(),
-        setVolume: vi.fn(),
-        setAutoStart: vi.fn(),
-        setCountDownStart: vi.fn(),
-        setAutoSave: vi.fn(),
-        setKiosk: vi.fn(),
-        setPaused: vi.fn(),
-        setScaleControls: vi.fn(),
-        setNoCloud: vi.fn(),
-        setKey: vi.fn(),
-        save: vi.fn(),
-      };
-
-      window.Dos = vi.fn((_element, options) => {
-        setTimeout(() => {
-          options?.onEvent?.('ci-ready', mockCi);
-        }, 0);
-        return mockDosProps;
-      });
+      const { ci, exit } = createMockCommandInterface();
 
       render(<DosPlayer onExit={onExit} />);
+      emit('ci-ready', ci);
+      act(() => exit());
 
-      await waitFor(() => {
-        expect(exitCallback).toBeDefined();
-      });
-
-      // Trigger exit
-      exitCallback?.();
       expect(onExit).toHaveBeenCalled();
     });
   });
@@ -320,12 +225,12 @@ describe('DosPlayer', () => {
 
       unmount();
 
-      expect(mockStop).toHaveBeenCalled();
+      expect(player.stop).toHaveBeenCalled();
     });
 
     it('should handle stop errors gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockStop.mockRejectedValueOnce(new Error('Stop failed'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      player.stop.mockRejectedValueOnce(new Error('Stop failed'));
 
       const { unmount } = render(<DosPlayer />);
 
@@ -337,9 +242,7 @@ describe('DosPlayer', () => {
       unmount();
 
       // Should not throw
-      expect(mockStop).toHaveBeenCalled();
-
-      consoleError.mockRestore();
+      expect(player.stop).toHaveBeenCalled();
     });
   });
 
