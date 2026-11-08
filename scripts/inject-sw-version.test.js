@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -13,10 +14,8 @@ import {
   precachedPaths,
 } from './inject-sw-version.js';
 
-const serviceWorker = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), '../public/sw.js'),
-  'utf8'
-);
+const SCRIPTS = dirname(fileURLToPath(import.meta.url));
+const serviceWorker = readFileSync(join(SCRIPTS, '../public/sw.js'), 'utf8');
 
 const BUILT_INDEX_HTML = `
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -281,5 +280,85 @@ describe('hashDemoArchives', () => {
 
   it('fails when dist/demos has no archives', () => {
     expect(() => hashOf({ 'README.md': '# Demos' })).toThrow(/no \.zip archives/);
+  });
+});
+
+// The step as `npm run build` runs it, after vite build, on a copy of the project
+describe('the build step', () => {
+  const projects = [];
+
+  /**
+   * A project as vite build leaves it: this script in scripts/, dist/ with sw.js and what
+   * it precaches, and js-dos's package.json in node_modules/. DosKit's own package.json
+   * gives another version, so the js-dos version cannot come from it by mistake.
+   * @param {Record<string, string | null>} dist - Files of dist/ to add, change, or (null) leave out
+   */
+  function createProject(dist = {}) {
+    const root = mkdtempSync(join(tmpdir(), 'inject-sw-version-build-'));
+    projects.push(root);
+    const files = {
+      'package.json': JSON.stringify({ name: 'doskit', version: '1.1.0', type: 'module' }),
+      'node_modules/js-dos/package.json': JSON.stringify({ name: 'js-dos', version: '9.9.9' }),
+      'scripts/inject-sw-version.js': readFileSync(join(SCRIPTS, 'inject-sw-version.js')),
+      ...Object.fromEntries(
+        Object.entries({
+          'sw.js': serviceWorker,
+          'index.html': BUILT_INDEX_HTML,
+          'assets/index-abc123.js': 'console.log("app")',
+          'assets/index-789xyz.css': 'body {}',
+          'assets/react-vendor-def456.js': 'console.log("react")',
+          'demos/stars.zip': 'PK stars',
+          'manifest.json': '{}',
+          'logo.svg': '<svg></svg>',
+          'favicon.svg': '<svg></svg>',
+          'js-dos.js': 'console.log("js-dos")',
+          'js-dos.css': '.jsdos {}',
+          'emulators/emulators.js': '',
+          'emulators/wdosbox.js': '',
+          'emulators/wdosbox.wasm': '',
+          'emulators/wlibzip.js': '',
+          'emulators/wlibzip.wasm': '',
+          ...dist,
+        }).map(([file, contents]) => [`dist/${file}`, contents])
+      ),
+    };
+    for (const [file, contents] of Object.entries(files)) {
+      if (contents !== null) {
+        mkdirSync(dirname(join(root, file)), { recursive: true });
+        writeFileSync(join(root, file), contents);
+      }
+    }
+    return root;
+  }
+
+  /** Runs the step in the project, as a script of its own, and reads what it left in dist/ */
+  function build(root) {
+    const run = spawnSync(process.execPath, [join(root, 'scripts/inject-sw-version.js')], {
+      cwd: root,
+      encoding: 'utf8',
+    });
+    return { ...run, serviceWorker: readFileSync(join(root, 'dist/sw.js'), 'utf8') };
+  }
+
+  afterEach(() => {
+    for (const root of projects.splice(0)) {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('stamps the version of the js-dos it copied, from node_modules/js-dos', () => {
+    const result = build(createProject());
+
+    expect(result.status).toBe(0);
+    expect(result.serviceWorker).toContain("const JS_DOS_VERSION = '9.9.9';");
+  });
+
+  it('fails the build, and leaves sw.js as it was, when a file it precaches is missing', () => {
+    // cache.addAll() rejects on a single 404, and the worker would never install
+    const result = build(createProject({ 'manifest.json': null }));
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('/manifest.json');
+    expect(result.serviceWorker).toBe(serviceWorker);
   });
 });
