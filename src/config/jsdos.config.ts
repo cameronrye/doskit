@@ -47,7 +47,6 @@ export const defaultJsDosConfig: Partial<DosOptions> = {
   // UI Settings
   lang: 'en',
   thinSidebar: false,
-  scaleControls: 0.3, // Mobile-friendly control size
 
   // Cloud/Network Settings
   noCloud: true, // Disable cloud features by default
@@ -149,7 +148,6 @@ const softKeyboardSymbols: Record<string, string>[] = [
 export const mobileJsDosConfig: Partial<DosOptions> = {
   ...defaultJsDosConfig,
   softFullscreen: true,
-  scaleControls: 0.4, // Larger controls for touch
   mouseCapture: false,
   // The on-screen keyboard behind the keyboard button in the js-dos sidebar: DosKit's compact
   // layout first, then js-dos's own two

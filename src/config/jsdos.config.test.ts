@@ -215,6 +215,12 @@ describe('jsdos.config', () => {
     it('should have correct aspect ratio', () => {
       expect(defaultJsDosConfig.renderAspect).toBe('4/3');
     });
+
+    // js-dos scales only the touch controls a bundle's .jsdos/jsdos.json defines, and DosKit
+    // gives it none
+    it('should not set scaleControls, which has nothing to scale', () => {
+      expect(defaultJsDosConfig).not.toHaveProperty('scaleControls');
+    });
   });
 
   describe('mobileJsDosConfig', () => {
@@ -223,9 +229,8 @@ describe('jsdos.config', () => {
       expect(mobileJsDosConfig.theme).toBe('dark');
     });
 
-    it('should have larger controls for mobile', () => {
-      expect(mobileJsDosConfig.scaleControls).toBe(0.4);
-      expect(defaultJsDosConfig.scaleControls).toBe(0.3);
+    it('should not set scaleControls, which has nothing to scale', () => {
+      expect(mobileJsDosConfig).not.toHaveProperty('scaleControls');
     });
 
     describe('on-screen keyboard', () => {
@@ -410,7 +415,7 @@ describe('jsdos.config', () => {
         writable: true,
       });
       const config = getDefaultConfig();
-      expect(config.scaleControls).toBe(0.4);
+      expect(config).toBe(mobileJsDosConfig);
       expect(config.softKeyboardLayout).toBeDefined();
     });
 
@@ -420,7 +425,7 @@ describe('jsdos.config', () => {
         writable: true,
       });
       const config = getDefaultConfig();
-      expect(config.scaleControls).toBe(0.3);
+      expect(config).toBe(defaultJsDosConfig);
       expect(config.softKeyboardLayout).toBeUndefined();
     });
   });
