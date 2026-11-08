@@ -25,9 +25,9 @@ interface DosPlayerWithAppsProps {
   className?: string;
   showSelector?: boolean;
   /**
-   * App to run, such as the one a URL names. Each new value loads that app unless it is
-   * already running; null runs the default DOS prompt. Apps picked in the selector run
-   * without it.
+   * App to run, such as the one a URL names. Each new value stops what is running and loads
+   * that app, unless it is already running; null runs the default DOS prompt. Apps picked in
+   * the selector run without it.
    */
   requestedApp?: DosApp | null;
   /** Called when an app starts running (picked or requested), and with null after a reset */
@@ -53,16 +53,17 @@ export function DosPlayerWithApps({
   onAppChange,
   onSelectorVisibilityChange,
 }: DosPlayerWithAppsProps) {
-  // Nothing runs until a requested app has loaded, so a deep link never boots the
-  // default prompt first
+  // Nothing runs while a requested app loads: a deep link never boots the default prompt
+  // first, and the app or prompt that was running stops, sound and all, as the load starts
   const [session, setSession] = useState<Session | null>(requestedApp ? null : DEFAULT_PROMPT);
   const [loadingApp, setLoadingApp] = useState<DosApp | null>(requestedApp);
   const [requestedId, setRequestedId] = useState(requestedApp?.id ?? null);
   const [showAppSelector, setShowAppSelector] = useState(showSelector);
   const [error, setError] = useState<FriendlyError | null>(null);
 
-  // A new request supersedes any load still running for an earlier one. Adjusting state
-  // while rendering instead of in an effect:
+  // A new request supersedes any load still running for an earlier one, and a request for
+  // the app already running changes nothing. Adjusting state while rendering instead of in
+  // an effect:
   // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
   if ((requestedApp?.id ?? null) !== requestedId) {
     setRequestedId(requestedApp?.id ?? null);
@@ -70,8 +71,11 @@ export function DosPlayerWithApps({
     if (!requestedApp) {
       setLoadingApp(null);
       setSession(DEFAULT_PROMPT);
+    } else if (requestedApp.id === session?.app?.id) {
+      setLoadingApp(null);
     } else {
-      setLoadingApp(requestedApp.id === session?.app?.id ? null : requestedApp);
+      setLoadingApp(requestedApp);
+      setSession(null);
     }
   }
 

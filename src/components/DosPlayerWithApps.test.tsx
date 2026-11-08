@@ -51,6 +51,9 @@ const mockAppWithError: DosApp = {
  */
 const boots = vi.hoisted(() => [] as string[]);
 
+/** Every emulator stop, in order, named as in boots */
+const stops = vi.hoisted(() => [] as string[]);
+
 // Mock DosPlayer component
 vi.mock('./DosPlayer', async () => {
   const { useEffect, useState } = await import('react');
@@ -66,10 +69,13 @@ vi.mock('./DosPlayer', async () => {
       dosboxConf?: string;
       options?: Partial<DosOptions>;
     }) => {
-      // Like useDosEmulator, which starts js-dos once per mount
+      // Like useDosEmulator, which starts js-dos once per mount and stops it on unmount
       const [boot] = useState(options?.initFs ? (dosboxConf ?? 'no config') : 'default');
       useEffect(() => {
         boots.push(boot);
+        return () => {
+          stops.push(boot);
+        };
       }, [boot]);
       return (
         <div data-testid="dos-player-mock" data-dosbox-conf={dosboxConf ?? 'default'}>
@@ -149,6 +155,7 @@ describe('DosPlayerWithApps', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     boots.length = 0;
+    stops.length = 0;
     // Store mock app and loaded app in window for the mock selector to use
     (window as WindowWithMockApp).__mockApp = mockApp;
     (window as WindowWithMockApp).__mockLoadedApp = mockLoadedApp;
@@ -588,6 +595,52 @@ describe('DosPlayerWithApps', () => {
       expect(boots).toEqual(['default', 'conf:stars']);
     });
 
+    it('stops the running app as soon as another app is requested', async () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      await stars.finish();
+
+      // Going back or forward to another app's URL
+      rerender(<DosPlayerWithApps requestedApp={rotate.app} />);
+
+      // Nothing runs, or plays sound, while the next app downloads
+      expect(stops).toEqual(['conf:stars']);
+      expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+
+      await rotate.finish();
+
+      expect(boots).toEqual(['conf:stars', 'conf:3drotate']);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+    });
+
+    it('stops the default prompt as soon as an app is requested', () => {
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={null} />);
+
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      expect(stops).toEqual(['default']);
+      expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
+    });
+
+    it('runs nothing behind the error of a newly requested app that fails to load', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const stars = deferredApp('stars');
+      const broken = deferredApp('broken');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      await stars.finish();
+
+      rerender(<DosPlayerWithApps requestedApp={broken.app} />);
+      await broken.fail(new TypeError('Failed to fetch'));
+
+      expect(screen.getByRole('alert')).toHaveTextContent('Error Loading Application');
+      expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
+      expect(boots).toEqual(['conf:stars']);
+      expect(stops).toEqual(['conf:stars']);
+    });
+
     it('does not reload an app picked in the selector when it is requested next', () => {
       // App mirrors the pick into requestedApp once the selector reports it
       const { rerender } = render(<DosPlayerWithApps showSelector={true} requestedApp={null} />);
@@ -598,6 +651,8 @@ describe('DosPlayerWithApps', () => {
       expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
       expect(mockApp.loader).not.toHaveBeenCalled();
       expect(boots).toEqual(['default', '[cpu]\ncore=auto']);
+      // The picked app goes on running
+      expect(stops).toEqual(['default']);
     });
 
     it('leaves the selector open when a requested app finishes loading behind it', async () => {
@@ -731,11 +786,11 @@ describe('DosPlayerWithApps', () => {
       expect(stars.signal()?.aborted).toBe(true);
       expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
       await stars.finish();
-      // The default prompt kept running throughout
-      expect(boots).toEqual(['default']);
+      // The request for stars stopped the default prompt, which starts again
+      expect(boots).toEqual(['default', 'default']);
     });
 
-    it('keeps the running app when the request returns to it during another load', async () => {
+    it('loads the stopped app again when the request returns to it during another load', async () => {
       const stars = deferredApp('stars');
       const rotate = deferredApp('3drotate');
       const { rerender } = render(<DosPlayerWithApps requestedApp={rotate.app} />);
@@ -745,9 +800,33 @@ describe('DosPlayerWithApps', () => {
       rerender(<DosPlayerWithApps requestedApp={rotate.app} />);
 
       expect(stars.signal()?.aborted).toBe(true);
+      expect(rotate.loader).toHaveBeenCalledTimes(2);
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+      await stars.finish();
+      await rotate.finish();
+      expect(boots).toEqual(['conf:3drotate', 'conf:3drotate']);
+    });
+
+    it('lets an app picked in the selector win over a load that stopped the running app', async () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const onAppChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps requestedApp={rotate.app} onAppChange={onAppChange} />
+      );
+      await rotate.finish();
+      rerender(<DosPlayerWithApps requestedApp={stars.app} onAppChange={onAppChange} />);
+      // The user opens the selector during the download and picks another app
+      rerender(
+        <DosPlayerWithApps requestedApp={stars.app} showSelector={true} onAppChange={onAppChange} />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(stars.signal()?.aborted).toBe(true);
       expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
       await stars.finish();
-      expect(boots).toEqual(['conf:3drotate']);
+      expect(boots).toEqual(['conf:3drotate', '[cpu]\ncore=auto']);
+      expect(onAppChange).toHaveBeenLastCalledWith(mockApp);
     });
 
     it('lets an app picked in the selector win over a requested app still loading', async () => {
