@@ -24,7 +24,16 @@
   background:
     linear-gradient(rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.06)),
     linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 0.5rem 2rem;
+  /*
+   * index.html lets iOS draw the page under the status bar, the notch and the home indicator
+   * (viewport-fit=cover, and black-translucent once installed), so the header and footer
+   * reach the edges and pad their content clear of them by the safe-area insets
+   */
+  --header-padding-y: 0.5rem;
+  --header-padding-x: 2rem;
+  padding: calc(var(--header-padding-y) + env(safe-area-inset-top, 0px))
+    calc(var(--header-padding-x) + env(safe-area-inset-right, 0px)) var(--header-padding-y)
+    calc(var(--header-padding-x) + env(safe-area-inset-left, 0px));
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   z-index: 10;
 }
@@ -129,6 +138,9 @@
   overflow: hidden;
   background-color: #000;
   position: relative;
+  /* The player clear of the notch and the rounded corners of a phone held sideways */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 /* URL Error Banner */
@@ -191,7 +203,12 @@
 
 .app-footer {
   background-color: #2a2a2a;
-  padding: 0.75rem 2rem;
+  /* Clear of the home indicator and the notch, as the header */
+  --footer-padding-y: 0.75rem;
+  --footer-padding-x: 2rem;
+  padding: var(--footer-padding-y) calc(var(--footer-padding-x) + env(safe-area-inset-right, 0px))
+    calc(var(--footer-padding-y) + env(safe-area-inset-bottom, 0px))
+    calc(var(--footer-padding-x) + env(safe-area-inset-left, 0px));
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -339,7 +356,7 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .app-header {
-    padding: 0.5rem 1rem;
+    --header-padding-x: 1rem;
   }
 
   .header-content {
@@ -386,7 +403,7 @@
   .app-footer {
     flex-direction: column;
     gap: 0.5rem;
-    padding: 0.75rem 1rem;
+    --footer-padding-x: 1rem;
     text-align: center;
   }
 
@@ -438,7 +455,8 @@
  */
 @media (max-height: 500px) {
   .app-header {
-    padding: 0.25rem 1rem;
+    --header-padding-y: 0.25rem;
+    --header-padding-x: 1rem;
   }
 
   .header-content {
@@ -490,7 +508,8 @@
 
   .app-footer {
     flex-direction: row;
-    padding: 0.25rem 1rem;
+    --footer-padding-y: 0.25rem;
+    --footer-padding-x: 1rem;
   }
 
   .app-footer .made-with,
