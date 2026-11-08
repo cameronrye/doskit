@@ -131,10 +131,13 @@ export function DosPlayerWithApps({
     }
   }
 
-  // Sync showSelector prop with local state
-  useEffect(() => {
+  // The parent's showSelector opens or closes the selector whenever it changes, and the
+  // selector's own buttons close it in between. Adjusted while rendering, as for requestedApp.
+  const [shownBy, setShownBy] = useState(showSelector);
+  if (showSelector !== shownBy) {
+    setShownBy(showSelector);
     setShowAppSelector(showSelector);
-  }, [showSelector]);
+  }
 
   const runLoadedApp = useEffectEvent((app: DosApp, files: Session['files'], conf: string) => {
     setSession(newSession(app, files, conf));
