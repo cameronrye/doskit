@@ -169,7 +169,7 @@ export class JsDosAdapter implements EmulatorAdapter {
  * Default emulator adapter instance
  * Uses js-dos as the default implementation
  */
-export const defaultEmulatorAdapter: EmulatorAdapter = new JsDosAdapter();
+const defaultEmulatorAdapter: EmulatorAdapter = new JsDosAdapter();
 
 /**
  * Get the current emulator adapter

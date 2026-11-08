@@ -67,5 +67,3 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
     />
   );
 };
-
-export default DosPlayer;

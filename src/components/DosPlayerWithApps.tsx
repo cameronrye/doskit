@@ -16,8 +16,8 @@ import type { InitFileEntry } from '../types/js-dos';
 import { getUserFriendlyError, type FriendlyError } from '../utils/errorMessages';
 import './DosPlayerWithApps.css';
 
-// Re-export types for use in parent components
-export type { DosApp, LoadedApp };
+// Re-export the app type for use in parent components
+export type { DosApp };
 
 interface DosPlayerWithAppsProps {
   onReady?: (ci: CommandInterface) => void;

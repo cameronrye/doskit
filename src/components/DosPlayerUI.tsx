@@ -62,5 +62,3 @@ export const DosPlayerUI: React.FC<DosPlayerUIProps> = ({
     </div>
   );
 };
-
-export default DosPlayerUI;
