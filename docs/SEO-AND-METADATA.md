@@ -155,7 +155,7 @@ Location: `/public/robots.txt`
 Features:
 
 - Allow all crawlers by default
-- Disallow source maps (`/*.map$`); the JS and CSS in `/assets/` stay crawlable, since crawlers need them to render the app
+- Disallow source maps (`/*.map$`) for every crawler; the JS and CSS in `/assets/` stay crawlable, since crawlers need them to render the app
 - Explicit allow rules for AI/LLM crawlers:
   - GPTBot (OpenAI)
   - ChatGPT-User
@@ -166,7 +166,7 @@ Features:
   - PerplexityBot
 - Sitemap location
 
-A crawler follows only the most specific group that matches it, and the AI/LLM crawler groups have no `Disallow` line of their own, so those crawlers may fetch the source maps too.
+A crawler obeys only the group that names it, or the `*` group when none does, so every group repeats `Disallow: /*.map$`, the AI/LLM crawlers' included. `scripts/robots-txt.test.js` groups the file's lines as RFC 9309 does and fails for a group without the rule.
 
 #### humans.txt
 
@@ -403,4 +403,4 @@ Potential additions:
 
 ---
 
-Last updated: 2026-11-07
+Last updated: 2026-11-08
