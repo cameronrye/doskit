@@ -90,7 +90,8 @@ export function getUrlFriendlyId(appId: string): string {
 
 /**
  * Update the browser URL with the specified app ID
- * Uses query parameter approach: ?app=secondreality
+ * Uses query parameter approach: /?app=secondreality, the one form of an app URL, so
+ * replacing also rewrites path-style links (/secondreality) and other spellings
  * @param appId - The internal app ID, or null to remove the app parameter
  * @param replace - If true, replaces the current history entry instead of adding a new one
  */
@@ -99,6 +100,7 @@ export function updateUrlWithApp(appId: string | null, replace: boolean = false)
 
   if (appId) {
     const urlFriendlyId = getUrlFriendlyId(appId);
+    url.pathname = '/';
     url.searchParams.set('app', urlFriendlyId);
   } else {
     url.searchParams.delete('app');

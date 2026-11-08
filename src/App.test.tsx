@@ -194,6 +194,49 @@ describe('App', () => {
       expect(screen.getByTestId('requested-app')).toHaveTextContent('3drotate');
     });
 
+    it('rewrites a path-style deep link to ?app= without a new history entry', () => {
+      window.history.replaceState({}, '', '/stars');
+      const lengthBefore = window.history.length;
+
+      render(<App />);
+
+      expect(window.location.pathname + window.location.search).toBe('/?app=stars');
+      expect(window.history.length).toBe(lengthBefore);
+      expect(requests[0]).toBe('stars');
+    });
+
+    it('adds no history entry when a path-style deep link reports in', () => {
+      window.history.replaceState({}, '', '/stars');
+      render(<App />);
+      const lengthBefore = window.history.length;
+
+      fireEvent.click(screen.getByText('Report Requested App'));
+
+      expect(window.history.length).toBe(lengthBefore);
+    });
+
+    it('rewrites other spellings of a deep link to the one the app uses', () => {
+      window.history.replaceState({}, '', '/?app=Second-Reality');
+      render(<App />);
+      const lengthBefore = window.history.length;
+
+      fireEvent.click(screen.getByText('Report Requested App'));
+
+      expect(window.location.search).toBe('?app=secondreality');
+      expect(window.history.length).toBe(lengthBefore);
+    });
+
+    it('rewrites a path-style entry that going back lands on', async () => {
+      window.history.replaceState({}, '', '/stars');
+      window.history.pushState({}, '', '/');
+      render(<App />);
+
+      await traverse('back');
+
+      expect(window.location.pathname + window.location.search).toBe('/?app=stars');
+      expect(screen.getByTestId('requested-app')).toHaveTextContent('stars');
+    });
+
     it('shows the URL error banner for a deep link to an unknown app', () => {
       window.history.replaceState({}, '', '/?app=bogus');
       const lengthBefore = window.history.length;

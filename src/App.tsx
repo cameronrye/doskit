@@ -30,9 +30,15 @@ function readUrlRoute(): UrlRoute {
   };
 }
 
-/** Set the title for a route, and drop an unknown app from the URL (no new history entry) */
+/**
+ * Set the title for a route, and bring the URL to the form the app pushes without a new
+ * history entry: /?app=<id> for an app (also for /stars or ?app=Stars), and no app
+ * parameter for an unknown one. Apps reporting in once loaded then find their URL in place.
+ */
 function applyUrlRoute(route: UrlRoute): void {
-  if (route.error) {
+  if (route.app) {
+    updateUrlWithApp(route.app.id, true);
+  } else if (route.error) {
     updateUrlWithApp(null, true);
   }
   updateDocumentTitle(route.app?.name);

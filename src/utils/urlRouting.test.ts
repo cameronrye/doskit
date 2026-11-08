@@ -83,6 +83,35 @@ describe('urlRouting', () => {
 
       expect(window.history.length).toBe(lengthBefore);
     });
+
+    it('rewrites a path-style link to /?app= in place', () => {
+      window.history.replaceState({}, '', '/secondreality');
+      const lengthBefore = window.history.length;
+
+      updateUrlWithApp('second-reality', true);
+
+      expect(window.location.pathname).toBe('/');
+      expect(window.location.search).toBe('?app=secondreality');
+      expect(window.history.length).toBe(lengthBefore);
+    });
+
+    it('keeps other parameters and the hash when rewriting', () => {
+      window.history.replaceState({}, '', '/stars?ref=sceners#top');
+
+      updateUrlWithApp('stars', true);
+
+      expect(window.location.pathname + window.location.search + window.location.hash).toBe(
+        '/?ref=sceners&app=stars#top'
+      );
+    });
+
+    it('links an app picked on another page from the root', () => {
+      window.history.replaceState({}, '', '/index.html');
+
+      updateUrlWithApp('stars');
+
+      expect(window.location.pathname + window.location.search).toBe('/?app=stars');
+    });
   });
 
   describe('normalizeAppId', () => {
