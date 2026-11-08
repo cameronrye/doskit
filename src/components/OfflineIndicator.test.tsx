@@ -26,8 +26,9 @@ function offerInstall(outcome: 'accepted' | 'dismissed' = 'accepted') {
 }
 
 /**
- * jsdom has no ResizeObserver. Like a browser's, this one reports an element once it starts
- * observing it, and resizeAll() reports a change in the size of every element observed.
+ * Like a browser's ResizeObserver, this one reports an element once it starts observing it,
+ * and resizeAll() reports a change in the size of every element observed. The one
+ * src/test/setup.ts gives jsdom never reports anything.
  */
 class FakeResizeObserver {
   static observing = new Set<FakeResizeObserver>();
@@ -62,8 +63,6 @@ describe('OfflineIndicator', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    FakeResizeObserver.observing.clear();
-    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
 
     // Save originals
     originalNavigator = window.navigator;
@@ -442,6 +441,8 @@ describe('OfflineIndicator', () => {
     const rootProperty = (name: string) => document.documentElement.style.getPropertyValue(name);
 
     beforeEach(() => {
+      FakeResizeObserver.observing.clear();
+      vi.stubGlobal('ResizeObserver', FakeResizeObserver);
       heights['offline-indicator'] = 84;
       heights['install-prompt'] = 234;
       vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (
