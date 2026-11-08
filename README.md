@@ -457,22 +457,22 @@ https://doskit.net/?app=impulsetracker
 
 To add an app to DosKit's selector, with a link of its own, follow [src/dos-apps/README.md](src/dos-apps/README.md): a ZIP archive in `public/demos/`, a config module in `src/dos-apps/`, and an entry in `src/config/apps.config.ts`.
 
-To run DOS applications or games with the `DosPlayer` component directly:
+To run a DOS program of your own with the `DosPlayer` component directly:
 
 1. **Create a custom DOSBox configuration:**
 
 ```typescript
-const gameConfig = `
+const programConfig = `
 [autoexec]
 @echo off
 mount c .
 c:
-cd MYGAME
-game.exe
+cd MYPROG
+myprog.exe
 `;
 ```
 
-2. **Package your DOS files in a ZIP archive** in the public directory, for example as `public/demos/mygame.zip`, where the service worker caches it for offline use like the apps' archives. js-dos only sees the files passed in its `initFs` option.
+2. **Package your DOS files in a ZIP archive** in the public directory, for example as `public/demos/myprog.zip`, where the service worker caches it for offline use like the apps' archives. js-dos only sees the files passed in its `initFs` option.
 
 3. **Download the archive and hand it to DosPlayer:**
 
@@ -481,12 +481,12 @@ import { useEffect, useState } from 'react';
 import { DosPlayer } from './components/DosPlayer';
 import { loadZipArchive } from './utils/diskLoader';
 
-function MyGame() {
+function MyProgram() {
   const [zip, setZip] = useState<Uint8Array | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    loadZipArchive('/demos/mygame.zip', undefined, controller.signal).then(setZip, () => {
+    loadZipArchive('/demos/myprog.zip', undefined, controller.signal).then(setZip, () => {
       // Aborted on unmount, or failed: loadZipArchive logs failures
     });
     return () => controller.abort();
@@ -494,7 +494,7 @@ function MyGame() {
 
   // DosPlayer starts js-dos when it mounts, so mount it once the files are here
   if (!zip) return <p>Loading...</p>;
-  return <DosPlayer dosboxConf={gameConfig} options={{ initFs: zip }} />;
+  return <DosPlayer dosboxConf={programConfig} options={{ initFs: zip }} />;
 }
 ```
 

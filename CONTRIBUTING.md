@@ -51,7 +51,7 @@ Use descriptive branch names that follow this pattern:
 - `refactor/description` - For code refactoring
 - `test/description` - For test additions or updates
 
-Example: `feature/add-gamepad-support`
+Example: `feature/add-screenshot-capture`
 
 ### Making Changes
 
@@ -97,11 +97,11 @@ Pull requests to `main` run CI (`.github/workflows/ci.yml`): ESLint, the format 
 Write clear, concise commit messages that describe what changed and why:
 
 ```
-feat: add gamepad support for DOS games
+feat: add screenshot capture
 
-- Implement gamepad API integration
-- Add configuration options for button mapping
-- Update documentation with gamepad usage
+- Save the emulator's screen as a PNG with ci.screenshot()
+- Add a Screenshot button to the header
+- Document it in the README
 
 Closes #123
 ```
@@ -338,7 +338,7 @@ Use **conventional commits** for automatic versioning and changelog generation:
 Examples:
 
 ```bash
-git commit -m "feat: add gamepad support"
+git commit -m "feat: add screenshot capture"
 git commit -m "fix: resolve audio sync issue"
 git commit -m "docs: update installation guide"
 ```
