@@ -112,7 +112,7 @@ Closes #123
 
 2. **Create a Pull Request** on GitHub from your fork to the main repository
 
-3. **Fill out the PR template** with:
+3. **Describe the PR** with:
    - Description of changes
    - Related issue numbers
    - Testing performed
@@ -129,7 +129,7 @@ Closes #123
 ### TypeScript
 
 - Use **TypeScript** for all new code
-- Enable **strict mode** type checking
+- Pass **strict mode** type checking (`strict` is on for the app, the tests and the configs)
 - Avoid using `any` type - use `unknown`, specific types, or proper generics
 - Document complex types with JSDoc comments
 
@@ -143,34 +143,45 @@ Closes #123
 ### Code Formatting
 
 - **ESLint**: All code must pass ESLint checks
+- **Prettier**: Applies the rules below, with the settings in `.prettierrc`
 - **Indentation**: 2 spaces
-- **Quotes**: Single quotes for strings
+- **Quotes**: Single quotes for strings (double quotes in JSX attributes)
 - **Semicolons**: Required
 - **Line length**: Maximum 100 characters (soft limit)
 
-Run the linter to auto-fix many style issues:
+Let the tools fix what they can:
 
 ```bash
-npm run lint
+# Format every file with Prettier
+npm run format
+
+# Apply ESLint's automatic fixes
+npm run lint -- --fix
 ```
 
 ### File Organization
 
 ```
 src/
+├── adapters/       # Emulator adapter around js-dos
 ├── components/     # React components
 ├── config/         # Configuration files
+├── constants/      # Shared constants
+├── dos-apps/       # One config module per DOS app
 ├── hooks/          # Custom React hooks
+├── integration/    # Integration tests
+├── test/           # Test setup
 ├── types/          # TypeScript type definitions
-├── utils/          # Utility functions
-└── assets/         # Static assets
+└── utils/          # Utility functions
 ```
+
+Static files, such as icons and the DOS app archives in `public/demos/`, live in `public/`. `scripts/` holds the Node scripts and the tests for code outside `src/`. [`src/dos-apps/README.md`](src/dos-apps/README.md) explains how to add a DOS app.
 
 ## Testing Guidelines
 
 ### Test Requirements
 
-- **Coverage**: Maintain minimum 70% code coverage
+- **Coverage**: Stay at or above the thresholds in `vitest.config.ts`; `npm run test:coverage`, which CI runs, fails below them
 - **Unit tests**: Required for all new features and bug fixes
 - **Component tests**: Required for all React components
 - **Integration tests**: Recommended for complex features
@@ -203,17 +214,20 @@ describe('DosPlayer', () => {
 ### Running Tests
 
 ```bash
-# Run tests in watch mode
+# Run tests once
 npm test
 
-# Run tests once
-npm run test:run
+# Run tests in watch mode
+npm run test:watch
 
 # Run tests with coverage
 npm run test:coverage
 
 # Run tests with UI
 npm run test:ui
+
+# Run one test file
+npx vitest run src/utils/urlRouting.test.ts
 ```
 
 ## Documentation
@@ -251,17 +265,19 @@ Example:
 
 ```typescript
 /**
- * Load files from URLs with progress tracking
+ * Load a ZIP archive for js-dos
  *
- * @param urls - Array of file URLs to load
+ * @param zipUrl - URL of the ZIP archive
  * @param onProgress - Optional callback for progress updates
- * @returns Promise that resolves to array of loaded files
- * @throws {Error} If any file fails to load
+ * @param signal - Optional AbortSignal that cancels the download
+ * @returns Promise that resolves to the archive's bytes
+ * @throws {Error} If the download fails or is aborted
  */
-export async function loadFilesFromUrls(
-  urls: string[],
-  onProgress?: (progress: LoadProgress) => void
-): Promise<InitFileEntry[]> {
+export async function loadZipArchive(
+  zipUrl: string,
+  onProgress?: (progress: LoadProgress) => void,
+  signal?: AbortSignal
+): Promise<Uint8Array> {
   // Implementation...
 }
 ```
@@ -298,7 +314,7 @@ Use **conventional commits** for automatic versioning and changelog generation:
 - `chore:` - Maintenance tasks
 - `refactor:` - Code refactoring
 - `test:` - Test changes
-- `BREAKING CHANGE:` - Breaking changes (major version bump)
+- `BREAKING CHANGE:` footer, or `!` after the type (`feat!:`) - Breaking changes (major version bump)
 
 Examples:
 
