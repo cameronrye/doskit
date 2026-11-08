@@ -36,7 +36,16 @@ interface DosPlayerWithAppsProps {
    */
   onAppChange?: (app: DosApp | null) => void;
   onSelectorVisibilityChange?: (visible: boolean) => void;
+  /** Called with the status on mount, and again whenever it changes */
+  onStatusChange?: (status: PlayerStatus) => void;
 }
+
+/**
+ * How the player is doing: 'loading' while an app downloads or its emulator starts, and
+ * after DOS has exited until the next start; 'ready' once js-dos reports the emulator
+ * ready; 'error' while the load error or the emulator's start error shows
+ */
+export type PlayerStatus = 'loading' | 'ready' | 'error';
 
 /** What the emulator runs: an app with its files, or the default DOS prompt */
 interface Session {
@@ -74,6 +83,7 @@ export function DosPlayerWithApps({
   requestedApp = null,
   onAppChange,
   onSelectorVisibilityChange,
+  onStatusChange,
 }: DosPlayerWithAppsProps) {
   // Nothing runs while a requested app loads: a deep link never boots the default prompt
   // first, and the app or prompt that was running stops, sound and all, as the load starts
@@ -82,7 +92,24 @@ export function DosPlayerWithApps({
   const [requestedId, setRequestedId] = useState(requestedApp?.id ?? null);
   const [showAppSelector, setShowAppSelector] = useState(showSelector);
   const [error, setError] = useState<LoadError | null>(null);
+  // What became of the session's emulator, once it is ready or has failed to start
+  const [started, setStarted] = useState<{
+    session: Session;
+    status: 'ready' | 'error';
+  } | null>(null);
   const tryAgainRef = useRef<HTMLButtonElement>(null);
+
+  // A new session is loading until its own emulator is ready
+  const status: PlayerStatus = error
+    ? 'error'
+    : session && started?.session === session
+      ? started.status
+      : 'loading';
+
+  const reportStatus = useEffectEvent((current: PlayerStatus) => onStatusChange?.(current));
+  useEffect(() => {
+    reportStatus(status);
+  }, [status]);
 
   // A new request supersedes any load still running for an earlier one, and a request for
   // the app already running changes nothing. Adjusting state while rendering instead of in
@@ -243,8 +270,15 @@ export function DosPlayerWithApps({
           key={session.id} // A new session starts a new player
           dosboxConf={session.dosboxConf}
           options={session.app ? { initFs: session.files } : {}}
-          onReady={onReady}
-          onExit={onExit}
+          onReady={(ci) => {
+            setStarted({ session, status: 'ready' });
+            onReady?.(ci);
+          }}
+          onExit={() => {
+            setStarted(null);
+            onExit?.();
+          }}
+          onError={() => setStarted({ session, status: 'error' })}
           className="dos-player-instance"
         />
       )}

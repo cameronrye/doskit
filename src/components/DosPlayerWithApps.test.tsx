@@ -62,11 +62,13 @@ vi.mock('./DosPlayer', async () => {
     DosPlayer: ({
       onReady,
       onExit,
+      onError,
       dosboxConf,
       options,
     }: {
       onReady?: () => void;
       onExit?: () => void;
+      onError?: (error: string) => void;
       dosboxConf?: string;
       options?: Partial<DosOptions>;
     }) => {
@@ -82,6 +84,7 @@ vi.mock('./DosPlayer', async () => {
         <div data-testid="dos-player-mock" data-dosbox-conf={dosboxConf ?? 'default'}>
           <button onClick={onReady}>Trigger Ready</button>
           <button onClick={onExit}>Trigger Exit</button>
+          <button onClick={() => onError?.('Failed to initialize js-dos')}>Trigger Error</button>
         </div>
       );
     },
@@ -284,6 +287,92 @@ describe('DosPlayerWithApps', () => {
       exitButton.click();
 
       expect(onExit).toHaveBeenCalled();
+    });
+  });
+
+  // What the page's footer shows
+  describe('Status', () => {
+    it('reports loading until js-dos reports the emulator ready', () => {
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps onStatusChange={onStatusChange} />);
+
+      expect(onStatusChange.mock.calls).toEqual([['loading']]);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['ready']]);
+    });
+
+    it('reports loading while a requested app downloads and its emulator starts', async () => {
+      const stars = deferredApp('stars');
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps requestedApp={stars.app} onStatusChange={onStatusChange} />);
+
+      await stars.finish();
+
+      expect(onStatusChange.mock.calls).toEqual([['loading']]);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      expect(onStatusChange).toHaveBeenLastCalledWith('ready');
+    });
+
+    it('reports an error while the load error shows, and loading again on Try Again', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const stars = deferredApp('stars');
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps requestedApp={stars.app} onStatusChange={onStatusChange} />);
+
+      await stars.fail(new TypeError('Failed to fetch'));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['error']]);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['error'], ['loading']]);
+    });
+
+    it('reports an error when the emulator cannot start', () => {
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps onStatusChange={onStatusChange} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Error' }));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['error']]);
+    });
+
+    it('reports loading for the next app until its emulator is ready', () => {
+      const onStatusChange = vi.fn();
+      const { rerender } = render(<DosPlayerWithApps onStatusChange={onStatusChange} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      rerender(<DosPlayerWithApps showSelector={true} onStatusChange={onStatusChange} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['ready'], ['loading']]);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      expect(onStatusChange).toHaveBeenLastCalledWith('ready');
+    });
+
+    // Nothing runs then until the next start, as the footer said before
+    it('reports loading once DOS has exited', () => {
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps onStatusChange={onStatusChange} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Exit' }));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['ready'], ['loading']]);
+    });
+
+    it('still passes the ready emulator and its exit on', () => {
+      const onReady = vi.fn();
+      const onExit = vi.fn();
+      render(<DosPlayerWithApps onReady={onReady} onExit={onExit} onStatusChange={() => {}} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Exit' }));
+
+      expect(onReady).toHaveBeenCalledOnce();
+      expect(onExit).toHaveBeenCalledOnce();
     });
   });
 
