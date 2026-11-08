@@ -787,6 +787,37 @@ describe('DosPlayerWithApps', () => {
     });
   });
 
+  // A download that stalls would keep it up for good
+  describe('Loading overlay', () => {
+    it('stops the load on Cancel and runs the default DOS prompt under the selector', async () => {
+      const stars = deferredApp('stars');
+      const onAppChange = vi.fn();
+      const onSelectorVisibilityChange = vi.fn();
+      render(
+        <DosPlayerWithApps
+          requestedApp={stars.app}
+          onAppChange={onAppChange}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(stars.signal()?.aborted).toBe(true);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+      expect(boots).toEqual(['default']);
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(null);
+      expect(onSelectorVisibilityChange).toHaveBeenCalledExactlyOnceWith(true);
+
+      // A download that finishes all the same is dropped
+      await stars.finish();
+
+      expect(boots).toEqual(['default']);
+      expect(onAppChange).toHaveBeenCalledOnce();
+    });
+  });
+
   describe('Overlapping loads', () => {
     it('aborts the download of a request that a newer one supersedes', () => {
       const stars = deferredApp('stars');

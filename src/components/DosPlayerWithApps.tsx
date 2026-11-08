@@ -177,9 +177,11 @@ export function DosPlayerWithApps({
     setLoadingApp(app);
   }, []);
 
-  // Choose Another Application: the default DOS prompt, with the selector open over it
+  // Choose Another Application, and Cancel while a requested app loads, which stops the
+  // load: the default DOS prompt, with the selector open over it
   const handleChooseAnother = useCallback(() => {
     setSession(newSession(null));
+    setLoadingApp(null);
     setError(null);
     setShowAppSelector(true);
     onAppChange?.(null);
@@ -206,6 +208,7 @@ export function DosPlayerWithApps({
         <div className="loading-overlay">
           <div className="loading-spinner" />
           <p>Loading application...</p>
+          <button onClick={handleChooseAnother}>Cancel</button>
         </div>
       )}
 
