@@ -398,7 +398,7 @@ function MyApp() {
   const handleReady = (commandInterface: CommandInterface) => {
     setCi(commandInterface);
     // Control DOS programmatically
-    commandInterface.simulateKeyPress(13); // Press Enter
+    commandInterface.simulateKeyPress(257); // Press Enter (257 in js-dos key codes)
   };
 
   return <DosPlayer onReady={handleReady} />;
@@ -438,7 +438,7 @@ Methods:
 - `fsReadFile(file: string): Promise<Uint8Array>` - Read file from DOS filesystem
 - `fsWriteFile(file: string, contents: ReadableStream<Uint8Array> | Uint8Array): Promise<void>` - Write file to DOS filesystem
 - `persist(onlyChanges?: boolean): Promise<Uint8Array | null>` - Pack the DOS filesystem's changes (or, with `false`, all of it) into a bundle
-- `simulateKeyPress(...keyCodes: number[]): void` - Simulate key presses
+- `simulateKeyPress(...keyCodes: number[]): void` - Simulate key presses, in js-dos key codes rather than the browser's: Enter is 257 and Esc 256, while letters (uppercase) and digits keep their ASCII codes
 - `exit(): Promise<void>` - Exit emulator
 
 ## Development
