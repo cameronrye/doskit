@@ -73,6 +73,14 @@ describe('availableApps', () => {
       expect(conf).not.toMatch(/^echo CPU: .*(486|pentium)/im);
     });
 
+    it('should not claim a GUS memory size or stereo sound in its banner', async () => {
+      // The backend's GUS always has 1 MB, which no setting changes, and js-dos mixes the
+      // sound down to one channel for the page
+      const conf = await dosboxConfOf(app);
+
+      expect(conf).not.toMatch(/^echo .*(\d+ ?KB|stereo)/im);
+    });
+
     it('should name no other year for its release in its description or banner', async () => {
       // A year in the description, or a banner's "by Triton (1993)" or "1993 - ...", is the
       // release year; a party's year in the banner ("The Party 1992") is not

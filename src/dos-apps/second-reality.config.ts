@@ -19,7 +19,8 @@ import { presets } from '../utils/dosboxConfigBuilder';
  * - Memory: 570KB conventional, 1MB EMS for SB (GUS doesn't need EMS)
  *
  * This configuration uses:
- * - Gravis UltraSound with 512KB stereo memory (optimal audio quality)
+ * - Gravis UltraSound (the backend's always has 1 MB of memory, and js-dos plays its sound in
+ *   mono)
  * - Maximum cycles (best performance) on the simple CPU core
  * - DOSBox's default 16 MB of memory, with EMS/XMS enabled
  * - Sound Blaster as fallback
@@ -44,7 +45,7 @@ export const secondRealityDosboxConf = presets
     'echo   Second Reality by Future Crew (1993)',
     'echo ========================================',
     'echo.',
-    'echo Audio: Gravis UltraSound (512KB Stereo)',
+    'echo Audio: Gravis UltraSound',
     'echo CPU: Maximum Cycles',
     'echo.',
     'echo Mounting C: drive...',
