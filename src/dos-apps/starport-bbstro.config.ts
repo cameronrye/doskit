@@ -23,9 +23,9 @@ export const starportBbstroZipUrl = '/demos/starport-bbstro.zip';
  * DOSBox configuration optimized for Starport BBS Intro II
  *
  * Starport BBS requirements:
- * - 286 CPU minimum (very lightweight)
+ * - 386 CPU minimum (SP2.ASM is written for the 386)
  * - VGA graphics
- * - Sound Blaster compatible sound card
+ * - AdLib compatible sound card (FCINFO12.TXT lists it as "VGA/Adlib")
  * - Memory: Minimal (runs in 640KB)
  *
  * This configuration uses:

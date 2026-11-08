@@ -14,7 +14,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
  * A legendary 1993 demo that won 1st place at The Computer Crossroads 1993
  *
  * Source: https://files.scene.org/get/demos/groups/triton/cd2-trn.zip
- * License: Scene/Historical
+ * License: none found (see public/demos/README.md)
  * Size: ~2MB
  */
 export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';

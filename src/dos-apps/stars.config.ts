@@ -15,7 +15,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
  * A classic starfield effect demo, from VLA's "Intro To Starfields" by Draeden
  *
  * Source: https://github.com/sceners/grumpys-source-pack-collection
- * License: Scene/Historical
+ * License: none found (see public/demos/README.md)
  */
 export const starsZipUrl = '/demos/stars.zip';
 
@@ -23,7 +23,7 @@ export const starsZipUrl = '/demos/stars.zip';
  * DOSBox configuration optimized for Starfield Effect
  *
  * Requirements:
- * - 286 CPU minimum
+ * - 386 CPU minimum (STARS.ASM: "Need 386 to execute")
  * - VGA graphics
  * - Memory: Minimal (runs in 640KB)
  *

@@ -15,7 +15,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
  * A classic 3D rotation demo effect, from VLA's "Intro To 3d Rotations" by Draeden
  *
  * Source: https://github.com/sceners/grumpys-source-pack-collection
- * License: Scene/Historical
+ * License: none found (see public/demos/README.md)
  */
 export const rotate3dZipUrl = '/demos/3drotate.zip';
 
@@ -23,7 +23,7 @@ export const rotate3dZipUrl = '/demos/3drotate.zip';
  * DOSBox configuration optimized for 3D Rotate Demo
  *
  * Requirements:
- * - 286 CPU minimum
+ * - 386 CPU minimum (3DROTATE.TXT: "requires a 386 or better")
  * - VGA graphics
  * - Memory: Minimal (runs in 640KB)
  *

@@ -14,7 +14,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
  * A tiny BBS intro by cld & The Doctor (1994)
  *
  * Source: https://github.com/sceners/squid-bbstro
- * License: Scene/Historical
+ * License: Freeware (SQUID1.ASM; see public/demos/README.md)
  * Size: 1899 bytes
  */
 export const squidBbstroZipUrl = '/demos/squid-bbstro.zip';
@@ -23,7 +23,7 @@ export const squidBbstroZipUrl = '/demos/squid-bbstro.zip';
  * DOSBox configuration optimized for Squid BBS Intro
  *
  * Squid BBS requirements:
- * - 286 CPU minimum (very lightweight)
+ * - A fast 386: SQUID1.ASM calls a 33 MHz 386DX enough and a 33 MHz 386SX too slow
  * - VGA graphics
  * - AdLib compatible sound card
  * - Memory: Minimal (runs in 640KB)
