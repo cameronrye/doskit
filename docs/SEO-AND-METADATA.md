@@ -72,11 +72,18 @@ Location: `/public/sitemap.xml`
 
 Includes:
 
-- Main page (priority 1.0)
-- Documentation pages (priority 0.7-0.8)
-- GitHub repository link (priority 0.9)
+- Main page, https://doskit.net/ (priority 1.0)
 - Proper lastmod dates
 - Change frequency hints
+
+It lists only pages on doskit.net that exist: the documentation is not deployed with the site, and a sitemap may only list URLs on its own host. To list app pages, use their canonical form (see Deep Links).
+
+#### Deep Links
+
+An app's URL is `/?app=<id>` with the id's hyphens dropped, such as https://doskit.net/?app=secondreality. The app rewrites the other forms it accepts, a path-style `/secondreality` or another spelling such as `?app=Second-Reality`, to this one without adding a history entry. Share and list app pages in this form:
+
+- GitHub Pages has no file for a path such as `/secondreality`, so it answers with `404.html` (the build's copy of `index.html`) and HTTP status 404. The app still opens, but crawlers treat the URL as missing.
+- Every URL serves the same `index.html`, so a crawler that does not run JavaScript, such as a social media preview, sees the home page's title, description, `og:url` and image for every app. Only `document.title` changes, to `<App name> - DosKit`, once the page's script has read the URL.
 
 #### JSON-LD Structured Data
 
@@ -146,7 +153,7 @@ Location: `/public/robots.txt`
 Features:
 
 - Allow all crawlers by default
-- Disallow build artifacts and source maps
+- Disallow source maps (`/*.map$`); the JS and CSS in `/assets/` stay crawlable, since crawlers need them to render the app
 - Explicit allow rules for AI/LLM crawlers:
   - GPTBot (OpenAI)
   - ChatGPT-User
@@ -156,7 +163,8 @@ Features:
   - Google-Extended
   - PerplexityBot
 - Sitemap location
-- Host preference for SEO
+
+A crawler follows only the most specific group that matches it, and the AI/LLM crawler groups have no `Disallow` line of their own, so those crawlers may fetch the source maps too.
 
 #### humans.txt
 
@@ -212,7 +220,7 @@ public/
 
 ### Build Output
 
-Vite copies every file in `public/` into `dist/` as it is. The build also writes `dist/404.html`, a copy of the built `index.html`.
+Vite copies every file in `public/` into `dist/` as it is. The build also writes `dist/404.html`, a copy of the built `index.html` that serves path-style deep links on GitHub Pages (see Deep Links).
 
 ## Build Process
 
@@ -373,6 +381,11 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 3. Verify sitemap URL in robots.txt
 4. Ensure XML is valid
 5. Check for 404 errors
+
+### App Pages Reported as Not Found
+
+1. Check the URL's form: path-style links such as https://doskit.net/secondreality are served by `404.html` with HTTP status 404
+2. Link to and list the canonical form instead, such as https://doskit.net/?app=secondreality (see Deep Links)
 
 ## Future Enhancements
 
