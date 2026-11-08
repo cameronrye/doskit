@@ -6,19 +6,15 @@ This directory contains the Progressive Web App (PWA) icons for DosKit in variou
 
 ### Option 1: Automated Script (Recommended)
 
-Install the required dependency:
+The script uses sharp, one of the devDependencies, so `npm ci` installs it. Then run:
 
 ```bash
-npm install --save-dev sharp
+npm run generate-icons
 ```
 
-Then run the icon generation script:
+This generates every icon below from `public/logo.svg`: the standard, maskable and Apple touch icons.
 
-```bash
-node scripts/generate-icons.js
-```
-
-This will automatically generate all required icon sizes from `public/logo.svg`.
+The icons depend on the machine that makes them. `logo.svg` sets its text in Courier New, which sharp renders with the fonts that machine has, and a machine without Courier New substitutes another monospace font. The icons in this directory were not all made on the same machine, so the script also rewrites icons you did not mean to change, with text that looks different. Commit only the icons your change is about: check `git status` afterwards, and put the others back with `git restore <file>`.
 
 ### Option 2: Online Tools
 
@@ -55,7 +51,7 @@ Use any image editing software (Photoshop, GIMP, Inkscape, etc.) to export `publ
 - 384x384
 - 512x512
 
-For maskable icons (192x192 and 512x512), add 10% padding around the logo with the theme color (#667eea) as background.
+For maskable icons (192x192 and 512x512), add 10% padding around the logo with the theme color (#667eea) as background. The Apple touch icons are 180x180 and 120x120. Flatten the maskable and Apple touch icons onto the theme color, so that no pixel is transparent.
 
 ## Required Icons
 
@@ -65,7 +61,7 @@ For maskable icons (192x192 and 512x512), add 10% padding around the logo with t
 - `icon-96x96.png` - Small icon
 - `icon-128x128.png` - Medium icon
 - `icon-144x144.png` - Medium icon
-- `icon-152x152.png` - Apple touch icon
+- `icon-152x152.png` - Medium icon
 - `icon-192x192.png` - Standard PWA icon
 - `icon-384x384.png` - Large icon
 - `icon-512x512.png` - Extra large icon
@@ -74,6 +70,13 @@ For maskable icons (192x192 and 512x512), add 10% padding around the logo with t
 
 - `icon-192x192-maskable.png` - Maskable icon (with safe area padding)
 - `icon-512x512-maskable.png` - Large maskable icon (with safe area padding)
+
+### Apple Touch Icons
+
+- `apple-touch-icon-180x180.png` - For iPhones with 3x screens; iPads scale it down
+- `apple-touch-icon-120x120.png` - For iPhones with 2x screens
+
+`index.html` links them with their sizes.
 
 ## Icon Guidelines
 
@@ -85,10 +88,14 @@ For maskable icons (192x192 and 512x512), add 10% padding around the logo with t
 
 ### Maskable Icons
 
-- Use #667eea (theme color) as background
+- Use #667eea (theme color) as background, with no transparent pixels: launchers fill those with a color of their own, inside the mask
 - Add 10% padding around the logo for safe area
 - Logo should be centered
 - These icons work better on Android adaptive icons
+
+### Apple Touch Icons
+
+- The logo on #667eea (theme color), with no transparent pixels: iOS fills those with black
 
 ## Testing Icons
 
@@ -101,12 +108,11 @@ After generating icons, test them:
    npm run preview
    ```
 
-   Then open DevTools → Application → Manifest to verify icons
+   Then open DevTools → Application → Manifest, which lists each icon with its size. **Show only the minimum safe area for maskable icons** shows what a launcher's mask keeps of the maskable icons.
 
-2. **Lighthouse PWA Audit:**
-   - Open DevTools → Lighthouse
-   - Run PWA audit
-   - Check for icon-related issues
+2. **Automated Checks:**
+
+   `npm test` runs `scripts/icons.test.js`, which checks every icon that `index.html` and `manifest.json` declare for its size, and the maskable and Apple touch icons for transparent pixels.
 
 3. **Online Testing:**
    - Deploy to GitHub Pages
@@ -133,7 +139,7 @@ After generating icons, test them:
 
 - Verify 10% safe area padding
 - Use solid background color (#667eea)
-- Test with Chrome's maskable icon preview tool
+- Check them in DevTools → Application → Manifest with **Show only the minimum safe area for maskable icons**
 
 ## Resources
 
