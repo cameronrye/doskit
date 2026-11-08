@@ -26,30 +26,33 @@ DosKit is a modern web application that enables users to run classic DOS applica
 
 The project leverages js-dos v8.3.20, a WebAssembly-based DOS emulator built on DOSBox. Combined with React 19's modern component architecture and Vite's lightning-fast build system, DosKit delivers an exceptional user experience for retro computing enthusiasts and developers.
 
+DosKit comes with a library of demoscene productions and music trackers, among them Second Reality, Crystal Dream 2, Impulse Tracker and Scream Tracker 3 (see Bundled Applications under Usage). Games are outside its scope.
+
 ## Features
 
 ### Core Features
 
-- **Interactive DOS Prompt**: Boots directly to a fully functional DOS command prompt where users can execute DOS commands
+- **Interactive DOS Prompt**: The start page boots a fully functional DOS command prompt where users can execute DOS commands, with the application selector open over it
+- **Application Library**: Demoscene productions and music trackers, picked from a selector of floppy disks that works with the mouse or the keyboard (arrow keys, Enter, Space, Escape)
 - **Cross-Platform Compatibility**: Works seamlessly on Windows, macOS, Linux, iOS, and Android
-- **Progressive Web App (PWA)**: Can be installed as a native app with full offline support
+- **Progressive Web App (PWA)**: Can be installed as a native app, with offline support
 - **Deep Linking**: Load specific applications directly via URL parameters (e.g., `?app=secondreality`)
-- **Offline Functionality**: Works completely offline after first visit thanks to service worker caching
-- **WebAssembly Performance**: Leverages js-dos v8.3.20 for near-native DOS emulation speed
+- **Offline Functionality**: After the first visit the app and its DOS prompt work offline; each application works offline once it has been opened online
+- **WebAssembly Performance**: js-dos v8.3.20 runs DOSBox as WebAssembly in a worker thread and renders with WebGL
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
 - **Audio Support**: Sound Blaster and AdLib emulation with proper audio output
 - **Responsive Design**: Optimized layouts for desktop, tablet, and mobile devices
 - **Touch Controls**: Mobile-friendly on-screen keyboard for touch devices
 - **Type-Safe Development**: Full TypeScript support with comprehensive type definitions
-- **Service Worker Caching**: Intelligent cache management for fast loading
+- **Service Worker Caching**: Emulator files and application archives stay cached across deploys until js-dos or the archives change
 
 ### PWA Features
 
-- **Installable**: Install DosKit as a native app on desktop and mobile
-- **Offline Support**: Works completely offline after first visit
+- **Installable**: Install DosKit as a native app on desktop and mobile. Where the browser offers installation, DosKit suggests it 5 seconds after load, waits 7 days after each dismissal, and stops asking after the third
+- **Offline Support**: After the first visit the app works offline (see Service Worker under Architecture)
 - **Fast Loading**: Service worker caches assets for instant loading
 - **Native Experience**: Standalone mode without browser UI
-- **Auto-Updates**: Automatic updates when new versions are available
+- **Update Prompt**: DosKit checks for a new version every hour and whenever the tab becomes visible again. Once one has installed, it offers to reload into it ("Update Now") or to wait ("Later"); an update put off is offered again on the next visit
 - **Connection Status**: Real-time online/offline indicator
 
 ## Technology Stack
@@ -116,16 +119,36 @@ UpdateNotification is not part of this tree: src/utils/updatePrompt.ts mounts it
 
 ### Data Flow
 
-1. **Application Loading**: User visits site → Service worker checks cache → Loads assets
-2. **Emulator Initialization**: DosPlayer component mounts → js-dos library loads → DOSBox initializes
+1. **Application Loading**: User visits site → Service worker serves the page from the network, or from its cache when offline → Loads assets
+2. **Emulator Initialization**: DosPlayer component mounts → useDosEmulator starts js-dos with the merged options → js-dos loads the DOSBox backend from /emulators/ → DOSBox initializes with the DOSBox configuration
 3. **User Interaction**: User types commands → js-dos processes input → DOSBox executes → Screen updates
-4. **Deep Linking**: URL parameter detected → App configuration loaded → Emulator starts with app
+4. **Deep Linking**: App id read from `?app=` or the path → URL rewritten to `/?app=<id>` → DosPlayerWithApps downloads the app's ZIP archive and DOSBox configuration → Emulator starts with app, without booting the default prompt first
+5. **Selecting an App**: User picks an app in DemoSelector → its archive downloads with progress, cancellable and with a 30-second timeout → DosPlayerWithApps remounts DosPlayer with the files → the URL becomes `/?app=<id>` in a new history entry
 
 ### State Management
 
 - React hooks (useState, useEffect, useCallback) for component state, held in App and DosPlayerWithApps and passed down as props; there is no context or global store
 - Local storage only for install prompt dismissals, through src/utils/storage.ts, which never throws when storage is blocked or full
 - URL parameters for deep linking state
+
+### Service Worker
+
+`public/sw.js` is registered in production builds only:
+
+- **Install**: precaches the app shell (/, /index.html, the manifest, logo and favicon, js-dos.js and js-dos.css), every JS and CSS bundle, including the lazily loaded app configs, and the DOSBox backend (wdosbox, wlibzip and emulators.js)
+- **Pages**: network first with a 5-second timeout, falling back to the cached page or to index.html, so deep links open offline too
+- **Emulator files** (`/emulators/`): cache first, from a cache named after the js-dos version, which deploys keep; DOSBox-X is not precached and is stored on first use
+- **Application archives** (`/demos/*.zip`): cache first, from a cache named after a hash of the archives, which deploys keep while the archives stay the same; each is stored on first use
+- **Other assets**: stale-while-revalidate, in a cache of at most 100 entries that trims the least recently used, never the precached files
+- **Updates**: each new build installs as a new worker, which waits until the user accepts the update prompt
+
+### Error Handling
+
+- **Error boundaries** around the whole app (main.tsx) and around the player (App.tsx), which report to the error tracker
+- **Global handler** (src/utils/globalErrorHandler.ts): logs uncaught errors and unhandled promise rejections, and keeps known harmless ones out of the console: js-dos's fullscreen and keyboard lock calls that fail without a user gesture, ResizeObserver loop notices and browser extension errors
+- **Error tracking** (src/utils/errorTracking.ts): a console tracker; no remote service is set up
+- **Downloads**: application archives retry network failures and 408, 429, 500, 502, 503 and 504 responses up to three times with exponential backoff; a download the user cancels, or a newer navigation supersedes, is not reported as an error
+- **Messages**: the selector explains a failed or timed-out load, an unknown `?app=` id shows a banner, a deep link that fails to load offers Try Again (back to the selector), and the player offers a reload when js-dos cannot start
 
 ## Project Structure
 
@@ -257,7 +280,9 @@ npm run dev
 
 4. Open your browser and navigate to `http://localhost:5173`
 
-The DOS emulator will automatically load and present an interactive DOS prompt!
+The DOS emulator will automatically load and present an interactive DOS prompt, with the application selector open over it!
+
+The service worker is only registered in production builds: to try offline behavior, run `npm run build` and `npm run preview`.
 
 ## Configuration
 
@@ -306,7 +331,22 @@ DosKit detects mobile devices by their user agent and applies optimized settings
 
 ### Basic Usage
 
-Visit https://doskit.net/ to use the emulator directly in your browser. The application boots to an interactive DOS prompt where you can execute DOS commands.
+Visit https://doskit.net/ to use the emulator directly in your browser. The application boots to an interactive DOS prompt where you can execute DOS commands, and opens the application selector over it: pick an application to run it, or close the selector to use the prompt.
+
+### Bundled Applications
+
+`src/config/apps.config.ts` registers these, and each opens at its link:
+
+- Second Reality (Future Crew, 1993): https://doskit.net/?app=secondreality
+- Impulse Tracker (Jeffrey Lim, 1995): https://doskit.net/?app=impulsetracker
+- Starport BBS Intro II (Future Crew, 1993): https://doskit.net/?app=starportbbstro
+- Scream Tracker 3 (Future Crew, 1994): https://doskit.net/?app=screamtracker
+- Unreal (Future Crew, 1992): https://doskit.net/?app=unreal
+- Panic (Future Crew, 1992): https://doskit.net/?app=panic
+- Squid BBS Intro (cld & The Doctor, 1994): https://doskit.net/?app=squidbbstro
+- 3D Rotation Demo (Grumpy's Collection, 1990): https://doskit.net/?app=3drotate
+- Starfield Effect (Grumpy's Collection, 1990): https://doskit.net/?app=stars
+- Crystal Dream 2 (Triton, 1993): https://doskit.net/?app=crystaldream2
 
 ### Deep Linking
 
@@ -320,7 +360,9 @@ Features:
 - Bookmarkable: Save direct links to your favorite DOS applications
 - Browser Navigation: Back/forward buttons work correctly
 - Refresh-Safe: Page refreshes maintain the loaded application
-- Error Handling: Invalid app IDs show helpful error messages
+- Error Handling: Invalid app IDs in `?app=` show helpful error messages
+- One URL Form: path-style links (`https://doskit.net/secondreality`) and other spellings (`?app=second-reality`) open the same app, and the address bar is rewritten to `/?app=secondreality`
+- Direct Start: a deep link downloads its application and starts it without booting the default prompt first
 
 ### Adding DOS Applications
 
@@ -584,6 +626,11 @@ The social media images are not part of the build: after editing their SVG sourc
 - Verify volume setting in options
 - Click inside emulator for user interaction
 - Check DOSBox sound card configuration
+
+#### Application Fails to Load
+- Check internet connection: downloads retry network failures up to three times, and the selector gives up after 30 seconds
+- Offline, only applications that have been opened online before can load
+- After a failed deep link, Try Again returns to the selector, where the application can be picked again
 
 ### Debug Mode
 
