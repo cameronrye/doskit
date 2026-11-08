@@ -42,22 +42,44 @@ const restoreProperty = (target: object, key: string, descriptor?: PropertyDescr
   }
 };
 
+/** Serve the page from this URL, with a reload() to spy on */
+const setLocation = (href: string) => {
+  const { hostname, origin } = new URL(href);
+  Object.defineProperty(window, 'location', {
+    writable: true,
+    configurable: true,
+    value: { hostname, origin, href, reload: vi.fn() },
+  });
+};
+
+/** Hide or show the page, as switching tabs does */
+const setVisibility = (state: DocumentVisibilityState) => {
+  Object.defineProperty(document, 'visibilityState', { configurable: true, value: state });
+  document.dispatchEvent(new Event('visibilitychange'));
+};
+
 describe('serviceWorkerRegistration', () => {
   const originalServiceWorker = Object.getOwnPropertyDescriptor(navigator, 'serviceWorker');
   const originalLocation = Object.getOwnPropertyDescriptor(window, 'location');
   const originalVisibilityState = Object.getOwnPropertyDescriptor(document, 'visibilityState');
-  // register() adds a load listener on every call. They are removed after each test, so a
-  // later test's load event cannot run an earlier test's registration.
-  let loadListeners: EventListenerOrEventListenerObject[] = [];
+  // register() adds a load listener on every call, and each registration a visibilitychange
+  // listener. They are removed after each test, so that a later test's events cannot run an
+  // earlier test's registration.
+  let listeners: [EventTarget, string, EventListenerOrEventListenerObject][] = [];
 
   beforeEach(() => {
-    const addEventListener = window.addEventListener.bind(window);
-    vi.spyOn(window, 'addEventListener').mockImplementation((type, listener, options) => {
-      if (type === 'load' && listener) {
-        loadListeners.push(listener);
-      }
-      addEventListener(type, listener, options);
-    });
+    for (const [target, type] of [
+      [window, 'load'],
+      [document, 'visibilitychange'],
+    ] as const) {
+      const addEventListener = target.addEventListener.bind(target);
+      vi.spyOn(target, 'addEventListener').mockImplementation((added, listener, options) => {
+        if (added === type && listener) {
+          listeners.push([target, type, listener]);
+        }
+        addEventListener(added, listener, options);
+      });
+    }
 
     // Mock navigator.serviceWorker
     Object.defineProperty(globalThis.navigator, 'serviceWorker', {
@@ -70,17 +92,9 @@ describe('serviceWorkerRegistration', () => {
       },
     });
 
-    // Mock window.location
-    Object.defineProperty(globalThis.window, 'location', {
-      writable: true,
-      configurable: true,
-      value: {
-        hostname: 'example.com',
-        origin: 'https://example.com',
-        href: 'https://example.com/',
-        reload: vi.fn(),
-      },
-    });
+    // jsdom's page is on localhost, which is what the module imported above read once, when
+    // it loaded, to tell whether it runs on localhost
+    setLocation('http://localhost/');
 
     // Mock document.visibilityState
     Object.defineProperty(document, 'visibilityState', {
@@ -94,20 +108,22 @@ describe('serviceWorkerRegistration', () => {
   });
 
   afterEach(() => {
-    loadListeners.forEach((listener) => window.removeEventListener('load', listener));
-    loadListeners = [];
+    listeners.forEach(([target, type, listener]) => target.removeEventListener(type, listener));
+    listeners = [];
     vi.restoreAllMocks();
     restoreProperty(navigator, 'serviceWorker', originalServiceWorker);
     restoreProperty(window, 'location', originalLocation);
     restoreProperty(document, 'visibilityState', originalVisibilityState);
   });
 
+  const loadListeners = () => listeners.filter(([, type]) => type === 'load');
+
   describe('register', () => {
     beforeEach(() => {
       // Mock import.meta.env
       vi.stubEnv('PROD', true);
       vi.stubEnv('BASE_URL', '/');
-      // jsdom serves the page from localhost, where register() first checks that sw.js exists
+      // On localhost, register() first checks that sw.js exists
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(swScriptResponse));
     });
 
@@ -119,37 +135,28 @@ describe('serviceWorkerRegistration', () => {
     it('should not register in development mode', () => {
       vi.stubEnv('PROD', false);
 
-      const registerSpy = vi.spyOn(navigator.serviceWorker, 'register');
-
       register();
 
-      expect(registerSpy).not.toHaveBeenCalled();
+      expect(loadListeners()).toHaveLength(0);
     });
 
     it('should not register when service worker is not supported', () => {
       Reflect.deleteProperty(navigator, 'serviceWorker');
 
       expect(() => register()).not.toThrow();
-      expect(loadListeners).toHaveLength(0);
+      expect(loadListeners()).toHaveLength(0);
     });
 
     it('should not register when PUBLIC_URL is on different origin', () => {
       vi.stubEnv('BASE_URL', 'https://different-origin.com/');
-
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const registerSpy = vi.spyOn(navigator.serviceWorker, 'register');
 
       register();
-
-      // Trigger load event
-      window.dispatchEvent(new Event('load'));
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('PUBLIC_URL is on a different origin')
       );
-      expect(registerSpy).not.toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
+      expect(loadListeners()).toHaveLength(0);
     });
 
     it('should register service worker on load event', async () => {
@@ -163,17 +170,14 @@ describe('serviceWorkerRegistration', () => {
       // Trigger load event
       window.dispatchEvent(new Event('load'));
 
-      // Wait for async operations
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      expect(registerSpy).toHaveBeenCalledWith('/sw.js');
+      await vi.waitFor(() => expect(registerSpy).toHaveBeenCalledWith('/sw.js'));
     });
 
-    it('should call onSuccess callback when SW is installed for first time', async () => {
-      const onSuccess = vi.fn();
-      const onOfflineReady = vi.fn();
-      const config: ServiceWorkerConfig = { onSuccess, onOfflineReady };
-
+    /**
+     * Register on load, and install a worker once the registration has its updatefound
+     * handler, the way the browser reports one installing
+     */
+    async function registerAndInstall(config: ServiceWorkerConfig) {
       const installingWorker = {
         state: 'installing' as ServiceWorkerState,
         onstatechange: null as ((ev: Event) => unknown) | null,
@@ -181,43 +185,28 @@ describe('serviceWorkerRegistration', () => {
       const mockRegistration = createMockRegistration({
         installing: createMockWorker(installingWorker),
       });
+      vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(mockRegistration);
 
-      vi.spyOn(navigator.serviceWorker, 'register').mockImplementation(async () => {
-        // Simulate registration process
-        await new Promise((resolve) => setTimeout(resolve, 0));
+      register(config);
+      window.dispatchEvent(new Event('load'));
+      await vi.waitFor(() => expect(mockRegistration.onupdatefound).toBeTypeOf('function'));
+      mockRegistration.onupdatefound?.call(mockRegistration, new Event('updatefound'));
+      installingWorker.state = 'installed';
+      installingWorker.onstatechange?.(new Event('statechange'));
+      return mockRegistration;
+    }
 
-        // Trigger onupdatefound after registration
-        setTimeout(() => {
-          if (mockRegistration.onupdatefound) {
-            mockRegistration.onupdatefound(new Event('updatefound'));
-          }
-
-          // Change state to installed
-          setTimeout(() => {
-            installingWorker.state = 'installed';
-            if (installingWorker.onstatechange) {
-              installingWorker.onstatechange(new Event('statechange'));
-            }
-          }, 0);
-        }, 0);
-
-        return mockRegistration;
-      });
-
-      // Mock navigator.serviceWorker.controller to be null (first install)
+    it('should call onSuccess callback when SW is installed for first time', async () => {
+      const onSuccess = vi.fn();
+      const onOfflineReady = vi.fn();
+      // No worker controls the page yet: this is the first install
       Object.defineProperty(navigator.serviceWorker, 'controller', {
         writable: true,
         configurable: true,
         value: null,
       });
 
-      register(config);
-
-      // Trigger load event
-      window.dispatchEvent(new Event('load'));
-
-      // Wait for all async operations
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      const mockRegistration = await registerAndInstall({ onSuccess, onOfflineReady });
 
       expect(onSuccess).toHaveBeenCalledWith(mockRegistration);
       expect(onOfflineReady).toHaveBeenCalled();
@@ -225,52 +214,14 @@ describe('serviceWorkerRegistration', () => {
 
     it('should call onUpdate callback when SW is updated', async () => {
       const onUpdate = vi.fn();
-      const config: ServiceWorkerConfig = { onUpdate };
-
-      const installingWorker = {
-        state: 'installing' as ServiceWorkerState,
-        onstatechange: null as ((ev: Event) => unknown) | null,
-      };
-      const mockRegistration = createMockRegistration({
-        installing: createMockWorker(installingWorker),
-      });
-
-      vi.spyOn(navigator.serviceWorker, 'register').mockImplementation(async () => {
-        // Simulate registration process
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        // Trigger onupdatefound after registration
-        setTimeout(() => {
-          if (mockRegistration.onupdatefound) {
-            mockRegistration.onupdatefound(new Event('updatefound'));
-          }
-
-          // Change state to installed
-          setTimeout(() => {
-            installingWorker.state = 'installed';
-            if (installingWorker.onstatechange) {
-              installingWorker.onstatechange(new Event('statechange'));
-            }
-          }, 0);
-        }, 0);
-
-        return mockRegistration;
-      });
-
-      // Mock navigator.serviceWorker.controller to exist (update scenario)
+      // A worker controls the page: what installs is an update
       Object.defineProperty(navigator.serviceWorker, 'controller', {
         writable: true,
         configurable: true,
         value: { state: 'activated' },
       });
 
-      register(config);
-
-      // Trigger load event
-      window.dispatchEvent(new Event('load'));
-
-      // Wait for all async operations
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      const mockRegistration = await registerAndInstall({ onUpdate });
 
       expect(onUpdate).toHaveBeenCalledWith(mockRegistration);
     });
@@ -291,9 +242,52 @@ describe('serviceWorkerRegistration', () => {
 
       register({ onUpdate });
       window.dispatchEvent(new Event('load'));
-      await new Promise((resolve) => setTimeout(resolve, 0));
 
-      expect(onUpdate).toHaveBeenCalledWith(mockRegistration);
+      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalledWith(mockRegistration));
+    });
+
+    // What doskit.net runs. Whether the page is on localhost is read once, when the module
+    // loads, so the module is loaded afresh for a page on doskit.net.
+    describe('on a host other than localhost', () => {
+      it('registers the worker once the page has loaded, without fetching its script first', async () => {
+        setLocation('https://doskit.net/?app=stars');
+        vi.resetModules();
+        const onHost = await import('./serviceWorkerRegistration');
+        const mockRegistration = createMockRegistration();
+        const registerSpy = vi
+          .spyOn(navigator.serviceWorker, 'register')
+          .mockResolvedValue(mockRegistration);
+
+        onHost.register();
+        expect(registerSpy).not.toHaveBeenCalled();
+        window.dispatchEvent(new Event('load'));
+
+        await vi.waitFor(() => expect(registerSpy).toHaveBeenCalledWith('/sw.js'));
+        expect(fetch).not.toHaveBeenCalled();
+      });
+    });
+
+    // A port on localhost may serve another app than the one whose worker is registered
+    // there, which register() checks for by fetching the worker's script first
+    describe('on localhost, when sw.js is not a service worker', () => {
+      it.each([
+        ['is missing', { status: 404, headers: { get: () => 'text/html' } }],
+        ['is not JavaScript', { status: 200, headers: { get: () => 'text/html' } }],
+      ])('unregisters the worker there and reloads when sw.js %s', async (_, response) => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+        const existing = createMockRegistration();
+        Object.defineProperty(navigator.serviceWorker, 'ready', {
+          configurable: true,
+          value: Promise.resolve(existing),
+        });
+
+        register();
+        window.dispatchEvent(new Event('load'));
+
+        await vi.waitFor(() => expect(window.location.reload).toHaveBeenCalledOnce());
+        expect(existing.unregister).toHaveBeenCalledOnce();
+        expect(navigator.serviceWorker.register).not.toHaveBeenCalled();
+      });
     });
 
     describe('logging', () => {
@@ -360,7 +354,6 @@ describe('serviceWorkerRegistration', () => {
         vi.useFakeTimers();
         vi.stubEnv('DEV', false);
         vi.resetModules();
-        window.location.hostname = 'localhost';
         const production = await import('./serviceWorkerRegistration');
         const lines = captureInformation();
 
@@ -382,19 +375,44 @@ describe('serviceWorkerRegistration', () => {
         vi.useRealTimers();
       });
 
-      it('should check for an update each time the configured interval passes', async () => {
+      /** Register on load, and let the registration resolve */
+      async function registerOnLoad() {
         const mockRegistration = createMockRegistration();
         vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(mockRegistration);
-
         register();
         window.dispatchEvent(new Event('load'));
-        await vi.advanceTimersByTimeAsync(0); // let the registration resolve
+        await vi.advanceTimersByTimeAsync(0);
+        return mockRegistration;
+      }
+
+      it('should check for an update each time the configured interval passes', async () => {
+        const mockRegistration = await registerOnLoad();
 
         await vi.advanceTimersByTimeAsync(PWA_CONFIG.UPDATE_CHECK_INTERVAL - 1);
         expect(mockRegistration.update).not.toHaveBeenCalled();
 
         await vi.advanceTimersByTimeAsync(1);
         expect(mockRegistration.update).toHaveBeenCalled();
+      });
+
+      it('checks for an update whenever the page becomes visible again', async () => {
+        // Such as when the user comes back to its tab
+        const mockRegistration = await registerOnLoad();
+
+        setVisibility('hidden');
+        expect(mockRegistration.update).not.toHaveBeenCalled();
+        setVisibility('visible');
+
+        expect(mockRegistration.update).toHaveBeenCalledOnce();
+      });
+
+      it('does not check while the page is hidden', async () => {
+        const mockRegistration = await registerOnLoad();
+        setVisibility('hidden');
+
+        await vi.advanceTimersByTimeAsync(PWA_CONFIG.UPDATE_CHECK_INTERVAL * 2);
+
+        expect(mockRegistration.update).not.toHaveBeenCalled();
       });
 
       it('should check hourly', () => {
