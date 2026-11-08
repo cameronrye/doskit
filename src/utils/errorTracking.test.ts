@@ -2,7 +2,7 @@
  * Tests for errorTracking utility
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   initializeErrorTracking,
   getErrorTracker,
@@ -10,40 +10,59 @@ import {
   type ErrorContext,
 } from './errorTracking';
 
+/**
+ * The tracker is a module-level singleton, so tests of its lifecycle load a
+ * fresh copy of the module to start from an uninitialized tracker
+ */
+async function loadFreshErrorTracking() {
+  vi.resetModules();
+  return import('./errorTracking');
+}
+
 describe('errorTracking', () => {
-  beforeEach(() => {
-    // Reset singleton
-    vi.resetModules();
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('initializeErrorTracking', () => {
-    it('should initialize console tracker by default', () => {
-      initializeErrorTracking();
-      const tracker = getErrorTracker();
-      expect(tracker.isInitialized()).toBe(true);
+    it('should initialize the console tracker', async () => {
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const fresh = await loadFreshErrorTracking();
+
+      fresh.initializeErrorTracking();
+
+      expect(fresh.getErrorTracker().isInitialized()).toBe(true);
+      expect(logSpy).toHaveBeenCalledWith('[ErrorTracking] Console tracker initialized');
     });
 
-    it('should warn if already initialized', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    it('should warn only when initialized a second time', async () => {
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const fresh = await loadFreshErrorTracking();
 
-      initializeErrorTracking();
-      initializeErrorTracking(); // Second call
+      fresh.initializeErrorTracking();
+      expect(warnSpy).not.toHaveBeenCalled();
 
-      expect(consoleSpy).toHaveBeenCalledWith('[ErrorTracking] Already initialized');
-      consoleSpy.mockRestore();
+      fresh.initializeErrorTracking(); // Second call
+      expect(warnSpy).toHaveBeenCalledWith('[ErrorTracking] Already initialized');
     });
   });
 
   describe('getErrorTracker', () => {
-    it('should auto-initialize if not initialized', () => {
-      const tracker = getErrorTracker();
+    it('should auto-initialize if not initialized', async () => {
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      const fresh = await loadFreshErrorTracking();
+
+      const tracker = fresh.getErrorTracker();
+
       expect(tracker.isInitialized()).toBe(true);
     });
 
-    it('should return same instance', () => {
-      const tracker1 = getErrorTracker();
-      const tracker2 = getErrorTracker();
-      expect(tracker1).toBe(tracker2);
+    it('should return same instance', async () => {
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      const fresh = await loadFreshErrorTracking();
+
+      expect(fresh.getErrorTracker()).toBe(fresh.getErrorTracker());
     });
   });
 
