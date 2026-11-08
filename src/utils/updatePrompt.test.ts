@@ -66,7 +66,7 @@ describe('showUpdateNotification', () => {
       expect(later).toHaveFocus();
     });
 
-    it('takes the focus to Reload when it shows the prompt again', async () => {
+    it('takes the focus to Later when it shows the prompt again', async () => {
       await act(async () => {
         showUpdateNotification(registration);
       });
@@ -76,7 +76,7 @@ describe('showUpdateNotification', () => {
 
       takeControl();
 
-      expect(screen.getByRole('button', { name: 'Reload' })).toHaveFocus();
+      expect(screen.getByRole('button', { name: 'Later' })).toHaveFocus();
     });
 
     it('shows the prompt again, though this tab put it off', async () => {

@@ -157,10 +157,12 @@ describe('UpdateNotification', () => {
       expect(dialog.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
     });
 
-    it('takes the focus to Update Now when it appears', () => {
+    // It can appear while someone types into a DOS program: on Later, a key they meant for
+    // DOS reloads nothing
+    it('takes the focus to Later when it appears', () => {
       renderOverPage();
 
-      expect(updateNow()).toHaveFocus();
+      expect(later()).toHaveFocus();
     });
 
     it('answers Escape as it does Later', async () => {
@@ -180,11 +182,11 @@ describe('UpdateNotification', () => {
       renderOverPage();
 
       await user.tab();
-      expect(later()).toHaveFocus();
-      await user.tab();
       expect(updateNow()).toHaveFocus();
-      await user.tab({ shift: true });
+      await user.tab();
       expect(later()).toHaveFocus();
+      await user.tab({ shift: true });
+      expect(updateNow()).toHaveFocus();
     });
 
     it('keeps the focus when it is clicked outside its buttons', async () => {
@@ -212,7 +214,7 @@ describe('UpdateNotification', () => {
           <UpdateNotification registration={mockRegistration} />
         </>
       );
-      expect(updateNow()).toHaveFocus();
+      expect(later()).toHaveFocus();
 
       await user.click(later());
 
@@ -242,8 +244,8 @@ describe('UpdateNotification', () => {
       expect(dialog).toHaveAccessibleDescription(
         'DosKit was updated in another tab. Reload to use the new version.'
       );
-      expect(screen.getByRole('button', { name: 'Reload' })).toHaveFocus();
-      expect(screen.getByRole('button', { name: 'Later' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Reload' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Later' })).toHaveFocus();
       expect(screen.queryByRole('button', { name: 'Update Now' })).not.toBeInTheDocument();
     });
 

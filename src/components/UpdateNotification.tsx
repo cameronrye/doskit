@@ -54,11 +54,13 @@ export function UpdateNotification({
   const laterButton = useRef<HTMLButtonElement>(null);
 
   // It covers the page, so like any modal dialog it takes the focus when it appears, and
-  // gives it back when it goes to whatever had it, which may be the page itself
+  // gives it back when it goes to whatever had it, which may be the page itself. The focus
+  // goes to Later: the prompt can appear while someone types into a DOS program, and a key
+  // meant for DOS must not reload the page under it.
   useEffect(() => {
     if (!show) return;
     const previous = document.activeElement;
-    updateButton.current?.focus();
+    laterButton.current?.focus();
     return () => {
       if (previous instanceof HTMLElement) {
         previous.focus();
