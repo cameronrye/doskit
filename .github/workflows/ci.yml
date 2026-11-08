@@ -81,6 +81,11 @@ jobs:
       - name: Build project
         run: npm run build
 
+      # The CSS minifier writes for build.target, which must keep the oldest browsers
+      # README supports: their media queries and their 100vh fallbacks
+      - name: Check the CSS against the oldest supported browsers
+        run: node scripts/check-built-css.js
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7
         with:

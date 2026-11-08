@@ -55,7 +55,11 @@ export default defineConfig({
 
   // Build configuration for production
   build: {
-    target: 'esnext',
+    // The oldest browsers README supports, the first with structuredClone(). The CSS
+    // minifier writes for these too: for newer ones it drops the 100vh fallbacks before
+    // 100dvh and rewrites max-width media queries in range syntax, which these ignore.
+    // scripts/check-built-css.js checks the result in CI.
+    target: ['chrome98', 'edge98', 'firefox94', 'opera84', 'safari15.4', 'ios15.4'],
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: 'hidden', // Generate source maps but don't reference them in production bundles
