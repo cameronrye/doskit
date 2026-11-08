@@ -31,16 +31,28 @@ class WorkerRequest extends Request {
   }
 }
 
+// Navigations are plain objects without headers, and cache.addAll() takes paths
+const headersOf = (request) =>
+  new Headers(typeof request === 'object' ? request.headers : undefined);
+
 class CacheMock {
-  #entries = new Map(); // URL -> body and init of the stored response
+  #entries = new Map(); // URL -> headers of the stored request, body and init of the response
 
   constructor(fetch) {
     this.fetch = fetch;
   }
 
-  async match(request) {
+  // Like Cache Storage, an entry whose response has a Vary header matches only requests
+  // that agree with the stored one on each header it names, unless ignoreVary is set
+  async match(request, { ignoreVary = false } = {}) {
     const entry = this.#entries.get(urlOf(request).href);
-    return entry && new Response(entry.body, entry.init);
+    const vary = entry && new Headers(entry.init.headers).get('Vary');
+    const varied = (name) =>
+      name === '*' || headersOf(request).get(name) !== entry.requestHeaders.get(name);
+    if (!entry || (!ignoreVary && vary?.split(',').some((name) => varied(name.trim())))) {
+      return undefined;
+    }
+    return new Response(entry.body, entry.init);
   }
 
   // Like Cache.put(), this reads the whole body before it stores anything, so a body
@@ -51,7 +63,11 @@ class CacheMock {
     const url = urlOf(request).href;
     // Like browsers, a replaced entry moves to the end of keys()
     this.#entries.delete(url);
-    this.#entries.set(url, { body, init: { status, statusText, headers: [...headers] } });
+    this.#entries.set(url, {
+      requestHeaders: headersOf(request),
+      body,
+      init: { status, statusText, headers: [...headers] },
+    });
   }
 
   async addAll(requests) {
@@ -124,6 +140,8 @@ function createBrowser() {
     deploy: 'A',
     online: true,
     requests: [],
+    // Sent with every response, such as the Vary: Origin of vite preview
+    headers: {},
     held: new Map(), // path -> promise the second half of its body waits for
     /** Holds back the second half of the file's body until the returned release() */
     hold(path) {
@@ -148,6 +166,7 @@ function createBrowser() {
       headers: {
         'Content-Length': String(bytes.length),
         'Content-Type': CONTENT_TYPES[extname(urlOf(file).pathname)] ?? 'text/plain',
+        ...server.headers,
       },
     });
   }
@@ -169,9 +188,9 @@ function createBrowser() {
     async keys() {
       return [...store.keys()];
     },
-    async match(request) {
+    async match(request, options) {
       for (const cache of store.values()) {
-        const response = await cache.match(request);
+        const response = await cache.match(request, options);
         if (response) {
           return response;
         }
@@ -362,6 +381,23 @@ describe('emulator files', () => {
     expect(requestedPaths(browser)).toEqual([]);
   });
 
+  it('serves the precached wasm to the preload in index.html, which sends Origin', async () => {
+    // The preload has crossorigin, so Chrome sends Origin, and install's request did not.
+    // A host that answers with Vary: Origin (vite preview does) makes that a miss unless
+    // the lookup ignores Vary.
+    const browser = createBrowser();
+    browser.server.headers = { Vary: 'Origin' };
+    const worker = await installAndActivate(browser);
+    browser.server.requests.length = 0;
+
+    const { response } = await worker.dispatch('fetch', {
+      request: subresource('/emulators/wdosbox.wasm', { headers: { Origin: ORIGIN } }),
+    });
+
+    expect(await response?.text()).toBe('/emulators/wdosbox.wasm from deploy A');
+    expect(requestedPaths(browser)).toEqual([]);
+  });
+
   it('caches DOSBox-X on first use and serves it from the cache, offline too', async () => {
     const browser = createBrowser();
     const worker = await installAndActivate(browser);
@@ -474,6 +510,21 @@ describe('demo archives', () => {
     expect(Number(cached.headers.get('Content-Length'))).toBe(
       (await cached.arrayBuffer()).byteLength
     );
+  });
+
+  it('serves a cached archive whatever the headers its Vary names', async () => {
+    const browser = createBrowser();
+    browser.server.headers = { Vary: 'Origin' };
+    const worker = await installAndActivate(browser);
+    await worker.dispatch('fetch', { request: subresource('/demos/stars.zip') });
+    browser.server.requests.length = 0;
+
+    const { response } = await worker.dispatch('fetch', {
+      request: subresource('/demos/stars.zip', { headers: { Origin: ORIGIN } }),
+    });
+
+    expect(await response?.text()).toBe('/demos/stars.zip from deploy A');
+    expect(requestedPaths(browser)).toEqual([]);
   });
 
   it('keeps them across deploys that leave the archives unchanged', async () => {

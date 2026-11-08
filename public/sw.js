@@ -320,7 +320,11 @@ async function cacheResponse(request, response) {
 async function serveCacheFirst(event, cacheName) {
   const { request } = event;
   const cache = await caches.open(cacheName);
-  const cachedResponse = await cache.match(request);
+  // These files are the same for every request. Vary would make a request miss that
+  // differs from the stored one in a header it names: the crossorigin preload of
+  // wdosbox.wasm sends Origin, install did not, and some hosts (vite preview) answer
+  // with Vary: Origin.
+  const cachedResponse = await cache.match(request, { ignoreVary: true });
   if (cachedResponse) {
     console.log('[Service Worker] Serving from cache (cache-first):', request.url);
     return cachedResponse;
