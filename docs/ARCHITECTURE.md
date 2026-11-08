@@ -101,6 +101,8 @@ ErrorBoundary (main.tsx)
 UpdateNotification (a React root of its own, mounted by utils/updatePrompt.ts)
 ```
 
+What covers what is fixed. From the bottom: the header and footer, with js-dos's sidebar; the player's own loading and error panels; the URL error banner; js-dos's modals and on-screen controls; the loading and error overlays over the whole player; the selector's backdrop and the selector; the install prompt and js-dos's toasts; and the offline notices and the update prompt. The comment at the top of `src/components/DosPlayerWithApps.css` gives each one's `z-index` and the file that sets it; a new overlay belongs in that list.
+
 ## Data Flow
 
 ### Application Loading Flow
