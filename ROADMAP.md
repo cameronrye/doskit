@@ -543,7 +543,7 @@ interface AudioRecorder {
 
 **Impact**: MEDIUM | **Effort**: MEDIUM
 
-**Status**: Mobile devices get larger controls and an on-screen keyboard layout (`mobileJsDosConfig` in `src/config/jsdos.config.ts`); the enhancements below are open.
+**Status**: Mobile devices get an on-screen keyboard layout of their own, with common DOS keys (`mobileJsDosConfig` in `src/config/jsdos.config.ts`); the enhancements below are open.
 
 **Enhancements**:
 

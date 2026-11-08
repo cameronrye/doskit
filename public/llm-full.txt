@@ -323,9 +323,14 @@ Available options:
 
 ### Mobile Configuration
 
-DosKit detects mobile devices by their user agent and applies optimized settings:
-- Larger touch controls
-- On-screen keyboard with common DOS keys (Esc, function keys, digits, letters, Ctrl, Alt, Space, Enter and the arrow keys)
+DosKit detects mobile devices by their user agent and applies `mobileJsDosConfig` from `src/config/jsdos.config.ts`, which gives the on-screen keyboard (the keyboard button in the js-dos sidebar) a layout of its own in place of js-dos's two:
+- Esc, F1, F2, F3 and F5
+- 1 to 5
+- The left-hand letters q w e r t, a s d f g and z x c v b
+- Ctrl, Alt, Space and Enter
+- The arrow keys, labeled ↑ ↓ ← →
+
+It has no Backspace and no key to switch layouts. Its larger `scaleControls` only scales the touch controls a js-dos bundle defines, and DosKit's applications define none. Safari on iPadOS identifies itself as a Mac by default, so an iPad in Safari gets the desktop settings and js-dos's own layouts.
 
 ## Usage
 

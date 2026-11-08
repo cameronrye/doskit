@@ -24,7 +24,7 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
 - **Audio Support**: Sound Blaster and AdLib emulation with proper audio output
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
-- **Touch Controls**: On-screen keyboard in the js-dos sidebar (on phones it does not open yet: see [Mobile Touch Controls Not Appearing](#mobile-touch-controls-not-appearing))
+- **Touch Controls**: On-screen keyboard in the js-dos sidebar, with a smaller layout of its own on phones and tablets (see [Mobile Configuration](#mobile-configuration))
 - **Type-Safe**: Full TypeScript support with comprehensive type definitions
 - **Service Worker Caching**: Fast loading with intelligent cache management
 
@@ -402,12 +402,17 @@ DosPlayer sets `dosboxConf` (from its prop of that name) and `onEvent` itself, s
 
 ### Mobile Configuration
 
-DosKit detects phones and tablets by their user agent and applies `mobileJsDosConfig` from `src/config/jsdos.config.ts`:
+DosKit detects phones and tablets by their user agent and applies `mobileJsDosConfig` from `src/config/jsdos.config.ts`. It gives the on-screen keyboard, which the keyboard button in the js-dos sidebar opens, a layout of its own:
 
-- Larger touch controls
-- Its own on-screen keyboard layout with common DOS keys, in a form js-dos cannot read: see [Mobile Touch Controls Not Appearing](#mobile-touch-controls-not-appearing)
+- Esc, F1, F2, F3 and F5
+- 1 to 5
+- The left-hand letters: q w e r t, a s d f g and z x c v b
+- Ctrl, Alt, Space and Enter
+- The arrow keys, labeled ↑ ↓ ← →
 
-Safari on iPadOS identifies itself as a Mac by default, so an iPad in Safari gets the desktop settings.
+It takes the place of both of js-dos's layouts: one of function keys, digits, arrows and a keypad, and a full keyboard that its ⎘ key switches to. It has no Backspace and no key to switch layouts. `mobileJsDosConfig` also sets a larger `scaleControls`, which only scales the touch controls a js-dos bundle defines, and DosKit's apps define none.
+
+Safari on iPadOS identifies itself as a Mac by default, so an iPad in Safari gets the desktop settings and js-dos's own layouts.
 
 ## Usage
 
@@ -579,7 +584,7 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 ### Known Limitations
 
 - **Older browsers** (before Chrome 98, Firefox 94 or Safari 15.4): no `structuredClone()`, which js-dos's player calls once a second, so each call ends in an error
-- **On-screen keyboard on phones**: does not open; see [Mobile Touch Controls Not Appearing](#mobile-touch-controls-not-appearing)
+- **On-screen keyboard on phones**: DosKit's layout has only some of the keys (see [Mobile Configuration](#mobile-configuration)), so a command such as `dir` cannot be typed on it, while `ver`, `cd` and `set` can
 - **Internet Explorer**: Not supported (no WebAssembly)
 - **Older Android browsers**: May have performance issues
 - **Keyboard Lock API**: Only supported in Chrome/Edge (not critical for functionality)
@@ -656,8 +661,6 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 
 **Problem**: On-screen keyboard missing on mobile.
 
-**Known issue**: On devices DosKit detects as mobile, the keyboard button in the js-dos sidebar shows no keyboard, and the console reports `TypeError: e.map is not a function`. js-dos cannot read the layout in `mobileJsDosConfig` (`softKeyboardLayout` in `src/config/jsdos.config.ts`). Desktop browsers, and iPads in Safari, get js-dos's own layout, which works.
-
 **Solutions:**
 
 1. Open the keyboard with the keyboard button in the js-dos sidebar
@@ -665,7 +668,7 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 3. Check mobile configuration is applied
 4. Try portrait and landscape orientations
 5. Refresh the page
-6. Check `softKeyboardLayout` in config
+6. If you changed `softKeyboardLayout` in `src/config/jsdos.config.ts`, check its form. It is a list of rows, each a string of js-dos key names separated by spaces, such as `'{esc} {f1} q w e'`, or a list of layouts, each a list of columns of such rows; `SoftKeyboardLayout` in `src/types/js-dos.d.ts` lists the key names. A list of lists of key names makes opening the keyboard throw `TypeError: e.map is not a function`, and a key js-dos has no name for, such as `Esc`, `F1`, `Ctrl`, `/` or `\`, presses nothing. `softKeyboardSymbols` labels keys by their names, as in `{ '{up}': '↑' }`.
 
 #### Service Worker Not Updating
 
