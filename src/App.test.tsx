@@ -756,6 +756,49 @@ describe('App', () => {
     });
   });
 
+  describe('Leaving the page', () => {
+    /** Fire the beforeunload a close, reload or Ctrl+W of the tab fires; true if App asked */
+    function leavePage(): boolean {
+      const event = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(event);
+      return event.defaultPrevented;
+    }
+
+    it('asks before the page goes while an app that warns about it runs', () => {
+      render(<App />);
+
+      reportApp({ ...mockApp, warnBeforeLeaving: true });
+
+      expect(leavePage()).toBe(true);
+    });
+
+    it('lets the page go while an app runs that does not warn about it', () => {
+      render(<App />);
+
+      reportApp(mockApp);
+
+      expect(leavePage()).toBe(false);
+    });
+
+    it('stops asking once another app replaces the one that warns', () => {
+      render(<App />);
+      reportApp({ ...mockApp, warnBeforeLeaving: true });
+
+      reportApp({ ...mockApp, id: 'another-app' });
+
+      expect(leavePage()).toBe(false);
+    });
+
+    it('stops asking once the default DOS prompt replaces the app that warns', () => {
+      render(<App />);
+      reportApp({ ...mockApp, warnBeforeLeaving: true });
+
+      act(() => (window as WindowWithTestCallbacks).__dosCallbacks?.onAppChange?.(null));
+
+      expect(leavePage()).toBe(false);
+    });
+  });
+
   describe('Selector visibility management', () => {
     it('should update selector visibility when changed', async () => {
       render(<App />);

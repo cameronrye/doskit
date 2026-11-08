@@ -158,6 +158,23 @@ function App() {
     };
   }, []);
 
+  // Ask before the page goes while an app people make things in runs. Its work lives only
+  // in the emulator's memory, and browsers keep keys such as Ctrl+W (Scream Tracker's save)
+  // for themselves, so one key press could close the tab.
+  const warnBeforeLeaving = currentApp?.warnBeforeLeaving ?? false;
+  useEffect(() => {
+    if (!warnBeforeLeaving) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      // Chrome and Edge before 119 ask only when returnValue is set
+      event.returnValue = true;
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [warnBeforeLeaving]);
+
   const release = currentApp && describeRelease(currentApp);
 
   return (
