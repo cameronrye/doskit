@@ -119,6 +119,16 @@ describe('DosPlayer', () => {
       const { container } = render(<DosPlayer />);
       expect(container.querySelector('.dos-player-spinner')).toBeInTheDocument();
     });
+
+    // The panel is nearly opaque, over the player: every app would run hidden under it
+    it('hides the loading panel once js-dos reports the emulator ready', () => {
+      const { container } = render(<DosPlayer />);
+
+      emit('emu-ready');
+
+      expect(screen.queryByText(/Loading DOS emulator/i)).not.toBeInTheDocument();
+      expect(container.querySelector('.dos-player-loading')).not.toBeInTheDocument();
+    });
   });
 
   describe('Error handling', () => {
