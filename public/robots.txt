@@ -8,41 +8,49 @@ Allow: /
 # Disallow crawling of source maps (the app's JS/CSS must stay crawlable to render)
 Disallow: /*.map$
 
-# Allow specific AI/LLM crawlers
+# Allow specific AI/LLM crawlers. A crawler follows only the group that names it, so each
+# group repeats the rule for source maps.
 User-agent: GPTBot
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
+Disallow: /*.map$
 
 User-agent: ChatGPT-User
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
+Disallow: /*.map$
 
 User-agent: CCBot
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
+Disallow: /*.map$
 
 User-agent: anthropic-ai
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
+Disallow: /*.map$
 
 User-agent: Claude-Web
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
+Disallow: /*.map$
 
 User-agent: Google-Extended
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
+Disallow: /*.map$
 
 User-agent: PerplexityBot
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
+Disallow: /*.map$
 
 # Sitemap location
 Sitemap: https://doskit.net/sitemap.xml
