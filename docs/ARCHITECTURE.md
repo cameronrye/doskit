@@ -105,50 +105,66 @@ UpdateNotification (a React root of its own, mounted by utils/updatePrompt.ts)
 
 ### Application Loading Flow
 
-1. **User selects an application** in DemoSelector
-2. **DemoSelector** calls the app's `loader()` function (lazy loaded)
-3. **Loader** fetches files using `diskLoader` utilities with retry logic
-4. **Files are passed** to DosPlayerWithApps via callback
-5. **DosPlayerWithApps** updates state and passes files to DosPlayer
-6. **DosPlayer** initializes js-dos with the files and DOSBox config
-7. **Emulator starts** and user can interact with the DOS application
+Picking an app in the selector:
+
+1. **User picks an application** in DemoSelector (double-click, Enter on the selected app, or Load Application)
+2. **DemoSelector** calls the app's `loader(onProgress, signal)` and, in parallel, its `loadDosboxConf()` (or the config it preloaded on hover); both import the app's config module lazily
+3. **Loader** downloads the app's ZIP archive with `loadZipArchive` (`diskLoader`), which retries through `fetchWithRetry`; the selector shows progress, offers Cancel Loading, and gives up after 30 seconds
+4. **Files are passed** to DosPlayerWithApps via `onSelect`
+5. **DosPlayerWithApps** makes them the running session, closes the selector and reports the app to App, which pushes `/?app=<id>` and sets the page title
+6. **DosPlayer** remounts, since it is keyed by app id: unmounting stops the previous player, and `useDosEmulator` starts js-dos with the archive as `initFs` and the app's DOSBox config
+7. **Emulator starts**: on js-dos's `ci-ready` the hook unmutes audio and calls `onReady`, and the footer shows Ready until that player is gone
+
+Apps the URL asks for (deep links, back/forward):
+
+1. **App** reads the app from the URL and passes it to DosPlayerWithApps as `requestedApp`
+2. **DosPlayerWithApps** loads its archive and DOSBox config itself, behind the loading overlay, and switches to the app only once both are in. On a deep link nothing runs before that, so the default DOS prompt never boots first.
+3. **A newer request**, a pick in the selector, or unmounting aborts the load and drops its result. A request also remounts the selector, which aborts any download the selector still runs.
+4. **Once loaded**, the app runs as in steps 6 and 7 above. DosPlayerWithApps reports it to App, which finds the URL already in place and adds no history entry.
+
+If a requested app fails to load, the error overlay shows why, and its Try Again boots the default DOS prompt and opens the selector. See [ERROR-HANDLING.md](ERROR-HANDLING.md) for the errors each step can show.
+
+### URL Routing
+
+`src/utils/urlRouting.ts` reads and writes the URL; App applies it on load and on `popstate`.
+
+- **One URL form**: An app's URL is `/?app=<id>`, with the app's id written without hyphens (`/?app=secondreality`). App also accepts the hyphenated id, any letter case, and the path form `/secondreality`, and rewrites them to that form without a new history entry.
+- **Path-style links on GitHub Pages**: GitHub Pages answers a path it has no file for with `404.html`. The build emits `404.html` as a copy of `index.html` (`githubPagesSpaFallback` in `vite.config.ts`), so the app boots there and rewrites the URL. The Vite dev and preview servers fall back to `index.html` themselves.
+- **History**: Picking an app pushes a history entry. Back and forward run whatever the URL then names; the start page stops the running app and opens the selector over the default DOS prompt.
+- **Unknown ids**: An `?app=` value that names no app shows a dismissible banner, drops the parameter from the URL without a new history entry, and opens the selector over the default DOS prompt. A path that names no app, such as `/index.html`, is just the start page.
 
 ### State Management
 
-DosKit uses React Context API for global state management, organized into three separate contexts:
+DosKit has no React contexts and no state library. Each component keeps the state it owns, App passes what the player needs down as props, and the player reports back through callbacks:
 
-1. **AppStateContext** - Application selection and emulator status
-2. **NetworkContext** - Network connectivity status
-3. **PWAContext** - Progressive Web App features (install, updates)
+1. **App** - The current app, whether the selector is shown, the URL error banner's text, and the Ready and Online flags behind the footer badges
+2. **DosPlayerWithApps** - The running session (an app with its files and DOSBox config, or the default DOS prompt; none while a requested app is still loading), the requested app being loaded, and its load error
+3. **DemoSelector** - Its selection, keyboard focus, load progress and error, the AbortController of its load, and the DOSBox configs it preloaded on hover
+4. **useDosEmulator** - Its loading and error state, and the command interface in a ref (`ciRef`) from `ci-ready` until the player is gone. Each mount's js-dos player lives in that mount's effect, which stops it on unmount.
+5. **OfflineIndicator** - The offline and back-online toasts and the install prompt; it records install-prompt dismissals in localStorage through `safeLocalStorage`
 
-#### Why Context API?
+#### Why No Global State?
 
 - **No additional dependencies** - Uses built-in React features
-- **Appropriate scale** - Sufficient for DosKit's state management needs
-- **Better React integration** - Works seamlessly with React DevTools
-- **Simpler testing** - Easier to mock and test
-- **Type safety** - Full TypeScript support out of the box
+- **Appropriate scale** - The only shared state is the current app, the selector's visibility and the two status flags, and App owns all of them
+- **Simpler testing** - Components take props and callbacks, so tests render them directly
+- **Type safety** - Props and callbacks are typed like any other function
 
-#### Context Usage
+#### Passing State
 
-```typescript
-import { useAppState, useAppStateValue, useAppStateActions } from '@/contexts';
-
-// Get full context (state + actions)
-const { currentApp, setCurrentApp } = useAppState();
-
-// Get only state (read-only) - prevents unnecessary re-renders
-const { currentApp, isEmulatorReady } = useAppStateValue();
-
-// Get only actions
-const { setCurrentApp, setEmulatorReady } = useAppStateActions();
+```tsx
+<DosPlayerWithApps
+  onReady={handleDosReady}
+  onExit={handleDosExit}
+  requestedApp={currentApp}
+  showSelector={showAppSelector}
+  onAppChange={handleAppChange}
+  onSelectorVisibilityChange={handleSelectorVisibilityChange}
+  className="dos-player"
+/>
 ```
 
-#### Best Practices
-
-- **Use specific hooks** - Prefer `useAppStateValue()` over `useAppState()` for read-only access
-- **Separate read and write** - Components that only read should use value hooks
-- **Keep contexts focused** - Each context manages a single domain
+`onAppChange` reports each app that starts running, picked or requested, and `null` after Try Again. `onExit` is called once per `onReady`: when DOS exits, or as soon as unmounting stops a ready player, so the footer shows Loading while the next app boots.
 
 ## Key Features
 
