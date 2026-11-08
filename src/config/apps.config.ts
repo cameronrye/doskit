@@ -206,26 +206,26 @@ export function getUrlFriendlyId(appId: string): string {
 }
 
 /**
+ * An empty mapping with no prototype: a URL's ?app=constructor or ?app=__proto__ must find
+ * nothing, not the Object function or Object.prototype every plain object inherits
+ */
+const emptyMapping = (): Record<string, string> => Object.create(null);
+
+/**
  * Auto-generated URL mapping from available apps
  * Maps both URL-friendly IDs (no hyphens) and original IDs to internal IDs
  */
-export const APP_ID_MAPPING: Record<string, string> = availableApps.reduce(
-  (acc, app) => {
-    const urlFriendly = getUrlFriendlyId(app.id);
-    acc[urlFriendly] = app.id;
-    acc[app.id] = app.id;
-    return acc;
-  },
-  {} as Record<string, string>
-);
+export const APP_ID_MAPPING: Record<string, string> = availableApps.reduce((acc, app) => {
+  const urlFriendly = getUrlFriendlyId(app.id);
+  acc[urlFriendly] = app.id;
+  acc[app.id] = app.id;
+  return acc;
+}, emptyMapping());
 
 /**
  * Reverse mapping: Internal ID -> URL-friendly ID
  */
-export const INTERNAL_TO_URL_MAPPING: Record<string, string> = availableApps.reduce(
-  (acc, app) => {
-    acc[app.id] = getUrlFriendlyId(app.id);
-    return acc;
-  },
-  {} as Record<string, string>
-);
+export const INTERNAL_TO_URL_MAPPING: Record<string, string> = availableApps.reduce((acc, app) => {
+  acc[app.id] = getUrlFriendlyId(app.id);
+  return acc;
+}, emptyMapping());

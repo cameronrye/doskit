@@ -3,7 +3,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { availableApps, findAppById, getUrlFriendlyId } from './apps.config';
+import {
+  APP_ID_MAPPING,
+  INTERNAL_TO_URL_MAPPING,
+  availableApps,
+  findAppById,
+  getUrlFriendlyId,
+} from './apps.config';
 import { loadZipArchive } from '../utils/diskLoader';
 import type { DosApp } from '../types/dos-app';
 
@@ -189,6 +195,24 @@ describe('availableApps', () => {
 
     expect(app?.author).toBe('Draeden of VLA');
     expect(await app?.loadDosboxConf?.()).toMatch(/^echo +by Draeden of VLA \(1993\)$/m);
+  });
+});
+
+describe('APP_ID_MAPPING and INTERNAL_TO_URL_MAPPING', () => {
+  it.each(['constructor', '__proto__', 'toString'])(
+    'should map no app from %s, which every object inherits',
+    (name) => {
+      // ?app=constructor would otherwise name the Object function as an app, and the page
+      // would show no "not found" message
+      expect(APP_ID_MAPPING[name]).toBeUndefined();
+      expect(INTERNAL_TO_URL_MAPPING[name]).toBeUndefined();
+    }
+  );
+
+  it('should still map each app from both forms of its id', () => {
+    expect(APP_ID_MAPPING['crystaldream2']).toBe('crystal-dream-2');
+    expect(APP_ID_MAPPING['crystal-dream-2']).toBe('crystal-dream-2');
+    expect(INTERNAL_TO_URL_MAPPING['crystal-dream-2']).toBe('crystaldream2');
   });
 });
 
