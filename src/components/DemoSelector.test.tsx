@@ -142,6 +142,17 @@ describe('DemoSelector', () => {
         ).toBeTruthy();
       });
 
+      // Opening the selector focuses the first disk, which scrolls the disks' area: in a
+      // phone held sideways, a notice inside it went out of sight
+      it('keeps it out of the area where the disks scroll', () => {
+        const { container } = render(<DemoSelector onSelect={mockOnSelect} notice={notFound} />);
+
+        expect(container.querySelector('.demo-selector-content')).toContainElement(
+          screen.getByRole('listbox')
+        );
+        expect(screen.getByRole('alert').closest('.demo-selector-content')).toBeNull();
+      });
+
       it.each([null, undefined])('shows none for %s', (notice) => {
         render(<DemoSelector onSelect={mockOnSelect} notice={notice} />);
 

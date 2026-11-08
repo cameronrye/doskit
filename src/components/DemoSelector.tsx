@@ -438,14 +438,15 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
         )}
       </div>
 
-      <div className="demo-selector-content">
-        {notice && (
-          <p className="selector-notice" role="alert">
-            <span aria-hidden="true">⚠ </span>
-            {notice}
-          </p>
-        )}
+      {/* Outside the disks' scrolling area, which opening the selector scrolls to its focus */}
+      {notice && (
+        <p className="selector-notice" role="alert">
+          <span aria-hidden="true">⚠ </span>
+          {notice}
+        </p>
+      )}
 
+      <div className="demo-selector-content">
         {/* Application List - Floppy Disk Grid, one tab stop with a roving focus */}
         <div
           className="app-list floppy-grid"
