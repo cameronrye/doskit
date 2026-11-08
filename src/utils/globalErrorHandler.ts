@@ -54,6 +54,17 @@ function errorText(value: unknown): string {
 }
 
 /**
+ * Get the error to report for a thrown value or rejection reason
+ * @param value - The value itself is used when it is an Error
+ * @param fallback - Message for a value that has no text, such as an object without a
+ *   prototype, for which String() throws
+ * @returns An Error with the value's text, or the fallback
+ */
+function toError(value: unknown, fallback: string): Error {
+  return value instanceof Error ? value : new Error(errorText(value) || fallback);
+}
+
+/**
  * Check if an error should be suppressed
  * @param error - Error to check
  * @returns True if error should be suppressed
@@ -103,13 +114,9 @@ let config = DEFAULT_CONFIG;
 function handleUncaughtError(event: ErrorEvent): void {
   // event.error is null for cross-origin "Script error." events, and can be any
   // value when a non-Error is thrown
-  const actualError: Error | undefined =
-    event.error instanceof Error
-      ? event.error
-      : event.error != null
-        ? new Error(String(event.error))
-        : undefined;
   const errorMessage = event.message;
+  const actualError: Error | undefined =
+    event.error != null ? toError(event.error, errorMessage || 'Uncaught exception') : undefined;
 
   // Check if error should be suppressed. Listeners suppress the browser's own
   // report with preventDefault(); returning true only works for window.onerror.
@@ -198,7 +205,7 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
 
   // Track error
   const tracker = getErrorTracker();
-  const actualError = error instanceof Error ? error : new Error(String(error));
+  const actualError = toError(error, 'Promise rejected with a value that has no text');
   tracker.captureError(actualError, context, ErrorSeverity.ERROR);
 
   // Call custom error handler
@@ -208,7 +215,7 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
 
   // Show user-friendly error if enabled
   if (config.showUserFriendlyErrors && !import.meta.env.DEV) {
-    const friendlyError = getUserFriendlyError(error);
+    const friendlyError = getUserFriendlyError(actualError);
     console.error('Error:', friendlyError.message);
     if (friendlyError.suggestion) {
       console.info('Suggestion:', friendlyError.suggestion);

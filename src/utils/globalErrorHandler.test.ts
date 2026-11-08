@@ -2,7 +2,7 @@
  * Tests for globalErrorHandler utility
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, onTestFinished, vi } from 'vitest';
 import {
   initializeGlobalErrorHandler,
   cleanupGlobalErrorHandler,
@@ -16,6 +16,8 @@ describe('globalErrorHandler', () => {
 
   afterEach(() => {
     cleanupGlobalErrorHandler();
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   describe('initializeGlobalErrorHandler', () => {
@@ -191,6 +193,62 @@ describe('globalErrorHandler', () => {
 
       expect(event.defaultPrevented).toBe(false);
       expect(onError).toHaveBeenCalledTimes(1);
+    });
+
+    // String() throws for an object without a prototype, so the handler must not need one
+    describe('for a value with no string form', () => {
+      /**
+       * Collect what listeners throw: the browser, here jsdom, reports each as an error
+       * event of its own, which the handler would then track in place of the value
+       */
+      const collectListenerExceptions = () => {
+        const exceptions: unknown[] = [];
+        const collect = (event: ErrorEvent) => exceptions.push(event.error);
+        window.addEventListener('error', collect);
+        onTestFinished(() => window.removeEventListener('error', collect));
+        return exceptions;
+      };
+
+      it('tracks a rejection with it as the reason', () => {
+        const exceptions = collectListenerExceptions();
+        const onError = vi.fn();
+        initializeGlobalErrorHandler({ onError });
+
+        rejectUnhandled(Object.create(null));
+
+        expect(exceptions).toEqual([]);
+        expect(onError).toHaveBeenCalledExactlyOnceWith(
+          expect.any(Error),
+          expect.objectContaining({ userAction: 'Promise rejection' })
+        );
+      });
+
+      it('logs the friendly message for that rejection in production', () => {
+        vi.stubEnv('DEV', false);
+        const exceptions = collectListenerExceptions();
+        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+        initializeGlobalErrorHandler();
+
+        rejectUnhandled(Object.create(null));
+
+        expect(exceptions).toEqual([]);
+        expect(consoleError).toHaveBeenCalledWith('Error:', 'An unexpected error occurred');
+      });
+
+      it('tracks it thrown, under the message the browser gives it', () => {
+        const onError = vi.fn();
+        initializeGlobalErrorHandler({ onError });
+
+        // What Chromium dispatches for `throw Object.create(null)`
+        window.dispatchEvent(
+          new ErrorEvent('error', { error: Object.create(null), message: 'Uncaught exception' })
+        );
+
+        expect(onError).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({ message: 'Uncaught exception' }),
+          expect.objectContaining({ userAction: 'Unknown' })
+        );
+      });
     });
 
     it('tracks a promise rejected without a reason', () => {
