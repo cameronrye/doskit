@@ -228,6 +228,7 @@ src/
 - **Line Length**: Maximum 100 characters (soft limit)
 - **Trailing Commas**: Use in multi-line arrays and objects
 
+<!-- prettier-ignore -->
 ```typescript
 // Good
 const config = {
@@ -238,9 +239,9 @@ const config = {
 
 // Bad
 const config = {
-  name: 'DosKit',
-  version: '1.0.0',
-  features: ['emulator', 'pwa'],
+  name: "DosKit",
+  version: "1.0.0",
+  features: ["emulator", "pwa"]
 };
 ```
 
@@ -277,6 +278,7 @@ import type { DosOptions } from './types/js-dos';
 - **Before Braces**: Always add space
 - **Empty Lines**: Use to separate logical blocks
 
+<!-- prettier-ignore -->
 ```typescript
 // Good
 const sum = a + b;
@@ -286,9 +288,9 @@ if (condition) {
 }
 
 // Bad
-const sum = a + b;
-const items = [1, 2, 3];
-if (condition) {
+const sum=a+b;
+const items = [1,2,3];
+if(condition){
   doSomething();
 }
 ```
