@@ -49,7 +49,7 @@ function generateVersion() {
   let gitHash = 'unknown';
   try {
     gitHash = execSync('git rev-parse --short HEAD').toString().trim();
-  } catch (error) {
+  } catch {
     console.warn('Could not get git hash, using timestamp only');
   }
 
