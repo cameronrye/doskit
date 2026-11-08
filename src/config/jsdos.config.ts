@@ -65,22 +65,21 @@ export const mobileJsDosConfig: Partial<DosOptions> = {
   softFullscreen: true,
   scaleControls: 0.4, // Larger controls for touch
   mouseCapture: false,
+  // The on-screen keyboard behind the keyboard button in the js-dos sidebar, in place of
+  // js-dos's own: rows of key names separated by spaces (see SoftKeyboardLayout in
+  // src/types/js-dos.d.ts for the names)
   softKeyboardLayout: [
-    ['Esc', 'F1', 'F2', 'F3', 'F5'],
-    ['1', '2', '3', '4', '5'],
-    ['Q', 'W', 'E', 'R', 'T'],
-    ['A', 'S', 'D', 'F', 'G'],
-    ['Z', 'X', 'C', 'V', 'B'],
-    ['Ctrl', 'Alt', 'Space', 'Enter'],
+    '{esc} {f1} {f2} {f3} {f5}',
+    '1 2 3 4 5',
+    'q w e r t',
+    'a s d f g',
+    'z x c v b',
+    '{ctrl} {alt} {space} {enter}',
+    '{up}',
+    '{left} {down} {right}',
   ],
-  softKeyboardSymbols: [
-    {
-      '↑': 'ArrowUp',
-      '↓': 'ArrowDown',
-      '←': 'ArrowLeft',
-      '→': 'ArrowRight',
-    },
-  ],
+  // Arrows for the arrow keys, which would otherwise read Up, Down, Left and Right
+  softKeyboardSymbols: [{ '{up}': '↑', '{down}': '↓', '{left}': '←', '{right}': '→' }],
 };
 
 /**

@@ -33,8 +33,8 @@ export interface DosOptions {
   mouseCapture?: boolean;
   mouseSensitivity?: number;
   noCursor?: boolean;
-  softKeyboardLayout?: string[][] | string[][][];
-  softKeyboardSymbols?: { [key: string]: string }[];
+  softKeyboardLayout?: SoftKeyboardLayout;
+  softKeyboardSymbols?: SoftKeyboardSymbols;
 
   // Audio Settings
   volume?: number;
@@ -65,6 +65,27 @@ export interface DosOptions {
 }
 
 export type DosEvent = 'emu-ready' | 'ci-ready' | 'bnd-play' | 'open-key' | 'fullscreen-change';
+
+/**
+ * The on-screen keyboard that the keyboard button in the js-dos sidebar opens: a list of
+ * rows, or a list of layouts, each a list of columns of rows. js-dos reads a list whose
+ * first element is an array as layouts, so a list of lists of key names fails to render.
+ *
+ * A row is a string of key names separated by spaces, and an empty row leaves a gap. A key
+ * is a letter or digit, one of , . ' : ; - = + ( ) [ ] { }, or a name in braces: {esc},
+ * {tab}, {lock}, {shift}, {ctrl}, {alt}, {space}, {enter}, {bksp}, {del}, {up}, {down},
+ * {left}, {right}, {home}, {end}, {pgup}, {pgdown}, {f1} to {f12} or {kp0} to {kp9}. Any
+ * other key, / and \ among them, presses nothing. {layout} switches to the next layout and
+ * {symbols} to the next set of labels.
+ */
+export type SoftKeyboardLayout = string[] | string[][][];
+
+/**
+ * Labels for the on-screen keyboard's keys by key name, such as `{ '{up}': '↑' }`: one set,
+ * or several that {symbols} switches between. A key without a label shows its name,
+ * capitalised and without braces ({esc} shows Esc).
+ */
+export type SoftKeyboardSymbols = Record<string, string>[];
 
 export interface InitFileEntry {
   path: string;
@@ -99,8 +120,8 @@ export interface DosProps {
   setMouseCapture(capture: boolean): void;
   setMouseSensitivity(sensitivity: number): void;
   setNoCursor(noCursor: boolean): void;
-  setSoftKeyboardLayout(layout: string[][] | string[][][]): void;
-  setSoftKeyboardSymbols(symbols: { [key: string]: string }[]): void;
+  setSoftKeyboardLayout(layout: SoftKeyboardLayout): void;
+  setSoftKeyboardSymbols(symbols: SoftKeyboardSymbols): void;
 
   // Audio Methods
   setVolume(volume: number): void;
