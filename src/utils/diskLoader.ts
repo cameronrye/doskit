@@ -39,7 +39,9 @@ const STALL_TIMEOUT_MS = 20_000;
  */
 function untilAborted<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const abort = () => reject(signal.reason);
+    // Firefox before 97 gives an abort no reason
+    const abort = () =>
+      reject(signal.reason ?? new DOMException('The operation was aborted.', 'AbortError'));
     signal.addEventListener('abort', abort, { once: true });
     promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
     if (signal.aborted) abort();
@@ -109,10 +111,15 @@ export async function loadZipArchive(
     new Error(`Download timed out: no data received for ${STALL_TIMEOUT_MS / 1000} seconds`),
     { name: 'TimeoutError' }
   );
+  // Kept here rather than read from the signal's reason, which Firefox before 97 lacks
+  let stalled = false;
   let stallTimer: ReturnType<typeof setTimeout> | undefined;
   const restartStallTimer = () => {
     clearTimeout(stallTimer);
-    stallTimer = setTimeout(() => download.abort(timedOut), STALL_TIMEOUT_MS);
+    stallTimer = setTimeout(() => {
+      stalled = true;
+      download.abort(timedOut);
+    }, STALL_TIMEOUT_MS);
   };
   // A chunk can arrive just before an abort and be handled after it: a caller that has
   // moved on gets no progress of the download it gave up
@@ -177,7 +184,7 @@ export async function loadZipArchive(
     return zipData;
   } catch (error) {
     // Whatever a stalled download failed with on its way out, it timed out
-    const failure = download.signal.reason === timedOut ? timedOut : error;
+    const failure = stalled ? timedOut : error;
     // An abort is the caller's own doing (the selector's Cancel, a navigation that
     // supersedes the load): it still rejects, but is no failure to log
     if (!signal?.aborted) {

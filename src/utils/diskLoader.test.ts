@@ -368,6 +368,26 @@ describe('diskLoader', () => {
         await expect(download).resolves.toEqual(new Uint8Array([80, 75, 3, 4, 1, 2]));
       });
 
+      // An abort's reason came in Chrome 98, Firefox 97 and Safari 15.4, after Firefox 94,
+      // which the README supports
+      it('fails with the timeout in a browser whose aborts have no reason', async () => {
+        const reason = Object.getOwnPropertyDescriptor(AbortSignal.prototype, 'reason')!;
+        Object.defineProperty(AbortSignal.prototype, 'reason', {
+          configurable: true,
+          get: () => undefined,
+        });
+        try {
+          answerLater();
+          loadZipArchive('http://example.com/archive.zip').catch(failed);
+
+          await vi.advanceTimersByTimeAsync(20_000);
+
+          expect(expectTimeout()).toHaveProperty('name', 'TimeoutError');
+        } finally {
+          Object.defineProperty(AbortSignal.prototype, 'reason', reason);
+        }
+      });
+
       it('still retries a temporary server error first', async () => {
         vi.mocked(globalThis.fetch)
           .mockResolvedValueOnce(new Response(null, { status: 503 }))
