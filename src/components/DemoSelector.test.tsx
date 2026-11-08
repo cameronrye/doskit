@@ -815,13 +815,20 @@ describe('DemoSelector', () => {
   });
 
   describe('Load cancellation and overlapping loads', () => {
-    /** Make each download wait until the test resolves it, keyed by archive URL */
-    const deferDownloads = () => {
+    /**
+     * Make each download wait until the test resolves it, keyed by archive URL. Like
+     * loadZipArchive, a download rejects with the abort's reason once its signal aborts,
+     * unless it ignores aborts, as an app's loader does while it imports its config chunk.
+     */
+    const deferDownloads = ({ ignoreAborts = false } = {}) => {
       const pending = new Map<string, (data: Uint8Array) => void>();
       vi.mocked(loadZipArchive).mockImplementation(
-        (url: string) =>
-          new Promise<Uint8Array>((resolve) => {
+        (url: string, _onProgress, signal) =>
+          new Promise<Uint8Array>((resolve, reject) => {
             pending.set(url, resolve);
+            if (!ignoreAborts) {
+              signal?.addEventListener('abort', () => reject(signal.reason));
+            }
           })
       );
       return pending;
@@ -833,8 +840,26 @@ describe('DemoSelector', () => {
       await waitFor(() => expect(pending.has(secondRealityZipUrl)).toBe(true));
     };
 
-    it('does not deliver the app when loading is cancelled before the download finishes', async () => {
+    const signalOf = (url: string) =>
+      vi.mocked(loadZipArchive).mock.calls.find(([called]) => called === url)?.[2];
+
+    it('aborts the download when loading is cancelled, with no error', async () => {
       const pending = deferDownloads();
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      await startLoadingSecondReality(pending);
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /Cancel Loading/i }));
+      });
+
+      expect(signalOf(secondRealityZipUrl)?.aborted).toBe(true);
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Load Application' })).toBeInTheDocument();
+      expect(mockOnSelect).not.toHaveBeenCalled();
+    });
+
+    it('does not deliver an app whose download finishes after loading was cancelled', async () => {
+      const pending = deferDownloads({ ignoreAborts: true });
       render(<DemoSelector onSelect={mockOnSelect} />);
       await startLoadingSecondReality(pending);
 
@@ -846,16 +871,39 @@ describe('DemoSelector', () => {
       expect(mockOnSelect).not.toHaveBeenCalled();
     });
 
-    it('aborts the in-flight download when loading is cancelled', async () => {
+    it('keeps loading the newer app when the download it superseded is aborted', async () => {
       const pending = deferDownloads();
       render(<DemoSelector onSelect={mockOnSelect} />);
       await startLoadingSecondReality(pending);
 
-      fireEvent.click(screen.getByRole('button', { name: /Cancel Loading/i }));
+      await act(async () => {
+        fireEvent.doubleClick(getFloppyDiskByName('Impulse Tracker'));
+      });
+      await waitFor(() => expect(pending.has(impulseTrackerZipUrl)).toBe(true));
 
-      const signal = vi.mocked(loadZipArchive).mock.calls[0]?.[2];
-      expect(signal).toBeInstanceOf(AbortSignal);
-      expect(signal?.aborted).toBe(true);
+      expect(signalOf(secondRealityZipUrl)?.aborted).toBe(true);
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Cancel Loading/i })).toBeInTheDocument();
+      await act(async () => {
+        pending.get(impulseTrackerZipUrl)!(new Uint8Array([2]));
+      });
+      expect(mockOnSelect).toHaveBeenCalledTimes(1);
+      expect(mockOnSelect.mock.calls[0]?.[0].app.id).toBe('impulse-tracker');
+    });
+
+    // DosPlayerWithApps remounts the selector for a newer request, which must stop its download
+    it('aborts the download when the selector closes, and delivers nothing', async () => {
+      const pending = deferDownloads();
+      const { unmount } = render(<DemoSelector onSelect={mockOnSelect} />);
+      await startLoadingSecondReality(pending);
+
+      unmount();
+      await act(async () => {
+        pending.get(secondRealityZipUrl)!(new Uint8Array([1]));
+      });
+
+      expect(signalOf(secondRealityZipUrl)?.aborted).toBe(true);
+      expect(mockOnSelect).not.toHaveBeenCalled();
     });
 
     // An app's loader imports its config chunk before it downloads, so a load given up while
@@ -878,7 +926,7 @@ describe('DemoSelector', () => {
     });
 
     it('ignores a superseded load that finishes before the newer one', async () => {
-      const pending = deferDownloads();
+      const pending = deferDownloads({ ignoreAborts: true });
       render(<DemoSelector onSelect={mockOnSelect} />);
       await startLoadingSecondReality(pending);
 
@@ -900,9 +948,6 @@ describe('DemoSelector', () => {
 
     // The details below the disks always name the app that is downloading
     describe('another disk chosen during a download', () => {
-      const signalOf = (url: string) =>
-        vi.mocked(loadZipArchive).mock.calls.find(([called]) => called === url)?.[2];
-
       it('cancels the download when it is clicked, and selects it', async () => {
         const pending = deferDownloads();
         render(<DemoSelector onSelect={mockOnSelect} />);
