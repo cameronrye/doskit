@@ -176,6 +176,7 @@ function createBrowser() {
     headers: {},
     held: new Map(), // path -> promise the second half of its body waits for
     stalled: new Map(), // path -> promise its response waits for
+    failing: new Map(), // path -> status the server answers it with instead, such as 503
     /** Holds back the second half of the file's body until the returned release() */
     hold(path) {
       let release;
@@ -222,7 +223,7 @@ function createBrowser() {
     const bytes = new TextEncoder().encode(`${file} from deploy ${deploy}`);
     const arrived = server.held.get(path) ?? Promise.resolve();
     return new Response(bodyOf(bytes, input.signal, arrived), {
-      status: file === '/404.html' ? 404 : 200,
+      status: server.failing.get(path) ?? (file === '/404.html' ? 404 : 200),
       headers: {
         'Content-Length': String(bytes.length),
         'Content-Type': CONTENT_TYPES[extname(urlOf(file).pathname)] ?? 'text/plain',
@@ -323,7 +324,7 @@ function startWorker(
       listeners[type] = listener;
     },
     skipWaiting: vi.fn(() => Promise.resolve()),
-    clients: { claim: () => Promise.resolve() },
+    clients: { claim: vi.fn(() => Promise.resolve()) },
   };
   const context = vm.createContext({
     self,
@@ -402,6 +403,18 @@ describe('install', () => {
       ...Object.fromEntries(SHELL_FILES.map((path) => [path, 'no-cache'])),
       ...Object.fromEntries(BUNDLES.map((path) => [path, 'default'])),
     });
+  });
+
+  it.each([
+    ['answers a file it precaches with 404', (server) => server.failing.set('/manifest.json', 404)],
+    ['cannot be reached', (server) => (server.online = false)],
+  ])('fails to install when the server %s', async (_, breakServer) => {
+    // An update that installed anyway would delete the caches of the version it replaces
+    // on activation, and leave the app with an app shell cache that lacks files
+    const browser = createBrowser();
+    breakServer(browser.server);
+
+    await expect(startWorker(browser).dispatch('install')).rejects.toThrow();
   });
 
   it("takes the bundles the previous deploy's cache holds under the same name", async () => {
@@ -565,6 +578,24 @@ describe('bundles', () => {
     expect(requestedPaths(browser)).toEqual(['/assets/index-later1.js']);
   });
 
+  it('stores nothing of one the page stops loading, and the worker reports no failure', async () => {
+    // Cache.put() rejects on a body that breaks off; nothing waits on that rejection
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    const release = browser.server.hold('/assets/index-later1.js');
+    const download = new AbortController();
+
+    const aborted = worker.dispatch('fetch', {
+      request: subresource('/assets/index-later1.js', { signal: download.signal }),
+    });
+    await vi.waitFor(() => expect(requestedPaths(browser)).toContain('/assets/index-later1.js'));
+    download.abort();
+    release();
+
+    await expect(aborted).resolves.toMatchObject({ responded: true });
+    expect(browser.cachedPaths()).not.toContain('/assets/index-later1.js');
+  });
+
   it('serves them to the crossorigin requests of index.html, whatever Vary says', async () => {
     // Its module scripts and stylesheet have crossorigin, so Chrome sends Origin, which
     // install's requests did not. On a host that answers with Vary: Origin (vite preview
@@ -697,6 +728,26 @@ describe('js-dos', () => {
     }
   });
 
+  it('passes on a failed download without storing it', async () => {
+    // The cache is kept for as long as js-dos stays the same: a stored error would be
+    // served until then, and DOSBox-X would never load
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    browser.server.failing.set(DOSBOX_X[1], 503);
+
+    const { response: failed } = await worker.dispatch('fetch', {
+      request: subresource(DOSBOX_X[1]),
+    });
+    browser.server.failing.clear();
+    const { response: retried } = await worker.dispatch('fetch', {
+      request: subresource(DOSBOX_X[1]),
+    });
+
+    expect(failed?.status).toBe(503);
+    expect(retried?.status).toBe(200);
+    expect(await retried?.text()).toBe(`${DOSBOX_X[1]} from deploy A`);
+  });
+
   it('asks the server for them rather than the HTTP cache', async () => {
     // A cache entry is kept for as long as js-dos stays the same, so it must not come
     // from an HTTP cache entry that is still fresh but from the previous js-dos
@@ -806,6 +857,54 @@ describe('demo archives', () => {
     expect(browser.contents()['doskit-demos-bbbb']).toEqual(['/demos/stars.zip']);
   });
 
+  it('passes on a failed download without storing it', async () => {
+    // The cache is kept until the archives change: a stored 404 would be served until
+    // then, and the app would not load even once the server has its archive again
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    browser.server.failing.set('/demos/stars.zip', 404);
+
+    const { response: failed } = await worker.dispatch('fetch', {
+      request: subresource('/demos/stars.zip'),
+    });
+    browser.server.failing.clear();
+    const { response: retried } = await worker.dispatch('fetch', {
+      request: subresource('/demos/stars.zip'),
+    });
+
+    expect(failed?.status).toBe(404);
+    expect(retried?.status).toBe(200);
+    expect(browser.contents()[DEMO_CACHE]).toEqual(['/demos/stars.zip']);
+  });
+
+  describe('on a slow network', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('gives an archive 30 seconds to arrive before the download fails', async () => {
+      // As every .zip and .wasm file: they are large, and a phone's network may be slow
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      const browser = createBrowser();
+      const worker = await installAndActivate(browser);
+      browser.server.stall('/demos/second-reality.zip');
+      let settled = false;
+
+      const download = worker.dispatch('fetch', {
+        request: subresource('/demos/second-reality.zip'),
+      });
+      download.then(
+        () => (settled = true),
+        () => (settled = true)
+      );
+      await vi.advanceTimersByTimeAsync(29_999);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+
+      await expect(download).rejects.toThrow('Network timeout after 30000ms');
+    });
+  });
+
   it('asks the server for them rather than the HTTP cache', async () => {
     // A cached archive is kept until the archives change, so it must not come from an
     // HTTP cache entry that is still fresh but holds the previous deploy's archive
@@ -860,6 +959,60 @@ describe('activate', () => {
     browser.server.online = false;
     const { response } = await worker.dispatch('fetch', { request: navigation('/') });
     expect(await response?.text()).toBe('/index.html from deploy B');
+  });
+
+  it('takes control of the open pages', async () => {
+    // So that the page that registered the first worker works offline from then on
+    const worker = await installAndActivate(createBrowser());
+
+    expect(worker.self.clients.claim).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the record of when each entry was last used, should the same build activate again', async () => {
+    // As when the worker is registered anew: trimming goes by that record
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser, { cacheVersion: 'vA' });
+    await worker.dispatch('fetch', { request: subresource('/notes/note-0.txt') });
+    expect(await browser.caches.has('doskit-vA-metadata')).toBe(true);
+
+    await installAndActivate(browser, { cacheVersion: 'vA' });
+
+    expect(await browser.caches.has('doskit-vA-metadata')).toBe(true);
+  });
+});
+
+// Stale-while-revalidate, as for the manifest and the icons, whose names never change
+describe('other files', () => {
+  it('serves the cached copy at once, and refreshes it from the network for next time', async () => {
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    browser.server.deploy = 'B';
+
+    const { response: cached } = await worker.dispatch('fetch', {
+      request: subresource('/manifest.json'),
+    });
+    const { response: refreshed } = await worker.dispatch('fetch', {
+      request: subresource('/manifest.json'),
+    });
+
+    expect(await cached?.text()).toBe('/manifest.json from deploy A');
+    expect(await refreshed?.text()).toBe('/manifest.json from deploy B');
+  });
+});
+
+describe('requests to other origins', () => {
+  it('leaves them to the browser', async () => {
+    // The worker caches only the site's own files
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    browser.server.requests.length = 0;
+
+    const { responded } = await worker.dispatch('fetch', {
+      request: subresource('https://fonts.example.com/dos.woff2'),
+    });
+
+    expect(responded).toBe(false);
+    expect(requestedPaths(browser)).toEqual([]);
   });
 });
 
