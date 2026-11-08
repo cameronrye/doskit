@@ -80,17 +80,39 @@ vi.mock('./DosPlayer', async () => {
   };
 });
 
-// Mock DemoSelector component
-vi.mock('./DemoSelector', () => ({
-  DemoSelector: ({ onSelect, onCancel }: DemoSelectorProps) => (
-    <div data-testid="demo-selector-mock">
-      <button onClick={() => onSelect((window as WindowWithMockApp).__mockLoadedApp!)}>
-        Select App
-      </button>
-      <button onClick={onCancel}>Cancel</button>
-    </div>
-  ),
+const selectorDownload = vi.hoisted(() => ({
+  /** Finishes the download started with "Start Download", once there is one */
+  finish: (() => {}) as (loadedApp: LoadedApp) => void,
 }));
+
+// Mock DemoSelector component
+vi.mock('./DemoSelector', async () => {
+  const { useEffect, useState } = await import('react');
+  return {
+    DemoSelector: ({ onSelect, onCancel }: DemoSelectorProps) => {
+      // Like the real selector, a download still running when it unmounts is aborted
+      // and never delivered
+      const [controller] = useState(() => new AbortController());
+      useEffect(() => () => controller.abort(), [controller]);
+      const startDownload = () => {
+        new Promise<LoadedApp>((resolve) => {
+          selectorDownload.finish = resolve;
+        }).then((loadedApp) => {
+          if (!controller.signal.aborted) onSelect(loadedApp);
+        });
+      };
+      return (
+        <div data-testid="demo-selector-mock">
+          <button onClick={() => onSelect((window as WindowWithMockApp).__mockLoadedApp!)}>
+            Select App
+          </button>
+          <button onClick={startDownload}>Start Download</button>
+          <button onClick={onCancel}>Cancel</button>
+        </div>
+      );
+    },
+  };
+});
 
 /** An app whose download finishes or fails when the test says so */
 function deferredApp(id: string) {
@@ -109,6 +131,8 @@ function deferredApp(id: string) {
   return {
     app,
     loader,
+    /** The AbortSignal the component gave the download */
+    signal: () => loader.mock.lastCall?.[1],
     finish: async () => {
       finish(new Uint8Array([1]));
       await settle();
@@ -594,6 +618,160 @@ describe('DosPlayerWithApps', () => {
       expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
       await stars.finish();
       expect(boots).toEqual(['conf:stars']);
+    });
+  });
+
+  describe('Overlapping loads', () => {
+    it('aborts the download of a request that a newer one supersedes', () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      expect(stars.signal()?.aborted).toBe(false);
+
+      rerender(<DosPlayerWithApps requestedApp={rotate.app} />);
+
+      expect(stars.signal()?.aborted).toBe(true);
+      expect(rotate.signal()?.aborted).toBe(false);
+    });
+
+    it('ignores a superseded load that finishes after the newer one', async () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const onAppChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps requestedApp={stars.app} onAppChange={onAppChange} />
+      );
+      rerender(<DosPlayerWithApps requestedApp={rotate.app} onAppChange={onAppChange} />);
+
+      await rotate.finish();
+      await stars.finish();
+
+      expect(boots).toEqual(['conf:3drotate']);
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(rotate.app);
+    });
+
+    it('ignores a superseded load that finishes before the newer one', async () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      rerender(<DosPlayerWithApps requestedApp={rotate.app} />);
+
+      await stars.finish();
+
+      expect(boots).toEqual([]);
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+
+      await rotate.finish();
+
+      expect(boots).toEqual(['conf:3drotate']);
+    });
+
+    it('does not report a superseded load that fails', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const broken = deferredApp('broken');
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={broken.app} />);
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      await broken.fail(new Error('Network down'));
+
+      expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+      expect(consoleError).not.toHaveBeenCalled();
+      await stars.finish();
+      expect(boots).toEqual(['conf:stars']);
+    });
+
+    it('drops a load still running when no app is requested', async () => {
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={null} />);
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      rerender(<DosPlayerWithApps requestedApp={null} />);
+
+      expect(stars.signal()?.aborted).toBe(true);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+      await stars.finish();
+      // The default prompt kept running throughout
+      expect(boots).toEqual(['default']);
+    });
+
+    it('keeps the running app when the request returns to it during another load', async () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={rotate.app} />);
+      await rotate.finish();
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      rerender(<DosPlayerWithApps requestedApp={rotate.app} />);
+
+      expect(stars.signal()?.aborted).toBe(true);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+      await stars.finish();
+      expect(boots).toEqual(['conf:3drotate']);
+    });
+
+    it('lets an app picked in the selector win over a requested app still loading', async () => {
+      const stars = deferredApp('stars');
+      const onAppChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps requestedApp={stars.app} onAppChange={onAppChange} />
+      );
+      // The user opens the selector during the download and picks another app
+      rerender(
+        <DosPlayerWithApps requestedApp={stars.app} showSelector={true} onAppChange={onAppChange} />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(stars.signal()?.aborted).toBe(true);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+      await stars.finish();
+      expect(boots).toEqual(['[cpu]\ncore=auto']);
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(mockApp);
+    });
+
+    it('clears a load error when an app is picked in the selector', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { rerender } = render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+      expect(await screen.findByText('Error Loading Application')).toBeInTheDocument();
+      rerender(<DosPlayerWithApps requestedApp={mockAppWithError} showSelector={true} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+      expect(boots).toEqual(['[cpu]\ncore=auto']);
+    });
+
+    it('drops a download the selector still has running when a new request arrives', async () => {
+      const stars = deferredApp('stars');
+      const onAppChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps requestedApp={stars.app} onAppChange={onAppChange} />
+      );
+      await stars.finish();
+      // The user starts another app from the selector, then goes back to the start page,
+      // which keeps the selector open
+      rerender(
+        <DosPlayerWithApps requestedApp={stars.app} showSelector={true} onAppChange={onAppChange} />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Start Download' }));
+      rerender(
+        <DosPlayerWithApps requestedApp={null} showSelector={true} onAppChange={onAppChange} />
+      );
+
+      await act(async () => selectorDownload.finish(mockLoadedApp));
+
+      expect(boots).toEqual(['conf:stars', 'default']);
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(stars.app);
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+    });
+
+    it('aborts a requested load when unmounted', () => {
+      const stars = deferredApp('stars');
+      const { unmount } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      unmount();
+
+      expect(stars.signal()?.aborted).toBe(true);
     });
   });
 

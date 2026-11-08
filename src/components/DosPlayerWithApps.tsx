@@ -60,15 +60,17 @@ export function DosPlayerWithApps({
   const [showAppSelector, setShowAppSelector] = useState(showSelector);
   const [error, setError] = useState<string | null>(null);
 
-  // A new request. Adjusting state while rendering instead of in an effect:
+  // A new request supersedes any load still running for an earlier one. Adjusting state
+  // while rendering instead of in an effect:
   // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
   if ((requestedApp?.id ?? null) !== requestedId) {
     setRequestedId(requestedApp?.id ?? null);
     setError(null);
     if (!requestedApp) {
+      setLoadingApp(null);
       setSession(DEFAULT_PROMPT);
-    } else if (requestedApp.id !== session?.app?.id) {
-      setLoadingApp(requestedApp);
+    } else {
+      setLoadingApp(requestedApp.id === session?.app?.id ? null : requestedApp);
     }
   }
 
@@ -89,7 +91,8 @@ export function DosPlayerWithApps({
     setLoadingApp(null);
   });
 
-  // Load the requested app's files and DOSBox config
+  // Load the requested app's files and DOSBox config. A newer request, a pick in the
+  // selector or unmounting changes loadingApp, which aborts this load and drops its result.
   useEffect(() => {
     if (!loadingApp) return;
 
@@ -97,20 +100,29 @@ export function DosPlayerWithApps({
       console.log('[DosPlayerWithApps] Loading requested app:', loadingApp.name);
     }
 
+    const controller = new AbortController();
     Promise.all([
-      loadingApp.loader(),
+      loadingApp.loader(undefined, controller.signal),
       loadingApp.loadDosboxConf
         ? loadingApp.loadDosboxConf()
         : Promise.resolve(loadingApp.dosboxConf),
     ]).then(
-      ([files, conf]) => runLoadedApp(loadingApp, files, conf),
-      (err: unknown) => showLoadError(err)
+      ([files, conf]) => {
+        if (!controller.signal.aborted) runLoadedApp(loadingApp, files, conf);
+      },
+      (err: unknown) => {
+        if (!controller.signal.aborted) showLoadError(err);
+      }
     );
+    return () => controller.abort();
   }, [loadingApp]);
 
   const handleSelectApp = useCallback(
     (loadedApp: LoadedApp) => {
-      // Files are already loaded by DemoSelector, just set the state
+      // Files are already loaded by DemoSelector. The user's pick wins over a requested
+      // app still loading.
+      setLoadingApp(null);
+      setError(null);
       setSession({ app: loadedApp.app, files: loadedApp.files, dosboxConf: loadedApp.dosboxConf });
       setShowAppSelector(false);
       onAppChange?.(loadedApp.app);
@@ -138,7 +150,12 @@ export function DosPlayerWithApps({
       {showAppSelector && (
         <>
           <div className="selector-overlay" onClick={handleCancelSelector} />
-          <DemoSelector onSelect={handleSelectApp} onCancel={handleCancelSelector} />
+          {/* A new request remounts the selector, which aborts a download it still runs */}
+          <DemoSelector
+            key={requestedId ?? 'none'}
+            onSelect={handleSelectApp}
+            onCancel={handleCancelSelector}
+          />
         </>
       )}
 
