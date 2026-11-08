@@ -359,15 +359,11 @@ const isDemo = (path) => path.startsWith('/demos/');
 
 // The shell files whose names carry no content hash, unlike the bundles. index.html is
 // stored once, as /.
-const SHELL_FILES = [
-  '/',
-  '/manifest.json',
-  '/logo.svg',
-  '/favicon.svg',
-  '/js-dos.js',
-  '/js-dos.css',
-];
+const SHELL_FILES = ['/', '/manifest.json', '/logo.svg', '/favicon.svg'];
 const APP_SHELL = [...SHELL_FILES, ...BUNDLES];
+// The js-dos player, which index.html loads and which loads the emulator files. Its file
+// names carry no hash either, and like the emulator files it changes only with js-dos.
+const JS_DOS_PLAYER = ['/js-dos.js', '/js-dos.css'];
 const DEFAULT_BACKEND = [
   '/emulators/emulators.js',
   '/emulators/wdosbox.js',
@@ -375,20 +371,21 @@ const DEFAULT_BACKEND = [
   '/emulators/wlibzip.js',
   '/emulators/wlibzip.wasm',
 ];
+// What install stores in the cache of its js-dos version
+const JS_DOS_FILES = [...JS_DOS_PLAYER, ...DEFAULT_BACKEND];
 const DOSBOX_X = ['/emulators/wdosbox-x.js', '/emulators/wdosbox-x.wasm'];
+const isJsDosFile = (path) => JS_DOS_PLAYER.includes(path) || path.startsWith('/emulators/');
 // Named after the hash of the archives startWorker() stamps by default
 const DEMO_CACHE = 'doskit-demos-aaaa';
 
 describe('install', () => {
-  it('precaches the app shell, the bundles and the default DOSBox backend', async () => {
+  it('precaches the app shell and the bundles, and js-dos in the cache of its version', async () => {
     const browser = createBrowser();
 
     await startWorker(browser).dispatch('install');
 
     expect(browser.contents()['doskit-vA'].sort()).toEqual([...APP_SHELL].sort());
-    expect(browser.contents()['doskit-emulators-8.3.20'].sort()).toEqual(
-      [...DEFAULT_BACKEND].sort()
-    );
+    expect(browser.contents()['doskit-emulators-8.3.20'].sort()).toEqual([...JS_DOS_FILES].sort());
   });
 
   it('asks the server for the shell files whose names carry no content hash', async () => {
@@ -586,13 +583,13 @@ describe('bundles', () => {
   });
 });
 
-describe('emulator files', () => {
-  it('serves the default backend from the precache', async () => {
+describe('js-dos', () => {
+  it('serves the player and the default backend from the precache', async () => {
     const browser = createBrowser();
     const worker = await installAndActivate(browser);
     browser.server.requests.length = 0;
 
-    for (const path of DEFAULT_BACKEND) {
+    for (const path of JS_DOS_FILES) {
       const { response } = await worker.dispatch('fetch', { request: subresource(path) });
       expect(await response?.text()).toBe(`${path} from deploy A`);
     }
@@ -642,13 +639,37 @@ describe('emulator files', () => {
     browser.server.requests.length = 0;
 
     const worker = await installAndActivate(browser, { cacheVersion: 'vB' });
-    for (const path of [...DEFAULT_BACKEND, DOSBOX_X[1]]) {
+    for (const path of [...JS_DOS_FILES, DOSBOX_X[1]]) {
       const { response } = await worker.dispatch('fetch', { request: subresource(path) });
       expect(await response?.text()).toBe(`${path} from deploy A`);
     }
 
     expect(requestedPaths(browser)).toEqual(expect.arrayContaining(SHELL_FILES));
-    expect(requestedPaths(browser).filter((path) => path.startsWith('/emulators/'))).toEqual([]);
+    expect(requestedPaths(browser).filter(isJsDosFile)).toEqual([]);
+  });
+
+  it('serves the js-dos it installed for as long as an update to another one waits', async () => {
+    // The player loads the emulator files, so every load must get both from the same
+    // js-dos until the user accepts the update, whose worker brings the deploy's copies
+    const browser = createBrowser();
+    const previous = await installAndActivate(browser, { cacheVersion: 'vA' });
+    browser.server.deploy = 'B';
+    await startWorker(browser, { cacheVersion: 'vB', jsDosVersion: '8.4.0' }).dispatch('install');
+
+    const loads = [];
+    for (let load = 0; load < 3; load++) {
+      const served = {};
+      for (const path of JS_DOS_FILES) {
+        const { response } = await previous.dispatch('fetch', { request: subresource(path) });
+        served[path] = await response?.text();
+      }
+      loads.push(served);
+    }
+
+    const fromDeployA = Object.fromEntries(
+      JS_DOS_FILES.map((path) => [path, `${path} from deploy A`])
+    );
+    expect(loads).toEqual([fromDeployA, fromDeployA, fromDeployA]);
   });
 
   it('replaces them when js-dos changes, once the new worker activates', async () => {
@@ -660,7 +681,7 @@ describe('emulator files', () => {
 
     const worker = startWorker(browser, { cacheVersion: 'vB', jsDosVersion: '8.4.0' });
     await worker.dispatch('install');
-    expect(requestedPaths(browser)).toEqual(expect.arrayContaining(DEFAULT_BACKEND));
+    expect(requestedPaths(browser)).toEqual(expect.arrayContaining(JS_DOS_FILES));
     // The waiting update must not change the files under the open page's js-dos
     const { response: current } = await previous.dispatch('fetch', {
       request: subresource('/emulators/wdosbox.wasm'),
@@ -670,10 +691,10 @@ describe('emulator files', () => {
     await worker.dispatch('activate');
 
     expect(Object.keys(browser.contents()).sort()).toEqual(['doskit-emulators-8.4.0', 'doskit-vB']);
-    const { response } = await worker.dispatch('fetch', {
-      request: subresource('/emulators/wdosbox.wasm'),
-    });
-    expect(await response?.text()).toBe('/emulators/wdosbox.wasm from deploy B');
+    for (const path of JS_DOS_FILES) {
+      const { response } = await worker.dispatch('fetch', { request: subresource(path) });
+      expect(await response?.text()).toBe(`${path} from deploy B`);
+    }
   });
 
   it('asks the server for them rather than the HTTP cache', async () => {
@@ -683,13 +704,11 @@ describe('emulator files', () => {
     const worker = await installAndActivate(browser);
     await worker.dispatch('fetch', { request: subresource(DOSBOX_X[1]) });
 
-    const emulatorRequests = browser.server.requests.filter(({ path }) =>
-      path.startsWith('/emulators/')
+    const jsDosRequests = browser.server.requests.filter(({ path }) => isJsDosFile(path));
+    expect(jsDosRequests.map(({ path }) => path).sort()).toEqual(
+      [...JS_DOS_FILES, DOSBOX_X[1]].sort()
     );
-    expect(emulatorRequests.map(({ path }) => path).sort()).toEqual(
-      [...DEFAULT_BACKEND, DOSBOX_X[1]].sort()
-    );
-    expect(new Set(emulatorRequests.map(({ cache }) => cache))).toEqual(new Set(['no-cache']));
+    expect(new Set(jsDosRequests.map(({ cache }) => cache))).toEqual(new Set(['no-cache']));
   });
 });
 

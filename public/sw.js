@@ -9,8 +9,9 @@ const CACHE_VERSION = 'v1';
 const CACHE_NAME = `doskit-${CACHE_VERSION}`;
 const METADATA_CACHE_NAME = `${CACHE_NAME}-metadata`;
 
-// Emulator files only change with js-dos, so they have a cache of their own that deploys
-// keep. The build replaces this with the js-dos version it copied into /emulators/.
+// js-dos's files, its player and the emulator files the player loads, only change with
+// js-dos, so they have a cache of their own that deploys keep. The build replaces this
+// with the version of js-dos it copied into the site.
 const JS_DOS_VERSION = 'dev';
 const EMULATOR_CACHE_NAME = `doskit-emulators-${JS_DOS_VERSION}`;
 
@@ -41,15 +42,20 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/logo.svg',
   '/favicon.svg',
-  '/js-dos.js',
-  '/js-dos.css',
 ];
 
-// Emulator files for the default "dosbox" backend, which every app runs on. DOSBox-X
-// (wdosbox-x.*, 6.6 MB) is left out: js-dos offers its backend picker only before a run,
-// which autoStart with countDownStart 0 skips, so users cannot switch to it. Should
+// What install puts in EMULATOR_CACHE_NAME: the js-dos player, which index.html loads, and
+// the files of its default "dosbox" backend, which every app runs on. They are served from
+// there and never refreshed, so a page always gets the player and the emulator files of
+// the js-dos its worker installed. A deploy that changes js-dos brings its own copies with
+// its worker, which serves them once it takes over.
+//
+// DOSBox-X (wdosbox-x.*, 6.6 MB) is left out: js-dos offers its backend picker only before
+// a run, which autoStart with countDownStart 0 skips, so users cannot switch to it. Should
 // anything request it, cache-first stores it on first use like any emulator file.
 const EMULATOR_ASSETS = [
+  '/js-dos.js',
+  '/js-dos.css',
   '/emulators/wdosbox.wasm',
   '/emulators/wdosbox.js',
   '/emulators/wlibzip.wasm',
@@ -76,6 +82,11 @@ const fromServer = (input) => new Request(input, { cache: 'no-cache' });
 
 // The JS and CSS Vite emits, named after a hash of their content
 const isBundle = (path) => path.startsWith('/assets/');
+
+// js-dos's player, and the emulator files it loads from /emulators/ (the pathPrefix of
+// src/config/jsdos.config.ts), DOSBox-X's included
+const isJsDosFile = (path) =>
+  path === '/js-dos.js' || path === '/js-dos.css' || path.startsWith('/emulators/');
 
 /**
  * Copy into the cache the bundles that the cache of an earlier deploy holds under the
@@ -115,23 +126,24 @@ async function precacheAppShell() {
 }
 
 /**
- * Precache the default backend into the cache of this js-dos version. Only files that
- * are not there yet are downloaded, so a deploy that keeps js-dos fetches none.
+ * Precache the js-dos player and the default backend into the cache of this js-dos
+ * version. Only files that are not there yet are downloaded, so a deploy that keeps
+ * js-dos fetches none.
  */
 async function precacheEmulator() {
   const cache = await caches.open(EMULATOR_CACHE_NAME);
   const cachedUrls = new Set((await cache.keys()).map((request) => request.url));
   const missing = EMULATOR_ASSETS.filter((path) => !cachedUrls.has(absoluteUrl(path)));
-  // A cached emulator file is kept until js-dos changes, so it must come from the server:
+  // A cached js-dos file is kept until js-dos changes, so it must come from the server:
   // an HTTP cache entry that is still fresh may hold the previous js-dos version's file
   await cache.addAll(missing.map(fromServer));
   console.log(
-    `[Service Worker] ✅ Emulator assets cached in ${EMULATOR_CACHE_NAME} ` +
+    `[Service Worker] ✅ js-dos cached in ${EMULATOR_CACHE_NAME} ` +
       `(${missing.length} downloaded, ${EMULATOR_ASSETS.length - missing.length} kept)`
   );
 }
 
-// Install event - cache the app shell and the default emulator
+// Install event - cache the app shell, and js-dos with its default emulator
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing service worker...', CACHE_NAME);
 
@@ -350,10 +362,10 @@ async function cacheResponse(request, response) {
 }
 
 /**
- * Serve a file cache-first from a cache that deploys keep (the emulator files of this
- * js-dos version, or these demo archives), storing it there on first use. Such a cache is
- * kept until its name changes, so a file must come from the server: a still-fresh HTTP
- * cache entry may hold a previous deploy's copy.
+ * Serve a file cache-first from a cache that deploys keep (the files of this js-dos
+ * version, or these demo archives), storing it there on first use. Such a cache is kept
+ * until its name changes, so a file must come from the server: a still-fresh HTTP cache
+ * entry may hold a previous deploy's copy.
  *
  * Cache.put() only stores a whole body, so a download the page aborts never leaves part
  * of a file behind. The copy of the page's request keeps its signal: where the browser
@@ -444,8 +456,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for emulator files, from the cache of this js-dos version
-  if (url.pathname.startsWith('/emulators/')) {
+  // Cache-first for the js-dos player and the emulator files it loads, from the cache of
+  // this js-dos version, so that a page gets them all from one version
+  if (isJsDosFile(url.pathname)) {
     event.respondWith(serveCacheFirst(event, EMULATOR_CACHE_NAME));
     return;
   }
@@ -487,7 +500,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for JS/CSS and other assets
+  // Stale-while-revalidate for everything else, such as the manifest and the icons
   event.respondWith(
     caches.match(request, MATCH_OPTIONS).then((cachedResponse) => {
       if (cachedResponse) {

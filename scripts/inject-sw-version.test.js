@@ -198,7 +198,7 @@ describe('injectIntoServiceWorker', () => {
 });
 
 describe('precachedPaths', () => {
-  it('lists the app shell and the default DOSBox backend, but not DOSBox-X', () => {
+  it('lists the app shell, and js-dos with its default backend, but not DOSBox-X', () => {
     const paths = precachedPaths(serviceWorker);
 
     expect(paths).toEqual(

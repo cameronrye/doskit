@@ -5,10 +5,11 @@
  * for proper offline functionality: every JS and CSS file in dist/assets,
  * so that the chunks the app imports lazily load offline too.
  *
- * It also stamps the js-dos version copied into dist/emulators/, which names
- * the worker's emulator cache: emulator files stay cached across deploys
- * until js-dos changes. A hash of the archives in dist/demos/ names the demo
- * cache the same way, so a deploy that changes none downloads none again.
+ * It also stamps the version of the js-dos copied into dist/, which names the
+ * worker's emulator cache: the js-dos player (js-dos.js and js-dos.css) and
+ * its emulator files stay cached across deploys until js-dos changes. A hash
+ * of the archives in dist/demos/ names the demo cache the same way, so a
+ * deploy that changes none downloads none again.
  *
  * The build fails if dist/sw.js lacks what this replaces, or if it would
  * precache a file that is not in dist/: cache.addAll() rejects on a single
@@ -24,7 +25,7 @@ import { dirname, join, sep } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const distDir = join(__dirname, '../dist');
-// Where copy-js-dos.js takes the files in dist/emulators/ from
+// Where copy-js-dos.js takes js-dos.js, js-dos.css and the files in dist/emulators/ from
 const jsDosPackage = join(__dirname, '../node_modules/js-dos/package.json');
 
 const CACHE_VERSION_PLACEHOLDER = /const CACHE_VERSION = ['"]v1['"];/;
