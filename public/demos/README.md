@@ -106,19 +106,22 @@ for StarPort, Future Crew's home BBS, with its source.
 **Scream Tracker 3.21** by Future Crew. FCINFO17.TXT calls it one of Future Crew's "own programs
 made by Psi"; ST3.DOC, the manual, is by Edge of Electromotive Force.
 
-- **Year**: 1994. In the archive it was taken from, `ST3.EXE`, `WHATSNEW.321` and `FILE_ID.DIZ` are
-  dated 25 December 1994, and FCINFO17.TXT, of 6 December 1994, dates version 3.2 that same day.
-- **Contents** (8 files; the ZIP is 176,562): `ST3.EXE` (126,252), the manual `ST3.DOC` (61,813),
-  `TECH.DOC` (19,399), with the technical specifications of the S3M format, `WHATSNEW.321` (4,457),
-  `FILE_ID.DIZ` (210), an example song, `ARMANI.S3M` (17,554), an example sample, `EXAMPLE.SMP`
-  (5,412), and `FCINFO17.TXT` (33,345).
-- **Source**: repacked from `scrmt321.zip` in the Internet Archive's
-  [scrmt321_202207](https://archive.org/details/scrmt321_202207) (MD5
-  `b2a1d2e8d907a4b206c18ec9397cd24d`). The eight files here are the same, byte for byte, as those in
-  it. Left out are `FCSITE17.TXT`, Future Crew's list of distribution sites, which FCINFO17.TXT
-  refers to; `SLI2IO`, an advert for the BBSes the archive went through; `SLEDGE.EXE`, a 3,457-byte
-  compressed program; and two empty files. The repacking also lost the file dates, now 19
-  November 2025.
+- **Year**: 1994. `ST3.EXE`, `WHATSNEW.321` and `FILE_ID.DIZ` are dated 25 December 1994, and
+  FCINFO17.TXT, of 6 December 1994, dates version 3.2 that same day.
+- **Contents** (13 files; the ZIP is 183,556): from Future Crew, `ST3.EXE` (126,252), the manual
+  `ST3.DOC` (61,813), `TECH.DOC` (19,399), with the technical specifications of the S3M format,
+  `WHATSNEW.321` (4,457), `FILE_ID.DIZ` (210), an example song, `ARMANI.S3M` (17,554), an example
+  sample, `EXAMPLE.SMP` (5,412), `FCINFO17.TXT` (33,345) and `FCSITE17.TXT` (11,951), the group's
+  list of distribution sites, which FCINFO17.TXT refers to. With them are two BBS adverts,
+  `SLI2IO` (827), a text advert for the SL1210 BBS, which the ZIP's comment advertises too, and
+  `SLEDGE.EXE` (3,457), a small intro for the Sledge Hammer BBS; and two empty files, `!UNZIP-D`
+  and `#GU#AD#V.RC#`. The app runs only `ST3.EXE`.
+- **Source**: `scrmt321.zip` in the Internet Archive's
+  [scrmt321_202207](https://archive.org/details/scrmt321_202207), byte for byte (MD5
+  `b2a1d2e8d907a4b206c18ec9397cd24d`). scene.org's `scrmt321.zip`, in
+  [Future Crew's folder](https://files.scene.org/view/demos/groups/future_crew/other/scrmt321.zip),
+  holds the same thirteen files, stored byte for byte as they are here, with scene.org's notice
+  added and its comment in place of the BBS's.
 - **Terms**: ST3.DOC, section 1.3: "The Scream Tracker is distributed as freeware, and this means
   that you can give it to your friends and distribute it in any way as long as no money is
   involved." FCINFO17.TXT, section 3: "All our demos and programs, except the ones which we have
