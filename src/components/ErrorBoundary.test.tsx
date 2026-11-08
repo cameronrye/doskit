@@ -34,7 +34,7 @@ describe('ErrorBoundary', () => {
   beforeEach(() => {
     childThrows = true;
     vi.clearAllMocks();
-    // React and the boundary log each error they catch, and these errors are expected
+    // React logs each error a boundary catches, and these errors are expected
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -86,6 +86,21 @@ describe('ErrorBoundary', () => {
       'error',
       { errorMessage: 'Render failed', errorName: 'Error' }
     );
+  });
+
+  // The tracker's report is the one line: the console tracker logs the error with its
+  // component stack, as the global handler does for errors outside React
+  it('leaves logging the error to the tracker', () => {
+    render(
+      <ErrorBoundary>
+        <Child />
+      </ErrorBoundary>
+    );
+
+    const ownLines = vi
+      .mocked(console.error)
+      .mock.calls.filter(([first]) => String(first).startsWith('[ErrorBoundary]'));
+    expect(ownLines).toEqual([]);
   });
 
   it('renders the children again on Try Again', () => {

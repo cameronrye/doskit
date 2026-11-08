@@ -47,16 +47,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Log error details for debugging
-    console.error('[ErrorBoundary] Caught error:', error);
-    console.error('[ErrorBoundary] Error info:', errorInfo);
-
     // Update state with error info
     this.setState({
       errorInfo,
     });
 
-    // Track error with error tracking service
+    // The tracker's report is the one line logged for the error: the console tracker logs it
+    // with its component stack
     const tracker = getErrorTracker();
     tracker.captureReactError(error, errorInfo, {
       component: 'ErrorBoundary',
