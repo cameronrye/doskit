@@ -135,7 +135,8 @@ export class JsDosAdapter implements EmulatorAdapter {
       dosProps = Dos(container, options);
     } catch (error) {
       throw new Error(
-        `Failed to initialize js-dos: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to initialize js-dos: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
 

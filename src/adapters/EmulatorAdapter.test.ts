@@ -117,6 +117,17 @@ describe('EmulatorAdapter', () => {
           'Failed to initialize js-dos: Initialization failed'
         );
       });
+
+      it("keeps js-dos's own error as the cause of the one it throws", async () => {
+        const fromJsDos = new Error('Initialization failed');
+        mockDos.mockImplementation(() => {
+          throw fromJsDos;
+        });
+
+        const container = document.createElement('div');
+
+        await expect(adapter.initialize(container, {})).rejects.toHaveProperty('cause', fromJsDos);
+      });
     });
 
     // js-dos 8.3.20 loads its emulators package, emulators.js, through a script tag that its
