@@ -171,6 +171,36 @@ describe('diskLoader', () => {
       );
     });
 
+    // Vite's dev and preview servers answer a missing archive with 200 and index.html,
+    // which js-dos would otherwise start with as an empty C: drive
+    describe('a response that is not a ZIP archive', () => {
+      const failWith = async (response: Response) => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.mocked(globalThis.fetch).mockResolvedValue(response);
+        return loadZipArchive('http://example.com/missing.zip').catch((error: unknown) => error);
+      };
+
+      it('rejects it, naming what came instead', async () => {
+        const error = await failWith(
+          new Response('<!doctype html><html lang="en"></html>', {
+            headers: { 'Content-Type': 'text/html' },
+          })
+        );
+
+        expect(error).toHaveProperty(
+          'message',
+          'Failed to load ZIP: not a ZIP archive (text/html)'
+        );
+        expect(getUserFriendlyError(error).message).toBe('Unable to load the application archive');
+      });
+
+      it('rejects an empty one', async () => {
+        const error = await failWith(new Response(null));
+
+        expect(error).toHaveProperty('message', 'Failed to load ZIP: not a ZIP archive');
+      });
+    });
+
     it('should reject and log when the download fails', async () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       const error = new Error('Network error');

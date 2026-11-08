@@ -66,6 +66,13 @@ async function readBody(
   }
 }
 
+/** How a ZIP archive starts: the signature of its first local file header, "PK\x03\x04" */
+const ZIP_SIGNATURE = [0x50, 0x4b, 0x03, 0x04];
+
+function isZipArchive(data: Uint8Array): boolean {
+  return ZIP_SIGNATURE.every((byte, index) => data[index] === byte);
+}
+
 /** The chunks of a download, joined in one array */
 function joinChunks(chunks: Uint8Array[], length: number): Uint8Array {
   const data = new Uint8Array(length);
@@ -150,6 +157,13 @@ export async function loadZipArchive(
       onProgress?.({ loadedBytes, totalBytes });
     });
     const zipData = joinChunks(chunks, loadedBytes);
+
+    // Vite's dev and preview servers answer a missing archive with 200 and index.html,
+    // which js-dos would start as an empty C: drive
+    if (!isZipArchive(zipData)) {
+      const type = response.headers.get('Content-Type');
+      throw new Error(`Failed to load ZIP: not a ZIP archive${type ? ` (${type})` : ''}`);
+    }
 
     if (import.meta.env.DEV) {
       console.log(`[DiskLoader] Loaded ZIP archive: ${zipUrl} (${zipData.length} bytes)`);
