@@ -86,7 +86,7 @@ For each demo (the full steps, with code, are in [`src/dos-apps/README.md`](../s
 2. **Create Config** - Add config file in `src/dos-apps/`, define DOSBox configuration
 3. **Register App** - Add an entry to `availableApps` in `src/config/apps.config.ts`; the app selector lists every registered app, so its UI needs no change
 4. **Record Its Source** - Give the archive an entry in `public/demos/README.md`: where it comes from, its authors and year, and its terms
-5. **List It** - Add it to the Bundled Applications in `public/llm-full.txt` and to the table above
+5. **List It** - Add it to the Bundled Applications in `public/llms-full.txt` and to the table above
 6. **Test** - Verify demo runs correctly, check audio/video output
 
 ## Available Repositories

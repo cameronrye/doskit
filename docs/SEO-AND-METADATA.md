@@ -109,9 +109,9 @@ Benefits:
 
 ### 4. LLM Discovery Files
 
-#### llm.txt
+#### llms.txt
 
-Location: `/public/llm.txt`
+Location: `/public/llms.txt`
 
 Concise project summary for AI crawlers including:
 
@@ -124,9 +124,9 @@ Concise project summary for AI crawlers including:
 - License and links
 - Browser compatibility
 
-#### llm-full.txt
+#### llms-full.txt
 
-Location: `/public/llm-full.txt`
+Location: `/public/llms-full.txt`
 
 Comprehensive documentation for AI crawlers including:
 
@@ -144,7 +144,7 @@ Comprehensive documentation for AI crawlers including:
 - Contributing guidelines
 - Contact information
 
-The llms.txt proposal (see Resources) names its file `/llms.txt`. DosKit's files are `/llm.txt` and `/llm-full.txt`, so tools that look for the proposal's file name will not find them.
+The llms.txt proposal (see Resources) puts its file at `/llms.txt`, which is where DosKit's summary is, so tools that look for the proposal's file find it; the full documentation is `/llms-full.txt`, next to it. `/llm.txt` and `/llm-full.txt`, the names the two files had before, are short files that point to them.
 
 ### 5. Standard Web Files
 
@@ -216,8 +216,10 @@ public/
 ├── sitemap.xml
 ├── robots.txt
 ├── humans.txt
-├── llm.txt
-└── llm-full.txt
+├── llms.txt
+├── llms-full.txt
+├── llm.txt (points to llms.txt)
+└── llm-full.txt (points to llms-full.txt)
 ```
 
 ### Build Output
@@ -316,7 +318,7 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 
 1. **index.html**: Update meta tags as needed; the build fills in the JSON-LD's `softwareVersion`
 2. **sitemap.xml**: Update lastmod dates when content changes
-3. **llm.txt / llm-full.txt**: Update when features or documentation changes
+3. **llms.txt / llms-full.txt**: Update when features or documentation changes; `llm.txt` and `llm-full.txt` only point to them
 4. **humans.txt**: Update when the team, the tools or the bundled productions change, and set its "Last update" date by hand when you do. It names no versions of DosKit or of its tools, so releases and upgrades need no edit there. Its browser list is written by hand too: keep it to the minimums in the README's [Browser Compatibility](../README.md#browser-compatibility).
 5. **.well-known/security.txt**: Renew `Expires` before it passes, keeping it less than a year ahead
 
@@ -342,8 +344,8 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
    - Use proper Schema.org types
 
 4. **Discovery Files**
-   - Keep llm.txt concise (< 3KB)
-   - Make llm-full.txt comprehensive
+   - Keep llms.txt concise (< 3KB)
+   - Make llms-full.txt comprehensive
    - Update when features change
    - Include relevant keywords
 
