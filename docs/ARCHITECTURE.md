@@ -123,8 +123,8 @@ Picking an app in the selector:
 Apps the URL asks for (deep links, back/forward):
 
 1. **App** reads the app from the URL and passes it to DosPlayerWithApps as `requestedApp`
-2. **DosPlayerWithApps** loads its archive and DOSBox config itself, behind the loading overlay, and switches to the app only once both are in. On a deep link nothing runs before that, so the default DOS prompt never boots first.
-3. **A newer request**, a pick in the selector, or unmounting aborts the load and drops its result. A request also remounts the selector, which aborts any download the selector still runs.
+2. **DosPlayerWithApps** stops whatever is running, the previous app (sound included) or the default DOS prompt, and loads the app's archive and DOSBox config itself, behind the loading overlay. It starts the app only once both are in. Nothing runs before that: a deep link never boots the default DOS prompt first, and the footer shows Loading. A request for the app already running changes nothing.
+3. **A newer request**, a pick in the selector, or unmounting aborts the load and drops its result. A request also remounts the selector, which aborts any download the selector still runs. A request that returns to the app the load stopped loads that app again.
 4. **Once loaded**, the app runs as in steps 6 and 7 above. DosPlayerWithApps reports it to App, which finds the URL already in place and adds no history entry.
 
 If a requested app fails to load, the error overlay shows why, and its Try Again boots the default DOS prompt and opens the selector. See [ERROR-HANDLING.md](ERROR-HANDLING.md) for the errors each step can show.
@@ -135,7 +135,7 @@ If a requested app fails to load, the error overlay shows why, and its Try Again
 
 - **One URL form**: An app's URL is `/?app=<id>`, with the app's id written without hyphens (`/?app=secondreality`). App also accepts the hyphenated id, any letter case, and the path form `/secondreality`, and rewrites them to that form without a new history entry.
 - **Path-style links on GitHub Pages**: GitHub Pages answers a path it has no file for with `404.html`. The build emits `404.html` as a copy of `index.html` (`githubPagesSpaFallback` in `vite.config.ts`), so the app boots there and rewrites the URL. The Vite dev and preview servers fall back to `index.html` themselves.
-- **History**: Picking an app pushes a history entry. Back and forward run whatever the URL then names; the start page stops the running app and opens the selector over the default DOS prompt.
+- **History**: Picking an app pushes a history entry. Back and forward run whatever the URL then names, stopping the running app as soon as the new one starts loading; the start page stops the running app and opens the selector over the default DOS prompt.
 - **Unknown ids**: An `?app=` value that names no app shows a dismissible banner, drops the parameter from the URL without a new history entry, and opens the selector over the default DOS prompt. A path that names no app, such as `/index.html`, is just the start page.
 
 ### State Management
@@ -169,7 +169,7 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 />
 ```
 
-`onAppChange` reports each app that starts running, picked or requested, and `null` after Try Again. `onExit` is called once per `onReady`: when DOS exits, or as soon as unmounting stops a ready player, so the footer shows Loading while the next app boots.
+`onAppChange` reports each app that starts running, picked or requested, and `null` after Try Again. `onExit` is called once per `onReady`: when DOS exits, or as soon as unmounting stops a ready player, so the footer shows Loading while the next app boots, and, for an app the URL asks for, while it downloads.
 
 ## Key Features
 
