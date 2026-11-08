@@ -110,9 +110,15 @@
   font-family: inherit;
 }
 
+/* White on purple: the page's own focus ring, #646cff, hardly shows against it */
+.update-notification-button:focus {
+  outline-color: white;
+}
+
 .update-notification-button-primary {
   background-color: white;
-  color: #667eea;
+  /* The prompt's purple, darkened to keep a 4.5:1 contrast on white */
+  color: #4c5fd5;
 }
 
 .update-notification-button-primary:hover {

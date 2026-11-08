@@ -6,7 +6,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { UpdateNotification } from './UpdateNotification';
-import { classesIn, keyframesIn, readStylesheets, styles } from '../test/stylesheets';
+import {
+  applyStylesheet,
+  classesIn,
+  contrastRatio,
+  keyframesIn,
+  readStylesheets,
+  styles,
+} from '../test/stylesheets';
 
 describe('UpdateNotification', () => {
   let mockRegistration: ServiceWorkerRegistration;
@@ -466,6 +473,20 @@ describe('UpdateNotification', () => {
       expect(
         classesIn(sheets.get(OWN)!).filter((name) => styles(sheets.get('js-dos.css')!, name))
       ).toEqual([]);
+    });
+
+    it("keeps Update Now's label readable, at 4.5:1 against the button", async () => {
+      const sheet = applyStylesheet((await readStylesheets()).get(OWN)!);
+      try {
+        render(<UpdateNotification registration={mockRegistration} />);
+
+        const { color, backgroundColor } = getComputedStyle(
+          screen.getByRole('button', { name: 'Update Now' })
+        );
+        expect(contrastRatio(color, backgroundColor)).toBeGreaterThanOrEqual(4.5);
+      } finally {
+        sheet.remove();
+      }
     });
   });
 

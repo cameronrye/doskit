@@ -6,7 +6,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWA_CONFIG } from '../constants/app';
-import { classesIn, keyframesIn, readStylesheets, styles } from '../test/stylesheets';
+import {
+  applyStylesheet,
+  classesIn,
+  contrastRatio,
+  keyframesIn,
+  readStylesheets,
+  styles,
+} from '../test/stylesheets';
 
 // Type definition for BeforeInstallPromptEvent
 interface BeforeInstallPromptEvent extends Event {
@@ -646,6 +653,23 @@ describe('OfflineIndicator', () => {
       expect(
         classesIn(sheets.get(OWN)!).filter((name) => styles(sheets.get('js-dos.css')!, name))
       ).toEqual([]);
+    });
+
+    it("keeps the Install button's label readable, at 4.5:1 against the button", async () => {
+      const sheet = applyStylesheet((await readStylesheets()).get(OWN)!);
+      vi.useFakeTimers();
+      try {
+        render(<OfflineIndicator />);
+        offerInstall();
+
+        const { color, backgroundColor } = getComputedStyle(
+          screen.getByRole('button', { name: 'Install' })
+        );
+        expect(contrastRatio(color, backgroundColor)).toBeGreaterThanOrEqual(4.5);
+      } finally {
+        vi.useRealTimers();
+        sheet.remove();
+      }
     });
   });
 
