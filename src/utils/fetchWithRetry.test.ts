@@ -103,6 +103,132 @@ describe('fetchWithRetry', () => {
     });
   });
 
+  describe('retries', () => {
+    const serverError = () =>
+      vi.fn(async () => new Response(null, { status: 503, statusText: 'Service Unavailable' }));
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    it.each([408, 429, 500, 502, 503, 504])('retries status %i by default', async (status) => {
+      const fetchMock = vi.fn(async () => new Response(null, { status }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const response = fetchWithRetry('/demos/x.zip');
+      await vi.runAllTimersAsync();
+
+      expect((await response).status).toBe(status);
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    });
+
+    it('tells onRetry the attempt, the error and the delay before each retry', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0);
+      vi.stubGlobal('fetch', serverError());
+      const onRetry = vi.fn();
+
+      const response = fetchWithRetry('/demos/x.zip', undefined, { maxRetries: 2, onRetry });
+      await vi.runAllTimersAsync();
+      await response;
+
+      expect(onRetry.mock.calls).toEqual([
+        [1, expect.objectContaining({ message: 'HTTP 503 Service Unavailable' }), 1000],
+        [2, expect.objectContaining({ message: 'HTTP 503 Service Unavailable' }), 2000],
+      ]);
+    });
+
+    it('waits the delay before each retry', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0);
+      const fetchMock = serverError();
+      vi.stubGlobal('fetch', fetchMock);
+
+      fetchWithRetry('/demos/x.zip', undefined, { maxRetries: 1 }).catch(() => {});
+      await vi.advanceTimersByTimeAsync(999);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('doubles the delay each time, up to maxDelay', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0);
+      vi.stubGlobal('fetch', serverError());
+      const onRetry = vi.fn();
+
+      const response = fetchWithRetry('/demos/x.zip', undefined, {
+        maxRetries: 4,
+        maxDelay: 5000,
+        onRetry,
+      });
+      await vi.runAllTimersAsync();
+      await response;
+
+      expect(onRetry.mock.calls.map(([, , delay]) => delay)).toEqual([1000, 2000, 4000, 5000]);
+    });
+
+    // So that many clients do not retry in step
+    it('adds up to 30% at random to each delay', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.99);
+      vi.stubGlobal('fetch', serverError());
+      const onRetry = vi.fn();
+
+      const response = fetchWithRetry('/demos/x.zip', undefined, { maxRetries: 3, onRetry });
+      await vi.runAllTimersAsync();
+      await response;
+
+      expect(onRetry.mock.calls.map(([, , delay]) => delay)).toEqual([1297, 2594, 5188]);
+    });
+
+    it('rejects at once when aborted during the wait, and tries no more', async () => {
+      const fetchMock = serverError();
+      vi.stubGlobal('fetch', fetchMock);
+      const controller = new AbortController();
+      const failed = vi.fn();
+      fetchWithRetry('/demos/x.zip', undefined, { signal: controller.signal }).catch(failed);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      controller.abort();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(failed).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Operation aborted' })
+      );
+      await vi.runAllTimersAsync();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('the signal fetch gets', () => {
+    it("is the options' signal", async () => {
+      const fetchMock = vi.fn(async () => new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+      const controller = new AbortController();
+
+      await fetchWithRetry('/demos/x.zip', { method: 'GET' }, { signal: controller.signal });
+
+      expect(fetchMock).toHaveBeenCalledWith('/demos/x.zip', {
+        method: 'GET',
+        signal: controller.signal,
+      });
+    });
+
+    it("is the init's signal when the options give none", async () => {
+      const fetchMock = vi.fn(async () => new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+      const controller = new AbortController();
+
+      await fetchWithRetry('/demos/x.zip', { signal: controller.signal });
+
+      expect(fetchMock).toHaveBeenCalledWith('/demos/x.zip', { signal: controller.signal });
+    });
+  });
+
   it('does not retry an aborted request', async () => {
     // Browsers reject with a DOMException that inherits from Error. jsdom's
     // DOMException does not, so build the browser-shaped equivalent.
