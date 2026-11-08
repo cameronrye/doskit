@@ -796,45 +796,73 @@ describe('App', () => {
   });
 
   describe('Leaving the page', () => {
-    /** Fire the beforeunload a close, reload or Ctrl+W of the tab fires; true if App asked */
-    function leavePage(): boolean {
+    const tracker: DosApp = { ...mockApp, id: 'tracker', warnBeforeLeaving: true };
+
+    /**
+     * Fire the beforeunload a close, reload or Ctrl+W of the tab fires, with the returnValue
+     * Chrome and Edge before 119 ask on
+     * @returns Whether App asked, both ways
+     */
+    function leavePage() {
       const event = new Event('beforeunload', { cancelable: true });
+      Object.defineProperty(event, 'returnValue', { value: undefined, writable: true });
       window.dispatchEvent(event);
-      return event.defaultPrevented;
+      return { prevented: event.defaultPrevented, returnValue: event.returnValue as unknown };
+    }
+    const asked = { prevented: true, returnValue: true };
+    const notAsked = { prevented: false, returnValue: undefined };
+
+    /** Report an app as running, its player ready, as DosPlayerWithApps does */
+    function runApp(app: DosApp) {
+      reportApp(app);
+      fireEvent.click(screen.getByText('Report Ready'));
     }
 
     it('asks before the page goes while an app that warns about it runs', () => {
       render(<App />);
 
-      reportApp({ ...mockApp, warnBeforeLeaving: true });
+      runApp(tracker);
 
-      expect(leavePage()).toBe(true);
+      expect(leavePage()).toEqual(asked);
+    });
+
+    // Nothing has run yet, or nothing runs: nothing can be lost
+    it.each([
+      ['downloads, or its emulator starts', 'Report Loading'],
+      ['failed to load or start', 'Report Error'],
+    ])('lets the page go while that app %s', (_, report) => {
+      render(<App />);
+      runApp(tracker);
+
+      fireEvent.click(screen.getByText(report));
+
+      expect(leavePage()).toEqual(notAsked);
     });
 
     it('lets the page go while an app runs that does not warn about it', () => {
       render(<App />);
 
-      reportApp(mockApp);
+      runApp(mockApp);
 
-      expect(leavePage()).toBe(false);
+      expect(leavePage()).toEqual(notAsked);
     });
 
     it('stops asking once another app replaces the one that warns', () => {
       render(<App />);
-      reportApp({ ...mockApp, warnBeforeLeaving: true });
+      runApp(tracker);
 
-      reportApp({ ...mockApp, id: 'another-app' });
+      runApp({ ...mockApp, id: 'another-app' });
 
-      expect(leavePage()).toBe(false);
+      expect(leavePage()).toEqual(notAsked);
     });
 
     it('stops asking once the default DOS prompt replaces the app that warns', () => {
       render(<App />);
-      reportApp({ ...mockApp, warnBeforeLeaving: true });
+      runApp(tracker);
 
       act(() => (window as WindowWithTestCallbacks).__dosCallbacks?.onAppChange?.(null));
 
-      expect(leavePage()).toBe(false);
+      expect(leavePage()).toEqual(notAsked);
     });
   });
 
