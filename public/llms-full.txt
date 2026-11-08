@@ -42,7 +42,7 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
 - **Audio Support**: Sound Blaster and AdLib emulation with proper audio output
 - **Responsive Design**: Optimized layouts for desktop, tablet, and mobile devices
-- **Touch Controls**: Mobile-friendly on-screen keyboard for touch devices
+- **Touch Controls**: On-screen keyboard in the js-dos sidebar; phones and tablets get DosKit's compact layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key
 - **Type-Safe Development**: Full TypeScript support with comprehensive type definitions
 - **Service Worker Caching**: Emulator files and application archives stay cached across deploys until js-dos or the archives change, and so do the bundles a deploy leaves unchanged
 
@@ -326,14 +326,12 @@ Available options:
 
 ### Mobile Configuration
 
-DosKit detects mobile devices by their user agent and applies `mobileJsDosConfig` from `src/config/jsdos.config.ts`, which gives the on-screen keyboard (the keyboard button in the js-dos sidebar) a layout of its own in place of js-dos's two:
-- Esc, F1, F2, F3 and F5
-- 1 to 5
-- The left-hand letters q w e r t, a s d f g and z x c v b
-- Ctrl, Alt, Space and Enter
-- The arrow keys, labeled ↑ ↓ ← →
+DosKit detects mobile devices by their user agent and applies `mobileJsDosConfig` from `src/config/jsdos.config.ts`, which gives the on-screen keyboard (the keyboard button in the js-dos sidebar) three layouts. The ⎘ key on each switches to the next, and from the last back to the first:
+1. DosKit's compact layout, shown first: Esc, F1, F2, F3 and F5; 1 to 5 and Backspace; the left-hand letters q w e r t, a s d f g and z x c v b; ⎘, Ctrl, Alt, Space and Enter; and the arrow keys
+2. js-dos's full keyboard: every letter and digit, Esc, Tab, Shift, Ctrl, Alt, Space, Backspace, Enter, the arrow keys and ` - = ( ) { } [ ] \ ; : ' , . /
+3. js-dos's function-key layout: F1 to F12, Esc, 0 to 9, { } ( ), Shift, Ctrl, Alt, Space, PgUp, PgDown, Backspace, Del, Tab, the arrow keys, a keypad whose digits but 5 and 0 are labeled as arrows, and - + . Enter
 
-It has no Backspace and no key to switch layouts. Its larger `scaleControls` only scales the touch controls a js-dos bundle defines, and DosKit's applications define none. Safari on iPadOS identifies itself as a Mac by default, so an iPad in Safari gets the desktop settings and js-dos's own layouts.
+All three label their keys as js-dos does (␛ Esc, ⌫ Backspace, ↵ Enter, ⇑ Shift). js-dos presses nothing for the \ and / keys of its own full keyboard, and keypad 0 for its ` key, so DosKit's copy names those keys Ü, ¿ and À, which js-dos presses as \ / and `, and labels them \ / and `. It leaves out js-dos's En/Ru key, which switches the labels to Russian. Safari on iPadOS identifies itself as a Mac by default, so an iPad in Safari gets the desktop settings and js-dos's own two layouts, the function-key layout first.
 
 ## Usage
 
@@ -600,7 +598,7 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 | Touch Controls | N/A | N/A | N/A | N/A | Partial |
 | Offline Mode | Yes | Yes | Yes | Yes | Yes |
 
-Touch Controls are partial on mobile because DosKit's on-screen keyboard layout there has only some of the keys (see Mobile Configuration).
+Touch Controls are partial on mobile because js-dos draws the on-screen keyboard inside the player, under the DOS screen, without scrolling, so on a short player the bottom rows of a layout are cut off: on an upright phone the size of an iPhone 13, the last rows of the function-key layout's keypad, and held sideways, the bottom rows of the compact layout too. The fullscreen button in the js-dos sidebar gives the player the whole window, where every layout fits on such a phone. js-dos's own layouts, which desktop browsers and iPads in Safari get, press nothing for their \ and / keys and keypad 0 for `.
 
 ## Troubleshooting
 

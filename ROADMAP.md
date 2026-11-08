@@ -543,7 +543,7 @@ interface AudioRecorder {
 
 **Impact**: MEDIUM | **Effort**: MEDIUM
 
-**Status**: Mobile devices get an on-screen keyboard layout of their own, with common DOS keys (`mobileJsDosConfig` in `src/config/jsdos.config.ts`); the enhancements below are open.
+**Status**: Mobile devices get DosKit's compact on-screen keyboard layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key (`mobileJsDosConfig` in `src/config/jsdos.config.ts`); the enhancements below are open.
 
 **Enhancements**:
 

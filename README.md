@@ -24,7 +24,7 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
 - **Audio Support**: Sound Blaster and AdLib emulation with proper audio output
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
-- **Touch Controls**: On-screen keyboard in the js-dos sidebar, with a smaller layout of its own on phones and tablets (see [Mobile Configuration](#mobile-configuration))
+- **Touch Controls**: On-screen keyboard in the js-dos sidebar. Phones and tablets get DosKit's compact layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key (see [Mobile Configuration](#mobile-configuration))
 - **Type-Safe**: Full TypeScript support with comprehensive type definitions
 - **Service Worker Caching**: Fast loading with intelligent cache management
 
@@ -405,17 +405,15 @@ DosPlayer sets `dosboxConf` (from its prop of that name) and `onEvent` itself, s
 
 ### Mobile Configuration
 
-DosKit detects phones and tablets by their user agent and applies `mobileJsDosConfig` from `src/config/jsdos.config.ts`. It gives the on-screen keyboard, which the keyboard button in the js-dos sidebar opens, a layout of its own:
+DosKit detects phones and tablets by their user agent and applies `mobileJsDosConfig` from `src/config/jsdos.config.ts`. It gives the on-screen keyboard, which the keyboard button in the js-dos sidebar opens, three layouts. The ⎘ key on each switches to the next, and from the last back to the first:
 
-- Esc, F1, F2, F3 and F5
-- 1 to 5
-- The left-hand letters: q w e r t, a s d f g and z x c v b
-- Ctrl, Alt, Space and Enter
-- The arrow keys, labeled ↑ ↓ ← →
+1. **DosKit's compact layout**, shown first: Esc, F1, F2, F3 and F5; 1 to 5 and Backspace; the left-hand letters q w e r t, a s d f g and z x c v b; ⎘, Ctrl, Alt, Space and Enter; and the arrow keys
+2. **js-dos's full keyboard**: every letter and digit, Esc, Tab, Shift, Ctrl, Alt, Space, Backspace, Enter, the arrow keys and `` ` - = ( ) { } [ ] \ ; : ' , . / ``
+3. **js-dos's function-key layout**: F1 to F12, Esc, 0 to 9, `{ } ( )`, Shift, Ctrl, Alt, Space, PgUp, PgDown, Backspace, Del, Tab, the arrow keys, a keypad whose digits but 5 and 0 are labeled as arrows, and `-`, `+`, `.` and Enter
 
-It takes the place of both of js-dos's layouts: one of function keys, digits, arrows and a keypad, and a full keyboard that its ⎘ key switches to. It has no Backspace and no key to switch layouts. `mobileJsDosConfig` also sets a larger `scaleControls`, which only scales the touch controls a js-dos bundle defines, and DosKit's apps define none.
+All three label their keys as js-dos does, such as ␛ for Esc, ⌫ for Backspace, ↵ for Enter and ⇑ for Shift. js-dos presses nothing for the `\` and `/` keys of its own full keyboard, and keypad 0 for its `` ` `` key, so DosKit's copy names those three keys `Ü`, `¿` and `À`, which js-dos presses as `\`, `/` and `` ` ``, and labels them `\`, `/` and `` ` ``. It leaves out js-dos's En/Ru key, which switches the labels to Russian.
 
-Safari on iPadOS identifies itself as a Mac by default, so an iPad in Safari gets the desktop settings and js-dos's own layouts.
+Safari on iPadOS identifies itself as a Mac by default, so an iPad in Safari gets the desktop settings and js-dos's own two layouts, the function-key layout first.
 
 ## Usage
 
@@ -587,7 +585,8 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 ### Known Limitations
 
 - **Older browsers** (before Chrome 98, Firefox 94 or Safari 15.4): no `structuredClone()`, which js-dos's player calls once a second, so each call ends in an error
-- **On-screen keyboard on phones**: DosKit's layout has only some of the keys (see [Mobile Configuration](#mobile-configuration)), so a command such as `dir` cannot be typed on it, while `ver`, `cd` and `set` can
+- **On-screen keyboard on phones**: js-dos draws it inside the player, under the DOS screen, and it does not scroll, so on a short player the bottom rows of a layout are cut off. Upright, a phone the size of an iPhone 13 loses the last three rows of the function-key layout's keypad, and held sideways, the bottom rows of the compact layout too. The fullscreen button in the js-dos sidebar gives the player the whole window, where every layout fits on such a phone either way up
+- **js-dos's own keyboard layouts**, which desktop browsers and iPads in Safari get (see [Mobile Configuration](#mobile-configuration)): their `\` and `/` keys press nothing, and their `` ` `` key presses keypad 0
 - **Internet Explorer**: Not supported (no WebAssembly)
 - **Older Android browsers**: May have performance issues
 - **Keyboard Lock API**: Only supported in Chrome/Edge (not critical for functionality)
@@ -671,7 +670,7 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 3. Check mobile configuration is applied
 4. Try portrait and landscape orientations
 5. Refresh the page
-6. If you changed `softKeyboardLayout` in `src/config/jsdos.config.ts`, check its form. It is a list of rows, each a string of js-dos key names separated by spaces, such as `'{esc} {f1} q w e'`, or a list of layouts, each a list of columns of such rows; `SoftKeyboardLayout` in `src/types/js-dos.d.ts` lists the key names. A list of lists of key names makes opening the keyboard throw `TypeError: e.map is not a function`, and a key js-dos has no name for, such as `Esc`, `F1`, `Ctrl`, `/` or `\`, presses nothing. `softKeyboardSymbols` labels keys by their names, as in `{ '{up}': '↑' }`.
+6. If you changed `softKeyboardLayout` in `src/config/jsdos.config.ts`, check its form. It is a list of rows, each a string of js-dos key names separated by spaces, such as `'{esc} {f1} q w e'`, or a list of layouts, each a list of columns of such rows; `SoftKeyboardLayout` in `src/types/js-dos.d.ts` lists the key names, and `JS_DOS_KEYS` in `src/config/jsdos.config.test.ts` gives what each one presses. A list of lists of key names makes opening the keyboard throw `TypeError: e.map is not a function`. With several layouts, each needs a `{layout}` key (⎘ in DosKit's labels), which switches to the next one, and from the last back to the first. A name js-dos does not know, such as `Esc`, `F1` or `Ctrl` without braces, presses nothing, and so do `\` and `/`, while `` ` `` presses keypad 0: the names `Ü`, `¿` and `À` press `\`, `/` and `` ` ``, and need labels, as `src/config/jsdos.config.ts` gives them. `softKeyboardSymbols` labels keys by their names, as in `{ '{up}': '↑' }`.
 
 #### Service Worker Not Updating
 
