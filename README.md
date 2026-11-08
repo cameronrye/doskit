@@ -129,9 +129,9 @@ The service worker (`public/sw.js`) is registered by production builds only, so 
 
 - **On install**, the worker stores the app shell (`index.html`, the manifest, the logo and favicon, and every JS and CSS bundle, including the chunks loaded on demand) and, in a cache of their own, js-dos's player (`js-dos.js`, `js-dos.css`) and the emulator files of its default DOSBox backend. It serves js-dos's files from there and never refreshes them, so a page always gets the player and the emulator files of the same js-dos version.
 - **App archives** (`/demos/<id>.zip`) are stored the first time each app is opened while the service worker runs. On a first visit, an app opened before the worker has started, such as a deep link's, is stored the next time it is opened. An app not stored yet cannot start offline: while the browser reports being offline, it fails at once with "This application isn't available offline yet", and opening it once online stores it.
-- **While offline**, a banner at the top says so: the applications you have opened while online still work, and the others need a connection to load. It appears when the connection drops while DosKit is open (a page opened offline shows only the footer's **Offline** badge), can be closed, and goes away when the connection returns, with a **Back online** notice for 3 seconds.
+- **While offline**, a banner at the top says so, and screen readers announce it: the applications you have opened while online still work, and the others need a connection to load. It appears when the connection drops while DosKit is open and on a page opened offline, moves the header down below it, can be closed, and goes away when the connection returns, with a **Back online** notice at the top for 3 seconds. In windows under 500px tall it keeps to one line.
 - **Pages** come from the network. When the network fails or takes more than 5 seconds, every URL gets the `index.html` stored on install, so a URL never visited online, such as a new deep link, opens too. Pages are not stored as they are visited.
-- **Deploys**: each build has an app shell cache of its own, which replaces the previous one when the new version takes over. Bundles are named after their content, and install copies those the previous version's cache holds under the same name, so of the bundles a new version downloads only those it changed. js-dos's player and emulator files stay cached until the js-dos version changes, and an update waiting to take over cannot change them under an open page. App archives stay cached until an archive is added, changed or removed.
+- **Deploys**: the app shell cache is named after a hash of what the build made, every file the site serves and the worker, so a deploy that changes any of them installs a new worker with a cache of its own, which replaces the previous one when the new version takes over, and a deploy that changes none of them, such as one that only changes `README.md`, installs nothing and offers no update. Bundles are named after their content, and install copies those the previous version's cache holds under the same name, so of the bundles a new version downloads only those it changed. js-dos's player and emulator files stay cached until the js-dos version changes, and an update waiting to take over cannot change them under an open page. Pages come from the network, though, so until the new version takes over, a page loaded under the previous one gets the new `index.html` and bundles with the previous js-dos: after a deploy that upgrades js-dos, such a page runs the new app on the old js-dos. App archives stay cached until an archive is added, changed or removed; the version that does so drops them all as it takes over, and each is downloaded again the next time it is opened.
 
 DOSBox-X is not precached: DosKit starts js-dos without its backend picker, so every app runs on the default backend.
 
@@ -182,6 +182,7 @@ doskit/
 ├── public/                        # Static files, copied into the build as they are
 │   ├── demos/                     # The apps' ZIP archives (sources and terms in its README)
 │   ├── icons/                     # PWA icons
+│   ├── licenses/                  # Licenses of js-dos, DOSBox, DOSBox-X and libzip, with their sources
 │   ├── manifest.json              # PWA manifest
 │   ├── sw.js                      # Service worker
 │   ├── llms.txt                   # Summary and links for language models (llmstxt.org)
@@ -192,10 +193,12 @@ doskit/
 ├── scripts/
 │   ├── copy-js-dos.js             # Copies js-dos into public/ before dev and build
 │   ├── inject-sw-version.js       # Writes cache names and the precache list into dist/sw.js
+│   ├── check-built-css.js         # CI's check that the built CSS works in the oldest supported browsers
 │   ├── help.js                    # npm run help
 │   ├── generate-icons.js          # PWA icons from logo.svg
 │   ├── generate-social-images.js  # Social preview PNGs from their SVGs
-│   └── *.test.js                  # Tests of these scripts, the service worker, 404.html and robots.txt
+│   └── *.test.js                  # Tests of these scripts, the service worker, 404.html, robots.txt,
+│                                  # the licenses page, the icons, index.html's metadata and the ESLint config
 ├── src/
 │   ├── adapters/                  # Emulator adapter around js-dos's window.Dos()
 │   ├── components/                # React components
@@ -209,7 +212,8 @@ doskit/
 │   │   └── *.css                  # Component styles
 │   ├── config/                    # Configuration files
 │   │   ├── apps.config.ts         # The apps in the selector
-│   │   ├── apps.config.test.ts    # Checks every app's archive and DOSBox configuration
+│   │   ├── apps.config.test.ts    # Checks every app's archive, its entry in public/demos/README.md
+│   │   │                          # and its DOSBox configuration
 │   │   ├── dosbox.conf.ts         # DOSBox configuration of the DOS prompt
 │   │   └── jsdos.config.ts        # js-dos settings (desktop and mobile)
 │   ├── constants/                 # PWA and UI constants
@@ -217,7 +221,7 @@ doskit/
 │   ├── hooks/
 │   │   └── useDosEmulator.ts      # Starts and stops js-dos
 │   ├── integration/               # Integration tests
-│   ├── test/setup.ts              # Test setup
+│   ├── test/                      # Test setup, and the stylesheets the style tests read
 │   ├── types/                     # TypeScript type definitions
 │   │   ├── dos-app.ts             # DosApp
 │   │   ├── js-dos.d.ts            # js-dos type definitions
@@ -229,6 +233,7 @@ doskit/
 │   │   ├── errorTracking.ts       # Error tracking (logs to the console)
 │   │   ├── fetchWithRetry.ts      # Retries failed requests with backoff
 │   │   ├── globalErrorHandler.ts  # Uncaught errors and unhandled rejections
+│   │   ├── keysAroundDos.ts       # Keeps the keys pressed on DosKit's controls from js-dos
 │   │   ├── logger.ts              # Logger
 │   │   ├── serviceWorkerRegistration.ts
 │   │   ├── storage.ts             # localStorage that never throws
@@ -237,7 +242,7 @@ doskit/
 │   ├── App.tsx                    # Main application component
 │   ├── App.css                    # Application styles
 │   ├── main.tsx                   # Application entry point
-│   ├── main.test.tsx              # Checks main.tsx's service worker callbacks
+│   ├── main.test.tsx              # Checks main.tsx's update prompt and error handler
 │   ├── index.css                  # Global styles
 │   └── vite-env.d.ts              # Types of the build-time constants
 ├── .gitignore
@@ -327,9 +332,9 @@ DosKit is configured for automatic deployment to GitHub Pages.
 3. **Monitor deployment**: Check the Actions tab
 4. **Visit your site**: `https://doskit.net/` for this repository
 
-Every push to `main` starts the Deploy to GitHub Pages workflow (`.github/workflows/deploy.yml`), which can also be run by hand from the Actions tab. It runs the CI jobs from `ci.yml` (ESLint and the format check, the tests with coverage, the build, the type check, and an `npm audit` that only reports) and a production build of its own, and deploys that build only if both succeed. Pull requests to `main` run the same CI jobs.
+Every push to `main` starts the Deploy to GitHub Pages workflow (`.github/workflows/deploy.yml`), which can also be run by hand from the Actions tab. It runs the CI jobs from `ci.yml` (ESLint and the format check, the tests with coverage, the build and a check that its CSS works in the oldest supported browsers, the type check, and `npm audit`, which fails on a high or critical advisory in a production dependency and only reports on the rest) and a production build of its own, and deploys that build only if both succeed. Pull requests to `main` run the same CI jobs.
 
-The build also writes `dist/404.html`, a copy of `index.html`. GitHub Pages serves it for any path it has no file for, so path-style links such as `https://doskit.net/secondreality` start the app, which rewrites them to `/?app=secondreality`.
+The build also writes `dist/404.html`, a copy of `index.html`. GitHub Pages serves it for any path it has no file for, so path-style links such as `https://doskit.net/secondreality` start the app, which rewrites them to `/?app=secondreality`. They come with a 404 status, though, as every path GitHub Pages has no file for does, while `/?app=` links come with a 200.
 
 DosKit has to be served from the root of its domain: `vite.config.ts` sets `base: '/'`, and the bundles, the service worker, js-dos and the app archives are all requested by absolute paths. A fork needs a custom domain or a `<user>.github.io` repository; it does not work under a project path such as `https://<user>.github.io/doskit/`.
 
@@ -792,10 +797,13 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ### Third-Party Licenses
 
+The site serves js-dos and its emulators, which come with licenses of their own. The footer's **Licenses** link opens [/licenses/](https://doskit.net/licenses/) (`public/licenses/`), which gives each of these licenses, with the text of the GPL-2.0, and links the source of the exact versions the site serves; the build adds the licenses of the npm packages bundled into the app's scripts, as `third-party-licenses.txt`. Offline, the link opens DosKit's start page instead: the service worker does not store the licenses page.
+
 - **js-dos**: GPL-2.0 License - https://github.com/caiiiycuk/js-dos
+- **DOSBox** and **DOSBox-X**, compiled to WebAssembly in js-dos's emulators package (GPL-2.0): GPL, version 2 or later
+- **libzip**, in the same WebAssembly files: BSD-3-Clause License
 - **React**: MIT License
 - **retro-floppy**: MIT License
-- **DOSBox**: GPL-2.0 License
 - **Demos and trackers**: [public/demos/README.md](public/demos/README.md) records each archive's source and the terms its authors gave it, or that none were found
 
 ## Contributing
