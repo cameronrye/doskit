@@ -110,7 +110,7 @@ ErrorBoundary (main.tsx)
     │       ├── DemoSelector (modal)
     │       │   └── App selection UI
     │       ├── Loading overlay
-    │       ├── Error overlay
+    │       ├── Error overlay (Try Again, Choose Another Application)
     │       └── DosPlayer (useDosEmulator hook + DosPlayerUI)
     │           └── js-dos emulator instance
     └── Footer (Ready/Loading and Online/Offline badges)
@@ -150,7 +150,7 @@ UpdateNotification is not part of this tree: src/utils/updatePrompt.ts mounts it
 - **Global handler** (src/utils/globalErrorHandler.ts): logs uncaught errors and unhandled promise rejections, and keeps known harmless ones out of the console: js-dos's fullscreen and keyboard lock calls that fail without a user gesture, keyboard lock requests that a newer one superseded (two players starting milliseconds apart), ResizeObserver loop notices and browser extension errors
 - **Error tracking** (src/utils/errorTracking.ts): a console tracker; no remote service is set up
 - **Downloads**: application archives retry network failures and 408, 429, 500, 502, 503 and 504 responses up to three times with exponential backoff, but a network failure while the browser reports being offline fails at once; a download the user cancels, or a newer navigation supersedes, is not reported as an error
-- **Messages**: the selector and the error box of a deep link explain a failed load with the same messages (cannot connect, not available offline yet, file not found, server unavailable, took too long), with the technical message under a collapsed Details line; an unknown `?app=` id shows a banner; the deep link's Try Again returns to the selector; and the player offers a reload when js-dos cannot start
+- **Messages**: the selector and the error box of an application the URL asks for (a deep link, or Back and Forward) explain a failed load with the same messages (cannot connect, not available offline yet, file not found, server unavailable, took too long), with the technical message under a collapsed Details line; an unknown `?app=` id shows a banner; the error box's Try Again, which has the keyboard focus, downloads the application again, and its Choose Another Application opens the selector over the DOS prompt; and the player offers a reload when js-dos cannot start
 
 ## Project Structure
 
@@ -366,7 +366,7 @@ DosKit supports loading specific applications directly via URL parameters:
 Features:
 - Shareable Links: URLs automatically update when you select an app
 - Bookmarkable: Save direct links to your favorite DOS applications
-- Browser Navigation: Back/forward buttons work correctly
+- Browser Navigation: Back and Forward load the application in the URL; the running one stops, sound and all, as soon as the next one starts downloading, and going back to the start URL returns to the DOS prompt with the selector open
 - Refresh-Safe: Page refreshes maintain the loaded application
 - Error Handling: Invalid app IDs in `?app=` show helpful error messages
 - One URL Form: path-style links (`https://doskit.net/secondreality`) and other spellings (`?app=second-reality`) open the same app, and the address bar is rewritten to `/?app=secondreality`
@@ -644,7 +644,7 @@ Touch Controls are partial on mobile because js-dos draws the on-screen keyboard
 #### Application Fails to Load
 - Check internet connection: while the browser reports being online, downloads retry network failures up to three times, and the selector gives up after 30 seconds; while it reports being offline, they fail at once
 - Offline, only applications that have been opened online before can load; any other shows "This application isn't available offline yet", and opening it once online stores it
-- After a failed deep link, Try Again returns to the selector, where the application can be picked again
+- After a failed deep link or Back and Forward, Try Again downloads the application again (offline, for one not stored yet, it fails again at once), and Choose Another Application opens the selector over the DOS prompt
 
 ### Debug Mode
 

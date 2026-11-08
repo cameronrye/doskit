@@ -452,7 +452,7 @@ https://doskit.net/?app=impulsetracker
 - **Shareable Links**: URLs automatically update when you select an app
 - **Bookmarkable**: Save direct links to your favorite DOS applications
 - **Other Forms**: Path-style links such as `https://doskit.net/secondreality`, the id with its hyphens (`?app=second-reality`) and any capitalization work too, and the address bar shows them as `/?app=secondreality`
-- **Browser Navigation**: Back and Forward load the app in the URL. Going back to the start URL stops the running app and returns to the DOS prompt, with the selector open
+- **Browser Navigation**: Back and Forward load the app in the URL. The running app stops, sound and all, as soon as the next one starts downloading, and "Loading application..." shows while it downloads. Going back to the start URL stops the running app and returns to the DOS prompt, with the selector open
 - **Refresh-Safe**: Page refreshes maintain the loaded application
 - **Error Handling**: An unknown `?app=` id shows an "Application not found" banner over the start page and is removed from the address bar; a path that names no app opens the start page
 
@@ -690,7 +690,7 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 
 **Problem**: DOS application files fail to download.
 
-The selector, or the **Error Loading Application** box of a link to the app, says what went wrong. **Details**, under the explanation, shows the technical error for bug reports, such as `Failed to fetch` or `Failed to load ZIP: HTTP 404`.
+The selector, or the **Error Loading Application** box of an app the URL asks for, by a link or by Back and Forward, says what went wrong. **Details**, under the explanation, shows the technical error for bug reports, such as `Failed to fetch` or `Failed to load ZIP: HTTP 404`. In the box, **Try Again**, which has the keyboard focus, downloads the same app again, and **Choose Another Application** returns to the DOS prompt with the selector open; in the selector, **Load Application** tries again.
 
 - **Unable to connect to the server**: a network error while the browser reported being online, after the retries
 - **This application isn't available offline yet**: a network error while the browser reports being offline, for an app whose archive the service worker has not stored (see [How Offline Works](#how-offline-works))
