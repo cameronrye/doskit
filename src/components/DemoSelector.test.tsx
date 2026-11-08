@@ -445,20 +445,37 @@ describe('DemoSelector', () => {
       expect(within(alert).getByText('Details')).toBeVisible();
     });
 
-    it('explains a load that runs past its time limit as a timeout', async () => {
+    it('explains a download that stalled as a timeout, and loads it again on request', async () => {
+      // How loadZipArchive fails when no data arrives for 20 seconds
+      const alert = await failLoading(
+        Object.assign(new Error('Download timed out: no data received for 20 seconds'), {
+          name: 'TimeoutError',
+        })
+      );
+      expect(alert).toHaveTextContent('The request took too long to complete');
+
+      fireEvent.click(screen.getByRole('button', { name: /Load Application/i }));
+
+      await waitFor(() => expect(mockOnSelect).toHaveBeenCalledTimes(1));
+      expect(loadZipArchive).toHaveBeenCalledTimes(2);
+    });
+
+    // loadZipArchive gives up on a download that stalls; one that keeps going may take
+    // minutes on a slow connection
+    it('sets no time limit of its own on a download', async () => {
       vi.useFakeTimers();
       try {
         vi.mocked(loadZipArchive).mockImplementation(() => new Promise(() => {}));
         render(<DemoSelector onSelect={mockOnSelect} />);
         fireEvent.click(getFloppyDiskByName('Second Reality')!);
         fireEvent.click(screen.getByRole('button', { name: /Load Application/i }));
+        await vi.waitFor(() => expect(loadZipArchive).toHaveBeenCalled());
 
-        act(() => vi.advanceTimersByTime(30_000));
+        act(() => vi.advanceTimersByTime(10 * 60_000));
 
-        expect(screen.getByRole('alert')).toHaveTextContent(
-          'The request took too long to complete'
-        );
-        expect(screen.getByRole('button', { name: /Load Application/i })).toBeInTheDocument();
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Cancel Loading/i })).toBeInTheDocument();
+        expect(vi.mocked(loadZipArchive).mock.calls[0]?.[2]?.aborted).toBe(false);
       } finally {
         vi.useRealTimers();
       }

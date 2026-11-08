@@ -9,6 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { loadZipArchive } from './diskLoader';
+import { getUserFriendlyError } from './errorMessages';
 
 // Mock fetch globally
 globalThis.fetch = vi.fn();
@@ -24,6 +25,37 @@ const chunkedResponse = (chunks: number[][], headers?: HeadersInit) =>
     }),
     { headers }
   );
+
+/** A response whose body arrives as the test sends it */
+const openResponse = (headers?: HeadersInit) => {
+  let body!: ReadableStreamDefaultController<Uint8Array>;
+  const response = new Response(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        body = controller;
+      },
+    }),
+    { headers }
+  );
+  return {
+    response,
+    send: (chunk: number[]) => body.enqueue(new Uint8Array(chunk)),
+    end: () => body.close(),
+  };
+};
+
+/** Like fetch, answer only once `answer` is called, and reject once the signal aborts */
+const answerLater = () => {
+  let answer!: (response: Response) => void;
+  vi.mocked(globalThis.fetch).mockImplementation(
+    (_input, init) =>
+      new Promise<Response>((resolve, reject) => {
+        answer = resolve;
+        init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+      })
+  );
+  return (response: Response) => answer(response);
+};
 
 describe('diskLoader', () => {
   beforeEach(() => {
@@ -156,10 +188,12 @@ describe('diskLoader', () => {
         const controller = new AbortController();
         controller.abort();
 
+        // With the signal's own reason, as fetch rejects
         await expect(
           loadZipArchive('http://example.com/archive.zip', undefined, controller.signal)
-        ).rejects.toThrow('Operation aborted');
+        ).rejects.toBe(controller.signal.reason);
         expect(consoleError).not.toHaveBeenCalled();
+        expect(globalThis.fetch).not.toHaveBeenCalled();
       });
 
       it('rejects without logging if aborted during the request', async () => {
@@ -187,6 +221,92 @@ describe('diskLoader', () => {
 
         await expect(download).rejects.toMatchObject({ name: 'AbortError' });
         expect(consoleError).not.toHaveBeenCalled();
+      });
+    });
+
+    // A connection can stay open and deliver nothing, as after a network handover. Slow
+    // downloads that keep receiving data run as long as they need.
+    describe('when nothing arrives for 20 seconds', () => {
+      const failed = vi.fn();
+
+      beforeEach(() => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        failed.mockReset();
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      const expectTimeout = () => {
+        expect(failed).toHaveBeenCalledTimes(1);
+        const error: unknown = failed.mock.calls[0]?.[0];
+        expect(getUserFriendlyError(error).message).toBe('The request took too long to complete');
+        return error;
+      };
+
+      it('fails with a timeout when no response arrives', async () => {
+        answerLater();
+        loadZipArchive('http://example.com/archive.zip').catch(failed);
+
+        await vi.advanceTimersByTimeAsync(19_999);
+        expect(failed).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(1);
+
+        expect(expectTimeout()).toHaveProperty(
+          'message',
+          'Download timed out: no data received for 20 seconds'
+        );
+        // The request itself is abandoned
+        expect(vi.mocked(globalThis.fetch).mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+        expect(console.error).toHaveBeenCalledWith(
+          '[DiskLoader] Error loading ZIP:',
+          expect.objectContaining({ name: 'TimeoutError' })
+        );
+      });
+
+      it('counts again from the response, and from each chunk of the archive', async () => {
+        const answer = answerLater();
+        const { response, send } = openResponse();
+        loadZipArchive('http://example.com/archive.zip').catch(failed);
+
+        await vi.advanceTimersByTimeAsync(15_000);
+        answer(response);
+        await vi.advanceTimersByTimeAsync(15_000);
+        send([80, 75]);
+        await vi.advanceTimersByTimeAsync(19_999);
+        expect(failed).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(1);
+
+        expectTimeout();
+      });
+
+      it('completes a slow download that keeps receiving data', async () => {
+        const { response, send, end } = openResponse();
+        vi.mocked(globalThis.fetch).mockResolvedValue(response);
+        const download = loadZipArchive('http://example.com/archive.zip');
+
+        for (const chunk of [[80, 75], [3, 4], [1], [2]]) {
+          await vi.advanceTimersByTimeAsync(15_000);
+          send(chunk);
+        }
+        await vi.advanceTimersByTimeAsync(15_000);
+        end();
+
+        await expect(download).resolves.toEqual(new Uint8Array([80, 75, 3, 4, 1, 2]));
+      });
+
+      it('still retries a temporary server error first', async () => {
+        vi.mocked(globalThis.fetch)
+          .mockResolvedValueOnce(new Response(null, { status: 503 }))
+          .mockResolvedValueOnce(chunkedResponse([[80, 75, 3, 4]]));
+        const download = loadZipArchive('http://example.com/archive.zip');
+
+        await vi.advanceTimersByTimeAsync(2000);
+
+        await expect(download).resolves.toEqual(new Uint8Array([80, 75, 3, 4]));
+        expect(globalThis.fetch).toHaveBeenCalledTimes(2);
       });
     });
   });

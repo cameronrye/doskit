@@ -34,9 +34,6 @@ interface DemoSelectorProps {
   onCancel?: () => void;
 }
 
-/** Default loading timeout in milliseconds (30 seconds) */
-const LOADING_TIMEOUT_MS = 30000;
-
 /**
  * Count the apps on the first row of the rendered grid. Its auto-fill columns
  * follow the viewport width, so measure on each use. A grid without layout
@@ -128,9 +125,10 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   }, []);
 
   /**
-   * Load an application with a timeout and cancellation support. Takes the app
-   * rather than reading the selection, which a double-click sets in the same
-   * event and is not visible here until the next render.
+   * Load an application, with cancellation support. Takes the app rather than reading
+   * the selection, which a double-click sets in the same event and is not visible here
+   * until the next render. There is no time limit here: the download fails by itself
+   * when no data arrives for a while, however long one that keeps going takes.
    */
   const handleLoadApp = useCallback(
     async (app: DosApp) => {
@@ -144,16 +142,6 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
       setError(null);
       setLoadProgress(null);
 
-      // Set up timeout
-      const timeoutId = setTimeout(() => {
-        if (abortControllerRef.current !== controller) return; // already cancelled/superseded
-        controller.abort();
-        const timedOut = new Error(`Loading timed out after ${LOADING_TIMEOUT_MS / 1000} seconds`);
-        setError(getUserFriendlyError(timedOut, { online: navigator.onLine }));
-        setIsLoading(false);
-        setLoadProgress(null);
-      }, LOADING_TIMEOUT_MS);
-
       try {
         // Use preloaded config if available, otherwise load it
         const configPromise =
@@ -166,7 +154,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
           configPromise,
         ]);
 
-        // Cancelled, timed out, or superseded while loading
+        // Cancelled or superseded while loading
         if (controller.signal.aborted) {
           return;
         }
@@ -178,8 +166,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
           dosboxConf: conf,
         });
       } catch (err) {
-        // Don't show an error for a cancelled or superseded load (a timeout
-        // has already set its own message)
+        // Don't show an error for a cancelled or superseded load
         if (controller.signal.aborted) {
           return;
         }
@@ -188,8 +175,6 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
         setError(getUserFriendlyError(err, { online: navigator.onLine }));
         setIsLoading(false);
         setLoadProgress(null);
-      } finally {
-        clearTimeout(timeoutId);
       }
     },
     [onSelect]
