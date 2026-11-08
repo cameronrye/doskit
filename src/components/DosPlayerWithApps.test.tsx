@@ -155,6 +155,34 @@ function deferredApp(id: string) {
   };
 }
 
+/**
+ * A stylesheet beside this file, read from disk: Vitest keeps imported CSS out of tests.
+ * node:fs comes through importActual, as the tests have the browser's types only.
+ */
+async function readStylesheet(file: string): Promise<string> {
+  const fs = await vi.importActual<{ readFileSync(file: URL, encoding: 'utf8'): string }>(
+    'node:fs'
+  );
+  return fs.readFileSync(new URL(file, import.meta.url), 'utf8');
+}
+
+/** WCAG's contrast ratio between two opaque colours as getComputedStyle gives them */
+function contrastRatio(foreground: string, background: string): number {
+  const luminance = (color: string) => {
+    const [r = 0, g = 0, b = 0, alpha = 1] = (color.match(/[\d.]+/g) ?? []).map(Number);
+    if (alpha < 1) throw new Error(`${color} is not an opaque colour`);
+    const linear = (channel: number) => {
+      const c = channel / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+  };
+  const [lighter = 0, darker = 0] = [luminance(foreground), luminance(background)].sort(
+    (a, b) => b - a
+  );
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 describe('DosPlayerWithApps', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -608,6 +636,23 @@ describe('DosPlayerWithApps', () => {
       expect(screen.getByRole('alert')).toHaveTextContent('The requested file was not found');
       expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
       expect(boots).toEqual([]);
+    });
+
+    // Normal-size text needs 4.5:1. On the page's accent colour, Try Again's white text had
+    // 2.75:1, and 3.12:1 in the light colour scheme.
+    it('draws Try Again in colours of its own, with 4.5:1 contrast between them', async () => {
+      const sheet = document.createElement('style');
+      sheet.textContent = await readStylesheet('DosPlayerWithApps.css');
+      document.head.append(sheet);
+      try {
+        render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+
+        const style = getComputedStyle(await screen.findByRole('button', { name: 'Try Again' }));
+
+        expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+      } finally {
+        sheet.remove();
+      }
     });
 
     it('focuses Try Again when the error appears', async () => {

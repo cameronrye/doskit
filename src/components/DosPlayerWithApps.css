@@ -164,9 +164,11 @@
   margin-top: 1rem;
 }
 
+/* Try Again's white text on a blue of its own, dark enough for it (5:1, and 6:1 on hover):
+   the page's accent colour, lighter, would give it 2.75:1, or 3.12:1 in the light scheme */
 .error-box button {
   padding: 0.75rem 1.5rem;
-  background: var(--color-accent, #4a9eff);
+  background: #1971c2;
   color: white;
   border: 1px solid transparent;
   border-radius: 4px;
@@ -177,7 +179,7 @@
 }
 
 .error-box button:hover {
-  background: var(--color-accent-hover, #3a8eef);
+  background: #1864ab;
   transform: translateY(-1px);
 }
 
