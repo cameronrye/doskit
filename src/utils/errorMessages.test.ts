@@ -147,22 +147,63 @@ describe('getUserFriendlyError', () => {
     expect(getUserFriendlyError(Object.create(null)).message).toBe('An unexpected error occurred');
   });
 
-  it('keeps the technical message in development', () => {
-    // Vitest runs in development mode
-    expect(getUserFriendlyError(new Error('Failed to fetch')).originalError).toBe(
-      'Failed to fetch'
+  // The service worker stores an application's archive the first time it is opened
+  // online; until then, the application cannot load offline
+  describe('for an application loading while the browser is offline', () => {
+    const OFFLINE = {
+      message: "This application isn't available offline yet",
+      suggestion:
+        'Each application works offline once it has been opened while online. Connect to the internet and try again.',
+    };
+
+    it.each(['Failed to fetch', 'NetworkError when attempting to fetch resource.', 'Load failed'])(
+      'explains the network failure "%s" as not stored for offline use yet',
+      (technical) => {
+        expect(getUserFriendlyError(new TypeError(technical), { online: false })).toMatchObject(
+          OFFLINE
+        );
+      }
     );
-    expect(getUserFriendlyError(new Error('Something odd happened')).originalError).toBe(
-      'Something odd happened'
-    );
+
+    it('explains other failures as it would online', () => {
+      const error = new Error('Failed to load ZIP: HTTP 404');
+
+      expect(getUserFriendlyError(error, { online: false }).message).toBe(
+        'The requested file was not found'
+      );
+    });
+
+    // navigator.onLine is true whenever a network interface is up, server or not
+    it('takes only an offline report as offline', () => {
+      expect(
+        getUserFriendlyError(new TypeError('Failed to fetch'), { online: true })
+      ).toMatchObject(CONNECTION);
+      expect(getUserFriendlyError(new TypeError('Failed to fetch'))).toMatchObject(CONNECTION);
+    });
   });
 
-  it.each(['Failed to fetch', 'Something odd happened'])(
-    'leaves the technical message "%s" out in production',
-    (technical) => {
+  // For a details line next to the explanation, and for bug reports
+  describe('the technical message', () => {
+    it('is the error message', () => {
+      expect(getUserFriendlyError(new TypeError('Failed to fetch')).originalError).toBe(
+        'Failed to fetch'
+      );
+      expect(getUserFriendlyError('Something odd happened').originalError).toBe(
+        'Something odd happened'
+      );
+    });
+
+    it('is kept in production builds too', () => {
       vi.stubEnv('DEV', false);
 
-      expect(getUserFriendlyError(new Error(technical)).originalError).toBeUndefined();
-    }
-  );
+      expect(getUserFriendlyError(new Error('Failed to load ZIP: HTTP 404')).originalError).toBe(
+        'Failed to load ZIP: HTTP 404'
+      );
+    });
+
+    it('is left out for a value without text', () => {
+      expect(getUserFriendlyError(undefined).originalError).toBeUndefined();
+      expect(getUserFriendlyError(Object.create(null)).originalError).toBeUndefined();
+    });
+  });
 });

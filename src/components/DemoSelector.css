@@ -189,6 +189,37 @@
   margin-bottom: 1rem;
 }
 
+/* What went wrong, what to do, and the technical message on request */
+.demo-selector .error-message p {
+  margin: 0;
+  color: inherit;
+}
+
+.demo-selector .error-message .error-message-text {
+  font-weight: 600;
+}
+
+.demo-selector .error-message .error-suggestion {
+  margin-top: 0.25rem;
+}
+
+.demo-selector .error-details {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.demo-selector .error-details summary {
+  cursor: pointer;
+}
+
+.demo-selector .error-details code {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
 /* Load Progress */
 .load-progress {
   margin-bottom: 1rem;

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { act, render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { DosPlayerWithApps } from './DosPlayerWithApps';
 import type { DosApp } from '../types/dos-app';
 import type { DosOptions } from '../types/js-dos';
@@ -38,10 +38,11 @@ const mockLoadedApp: LoadedApp = {
   dosboxConf: '[cpu]\ncore=auto',
 };
 
+// Chrome's words for a download that cannot reach the server
 const mockAppWithError: DosApp = {
   ...mockApp,
   id: 'error-app',
-  loader: vi.fn().mockRejectedValue(new Error('Failed to load')),
+  loader: vi.fn().mockRejectedValue(new TypeError('Failed to fetch')),
 };
 
 /**
@@ -396,11 +397,52 @@ describe('DosPlayerWithApps', () => {
 
       render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
-        expect(screen.getByText('Failed to load')).toBeInTheDocument();
-      });
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent('Error Loading Application');
+      // Explained, not the browser's own words
+      expect(alert).toHaveTextContent('Unable to connect to the server');
+      expect(alert).toHaveTextContent('Please check your internet connection and try again.');
       expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+    });
+
+    it('keeps the technical message in a collapsed details line', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+
+      const alert = await screen.findByRole('alert');
+      const technical = within(alert).getByText('Failed to fetch');
+      expect(technical.closest('details')).not.toHaveAttribute('open');
+      expect(technical).not.toBeVisible();
+      expect(within(alert).getByText('Details')).toBeVisible();
+    });
+
+    it('says that the app needs a connection until it has been opened online', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent("This application isn't available offline yet");
+      expect(alert).toHaveTextContent(
+        'Each application works offline once it has been opened while online.'
+      );
+    });
+
+    it('explains an archive the server does not have', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const missing: DosApp = {
+        ...mockApp,
+        id: 'missing-app',
+        loader: vi.fn().mockRejectedValue(new Error('Failed to load ZIP: HTTP 404')),
+      };
+
+      render(<DosPlayerWithApps requestedApp={missing} />);
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'The requested file was not found'
+      );
     });
 
     it('should handle non-Error exceptions during loading', async () => {
@@ -412,9 +454,7 @@ describe('DosPlayerWithApps', () => {
 
       render(<DosPlayerWithApps requestedApp={appWithStringError} />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Failed to load application')).toBeInTheDocument();
-      });
+      expect(await screen.findByRole('alert')).toHaveTextContent('An unexpected error occurred');
     });
 
     it('should show Try Again button on error', async () => {

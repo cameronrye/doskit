@@ -13,8 +13,16 @@ export interface FriendlyError {
   message: string;
   /** What to do about it */
   suggestion?: string;
-  /** The technical message, in development builds */
+  /** The technical message, for a details line and bug reports; absent if it has none */
   originalError?: string;
+}
+
+export interface FriendlyErrorOptions {
+  /**
+   * navigator.onLine when an application failed to load. Only false changes the
+   * explanation: online only means that a network interface is up.
+   */
+  online?: boolean;
 }
 
 type Explanation = Omit<FriendlyError, 'originalError'>;
@@ -26,6 +34,14 @@ interface ErrorMapping extends Explanation {
 const CONNECTION_FAILED: Explanation = {
   message: 'Unable to connect to the server',
   suggestion: 'Please check your internet connection and try again.',
+};
+
+// The service worker stores an application's archive the first time it is opened
+// online, and the application works offline from then on
+const NOT_AVAILABLE_OFFLINE: Explanation = {
+  message: "This application isn't available offline yet",
+  suggestion:
+    'Each application works offline once it has been opened while online. Connect to the internet and try again.',
 };
 
 const TIMED_OUT: Explanation = {
@@ -180,12 +196,14 @@ function errorName(error: unknown): string {
 /**
  * Explain an error by its name and message
  */
-function explain(name: string, text: string): Explanation {
+function explain(name: string, text: string, online: boolean | undefined): Explanation {
   // A cancelled request is an AbortError, whose message need not say so: Chromium's
   // "This request has been superseded by a subsequent lock() method call."
   if (name === 'AbortError') return CANCELLED;
 
-  if (NETWORK_FAILURES.some((pattern) => pattern.test(text))) return CONNECTION_FAILED;
+  if (NETWORK_FAILURES.some((pattern) => pattern.test(text))) {
+    return online === false ? NOT_AVAILABLE_OFFLINE : CONNECTION_FAILED;
+  }
   // Timeouts before aborts: the TimeoutError of AbortSignal.timeout() reads "signal
   // timed out" in browsers, but "The operation was aborted due to timeout" in Node
   if (/time ?out|timed out/i.test(text)) return TIMED_OUT;
@@ -201,14 +219,14 @@ function explain(name: string, text: string): Explanation {
 /**
  * Get user-friendly error message from technical error
  * @param error - The error object or message; can be anything, including undefined
- * @returns User-friendly error message with optional suggestion
+ * @param options - For an application that failed to load: whether the browser was online
+ * @returns User-friendly error message with optional suggestion, and the technical message
  */
-export function getUserFriendlyError(error: unknown): FriendlyError {
+export function getUserFriendlyError(
+  error: unknown,
+  { online }: FriendlyErrorOptions = {}
+): FriendlyError {
   const text = errorText(error);
-  const { message, suggestion } = explain(errorName(error), text);
-  return {
-    message,
-    suggestion,
-    originalError: import.meta.env.DEV ? text : undefined,
-  };
+  const { message, suggestion } = explain(errorName(error), text, online);
+  return { message, suggestion, originalError: text || undefined };
 }

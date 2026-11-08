@@ -13,6 +13,7 @@ import { DemoSelector, type LoadedApp } from './DemoSelector';
 import type { DosApp } from '../types/dos-app';
 import type { CommandInterface } from '../types/js-dos';
 import type { InitFileEntry } from '../types/js-dos';
+import { getUserFriendlyError, type FriendlyError } from '../utils/errorMessages';
 import './DosPlayerWithApps.css';
 
 // Re-export types for use in parent components
@@ -58,7 +59,7 @@ export function DosPlayerWithApps({
   const [loadingApp, setLoadingApp] = useState<DosApp | null>(requestedApp);
   const [requestedId, setRequestedId] = useState(requestedApp?.id ?? null);
   const [showAppSelector, setShowAppSelector] = useState(showSelector);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
 
   // A new request supersedes any load still running for an earlier one. Adjusting state
   // while rendering instead of in an effect:
@@ -87,7 +88,7 @@ export function DosPlayerWithApps({
 
   const showLoadError = useEffectEvent((err: unknown) => {
     console.error('[DosPlayerWithApps] Error loading application:', err);
-    setError(err instanceof Error ? err.message : 'Failed to load application');
+    setError(getUserFriendlyError(err, { online: navigator.onLine }));
     setLoadingApp(null);
   });
 
@@ -170,9 +171,16 @@ export function DosPlayerWithApps({
       {/* Error State */}
       {error && (
         <div className="error-overlay">
-          <div className="error-box">
+          <div className="error-box" role="alert">
             <h3>Error Loading Application</h3>
-            <p>{error}</p>
+            <p>{error.message}</p>
+            {error.suggestion && <p className="error-suggestion">{error.suggestion}</p>}
+            {error.originalError && (
+              <details className="error-details">
+                <summary>Details</summary>
+                <code>{error.originalError}</code>
+              </details>
+            )}
             <button onClick={handleReset}>Try Again</button>
           </div>
         </div>

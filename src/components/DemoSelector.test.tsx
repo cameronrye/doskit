@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import { DemoSelector } from './DemoSelector';
 import { loadZipArchive } from '../utils/diskLoader';
 import { availableApps } from '../config/apps.config';
@@ -140,7 +140,8 @@ describe('DemoSelector', () => {
     });
 
     it('should clear error when selecting a new app', async () => {
-      vi.mocked(loadZipArchive).mockRejectedValueOnce(new Error('Load failed'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(loadZipArchive).mockRejectedValueOnce(new TypeError('Failed to fetch'));
 
       render(<DemoSelector onSelect={mockOnSelect} />);
 
@@ -154,16 +155,14 @@ describe('DemoSelector', () => {
       fireEvent.click(loadButton);
 
       // Wait for error to appear
-      await waitFor(() => {
-        expect(screen.getByText(/Load failed/i)).toBeInTheDocument();
-      });
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
 
       // Select another app
       const anotherFloppyDisk = getFloppyDiskByName('Impulse Tracker');
       fireEvent.click(anotherFloppyDisk!);
 
       // Error should be cleared
-      expect(screen.queryByText(/Load failed/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
   });
 
@@ -278,8 +277,8 @@ describe('DemoSelector', () => {
     });
 
     it('should handle loading errors', async () => {
-      const errorMessage = 'Load failed';
-      vi.mocked(loadZipArchive).mockRejectedValue(new Error(errorMessage));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(loadZipArchive).mockRejectedValue(new TypeError('Failed to fetch'));
 
       render(<DemoSelector onSelect={mockOnSelect} />);
 
@@ -292,19 +291,15 @@ describe('DemoSelector', () => {
       fireEvent.click(loadButton);
 
       // Wait for error to be displayed
-      await waitFor(
-        () => {
-          expect(screen.getByText(errorMessage)).toBeInTheDocument();
-        },
-        { timeout: 3000 }
-      );
+      expect(await screen.findByRole('alert')).toHaveTextContent('Unable to connect to the server');
 
-      // Verify loading state is cleared
+      // Verify loading state is cleared, so Load Application can try again
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Load Application/i })).toBeInTheDocument();
     });
 
     it('should handle non-Error exceptions', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
       vi.mocked(loadZipArchive).mockRejectedValueOnce('String error');
 
       render(<DemoSelector onSelect={mockOnSelect} />);
@@ -317,9 +312,7 @@ describe('DemoSelector', () => {
       });
       fireEvent.click(loadButton);
 
-      await waitFor(() => {
-        expect(screen.getByText(/Failed to load application/i)).toBeInTheDocument();
-      });
+      expect(await screen.findByRole('alert')).toHaveTextContent('An unexpected error occurred');
     });
 
     it('selects the focused app on Enter rather than loading it', () => {
@@ -341,6 +334,75 @@ describe('DemoSelector', () => {
 
       await waitFor(() => expect(mockOnSelect).toHaveBeenCalledTimes(1));
       expect(mockOnSelect.mock.calls[0]?.[0].app.id).toBe(availableApps[0]!.id);
+    });
+  });
+
+  describe('Load errors', () => {
+    /** Load Second Reality with its download failing, and return the error shown */
+    const failLoading = async (error: unknown) => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(loadZipArchive).mockRejectedValueOnce(error);
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      fireEvent.click(getFloppyDiskByName('Second Reality')!);
+      fireEvent.click(screen.getByRole('button', { name: /Load Application/i }));
+      return screen.findByRole('alert');
+    };
+
+    // fetch() rejects with each browser's own words for the same failure
+    it.each(['Failed to fetch', 'NetworkError when attempting to fetch resource.', 'Load failed'])(
+      'explains the network failure "%s" as a connection problem',
+      async (technical) => {
+        const alert = await failLoading(new TypeError(technical));
+
+        expect(alert).toHaveTextContent('Unable to connect to the server');
+        expect(alert).toHaveTextContent('Please check your internet connection and try again.');
+      }
+    );
+
+    it('says that the app needs a connection until it has been opened online', async () => {
+      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+      const alert = await failLoading(new TypeError('Failed to fetch'));
+
+      expect(alert).toHaveTextContent("This application isn't available offline yet");
+      expect(alert).toHaveTextContent(
+        'Each application works offline once it has been opened while online.'
+      );
+    });
+
+    it.each([
+      ['Failed to load ZIP: HTTP 404', 'The requested file was not found'],
+      ['Failed to load ZIP: HTTP 503', 'The server is temporarily unavailable'],
+    ])('explains "%s" as "%s"', async (technical, friendly) => {
+      expect(await failLoading(new Error(technical))).toHaveTextContent(friendly);
+    });
+
+    it('keeps the technical message in a collapsed details line', async () => {
+      const alert = await failLoading(new Error('Failed to load ZIP: HTTP 404'));
+
+      const technical = within(alert).getByText('Failed to load ZIP: HTTP 404');
+      expect(technical.closest('details')).not.toHaveAttribute('open');
+      expect(technical).not.toBeVisible();
+      expect(within(alert).getByText('Details')).toBeVisible();
+    });
+
+    it('explains a load that runs past its time limit as a timeout', async () => {
+      vi.useFakeTimers();
+      try {
+        vi.mocked(loadZipArchive).mockImplementation(() => new Promise(() => {}));
+        render(<DemoSelector onSelect={mockOnSelect} />);
+        fireEvent.click(getFloppyDiskByName('Second Reality')!);
+        fireEvent.click(screen.getByRole('button', { name: /Load Application/i }));
+
+        act(() => vi.advanceTimersByTime(30_000));
+
+        expect(screen.getByRole('alert')).toHaveTextContent(
+          'The request took too long to complete'
+        );
+        expect(screen.getByRole('button', { name: /Load Application/i })).toBeInTheDocument();
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
@@ -568,7 +630,8 @@ describe('DemoSelector', () => {
     });
 
     it('should clear error when cancel is clicked', async () => {
-      vi.mocked(loadZipArchive).mockRejectedValueOnce(new Error('Load failed'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(loadZipArchive).mockRejectedValueOnce(new TypeError('Failed to fetch'));
 
       render(<DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />);
 
@@ -581,9 +644,7 @@ describe('DemoSelector', () => {
       });
       fireEvent.click(loadButton);
 
-      await waitFor(() => {
-        expect(screen.getByText(/Load failed/i)).toBeInTheDocument();
-      });
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
 
       // Click cancel
       const cancelButtons = screen.getAllByRole('button', { name: /Cancel/i });
@@ -592,7 +653,7 @@ describe('DemoSelector', () => {
       );
       fireEvent.click(detailsCancelButton!);
 
-      expect(screen.queryByText(/Load failed/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
   });
 });

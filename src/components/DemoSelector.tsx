@@ -14,6 +14,7 @@ import 'retro-floppy/dist/retro-floppy.css';
 import type { DosApp } from '../types/dos-app';
 import type { InitFileEntry } from '../types/js-dos';
 import type { LoadProgress } from '../utils/diskLoader';
+import { getUserFriendlyError, type FriendlyError } from '../utils/errorMessages';
 import { availableApps, findAppById } from '../config/apps.config';
 import './DemoSelector.css';
 
@@ -58,7 +59,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [loadProgress, setLoadProgress] = useState<LoadProgress | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -125,7 +126,8 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
       const timeoutId = setTimeout(() => {
         if (abortControllerRef.current !== controller) return; // already cancelled/superseded
         controller.abort();
-        setError('Loading timed out. Please check your internet connection and try again.');
+        const timedOut = new Error(`Loading timed out after ${LOADING_TIMEOUT_MS / 1000} seconds`);
+        setError(getUserFriendlyError(timedOut, { online: navigator.onLine }));
         setIsLoading(false);
         setLoadProgress(null);
       }, LOADING_TIMEOUT_MS);
@@ -161,18 +163,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
         }
 
         console.error('[DemoSelector] Error loading application:', err);
-        // User-friendly error messages
-        let errorMessage = 'Failed to load application. Please try again.';
-        if (err instanceof Error) {
-          if (err.message.includes('network') || err.message.includes('fetch')) {
-            errorMessage = 'Network error. Please check your internet connection and try again.';
-          } else if (err.message.includes('timeout')) {
-            errorMessage = 'Loading timed out. The server may be slow. Please try again.';
-          } else {
-            errorMessage = err.message;
-          }
-        }
-        setError(errorMessage);
+        setError(getUserFriendlyError(err, { online: navigator.onLine }));
         setIsLoading(false);
         setLoadProgress(null);
       } finally {
@@ -361,7 +352,14 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
 
             {error && (
               <div className="error-message" role="alert">
-                {error}
+                <p className="error-message-text">{error.message}</p>
+                {error.suggestion && <p className="error-suggestion">{error.suggestion}</p>}
+                {error.originalError && (
+                  <details className="error-details">
+                    <summary>Details</summary>
+                    <code>{error.originalError}</code>
+                  </details>
+                )}
               </div>
             )}
 
