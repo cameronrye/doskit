@@ -121,6 +121,69 @@ describe('errorTracking', () => {
     });
   });
 
+  describe('in a production build', () => {
+    beforeEach(() => {
+      vi.stubEnv('DEV', false);
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    /** Everything logged below warnings, as one string per call */
+    function captureInformation() {
+      const lines: string[] = [];
+      for (const method of ['log', 'info', 'debug'] as const) {
+        vi.spyOn(console, method).mockImplementation((...args: unknown[]) => {
+          lines.push(args.join(' '));
+        });
+      }
+      return lines;
+    }
+
+    it('logs nothing below warnings when the tracker is initialized', async () => {
+      const fresh = await loadFreshErrorTracking();
+      const lines = captureInformation();
+
+      fresh.initializeErrorTracking();
+
+      expect(fresh.getErrorTracker().isInitialized()).toBe(true);
+      expect(lines).toEqual([]);
+    });
+
+    it('logs nothing below warnings for a breadcrumb', async () => {
+      const tracker = (await loadFreshErrorTracking()).getErrorTracker();
+      const lines = captureInformation();
+
+      tracker.addBreadcrumb('Test action', 'navigation', { page: 'home' });
+
+      expect(lines).toEqual([]);
+    });
+
+    it('still reports errors to the console', async () => {
+      const tracker = (await loadFreshErrorTracking()).getErrorTracker();
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const error = new Error('Test error');
+      const errorInfo = { componentStack: 'Component stack' };
+
+      tracker.captureError(error);
+      tracker.captureReactError(error, errorInfo);
+
+      expect(consoleError).toHaveBeenCalledWith(
+        '[ErrorTracking]',
+        ErrorSeverity.ERROR,
+        error,
+        undefined
+      );
+      expect(consoleError).toHaveBeenCalledWith(
+        '[ErrorTracking] React Error:',
+        error,
+        errorInfo,
+        undefined
+      );
+    });
+  });
+
   describe('ErrorSeverity', () => {
     it('should have correct values', () => {
       expect(ErrorSeverity.DEBUG).toBe('debug');

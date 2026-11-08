@@ -65,7 +65,9 @@ class ConsoleErrorTracker implements ErrorTrackingService {
 
   initialize(): void {
     this.initialized = true;
-    console.log('[ErrorTracking] Console tracker initialized');
+    if (import.meta.env.DEV) {
+      console.log('[ErrorTracking] Console tracker initialized');
+    }
   }
 
   isInitialized(): boolean {
@@ -81,7 +83,9 @@ class ConsoleErrorTracker implements ErrorTrackingService {
   }
 
   addBreadcrumb(message: string, category?: string, data?: Record<string, unknown>): void {
-    console.log('[ErrorTracking] Breadcrumb:', category, message, data);
+    if (import.meta.env.DEV) {
+      console.log('[ErrorTracking] Breadcrumb:', category, message, data);
+    }
   }
 }
 
