@@ -3,9 +3,9 @@
  * Updated to work with retro-floppy FloppyDisk components
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
-import { DemoSelector } from './DemoSelector';
+import { DemoSelector, type DosApp } from './DemoSelector';
 import { loadZipArchive } from '../utils/diskLoader';
 import { availableApps } from '../config/apps.config';
 import { secondRealityDosboxConf, secondRealityZipUrl } from '../dos-apps/second-reality.config';
@@ -95,6 +95,45 @@ describe('DemoSelector', () => {
       render(<DemoSelector onSelect={mockOnSelect} />);
       // FloppyDisk shows type (load method) in the disk label area as uppercase
       expect(screen.getAllByText('ZIP').length).toBeGreaterThan(0);
+    });
+
+    describe('accessible names', () => {
+      /** Add an app to the registry for the length of the test, as apps.config.ts would */
+      const registerApp = (release: Pick<DosApp, 'author' | 'year'>) => {
+        const app: DosApp = {
+          id: 'my-demo',
+          name: 'My Demo',
+          description: 'One line for the selector',
+          loadMethod: 'zip',
+          dosboxConf: '',
+          loader: async () => new Uint8Array(),
+          ...release,
+        };
+        availableApps.push(app);
+        onTestFinished(() => {
+          availableApps.splice(availableApps.indexOf(app), 1);
+        });
+      };
+
+      it.each([
+        [
+          'an author and a year',
+          { author: 'Some Group', year: 1994 },
+          'My Demo by Some Group (1994)',
+        ],
+        ['an author but no year', { author: 'Some Group' }, 'My Demo by Some Group'],
+        ['a year but no author', { year: 1994 }, 'My Demo (1994)'],
+        ['neither author nor year', {}, 'My Demo'],
+      ])('names the disk of an app with %s', (_, release, name) => {
+        registerApp(release);
+        render(<DemoSelector onSelect={mockOnSelect} />);
+
+        const disk = document.querySelector('[data-app-id="my-demo"] [role="button"]');
+        expect(disk).toHaveAttribute(
+          'aria-label',
+          `${name}. Press Enter to load, Space to select.`
+        );
+      });
     });
   });
 

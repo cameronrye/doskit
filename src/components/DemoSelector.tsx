@@ -54,6 +54,11 @@ function countGridColumns(grid: HTMLElement | null): number {
   return firstOnNextRow === -1 ? items.length : firstOnNextRow;
 }
 
+/** "Name by Author (year)", leaving out the author or year an app does not give */
+function describeApp({ name, author, year }: DosApp): string {
+  return `${name}${author ? ` by ${author}` : ''}${year ? ` (${year})` : ''}`;
+}
+
 export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   const [selectedApp, setSelectedApp] = useState<DosApp | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
@@ -338,7 +343,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
                   handleSelectApp(app);
                   handleLoadApp(app); // Pass app directly to avoid race condition
                 }}
-                ariaLabel={`${app.name} by ${app.author || 'Unknown'} (${app.year || 'Unknown year'}). Press Enter to load, Space to select.`}
+                ariaLabel={`${describeApp(app)}. Press Enter to load, Space to select.`}
               />
             </div>
           ))}
