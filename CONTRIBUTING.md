@@ -90,6 +90,8 @@ Example: `feature/add-screenshot-capture`
 
 When you commit, the pre-commit hook (Husky) runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats the CSS, HTML, JSON, Markdown and YAML files that `npm run format:check` checks, and skips files Prettier has no parser for or that `.gitignore` or `.prettierignore` lists.
 
+The service worker, `public/sw.js`, gets no tests from the hook: its tests, `scripts/service-worker.test.js` and `scripts/inject-sw-version.test.js`, read it as text instead of importing it, so `vitest related` finds none. After changing it, run them yourself with `npx vitest run scripts/service-worker.test.js scripts/inject-sw-version.test.js`; CI runs them on every pull request.
+
 Pull requests to `main` run CI (`.github/workflows/ci.yml`): ESLint, the format check, the tests with coverage, the build and the type check.
 
 ### Commit Messages
