@@ -17,10 +17,8 @@ const EMULATOR_CACHE_NAME = `doskit-emulators-${JS_DOS_VERSION}`;
 // Configuration
 const CONFIG = {
   NETWORK_TIMEOUT_BASE: 5000, // Base timeout: 5 seconds for small files
-  NETWORK_TIMEOUT_PER_MB: 2000, // Additional 2 seconds per MB
   NETWORK_TIMEOUT_MAX: 60000, // Maximum timeout: 60 seconds
-  MAX_CACHE_SIZE: 100, // Maximum number of items in cache
-  MAX_CACHE_AGE: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+  MAX_CACHE_SIZE: 100, // Entry limit of CACHE_NAME; trimming removes runtime entries only
 };
 
 // Assets to cache on install (the build appends the bundles from dist/index.html)
@@ -126,7 +124,7 @@ self.addEventListener('activate', (event) => {
 });
 
 /**
- * Calculate dynamic timeout based on file type and estimated size
+ * Calculate dynamic timeout based on file type
  * @param {Request} request - The fetch request
  * @returns {number} Timeout in milliseconds
  */
@@ -176,12 +174,8 @@ function fetchWithTimeout(request, timeout = null) {
 }
 
 /**
- * Utility: Trim cache to maximum size
- * Removes oldest entries when cache exceeds MAX_CACHE_SIZE
- */
-/**
- * Get cache metadata from IndexedDB
- * Stores timestamps for LRU cache management
+ * Read the LRU timestamps (last use of each cached URL), which Cache Storage keeps
+ * as one JSON entry in a cache of their own
  */
 async function getCacheMetadata() {
   try {
@@ -217,7 +211,8 @@ async function updateCacheMetadata(url, timestamp = Date.now()) {
 }
 
 /**
- * Trim cache using LRU (Least Recently Used) strategy with timestamps
+ * Trim the cache to MAX_CACHE_SIZE entries, removing the least recently used
+ * runtime entries first (LRU by the metadata timestamps)
  */
 async function trimCache(cacheName) {
   try {
