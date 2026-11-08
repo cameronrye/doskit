@@ -114,7 +114,7 @@ Picking an app in the selector:
 3. **Loader** downloads the app's ZIP archive with `loadZipArchive` (`diskLoader`), which retries through `fetchWithRetry`; the selector shows progress, offers Cancel Loading, and gives up after 30 seconds
 4. **Files are passed** to DosPlayerWithApps via `onSelect`
 5. **DosPlayerWithApps** makes them the running session, closes the selector and reports the app to App, which pushes `/?app=<id>` and sets the page title
-6. **DosPlayer** remounts, since it is keyed by app id: unmounting stops the previous player, and `useDosEmulator` starts js-dos with the archive as `initFs` and the app's DOSBox config
+6. **DosPlayer** remounts, since it is keyed by app id: unmounting stops the previous player, and `useDosEmulator` starts js-dos with the archive as `initFs` and the app's DOSBox config. If `emulators.js`, which the previous player began loading, has not run yet, as when an app is picked the moment the page opens, the start waits for it (see [Adapter Pattern](#6-adapter-pattern)).
 7. **Emulator starts**: on js-dos's `ci-ready` the hook unmutes audio and calls `onReady`, and the footer shows Ready until that player is gone
 
 Apps the URL asks for (deep links, back/forward):
@@ -291,7 +291,9 @@ export const starsDosboxConf = presets
 
 ### 6. Adapter Pattern
 
-`useDosEmulator` starts the emulator through `getEmulatorAdapter()` (`src/adapters/EmulatorAdapter.ts`), whose `JsDosAdapter` checks for `window.Dos` and calls it.
+`useDosEmulator` starts the emulator through `getEmulatorAdapter()` (`src/adapters/EmulatorAdapter.ts`), whose `JsDosAdapter` calls js-dos's `Dos()`. The declarations make `window.Dos` optional: the page runs without it when `js-dos.js` failed to download or was blocked, which `isAvailable()` reports.
+
+The adapter also holds back starts that js-dos would lose. js-dos's first `Dos()` call loads its emulators package, `emulators.js`, through a script tag with the id `emulators-js`, and a later call that finds that tag reads the `emulators` global at once (`initEmulatorsJs` in js-dos's `src/store/dos.ts`). Before the script has run, that read fails: the player never boots, and js-dos sends no event to say so. So a start made while the tag is there and the global is not, such as a pick in the selector right after the page opens, waits for the tag's `load` before it calls `Dos()`. The start that added the tag hands its player back only once the script has run, so that a failure reaches it too. If `emulators.js` fails to download, or runs without defining the global, each of these starts fails with an error that says so (see [ERROR-HANDLING.md](ERROR-HANDLING.md#5-component-level-error-states)), a player already made is stopped, and the tag is removed, so that the next start downloads `emulators.js` again.
 
 ## Security Considerations
 
@@ -345,7 +347,7 @@ The copy leaves source maps, debug symbols and type declarations behind, skips f
 1. Read the new version's notes in [js-dos releases](https://github.com/caiiiycuk/js-dos/releases)
 2. Bump `js-dos` in `package.json` and run `npm install`
 3. Run `npm run build` (or `npm run dev`), which copies the new files into `public/`
-4. Check the API against the new `node_modules/js-dos/dist/js-dos.js`. Its source map, `js-dos.js.map` next to it, holds js-dos's own sources, among them `src/main.tsx`, which reads most of the options `Dos()` takes and builds the player it returns, and `src/window/soft-keyboard.tsx`, the on-screen keyboard. Two lists in DosKit's tests are kept by hand from those files: the option and player-member names in `src/types/js-dos.test.ts`, with which `tsc -b` fails for any other name `src/types/js-dos.d.ts` declares, and `JS_DOS_KEYS` in `src/config/jsdos.config.test.ts`, the key names the keyboard of `mobileJsDosConfig` may use. Update them, then the declarations and the keyboard layout to match.
+4. Check the API against the new `node_modules/js-dos/dist/js-dos.js`. Its source map, `js-dos.js.map` next to it, holds js-dos's own sources, among them `src/main.tsx`, which reads most of the options `Dos()` takes and builds the player it returns, and `src/window/soft-keyboard.tsx`, the on-screen keyboard. Two lists in DosKit's tests are kept by hand from those files: the option and player-member names in `src/types/js-dos.test.ts`, with which `tsc -b` fails for any other name `src/types/js-dos.d.ts` declares, and `JS_DOS_KEYS` in `src/config/jsdos.config.test.ts`, the key names the keyboard of `mobileJsDosConfig` may use. Update them, then the declarations and the keyboard layout to match. Check also that `initEmulatorsJs`, in its `src/store/dos.ts`, still loads `emulators.js` through a script tag with the id `emulators-js`: `JsDosAdapter` finds that tag to hold starts back while the script loads (see [Adapter Pattern](#6-adapter-pattern)), which it needs to for as long as js-dos reads the `emulators` global as soon as it finds the tag.
 5. Update the version where it is written by hand: `git grep` the old one. It is in `public/llm.txt`, `public/llm-full.txt` and comments in `src/main.tsx`, `src/types/js-dos.d.ts`, `src/types/js-dos.test.ts` and `src/config/jsdos.config.test.ts`. The tests that use it only as sample data and `CHANGELOG.md` keep it. `docs/js-dos-llm-reference.md` is a copy of a third-party reference for that version: check its DosKit notes again.
 6. Test thoroughly before deploying
 

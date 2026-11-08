@@ -205,7 +205,7 @@ Anything else is "An unexpected error occurred".
 
 ### 5. Component-Level Error States
 
-**Files:** `src/components/DemoSelector.tsx`, `src/components/DosPlayerWithApps.tsx`, `src/hooks/useDosEmulator.ts`, `src/utils/diskLoader.ts`
+**Files:** `src/components/DemoSelector.tsx`, `src/components/DosPlayerWithApps.tsx`, `src/hooks/useDosEmulator.ts`, `src/adapters/EmulatorAdapter.ts`, `src/utils/diskLoader.ts`
 
 **Purpose:** Shows load and start failures where they happen
 
@@ -224,11 +224,14 @@ The selector and the error overlay explain a failed load the same way: they log 
 - A failed load shows the "Error Loading Application" overlay (`role="alert"`) with that explanation, then Try Again, which boots the default DOS prompt and opens the selector
 - A newer request, a pick in the selector or unmounting aborts the load and drops its result or error
 
-**useDosEmulator and DosPlayerUI** (starting js-dos):
+**useDosEmulator, the adapter and DosPlayerUI** (starting js-dos):
 
-- Without `window.Dos`: "DOS emulator library not loaded. Please refresh the page."
+- Without `window.Dos`: "DOS emulator library not loaded. Please refresh the page.", logged as "[useDosEmulator] Emulator not available"
 - If `window.Dos()` throws: its message, which the adapter prefixes with "Failed to initialize js-dos:"
-- Either shows an Error panel with a Reload Page button. A start that fails after the player unmounted is ignored, and failing to unmute audio or to stop a player is only logged.
+- If `emulators.js`, which js-dos's first start loads, fails to download: "The DOS emulator could not be loaded: /emulators/emulators.js failed to download. Check your connection, then reload the page." js-dos logs an error of its own for any failed download of it: "Unable to init emulators.js Error: Unable to add emulators.js. Probably you should set the 'pathPrefix' option to point to the js-dos folder."
+- If `emulators.js` runs without setting up the emulator: "The DOS emulator could not be loaded: /emulators/emulators.js ran but did not set up the emulator. Reload the page."
+- Every start that waits for `emulators.js` gets that error (see [Adapter Pattern](ARCHITECTURE.md#6-adapter-pattern)), and the adapter removes its script tag, so that the next start, such as a pick in the selector, downloads it again
+- Each shows an Error panel with a Reload Page button. For all but a missing `window.Dos`, the hook logs "[useDosEmulator] Failed to initialize emulator:" with the error. A start that fails after the player unmounted is ignored, and failing to unmute audio or to stop a player is only logged.
 
 **diskLoader and fetchWithRetry** (archive downloads):
 
