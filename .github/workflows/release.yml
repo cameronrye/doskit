@@ -22,9 +22,10 @@ jobs:
       - name: Run release-please
         id: release
         uses: googleapis/release-please-action@v5
+        # Manifest mode: the settings are in release-please-config.json, and the last
+        # release's version in .release-please-manifest.json. (A release-type input would
+        # find that version only among the latest 250 commits.)
         with:
-          # release-type mode takes all settings from these inputs, not from config files
-          release-type: node
           token: ${{ secrets.GITHUB_TOKEN }}
 
   # Build and upload artifacts when a release is created
