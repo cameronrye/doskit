@@ -6,7 +6,8 @@
  * ErrorBoundary Tests
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, expectTypeOf, vi, beforeEach, afterEach } from 'vitest';
+import type { ComponentProps, ErrorInfo } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorBoundary } from './ErrorBoundary';
 
@@ -117,6 +118,28 @@ describe('ErrorBoundary', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reset after Render failed' }));
 
     expect(screen.getByText('Child content')).toBeInTheDocument();
+  });
+
+  it('gives a custom fallback the component stack only once the error is caught', () => {
+    // Typed so that a fallback has to handle the first render's null
+    type Fallback = NonNullable<ComponentProps<typeof ErrorBoundary>['fallback']>;
+    expectTypeOf<Parameters<Fallback>[1]>().toEqualTypeOf<ErrorInfo | null>();
+    const stacks: Array<string | null | undefined> = [];
+
+    render(
+      <ErrorBoundary
+        fallback={(_error, errorInfo) => {
+          stacks.push(errorInfo === null ? null : errorInfo.componentStack);
+          return <p>Fallback</p>;
+        }}
+      >
+        <Child />
+      </ErrorBoundary>
+    );
+
+    // React renders the fallback before componentDidCatch has the error's details
+    expect(stacks[0]).toBeNull();
+    expect(stacks.at(-1)).toContain('Child');
   });
 
   it('shows the error details in development', () => {

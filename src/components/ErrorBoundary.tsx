@@ -11,7 +11,11 @@ import './ErrorBoundary.css';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
-  fallback?: (error: Error, errorInfo: ErrorInfo, reset: () => void) => ReactNode;
+  /**
+   * Shown instead of the default fallback. React renders it before componentDidCatch has
+   * the error's component stack, so errorInfo is null at first.
+   */
+  fallback?: (error: Error, errorInfo: ErrorInfo | null, reset: () => void) => ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -81,7 +85,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (this.state.hasError && this.state.error) {
       // If a custom fallback is provided, use it
       if (this.props.fallback) {
-        return this.props.fallback(this.state.error, this.state.errorInfo!, this.handleReset);
+        return this.props.fallback(this.state.error, this.state.errorInfo, this.handleReset);
       }
 
       // Default fallback UI
