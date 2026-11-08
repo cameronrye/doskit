@@ -24,7 +24,7 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
 - **Audio Support**: Sound Blaster and AdLib emulation with proper audio output
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
-- **Touch Controls**: Mobile-friendly on-screen keyboard for touch devices
+- **Touch Controls**: On-screen keyboard in the js-dos sidebar (on phones it does not open yet: see [Mobile Touch Controls Not Appearing](#mobile-touch-controls-not-appearing))
 - **Type-Safe**: Full TypeScript support with comprehensive type definitions
 - **Service Worker Caching**: Fast loading with intelligent cache management
 
@@ -402,11 +402,12 @@ DosPlayer sets `dosboxConf` (from its prop of that name) and `onEvent` itself, s
 
 ### Mobile Configuration
 
-DosKit automatically detects mobile devices and applies optimized settings:
+DosKit detects phones and tablets by their user agent and applies `mobileJsDosConfig` from `src/config/jsdos.config.ts`:
 
 - Larger touch controls
-- On-screen keyboard with common DOS keys
-- Optimized aspect ratio for mobile screens
+- Its own on-screen keyboard layout with common DOS keys, in a form js-dos cannot read: see [Mobile Touch Controls Not Appearing](#mobile-touch-controls-not-appearing)
+
+Safari on iPadOS identifies itself as a Mac by default, so an iPad in Safari gets the desktop settings.
 
 ## Usage
 
@@ -541,17 +542,19 @@ DosKit works on all modern browsers that support WebAssembly:
 
 ### Desktop Browsers
 
-- **Chrome/Edge** 90+ (Recommended)
-- **Firefox** 88+
-- **Safari** 15+
-- **Opera** 76+
+- **Chrome/Edge** 98+ (Recommended)
+- **Firefox** 94+
+- **Safari** 15.4+
+- **Opera** 84+
 
 ### Mobile Browsers
 
 - **Chrome Mobile** (Android)
-- **Safari Mobile** (iOS 15+)
+- **Safari Mobile** (iOS 15.4+)
 - **Firefox Mobile**
 - **Samsung Internet**
+
+These are the first versions with `structuredClone()`, which js-dos's player calls once a second while it runs.
 
 ### Requirements
 
@@ -562,36 +565,21 @@ DosKit works on all modern browsers that support WebAssembly:
 
 ### Detailed Compatibility Matrix
 
-| Feature         | Chrome 90+ | Firefox 88+ | Safari 15+ | Edge 90+ | Mobile  |
-| --------------- | ---------- | ----------- | ---------- | -------- | ------- |
-| WebAssembly     | Yes        | Yes         | Yes        | Yes      | Yes     |
-| Service Workers | Yes        | Yes         | Yes        | Yes      | Yes     |
-| PWA Install     | Yes        | Yes         | Yes        | Yes      | Yes     |
-| Fullscreen API  | Yes        | Yes         | Yes        | Yes      | Partial |
-| Keyboard Lock   | Yes        | No          | No         | Yes      | No      |
-| Audio           | Yes        | Yes         | Yes        | Yes      | Yes     |
-| Touch Controls  | N/A        | N/A         | N/A        | N/A      | Yes     |
-| Offline Mode    | Yes        | Yes         | Yes        | Yes      | Yes     |
-
-### Performance Benchmarks
-
-Tested on various devices with Second Reality demo:
-
-| Device              | Browser     | Load Time | FPS   | Notes      |
-| ------------------- | ----------- | --------- | ----- | ---------- |
-| Desktop (i7, 16GB)  | Chrome 120  | ~2s       | 60    | Optimal    |
-| MacBook Pro M1      | Safari 17   | ~2s       | 60    | Excellent  |
-| Desktop (i5, 8GB)   | Firefox 121 | ~3s       | 55-60 | Very Good  |
-| iPad Pro 2021       | Safari 17   | ~3s       | 50-60 | Good       |
-| iPhone 13           | Safari 17   | ~4s       | 45-55 | Good       |
-| Android (mid-range) | Chrome 120  | ~5s       | 40-50 | Acceptable |
-| Android (low-end)   | Chrome 120  | ~8s       | 25-35 | Playable   |
-
-_Load times include network fetch and initialization. FPS varies by DOS application complexity._
+| Feature         | Chrome 98+ | Firefox 94+ | Safari 15.4+ | Edge 98+ | Mobile  |
+| --------------- | ---------- | ----------- | ------------ | -------- | ------- |
+| WebAssembly     | Yes        | Yes         | Yes          | Yes      | Yes     |
+| Service Workers | Yes        | Yes         | Yes          | Yes      | Yes     |
+| PWA Install     | Yes        | No          | 17+          | Yes      | Yes     |
+| Fullscreen API  | Yes        | Yes         | Yes          | Yes      | Partial |
+| Keyboard Lock   | Yes        | No          | No           | Yes      | No      |
+| Audio           | Yes        | Yes         | Yes          | Yes      | Yes     |
+| Touch Controls  | N/A        | N/A         | N/A          | N/A      | Partial |
+| Offline Mode    | Yes        | Yes         | Yes          | Yes      | Yes     |
 
 ### Known Limitations
 
-- **iOS Safari < 15**: Limited WebAssembly support
+- **Older browsers** (before Chrome 98, Firefox 94 or Safari 15.4): no `structuredClone()`, which js-dos's player calls once a second, so each call ends in an error
+- **On-screen keyboard on phones**: does not open; see [Mobile Touch Controls Not Appearing](#mobile-touch-controls-not-appearing)
 - **Internet Explorer**: Not supported (no WebAssembly)
 - **Older Android browsers**: May have performance issues
 - **Keyboard Lock API**: Only supported in Chrome/Edge (not critical for functionality)
@@ -645,7 +633,7 @@ _Load times include network fetch and initialization. FPS varies by DOS applicat
 1. Click inside the emulator window to focus it
 2. Check if browser has focus (not in another tab)
 3. Try clicking the "Play" button if visible
-4. On mobile, use the on-screen keyboard
+4. On touch devices, use the on-screen keyboard from the js-dos sidebar
 5. Check browser console for errors
 
 #### Audio Not Playing
@@ -668,13 +656,16 @@ _Load times include network fetch and initialization. FPS varies by DOS applicat
 
 **Problem**: On-screen keyboard missing on mobile.
 
+**Known issue**: On devices DosKit detects as mobile, the keyboard button in the js-dos sidebar shows no keyboard, and the console reports `TypeError: e.map is not a function`. js-dos cannot read the layout in `mobileJsDosConfig` (`softKeyboardLayout` in `src/config/jsdos.config.ts`). Desktop browsers, and iPads in Safari, get js-dos's own layout, which works.
+
 **Solutions:**
 
-1. Verify you're on a mobile device (check user agent)
-2. Check mobile configuration is applied
-3. Try portrait and landscape orientations
-4. Refresh the page
-5. Check `softKeyboardLayout` in config
+1. Open the keyboard with the keyboard button in the js-dos sidebar
+2. Verify you're on a mobile device (check user agent)
+3. Check mobile configuration is applied
+4. Try portrait and landscape orientations
+5. Refresh the page
+6. Check `softKeyboardLayout` in config
 
 #### Service Worker Not Updating
 
