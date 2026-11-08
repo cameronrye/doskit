@@ -15,7 +15,9 @@ The archive's files are the directory the autoexec mounts as `C:`.
 ## Adding an app
 
 These steps use `my-demo` as the app's id. Keep ids to lowercase letters, digits and hyphens: the
-id names the archive and the config module, and it is the `?app=` value in links.
+id names the archive and the config module, and it is the `?app=` value in links. Links also work
+without the hyphens (`?app=mydemo`), so an id must stay unique with its hyphens removed: `mydemo`
+and `my-demo` cannot both be apps.
 
 ### 1. Add the archive
 

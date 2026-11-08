@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { availableApps, findAppById } from './apps.config';
+import { availableApps, findAppById, getUrlFriendlyId } from './apps.config';
 import { loadZipArchive } from '../utils/diskLoader';
 import type { DosApp } from '../types/dos-app';
 
@@ -141,6 +141,14 @@ describe('availableApps', () => {
         expect(year).toBe(app.year);
       }
     });
+  });
+
+  it('should give each app an id of its own, with or without its hyphens', () => {
+    // The address bar shows ids without hyphens, and a link names one app in either form
+    const ids = availableApps.map((app) => app.id);
+
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(ids.map(getUrlFriendlyId)).size).toBe(ids.length);
   });
 
   it('should load every archive in public/demos', () => {
