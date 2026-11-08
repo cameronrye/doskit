@@ -4,36 +4,39 @@
 
 ## Overview
 
-DosKit is a modern web application that enables users to run classic DOS applications and games directly in their browser. Built with React 19, TypeScript, and Vite, it leverages js-dos v8.3.20 for high-performance DOS emulation through WebAssembly.
+DosKit is a modern web application that enables users to run classic DOS applications and demos directly in their browser. Built with React 19, TypeScript, and Vite, it leverages js-dos v8.3.20 for high-performance DOS emulation through WebAssembly.
+
+It comes with a library of demoscene productions and music trackers, among them Second Reality, Crystal Dream 2, Impulse Tracker and Scream Tracker 3.
 
 ## Key Features
 
-- **Interactive DOS Prompt**: Boots directly to a fully functional DOS command prompt
+- **Interactive DOS Prompt**: The start page boots a fully functional DOS command prompt, with the application selector open over it
 - **Cross-Platform**: Works on Windows, macOS, Linux, iOS, and Android
-- **Progressive Web App**: Installable with offline support
+- **Progressive Web App**: Installable; after the first visit the app works offline, and each application does once it has been opened online
 - **Deep Linking**: Load specific applications via URL parameters
-- **WebAssembly Performance**: Near-native DOS emulation speed
+- **WebAssembly Performance**: DOSBox compiled to WebAssembly, running in a worker thread
 - **Full Keyboard & Audio Support**: Complete DOS experience including Sound Blaster emulation
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
 - **Type-Safe**: Full TypeScript support with comprehensive type definitions
 
 ## Technology Stack
 
-- React 19.2.0 - Modern UI framework
-- TypeScript 5.9.3 - Type-safe JavaScript
-- Vite 7.1.14 - Next-generation frontend tooling (Rolldown variant)
-- js-dos 8.3.20 - WebAssembly DOS emulator
-- Sharp - Image processing for social media previews
+- React 19 - Modern UI framework
+- TypeScript 5 - Type-safe JavaScript
+- Vite 8 - Next-generation frontend tooling, bundling with Rolldown
+- js-dos 8.3.20 - WebAssembly DOS emulator (DosKit runs its DOSBox backend)
+- Sharp - Image processing for the icons and social media previews
 
 ## Project Structure
 
 - `/src/components/` - React components including DosPlayer
-- `/src/config/` - DOSBox and js-dos configuration files
+- `/src/config/` - Application registry, DOSBox and js-dos configuration files
 - `/src/dos-apps/` - DOS application configurations
 - `/src/hooks/` - Custom React hooks
 - `/src/types/` - TypeScript type definitions
 - `/src/utils/` - Utility functions
-- `/public/` - Static assets
+- `/public/` - Static assets, the service worker and the application archives (`/public/demos/`)
+- `/scripts/` - Build scripts
 - `/docs/` - Documentation
 
 ## Usage
@@ -60,7 +63,8 @@ MIT License - Copyright (c) 2025 Cameron Rye
 - Website: https://doskit.net/
 - GitHub: https://github.com/cameronrye/doskit
 - Author: Cameron Rye <cameron@rye.dev>
-- Documentation: https://doskit.net/docs/
+- Documentation: https://github.com/cameronrye/doskit/tree/main/docs
+- Full documentation for LLMs: https://doskit.net/llm-full.txt
 
 ## Browser Compatibility
 
