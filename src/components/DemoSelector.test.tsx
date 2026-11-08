@@ -344,6 +344,81 @@ describe('DemoSelector', () => {
     });
   });
 
+  describe('Keyboard navigation', () => {
+    /**
+     * jsdom has no layout: report the offsets a browser gives the grid's apps
+     * when it fits this many of them on a row
+     */
+    const layOutGrid = (columns: number) => {
+      const position = (el: HTMLElement) =>
+        availableApps.findIndex((a) => a.id === el.dataset.appId);
+      vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function (
+        this: HTMLElement
+      ) {
+        const index = position(this);
+        return index < 0 ? 0 : Math.floor(index / columns) * 250;
+      });
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (
+        this: HTMLElement
+      ) {
+        return position(this) < 0 ? 0 : 200;
+      });
+    };
+
+    const appAt = (index: number) =>
+      document.querySelector<HTMLElement>(`[data-app-id="${availableApps[index]!.id}"]`)!;
+    const press = (key: string) => fireEvent.keyDown(document.activeElement!, { key });
+
+    it('moves down to the app below it in a four-column grid', () => {
+      layOutGrid(4);
+      render(<DemoSelector onSelect={mockOnSelect} />);
+
+      press('ArrowDown');
+
+      expect(appAt(4)).toHaveFocus();
+    });
+
+    it('moves up to the app above it in a two-column grid', () => {
+      layOutGrid(2);
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      act(() => appAt(5).focus());
+
+      press('ArrowUp');
+
+      expect(appAt(3)).toHaveFocus();
+    });
+
+    it('measures the columns again on each key press', () => {
+      layOutGrid(4);
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      press('ArrowDown');
+
+      layOutGrid(3); // the window got narrower
+      press('ArrowDown');
+
+      expect(appAt(7)).toHaveFocus();
+    });
+
+    it('moves down to the last app when the row below is too short', () => {
+      // All apps but the last fit on the first row
+      layOutGrid(availableApps.length - 1);
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      act(() => appAt(1).focus());
+
+      press('ArrowDown');
+
+      expect(appAt(availableApps.length - 1)).toHaveFocus();
+    });
+
+    it('moves one app at a time when the grid has no layout to measure', () => {
+      render(<DemoSelector onSelect={mockOnSelect} />);
+
+      press('ArrowDown');
+
+      expect(appAt(1)).toHaveFocus();
+    });
+  });
+
   describe('Load cancellation and overlapping loads', () => {
     /** Make each download wait until the test resolves it, keyed by archive URL */
     const deferDownloads = () => {

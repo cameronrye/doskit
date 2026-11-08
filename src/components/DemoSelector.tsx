@@ -36,6 +36,23 @@ interface DemoSelectorProps {
 /** Default loading timeout in milliseconds (30 seconds) */
 const LOADING_TIMEOUT_MS = 30000;
 
+/**
+ * Count the apps on the first row of the rendered grid. Its auto-fill columns
+ * follow the viewport width, so measure on each use. A grid without layout
+ * (hidden, or no layout engine) counts as a single column.
+ */
+function countGridColumns(grid: HTMLElement | null): number {
+  const items = grid ? Array.from(grid.children) : [];
+  const first = items[0];
+  if (!(first instanceof HTMLElement) || first.offsetWidth === 0) {
+    return 1;
+  }
+  const firstOnNextRow = items.findIndex(
+    (item) => item instanceof HTMLElement && item.offsetTop !== first.offsetTop
+  );
+  return firstOnNextRow === -1 ? items.length : firstOnNextRow;
+}
+
 export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   const [selectedApp, setSelectedApp] = useState<DosApp | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
@@ -185,7 +202,6 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   /** Keyboard navigation handler */
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      const gridColumns = 3; // Assuming 3 columns in the grid
       const totalApps = availableApps.length;
 
       switch (event.key) {
@@ -197,14 +213,18 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
           event.preventDefault();
           setFocusedIndex((prev) => (prev - 1 + totalApps) % totalApps);
           break;
-        case 'ArrowDown':
+        case 'ArrowDown': {
           event.preventDefault();
-          setFocusedIndex((prev) => Math.min(prev + gridColumns, totalApps - 1));
+          const columns = countGridColumns(gridRef.current);
+          setFocusedIndex((prev) => Math.min(prev + columns, totalApps - 1));
           break;
-        case 'ArrowUp':
+        }
+        case 'ArrowUp': {
           event.preventDefault();
-          setFocusedIndex((prev) => Math.max(prev - gridColumns, 0));
+          const columns = countGridColumns(gridRef.current);
+          setFocusedIndex((prev) => Math.max(prev - columns, 0));
           break;
+        }
         case 'Enter':
           event.preventDefault();
           if (selectedApp) {
