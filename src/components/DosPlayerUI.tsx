@@ -36,17 +36,17 @@ export const DosPlayerUI: React.FC<DosPlayerUIProps> = ({
 }) => {
   return (
     <div className={`dos-player-wrapper ${className}`} style={style}>
-      {/* Loading indicator */}
+      {/* Loading indicator, which screen readers announce */}
       {isLoading && !error && (
-        <div className="dos-player-loading">
+        <div className="dos-player-loading" role="status">
           <div className="dos-player-spinner"></div>
           <p>Loading DOS emulator...</p>
         </div>
       )}
 
-      {/* Error message */}
+      {/* Error message, which screen readers announce at once */}
       {error && (
-        <div className="dos-player-error">
+        <div className="dos-player-error" role="alert">
           <h3>Error</h3>
           <p>{error}</p>
           <button onClick={() => window.location.reload()}>Reload Page</button>

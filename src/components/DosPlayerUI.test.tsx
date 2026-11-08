@@ -1,10 +1,11 @@
 /**
- * Tests for DosPlayerUI's layout under js-dos's soft fullscreen
+ * Tests for DosPlayerUI: what it tells screen readers, and its layout under js-dos's soft
+ * fullscreen
  */
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { createRef } from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { DosPlayerUI } from './DosPlayerUI';
 
 /**
@@ -20,6 +21,29 @@ async function readPlayerStyles(): Promise<string> {
 }
 
 describe('DosPlayerUI', () => {
+  describe('for screen readers', () => {
+    it('announces that the emulator is loading', () => {
+      render(<DosPlayerUI dosContainerRef={createRef()} isLoading={true} error={null} />);
+
+      expect(screen.getByRole('status')).toHaveTextContent('Loading DOS emulator...');
+    });
+
+    it('announces at once why the emulator could not start', () => {
+      render(
+        <DosPlayerUI
+          dosContainerRef={createRef()}
+          isLoading={false}
+          error="DOS emulator library not loaded. Please refresh the page."
+        />
+      );
+
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'DOS emulator library not loaded. Please refresh the page.'
+      );
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+  });
+
   describe("js-dos's soft fullscreen", () => {
     let sheet: HTMLStyleElement;
     beforeAll(async () => {
