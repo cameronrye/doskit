@@ -12,8 +12,11 @@ const { register, showUpdateNotification } = vi.hoisted(() => ({
 
 vi.mock('./utils/serviceWorkerRegistration', () => ({ register }));
 vi.mock('./utils/updatePrompt', () => ({ showUpdateNotification }));
-// What main.tsx renders is not what these tests are about
+// What main.tsx renders is not what these tests are about. A real root would also leave
+// React's passive effects scheduled, and their flush reads window.event, so once the test
+// environment is torn down it fails with "window is not defined".
 vi.mock('./App.tsx', () => ({ default: () => null }));
+vi.mock('react-dom/client', () => ({ createRoot: () => ({ render: () => {} }) }));
 
 const registration = {} as ServiceWorkerRegistration;
 
