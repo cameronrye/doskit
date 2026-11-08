@@ -331,7 +331,7 @@ DosKit detects mobile devices by their user agent and applies optimized settings
 
 ### Basic Usage
 
-Visit https://doskit.net/ to use the emulator directly in your browser. The application boots to an interactive DOS prompt where you can execute DOS commands, and opens the application selector over it: pick an application to run it, or close the selector to use the prompt.
+Visit https://doskit.net/ to use the emulator directly in your browser. DosKit boots to an interactive DOS prompt where you can execute DOS commands, and opens the application selector over it: pick an application to run it, or close the selector to use the prompt.
 
 ### Bundled Applications
 
@@ -428,7 +428,7 @@ Methods:
 - `screenshot(): Promise<ImageData>` - Capture screenshot
 - `fsReadFile(file: string): Promise<Uint8Array>` - Read file from DOS filesystem
 - `fsWriteFile(file: string, contents: ReadableStream<Uint8Array> | Uint8Array): Promise<void>` - Write file to DOS filesystem
-- `persist(onlyChanges?: boolean): Promise<Uint8Array | null>` - Pack the DOS filesystem, or only its changes, into a bundle
+- `persist(onlyChanges?: boolean): Promise<Uint8Array | null>` - Pack the DOS filesystem's changes (or, with `false`, all of it) into a bundle
 - `simulateKeyPress(...keyCodes: number[]): void` - Simulate key presses
 - `exit(): Promise<void>` - Exit emulator
 
@@ -670,6 +670,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - js-dos: GPL-2.0 License - https://github.com/caiiiycuk/js-dos
 - React: MIT License
+- retro-floppy: MIT License
 - DOSBox: GPL-2.0 License
 
 ## Contact & Links
