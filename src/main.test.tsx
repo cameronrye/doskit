@@ -1,5 +1,5 @@
 /**
- * Tests for the entry point's service worker callbacks
+ * Tests for the entry point: its service worker callbacks and its error handling
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
@@ -36,7 +36,9 @@ async function runMain(): Promise<ServiceWorkerConfig> {
 }
 
 describe('main.tsx', () => {
-  afterEach(() => {
+  afterEach(async () => {
+    // The handler main.tsx set up, in the module graph it ran in
+    (await import('./utils/globalErrorHandler')).cleanupGlobalErrorHandler();
     vi.restoreAllMocks();
   });
 
@@ -54,5 +56,12 @@ describe('main.tsx', () => {
     const config = await runMain();
 
     expect(config).toEqual({ onUpdate: showUpdateNotification });
+  });
+
+  it('sets up the global error handler', async () => {
+    await runMain();
+
+    const { isGlobalErrorHandlerInitialized } = await import('./utils/globalErrorHandler');
+    expect(isGlobalErrorHandlerInitialized()).toBe(true);
   });
 });
