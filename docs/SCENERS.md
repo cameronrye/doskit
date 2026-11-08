@@ -15,14 +15,14 @@ The sceners organization (curated by Defacto2) contains more than 150 repositori
 
 ### Successfully Added
 
-| Demo             | ID                | Author              | Year  | Status     |
-| ---------------- | ----------------- | ------------------- | ----- | ---------- |
-| Squid BBS Intro  | `squid-bbstro`    | cld & The Doctor    | 1994  | ✅ Working |
-| 3D Rotation Demo | `3drotate`        | Grumpy's Collection | 1990s | ✅ Working |
-| Starfield Effect | `stars`           | Grumpy's Collection | 1990s | ✅ Working |
-| Crystal Dream 2  | `crystal-dream-2` | Triton              | 1993  | ✅ Working |
+| Demo             | ID                | Author           | Year | Status     |
+| ---------------- | ----------------- | ---------------- | ---- | ---------- |
+| Squid BBS Intro  | `squid-bbstro`    | cld & The Doctor | 1994 | ✅ Working |
+| 3D Rotation Demo | `3drotate`        | Draeden of VLA   | 1993 | ✅ Working |
+| Starfield Effect | `stars`           | Draeden of VLA   | 1993 | ✅ Working |
+| Crystal Dream 2  | `crystal-dream-2` | Triton           | 1993 | ✅ Working |
 
-The IDs are the app IDs in `src/config/apps.config.ts`. App URLs drop the hyphens (`/?app=squidbbstro`), which is the form DosKit shows in the address bar; links with the hyphenated ID still open the app and are rewritten to that form.
+The IDs are the app IDs in `src/config/apps.config.ts`, and the authors and years are those of its registry. [`public/demos/README.md`](../public/demos/README.md) records where each archive comes from and what gives its year. App URLs drop the hyphens (`/?app=squidbbstro`), which is the form DosKit shows in the address bar; links with the hyphenated ID still open the app and are rewritten to that form.
 
 ### Demo Details
 
@@ -33,17 +33,19 @@ The IDs are the app IDs in `src/config/apps.config.ts`. App URLs drop the hyphen
 - **URL**: `https://doskit.net/?app=squidbbstro`
 - **Source**: https://github.com/sceners/squid-bbstro
 
-#### 3D Rotation Demo
+#### 3D Rotation Demo (1993)
 
+- **Author**: Draeden of VLA. It is the example program of VLA's tutorial "Intro To 3d Rotations", whose text is dated 02/22/93, and `3DROTATE.EXE` carries the line "Coded by Draeden of VLA".
 - **Features**: Real-time 3D object rotation in VGA mode
 - **URL**: `https://doskit.net/?app=3drotate`
-- **Source**: https://github.com/sceners/grumpys-source-pack-collection
+- **Source**: https://github.com/sceners/grumpys-source-pack-collection, a copy of Grumpy's source pack: Grumpy collected the tutorial rather than writing it
 
-#### Starfield Effect
+#### Starfield Effect (1993)
 
+- **Author**: Draeden of VLA. It is the example program of VLA's tutorial "Intro To Starfields", whose text and source are dated 03/15/93.
 - **Features**: Classic starfield effect simulating flying through space
 - **URL**: `https://doskit.net/?app=stars`
-- **Source**: https://github.com/sceners/grumpys-source-pack-collection
+- **Source**: https://github.com/sceners/grumpys-source-pack-collection, the same source pack
 
 #### Crystal Dream 2 (1993)
 
@@ -83,7 +85,9 @@ For each demo (the full steps, with code, are in [`src/dos-apps/README.md`](../s
 1. **Prepare Files** - Copy executable and required data files, create ZIP bundle in `public/demos/`
 2. **Create Config** - Add config file in `src/dos-apps/`, define DOSBox configuration
 3. **Register App** - Add an entry to `availableApps` in `src/config/apps.config.ts`; the app selector lists every registered app, so its UI needs no change
-4. **Test** - Verify demo runs correctly, check audio/video output
+4. **Record Its Source** - Give the archive an entry in `public/demos/README.md`: where it comes from, its authors and year, and its terms
+5. **List It** - Add it to the Bundled Applications in `public/llm-full.txt` and to the table above
+6. **Test** - Verify demo runs correctly, check audio/video output
 
 ## Available Repositories
 
@@ -132,6 +136,7 @@ These demos are excellent for:
 ## License Notes
 
 - **Code-Breaker**: Public Domain (Unlicense)
+- **Integrated demos**: [`public/demos/README.md`](../public/demos/README.md) quotes the terms each archive states, or says that none were found. Squid's source calls it freeware; the two VLA tutorials and Crystal Dream 2 state no terms.
 - **Other repos**: Various scene/historical licenses
 - **Usage**: Educational and historical preservation
 
@@ -140,4 +145,5 @@ These demos are excellent for:
 - **Sceners Organization**: https://github.com/sceners
 - **Scene.org**: Official demoscene file archive
 - **Defacto2**: Curation and preservation of scene content
-- **Original Authors**: cld, The Doctor, Grumpy, Triton, and the demo scene community
+- **Original Authors**: cld, The Doctor, Draeden of VLA, Triton, and the demo scene community
+- **Grumpy**: Collected the source pack the two VLA tutorials come from
