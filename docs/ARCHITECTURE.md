@@ -104,7 +104,9 @@ UpdateNotification (a React root of its own, mounted by utils/updatePrompt.ts)
 
 In development, `StrictMode` runs each effect twice when a component mounts, with its cleanup in between, so each DosPlayer starts js-dos twice in its element. `useDosEmulator` stops the first start's player and passes on none of its events, and on a fresh page the adapter holds the second start back until `emulators.js` has run (see [Adapter Pattern](#6-adapter-pattern)). Production builds run each effect once.
 
-What covers what is fixed. From the bottom: the header and footer, with js-dos's sidebar; the player's own loading and error panels; the URL error banner; js-dos's modals and on-screen controls; the loading and error overlays over the whole player; the selector's backdrop and the selector; the install prompt and js-dos's toasts; and the offline notices and the update prompt. The comment at the top of `src/components/DosPlayerWithApps.css` gives each one's `z-index` and the file that sets it; a new overlay belongs in that list.
+What covers what is fixed. From the bottom: the header and footer, with js-dos's sidebar; the player's own loading and error panels; the URL error banner; js-dos's modals and on-screen controls, and the player in js-dos's soft fullscreen; the loading and error overlays over the whole player; the selector's backdrop and the selector; the install prompt and js-dos's toasts; and the offline notices and the update prompt. The comment at the top of `src/components/DosPlayerWithApps.css` gives each one's `z-index` and the file that sets it; a new overlay belongs in that list.
+
+With `softFullscreen` set, js-dos's fullscreen button has the player fill the window, over the header and footer, and js-dos's own layers, its toasts included, then stay inside it. The rule for that is DosKit's, in `src/components/DosPlayer.css`: the button marks the player's element with `jsdos-fullscreen-workaround`, but `js-dos.css` styles that class only on an element inside it.
 
 ## Data Flow
 

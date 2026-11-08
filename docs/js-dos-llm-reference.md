@@ -1127,6 +1127,8 @@ Dos(element, {
    }
    ```
 
+> **DosKit note:** With `softFullscreen`, step 3 is needed. js-dos's own rule, in `js-dos.css`, is `.jsdos-rso .jsdos-fullscreen-workaround`, for an element inside its root, but its fullscreen button marks the root itself, the element given to `Dos()`, which also has `jsdos-rso`. Without a rule of the page's own, the player keeps its size. DosKit's rule is in [`src/components/DosPlayer.css`](../src/components/DosPlayer.css), at the `z-index` js-dos's own rule has, 999: the 9999 above would put the player over DosKit's selector, at 1101.
+
 #### Issue 7: File System Operations Failing
 
 **Symptoms:** `fsReadFile` or `fsWriteFile` throws errors
