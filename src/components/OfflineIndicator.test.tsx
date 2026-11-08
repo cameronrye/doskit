@@ -138,6 +138,16 @@ describe('OfflineIndicator', () => {
       }
     });
 
+    it('shows the offline banner when the page opens offline', () => {
+      // A page the service worker serves offline gets no offline event
+      Object.defineProperty(window.navigator, 'onLine', { value: false, writable: true });
+
+      render(<OfflineIndicator />);
+
+      expect(screen.getByText("You're offline")).toBeInTheDocument();
+      expect(screen.queryByText('Back online')).not.toBeInTheDocument();
+    });
+
     it('should show offline message when offline event fires', async () => {
       render(<OfflineIndicator />);
 

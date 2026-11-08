@@ -56,7 +56,8 @@ const offlineBannerRef = keepHeightIn('--offline-banner-height');
 const installPromptRef = keepHeightIn('--install-prompt-height');
 
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkStatusChange }) => {
-  const [showOfflineMessage, setShowOfflineMessage] = useState(false);
+  // A page opened offline, which the service worker serves, gets no offline event
+  const [showOfflineMessage, setShowOfflineMessage] = useState(() => !navigator.onLine);
   const [showOnlineMessage, setShowOnlineMessage] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
