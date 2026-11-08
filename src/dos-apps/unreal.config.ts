@@ -29,7 +29,8 @@ export const unrealZipUrl = '/demos/unreal.zip';
  * - Memory: 4MB RAM
  *
  * This configuration uses:
- * - Auto CPU core, type and cycles
+ * - Auto CPU core and type, at a fixed 30000 cycles. 'auto' would give it 3,000 cycles/ms, at
+ *   which its text scroller falls a phrase behind within a minute.
  * - Sound Blaster 16 for audio
  * - Standard VGA graphics
  * - DOSBox's default 16 MB of memory
@@ -38,7 +39,7 @@ export const unrealZipUrl = '/demos/unreal.zip';
  */
 export const unrealDosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 30000 })
   .setSoundBlaster({
     sbtype: 'sb16',
     sbbase: 220,
@@ -62,7 +63,7 @@ export const unrealDosboxConf = presets
     'echo - Excellent music by Purple Motion',
     'echo.',
     'echo Audio: Sound Blaster 16',
-    'echo CPU: Auto Cycles',
+    'echo CPU: 30000 cycles',
     'echo.',
     'echo Mounting C: drive...',
     'mount c .',

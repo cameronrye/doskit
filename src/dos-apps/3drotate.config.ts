@@ -28,12 +28,13 @@ export const rotate3dZipUrl = '/demos/3drotate.zip';
  * - Memory: Minimal (runs in 640KB)
  *
  * This configuration uses:
- * - Auto CPU core, type and cycles
+ * - Auto CPU core and type, at a fixed 30000 cycles. 'auto' would give it 3,000 cycles/ms, at
+ *   which it needs two frames to draw the cube and turns it at half speed.
  * - Standard VGA graphics
  */
 export const rotate3dDosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 30000 })
   .setJoystick({ joysticktype: 'none' })
   .addAutoexec(
     '@echo off',
@@ -44,7 +45,7 @@ export const rotate3dDosboxConf = presets
     "echo   From Grumpy's Source Pack Collection",
     'echo ========================================',
     'echo.',
-    'echo CPU: Auto Cycles',
+    'echo CPU: 30000 cycles',
     'echo Graphics: VGA',
     'echo.',
     'echo Mounting C: drive...',

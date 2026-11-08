@@ -29,7 +29,9 @@ export const starportBbstroZipUrl = '/demos/starport-bbstro.zip';
  * - Memory: Minimal (runs in 640KB)
  *
  * This configuration uses:
- * - Auto CPU core, type and cycles (more than enough)
+ * - Auto CPU core and type, at a fixed 30000 cycles. 'auto' would give it 3,000 cycles/ms, at
+ *   which it draws only 35 of its 70 frames a second: SP2.ASM's 70 Hz timer keeps the motion
+ *   and the music at speed, but the motion stutters.
  * - Sound Blaster 16 for audio
  * - Standard VGA graphics
  *
@@ -37,7 +39,7 @@ export const starportBbstroZipUrl = '/demos/starport-bbstro.zip';
  */
 export const starportBbstroDosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 30000 })
   .setSoundBlaster({
     sbtype: 'sb16',
     sbbase: 220,
@@ -56,7 +58,7 @@ export const starportBbstroDosboxConf = presets
     'echo ========================================',
     'echo.',
     'echo Audio: Sound Blaster 16',
-    'echo CPU: Auto Cycles',
+    'echo CPU: 30000 cycles',
     'echo Size: 1993 bytes!',
     'echo.',
     'echo Mounting C: drive...',

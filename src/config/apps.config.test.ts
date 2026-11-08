@@ -187,6 +187,16 @@ describe('availableApps', () => {
     expect(conf).toMatch(/^cycles=max$/m);
   });
 
+  it.each(['starport-bbstro', 'unreal', 'panic', '3drotate'])(
+    'should run %s at a fixed 30000 cycles',
+    async (id) => {
+      // 'auto' gives these real-mode programs 3,000 cycles/ms: StarPort then draws 35 of its 70
+      // frames a second, 3drotate turns its cube at half speed, and Unreal's and Panic's
+      // effects fall seconds behind. At 'max' Panic plays no sound.
+      expect(await findAppById(id)?.loadDosboxConf?.()).toMatch(/^cycles=30000$/m);
+    }
+  );
+
   it('should give Crystal Dream 2 the Ultrasound its setup offers first, and a Sound Blaster', async () => {
     // Without a GUS, DOSBox sets no ULTRASND, and taking the setup's first choice stops the
     // demo at the DOS prompt: "Cannot find ULTRASND enviroment string."
