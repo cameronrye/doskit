@@ -9,6 +9,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    // Node 25+ defines its own localStorage and sessionStorage, which the jsdom environment
+    // does not replace, and warns whenever localStorage is read without --localstorage-file.
+    // Without them, tests get jsdom's, as on Node 24, which accepts the flag and ignores it.
+    execArgv: ['--no-experimental-webstorage'],
     setupFiles: './src/test/setup.ts',
     coverage: {
       provider: 'v8',
