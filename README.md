@@ -17,7 +17,7 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 - **Cross-Platform**: Works on Windows, macOS, Linux, iOS, and Android
 - **Progressive Web App (PWA)**: Install as a native app with offline support
 - **Deep Linking**: Load specific applications directly via URL (e.g., `?app=secondreality`)
-- **Offline Functionality**: Works completely offline after first visit
+- **Offline Functionality**: After the first visit, the DOS prompt works offline, and so does every app opened online after that
 - **Modern Tech Stack**: Built with React 19, TypeScript, and Vite
 - **WebAssembly Performance**: Leverages js-dos for near-native DOS emulation
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
@@ -87,10 +87,10 @@ DosKit is a fully-featured **Progressive Web App** that can be installed on your
 ### Key PWA Features
 
 - **Installable**: Install DosKit as a native app on desktop and mobile
-- **Offline Support**: Works completely offline after first visit
+- **Offline Support**: After the first visit, the DOS prompt works offline, and so does every app opened online after that
 - **Fast Loading**: Service worker caches assets for instant loading
 - **Native Experience**: Standalone mode without browser UI
-- **Auto-Updates**: Automatic updates when new versions are available
+- **Update Prompt**: New versions install in the background, and an "Update Available" prompt switches to them when you choose. DosKit checks for one every hour and whenever you return to the tab
 - **Connection Status**: Real-time online/offline indicator
 
 ### Quick Install
@@ -113,9 +113,18 @@ DosKit is a fully-featured **Progressive Web App** that can be installed on your
 2. Tap Share → "Add to Home Screen"
 3. Launch from your home screen
 
-### PWA Documentation
+In Chrome, Edge and other Chromium browsers, DosKit also shows its own **Install DosKit** prompt five seconds after the browser reports that the app can be installed. **Not now** hides it for a week, and after the third time it stops asking.
 
-DosKit includes Progressive Web App (PWA) capabilities for offline functionality and app-like experience. See the main documentation sections above for PWA-related features.
+### How Offline Works
+
+The service worker (`public/sw.js`) is registered by production builds only, so `npm run dev` runs without it. To try it locally, run `npm run build` and then `npm run preview`.
+
+- **On install**, the worker downloads the app shell (`index.html`, the manifest, the logo and favicon, `js-dos.js`, `js-dos.css`, and every JS and CSS bundle, including the chunks loaded on demand) and the emulator files of js-dos's default DOSBox backend.
+- **App archives** (`/demos/<id>.zip`) are stored the first time each app is opened while the service worker runs. On a first visit, an app opened before the worker has started, such as a deep link's, is stored the next time it is opened. An app not stored yet fails to load offline with a network error.
+- **Pages** come from the network, and from the cache when the network fails or takes more than 5 seconds. A URL never visited online, such as a new deep link, gets the app shell.
+- **Deploys**: each build has an app shell cache of its own, which replaces the previous one when the new version takes over. Emulator files stay cached until the js-dos version changes, and app archives until an archive is added, changed or removed.
+
+DOSBox-X is not precached: DosKit starts js-dos without its backend picker, so every app runs on the default backend.
 
 ## Technology Stack
 
@@ -630,7 +639,7 @@ _Load times include network fetch and initialization. FPS varies by DOS applicat
 
 **Solutions:**
 
-1. Click "Update Available" notification when it appears
+1. Click **Update Now** in the "Update Available" prompt when it appears (DosKit checks for updates when it loads, every hour, and when you return to the tab)
 2. Hard refresh: Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac)
 3. Clear browser cache and reload
 4. Unregister service worker in DevTools > Application > Service Workers
@@ -643,9 +652,9 @@ _Load times include network fetch and initialization. FPS varies by DOS applicat
 **Solutions:**
 
 1. Check internet connection
-2. Verify GitHub/CDN is accessible
-3. Check browser console for CORS errors
-4. Try again later (may be rate limited)
+2. Offline, only apps whose archives the service worker has stored can start: see [How Offline Works](#how-offline-works)
+3. Check the browser console and Network tab: each app downloads `/demos/<id>.zip` from the site itself
+4. Try again later. Failed downloads are retried three times, with growing delays, after network errors and 408, 429, 500, 502, 503 and 504 responses
 5. Check if using VPN or proxy that might block requests
 
 #### High Memory Usage
@@ -676,7 +685,7 @@ logger.debug('Debug message');
 
 - **Reduce CPU cycles** for better battery life on mobile
 - **Enable hardware acceleration** in browser settings
-- **Use cache-first mode** for offline performance
+- **Let the service worker cache**: after the first visit the emulator loads from its cache, and so does each app once the worker has stored it
 - **Close unused tabs** to free up memory
 - **Disable browser extensions** that might interfere
 
