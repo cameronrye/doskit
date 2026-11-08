@@ -179,12 +179,11 @@ scaler=none
 aspect=false
 ```
 
-**What it does:** States what the backend does anyway. `none` is the only scaler it accepts and aspect correction is off by default, so DOSBox hands js-dos each frame at the program's own resolution. Only the default DOS prompt's configuration states these lines; the presets leave `[render]` at the same defaults. js-dos then scales the frame on the GPU with WebGL (section 4), and its `renderAspect: '4/3'` option in `src/config/jsdos.config.ts` gives the picture its 4:3 shape.
+**What it does:** States what the backend does anyway. `none` is the only scaler it accepts and aspect correction is off by default, so DOSBox hands js-dos each frame at the program's own resolution. Only the default DOS prompt's configuration states these lines; the presets leave `[render]` at the same defaults. js-dos draws each frame into a canvas of that same size (section 4), and the browser scales the canvas to the player: js-dos sets its CSS width and height to fit the player at the aspect ratio of its `renderAspect` option, `'4/3'` in `src/config/jsdos.config.ts`, and its CSS `image-rendering` to the `imageRendering` option, `'pixelated'`, so the pixels are not smoothed.
 
 **Benefits:**
 
-- Scaling happens on the GPU, via WebGL
-- No CPU time goes to software scalers
+- DOSBox spends no time on software scalers: the browser scales the canvas
 
 ---
 
@@ -198,11 +197,12 @@ aspect=false
 renderBackend: 'webgl';
 ```
 
-**What it does:** Uses GPU-accelerated WebGL for rendering instead of CPU-based Canvas 2D.
+**What it does:** js-dos uploads each frame to a WebGL texture and draws it into the canvas, at most once per display frame: a frame that arrives before the last one was drawn takes its place. With Canvas 2D (`renderBackend: 'canvas'`), it converts every frame it receives to RGBA in a JavaScript loop and puts it on the canvas with `putImageData()`. Either way the canvas has the frame's own size, and the browser scales it to the player (section 3).
 
 **Benefits:**
 
-- Hardware-accelerated rendering
+- No JavaScript loop over each frame's pixels: the frame goes to the GPU as DOSBox sent it, RGB or RGBA
+- At most one draw per display frame, however many frames arrive
 
 **Fallback:** js-dos falls back to Canvas 2D when its WebGL renderer cannot start, for example when the browser gives it no WebGL context
 
@@ -386,7 +386,7 @@ cputype=auto
 cycles=25000
 
 [render]
-# The only scaler the backend has; WebGL scales the frame
+# The only scaler the backend has; the browser scales the canvas
 scaler=none
 aspect=false
 
