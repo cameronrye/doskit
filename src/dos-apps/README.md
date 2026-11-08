@@ -21,8 +21,9 @@ id names the archive and the config module, and it is the `?app=` value in links
 
 Put the program's files in a ZIP archive at `public/demos/my-demo.zip`, with the executable at
 the top level. Vite copies `public/` into the build as it is, so the app downloads the archive
-from `/demos/my-demo.zip`. Record where it comes from and its license in
-[`public/demos/README.md`](../../public/demos/README.md).
+from `/demos/my-demo.zip`. Where you can, use the archive as its source has it, byte for byte:
+several of the archives here ask to be passed on unmodified, and a repacked one loses the file
+dates that help establish the year.
 
 ### 2. Write the config module
 
@@ -47,14 +48,17 @@ The autoexec has to mount the archive (`mount c .`), switch to it (`c:`) and sta
 
 Every app runs on js-dos's default `dosbox` backend, set in `src/config/jsdos.config.ts`, and
 DOSBox ignores settings that backend does not have without a warning. The builder only has
-options for settings that backend applies, and only accepts the CPU cores, CPU types and scaler
-it has. That rules out a few settings DOSBox guides suggest:
+options for settings that backend applies, and only accepts the CPU cores, CPU types, scaler,
+sample rates and prebuffer values it has. That rules out a few settings DOSBox guides suggest:
 
 - There is no dynamic core: `core` is `auto`, `normal` or `simple`.
 - There is no `486` or `pentium` CPU type: `cputype` `auto` is the usual choice.
 - There is no `[dos] ver`: DOS reports version 5.00. A program that needs a newer one gets it
   from `VER SET 7 10` in the autoexec.
 - The builder has no memory setting: DOS gets DOSBox's default 16 MB.
+- There is no mixer `blocksize`: the mixer always works in 2048-sample blocks.
+- `prebuffer` goes from 0 to 100 ms, and the sample rates (`rate`, `oplrate`, `pcrate`,
+  `tandyrate`) are 8000, 11025, 16000, 22050, 32000, 44100, 48000 or 49716 Hz.
 
 Keep the comments and the autoexec's banner to what the configuration actually sets.
 
@@ -87,16 +91,41 @@ own that is only downloaded when the app is loaded, or when the selector preload
 `loadZipArchive` is already imported at the top of the file; pass it the `onProgress` and
 `signal` the loader receives, so the selector can show progress and cancel the download.
 
+`author` and `year` are the release's, from the archive's own files where they say; the header
+shows them as "Some Group (1994)". Both are optional: leave out a year that nothing establishes
+rather than guess one.
+
 The app now appears in the selector and opens at `/?app=my-demo`. The address bar shows the id
 without hyphens (`/?app=mydemo`); both forms work.
 
-### 4. Check it
+### 4. Record where it comes from
+
+Give the archive an entry in [`public/demos/README.md`](../../public/demos/README.md), like the
+others there: the program and its authors, its year and the file that gives it, what the ZIP
+holds, where it came from and whether it is that file byte for byte, and its terms, quoted from
+its own files, or that none were found. The registry entry's `author` and `year` should match it.
+
+### 5. List it
+
+[`public/llm-full.txt`](../../public/llm-full.txt) repeats the registry under "Bundled
+Applications", for readers that only fetch that file. Add the app there in the same form:
+
+```text
+- My Demo (Some Group, 1994): https://doskit.net/?app=mydemo
+```
+
+If the program comes from the [sceners](https://github.com/sceners) organization, add it to the
+table in [`docs/SCENERS.md`](../../docs/SCENERS.md) as well.
+
+### 6. Check it
 
 - `npx vitest run src/config/apps.config.test.ts` checks every registered app: its loader must
-  download `/demos/<id>.zip`, and its DOSBox configuration must leave out the settings the
-  default backend ignores.
-- Run `npm run dev` and open `http://localhost:5173/?app=my-demo`. The program should start on
-  its own, not stop at a DOS prompt or an error.
+  download `/demos/<id>.zip`, its DOSBox configuration must leave out the settings the default
+  backend ignores, and its description and autoexec banner must not give another year for the
+  release than its `year`.
+- Run `npm run dev` and open `http://localhost:5173/?app=my-demo` (Vite takes the next free port
+  if 5173 is in use, and prints the address). The program should start on its own, not stop at a
+  DOS prompt or an error.
 
 ## Legal considerations
 
