@@ -82,7 +82,7 @@ Whatever was thrown or rejected, the handler reports an `Error`: the value itsel
 **Features:**
 
 - Service-agnostic interface (`ErrorTrackingService`)
-- Console tracker, in development and production
+- Console tracker, in development and production; breadcrumbs are logged in development only
 - Error severity levels (DEBUG, INFO, WARNING, ERROR, FATAL)
 - Error context tracking
 - Breadcrumb support for user action trails
@@ -106,7 +106,7 @@ tracker.addBreadcrumb('User clicked load button', 'user-action');
 
 **Supported Services:**
 
-- **Console** - The only implementation: logs each error, React error and breadcrumb with an `[ErrorTracking]` prefix, and keeps nothing
+- **Console** - The only implementation, which keeps nothing. It logs each error and React error with `console.error` and an `[ErrorTracking]` prefix, in every build. Breadcrumbs and its "[ErrorTracking] Console tracker initialized" line are `console.log` calls behind `import.meta.env.DEV`, so a production build logs neither.
 
 **Who Reports to It:** The global error handler and ErrorBoundary. Errors that components catch themselves (see [Component-Level Error States](#5-component-level-error-states)) are logged to the console, not tracked.
 
@@ -415,6 +415,7 @@ What differs between builds follows `import.meta.env.DEV`. `getUserFriendlyError
 ### Production
 
 - The logger prints warnings and errors only
+- The error tracker logs errors and React errors, but no breadcrumbs
 - The global handler logs the user-friendly message and suggestion for each error it reports
 - ErrorBoundary's fallback shows only its message and buttons
 

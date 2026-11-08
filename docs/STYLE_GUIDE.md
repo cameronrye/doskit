@@ -609,6 +609,7 @@ for (const item of items) {
 
 - **Use `import.meta.env.DEV`**: For development-only code
 - **Console Logs**: `console.log` only in development; `console.warn` and `console.error` may stay in production code
+- **Logger**: `logger.debug` and `logger.info` from `src/utils/logger.ts` print in development only, so they need no guard; `logger.warn` and `logger.error` print in every build. `main.tsx` logs the service worker's callbacks with `logger.info`.
 - **Debug Features**: Guard with environment checks
 
 ```typescript
@@ -616,6 +617,9 @@ for (const item of items) {
 if (import.meta.env.DEV) {
   console.log('[DosPlayer] Initializing emulator');
 }
+
+// Good: the logger prints info and debug messages in development only
+logger.info('PWA', 'An update is waiting: showing the update prompt');
 
 // Bad
 console.log('[DosPlayer] Initializing emulator');
