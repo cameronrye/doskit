@@ -7,9 +7,9 @@
 A robust, cross-platform foundation for running DOS applications using js-dos WebAssembly technology. This project works seamlessly across different platforms (Windows, macOS, Linux) and devices (desktop, mobile, tablet).
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![js-dos](https://img.shields.io/badge/js--dos-v8.3.20-green.svg)
-![React](https://img.shields.io/badge/react-19.2.0-blue.svg)
-![TypeScript](https://img.shields.io/badge/typescript-5.9.3-blue.svg)
+![js-dos](https://img.shields.io/github/package-json/dependency-version/cameronrye/doskit/js-dos?color=green)
+![React](https://img.shields.io/github/package-json/dependency-version/cameronrye/doskit/react?color=blue)
+![TypeScript](https://img.shields.io/github/package-json/dependency-version/cameronrye/doskit/dev/typescript?color=blue)
 
 ## Features
 
@@ -19,7 +19,7 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 - **Deep Linking**: Load specific applications directly via URL (e.g., `?app=secondreality`)
 - **Offline Functionality**: Works completely offline after first visit
 - **Modern Tech Stack**: Built with React 19, TypeScript, and Vite
-- **WebAssembly Performance**: Leverages js-dos v8.3.20 for near-native DOS emulation
+- **WebAssembly Performance**: Leverages js-dos for near-native DOS emulation
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
 - **Audio Support**: Sound Blaster and AdLib emulation with proper audio output
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
@@ -47,7 +47,7 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 ### Prerequisites
 
 - Node.js 24+ (see `.nvmrc`)
-- npm 9+ or yarn 1.22+
+- npm, which comes with Node.js (dependencies are locked in `package-lock.json`)
 
 ### Installation
 
@@ -121,26 +121,29 @@ DosKit includes Progressive Web App (PWA) capabilities for offline functionality
 
 ### Core Technologies
 
-- **[React 19.2.0](https://react.dev/)** - Modern UI framework with latest features
-- **[TypeScript 5.9.3](https://www.typescriptlang.org/)** - Type-safe JavaScript
-- **[Vite 7.1.14](https://vite.dev/)** - Next-generation frontend tooling (Rolldown variant)
-- **[js-dos 8.3.20](https://js-dos.com/)** - WebAssembly DOS emulator
+- **[React 19](https://react.dev/)** - Modern UI framework with latest features
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
+- **[Vite 8](https://vite.dev/)** - Next-generation frontend tooling, bundling with Rolldown
+- **[js-dos 8](https://js-dos.com/)** - WebAssembly DOS emulator
+- **[Vitest](https://vitest.dev/)** - Test runner, with jsdom and Testing Library
+
+`package.json` pins their exact versions.
 
 ### Why These Technologies?
 
-#### React + Vite (Rolldown Variant)
+#### React + Vite
 
 - **Fast Development**: Hot Module Replacement (HMR) for instant feedback
-- **Modern Build**: Optimized production builds with code splitting
+- **Modern Build**: Optimized production builds with code splitting: React gets a chunk of its own, and each app's configuration is a separate chunk that the page imports only when it needs it
 - **Developer Experience**: Excellent TypeScript integration and tooling
-- **Experimental Rolldown**: This project uses the experimental Rolldown variant of Vite 7 for improved build performance. Rolldown is a Rust-based bundler that aims to replace Rollup in Vite. While experimental, it provides faster builds and better tree-shaking. For production use, you may want to switch to the stable Vite release by changing `vite` to the standard version in `package.json`.
+- **Rolldown**: Vite 8 bundles with Rolldown, a Rust-based bundler that took over from Rollup in Vite. `vite.config.ts` configures it through `build.rolldownOptions`.
 
-#### js-dos v8.3.20
+#### js-dos
 
-- **Latest Stable**: Most recent version with bug fixes and improvements
-- **WebAssembly**: High-performance emulation (80-90% of native speed)
+- **Self-Hosted**: `package.json` pins an exact js-dos version, and `scripts/copy-js-dos.js` copies it from `node_modules` into `public/` before every dev server start and build, so DosKit never loads js-dos from a CDN
+- **WebAssembly**: High-performance emulation, with DOSBox running in a Web Worker
 - **Cross-Platform**: Works in all modern browsers and Node.js
-- **Multiple Backends**: Supports both DOSBox and DOSBox-X
+- **Multiple Backends**: Supports both DOSBox and DOSBox-X; DosKit runs every app on DOSBox
 - **Active Development**: Regular updates and community support
 
 #### TypeScript
@@ -153,40 +156,88 @@ DosKit includes Progressive Web App (PWA) capabilities for offline functionality
 
 ```
 doskit/
-├── docs/                      # Documentation
-│   └── js-dos-llm-reference.md   # Comprehensive js-dos API reference
-├── public/                    # Static assets (logos, favicons)
+├── .github/workflows/             # CI, GitHub Pages deployment, release-please
+├── docs/                          # Documentation
+│   ├── ARCHITECTURE.md            # How DosKit is put together
+│   ├── *.md                       # Error handling, performance, SEO, style guide, sceners
+│   └── js-dos-llm-reference.md    # Comprehensive js-dos API reference
+├── public/                        # Static files, copied into the build as they are
+│   ├── demos/                     # The apps' ZIP archives (sources and licenses in its README)
+│   ├── icons/                     # PWA icons
+│   ├── manifest.json              # PWA manifest
+│   ├── sw.js                      # Service worker
+│   ├── emulators/                 # js-dos emulator files (generated)
+│   ├── js-dos.js                  # js-dos player (generated)
+│   └── js-dos.css                 # js-dos styles (generated)
+├── scripts/
+│   ├── copy-js-dos.js             # Copies js-dos into public/ before dev and build
+│   ├── inject-sw-version.js       # Writes cache names and the precache list into dist/sw.js
+│   ├── help.js                    # npm run help
+│   ├── generate-icons.js          # PWA icons from logo.svg
+│   ├── generate-social-images.js  # Social preview PNGs from their SVGs
+│   └── *.test.js                  # Tests of these scripts, the service worker and 404.html
 ├── src/
-│   ├── components/           # React components
-│   │   ├── DosPlayer.tsx    # Main DOS emulator component
-│   │   └── DosPlayer.css    # Component styles
-│   ├── config/              # Configuration files
-│   │   ├── dosbox.conf.ts   # DOSBox configurations
-│   │   └── jsdos.config.ts  # js-dos settings
-│   ├── dos-apps/            # DOS applications and games
-│   ├── hooks/               # Custom React hooks
-│   ├── types/               # TypeScript type definitions
-│   │   └── js-dos.d.ts     # js-dos type definitions
-│   ├── utils/               # Utility functions
-│   ├── App.tsx              # Main application component
-│   ├── App.css              # Application styles
-│   ├── main.tsx             # Application entry point
-│   └── index.css            # Global styles
+│   ├── adapters/                  # Emulator adapter around js-dos's window.Dos()
+│   ├── components/                # React components
+│   │   ├── DemoSelector.tsx       # App selector
+│   │   ├── DosPlayer.tsx          # Runs one js-dos player
+│   │   ├── DosPlayerUI.tsx        # The player's loading and error states
+│   │   ├── DosPlayerWithApps.tsx  # Loads apps and switches between them
+│   │   ├── ErrorBoundary.tsx
+│   │   ├── OfflineIndicator.tsx   # Offline notice and install prompt
+│   │   ├── UpdateNotification.tsx # "Update Available" prompt
+│   │   └── *.css                  # Component styles
+│   ├── config/                    # Configuration files
+│   │   ├── apps.config.ts         # The apps in the selector
+│   │   ├── apps.config.test.ts    # Checks every app's archive and DOSBox configuration
+│   │   ├── dosbox.conf.ts         # DOSBox configuration of the DOS prompt
+│   │   └── jsdos.config.ts        # js-dos settings (desktop and mobile)
+│   ├── constants/                 # PWA and UI constants
+│   ├── dos-apps/                  # Each app's archive URL and DOSBox configuration
+│   ├── hooks/
+│   │   └── useDosEmulator.ts      # Starts and stops js-dos
+│   ├── integration/               # Integration tests
+│   ├── test/setup.ts              # Test setup
+│   ├── types/                     # TypeScript type definitions
+│   │   ├── dos-app.ts             # DosApp
+│   │   └── js-dos.d.ts            # js-dos type definitions
+│   ├── utils/                     # Utility functions
+│   │   ├── diskLoader.ts          # Downloads app archives
+│   │   ├── dosboxConfigBuilder.ts # Builds DOSBox configurations
+│   │   ├── errorMessages.ts       # User-friendly error messages
+│   │   ├── errorTracking.ts       # Error tracking (logs to the console)
+│   │   ├── fetchWithRetry.ts      # Retries failed requests with backoff
+│   │   ├── globalErrorHandler.ts  # Uncaught errors and unhandled rejections
+│   │   ├── logger.ts              # Logger
+│   │   ├── serviceWorkerRegistration.ts
+│   │   ├── storage.ts             # localStorage that never throws
+│   │   ├── updatePrompt.ts        # Shows the "Update Available" prompt
+│   │   └── urlRouting.ts          # Deep links
+│   ├── App.tsx                    # Main application component
+│   ├── App.css                    # Application styles
+│   ├── main.tsx                   # Application entry point
+│   ├── index.css                  # Global styles
+│   └── vite-env.d.ts              # Types of the build-time constants
 ├── .gitignore
-├── eslint.config.js         # ESLint configuration
-├── index.html               # HTML entry point
-├── package.json             # Dependencies and scripts
-├── tsconfig.json            # TypeScript configuration
-├── vite.config.ts           # Vite configuration
-└── README.md                # This file
+├── eslint.config.js               # ESLint configuration
+├── index.html                     # HTML entry point
+├── package.json                   # Dependencies and scripts
+├── tsconfig.json                  # TypeScript configuration (app, Node and test projects)
+├── tsconfig.test.json             # Type-checks the tests
+├── typedoc.json                   # API documentation (npm run docs)
+├── vite.config.ts                 # Vite configuration
+├── vitest.config.ts               # Vitest configuration
+└── README.md                      # This file
 ```
+
+Tests sit next to the code they test, as `*.test.ts` and `*.test.tsx` files. The generated files in `public/` are copied from `node_modules` by `scripts/copy-js-dos.js` and are not committed.
 
 ## Development
 
 ### Available Scripts
 
 ```bash
-# Show all available scripts with descriptions
+# List all scripts by category, with the command each one runs
 npm run help
 
 # Start development server
@@ -195,34 +246,53 @@ npm run dev
 # Build for production
 npm run build
 
-# Preview production build
+# Preview production build (http://localhost:4173)
 npm run preview
 
 # Run linter
 npm run lint
 
-# Run tests
-npm run test
+# Format all files with Prettier
+npm run format
+
+# Check formatting, as CI does
+npm run format:check
+
+# Run tests once
+npm test
+
+# Run tests in watch mode
+npm run test:watch
 
 # Run tests with UI
 npm run test:ui
 
-# Run tests once (CI mode)
-npm run test:run
-
 # Run tests with coverage
 npm run test:coverage
+
+# Generate API documentation into docs/api/
+npm run docs
+
+# Regenerate the PWA icons and the social preview images
+npm run generate-icons
+npm run generate-social-images
 ```
 
 > **Tip**: Run `npm run help` anytime to see a formatted list of all available commands!
+
+`npm run dev` and `npm run build` first run `scripts/copy-js-dos.js`, which copies the js-dos runtime from `node_modules` into `public/` (`js-dos.js`, `js-dos.css` and `emulators/`). If you start Vite another way, such as `npx vite`, run `node scripts/copy-js-dos.js` first, and again after updating js-dos.
+
+`npm run build` type-checks the app, the tests and the Vite and Vitest configs (`tsc -b`), builds into `dist/`, and runs `scripts/inject-sw-version.js`, which writes the cache names and the list of files to precache into `dist/sw.js`. The build fails if a file it would precache is missing from `dist/`.
 
 ### Development Workflow
 
 1. **Start the dev server**: `npm run dev`
 2. **Make changes**: Edit files in `src/`
 3. **See changes instantly**: Vite HMR updates the browser automatically
-4. **Test**: Interact with the DOS prompt to verify functionality
+4. **Test**: Run `npm test`, and interact with the DOS prompt to verify functionality
 5. **Build**: Run `npm run build` to create production bundle
+
+Commits go through a pre-commit hook that runs ESLint, Prettier and the related tests on the staged files; see [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
 
 ## Deployment
 
@@ -480,13 +550,13 @@ _Load times include network fetch and initialization. FPS varies by DOS applicat
 
 #### "DOS emulator library not loaded"
 
-**Problem**: js-dos failed to load from CDN.
+**Problem**: js-dos (`/js-dos.js`, which DosKit serves itself) did not load.
 
 **Solutions:**
 
-1. Check your internet connection
-2. Verify CDN is accessible: https://v8.js-dos.com/latest/js-dos.js
-3. Check browser console for CORS or network errors
+1. Check the browser console and Network tab: `/js-dos.js` should load without errors
+2. In development, check that `public/js-dos.js` exists: `npm run dev` copies it from `node_modules`, and if you start Vite another way, run `node scripts/copy-js-dos.js` first
+3. Check your internet connection (after the first visit, the service worker serves it offline)
 4. Try refreshing the page
 5. Clear browser cache
 
@@ -633,7 +703,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 - **js-dos**: GPL-2.0 License - https://github.com/caiiiycuk/js-dos
 - **React**: MIT License
+- **retro-floppy**: MIT License
 - **DOSBox**: GPL-2.0 License
+- **Demos and trackers**: each archive in `public/demos/` keeps its own license, listed in [public/demos/README.md](public/demos/README.md)
 
 ## Contributing
 
