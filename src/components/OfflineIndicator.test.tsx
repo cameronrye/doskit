@@ -249,6 +249,61 @@ describe('OfflineIndicator', () => {
     });
   });
 
+  // Screen readers announce what is added to a live region already in the page, but not
+  // always a live region added with its text, so each region is there before its notice
+  describe('what screen readers are told', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('tells them at once that the connection is lost', () => {
+      render(<OfflineIndicator />);
+      const alert = screen.getByRole('alert');
+      expect(alert).toBeEmptyDOMElement();
+
+      fireEvent(window, new Event('offline'));
+
+      expect(alert).toHaveTextContent(/You're offline.*opened while online still work/);
+    });
+
+    it('tells them, when it is their turn, that the connection is back', () => {
+      vi.useFakeTimers();
+      render(<OfflineIndicator />);
+      fireEvent(window, new Event('offline'));
+      const status = screen.getByRole('status');
+      expect(status).toBeEmptyDOMElement();
+
+      fireEvent(window, new Event('online'));
+
+      expect(status).toHaveTextContent('Back online');
+      expect(screen.getByRole('alert')).toBeEmptyDOMElement();
+    });
+
+    it('names the install prompt as a region of the page', () => {
+      vi.useFakeTimers();
+      render(<OfflineIndicator />);
+
+      offerInstall();
+
+      expect(screen.getByRole('region', { name: 'Install DosKit' })).toHaveTextContent(
+        'Install this app for a better experience and offline access.'
+      );
+    });
+
+    it('does not read out the emoji the notices show', () => {
+      vi.useFakeTimers();
+      render(<OfflineIndicator />);
+      offerInstall();
+      fireEvent(window, new Event('offline'));
+      expect(screen.getByText('📡')).toHaveAttribute('aria-hidden', 'true');
+      expect(screen.getByText('📱')).toHaveAttribute('aria-hidden', 'true');
+
+      fireEvent(window, new Event('online'));
+
+      expect(screen.getByText('✓')).toHaveAttribute('aria-hidden', 'true');
+    });
+  });
+
   describe('PWA install prompt', () => {
     it('should not show install prompt initially', () => {
       render(<OfflineIndicator />);

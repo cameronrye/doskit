@@ -6,7 +6,7 @@
  * Displays online/offline status and PWA installation prompt
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useId, useRef } from 'react';
 import { PWA_CONFIG, UI_CONFIG } from '../constants/app';
 import { logger } from '../utils/logger';
 import { safeLocalStorage } from '../utils/storage';
@@ -62,6 +62,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const installTitleId = useId();
 
   // Use ref to track if we've already scheduled showing the prompt
   const promptScheduledRef = useRef(false);
@@ -266,45 +267,65 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
 
   return (
     <>
-      {/* Offline Indicator */}
-      {showOfflineMessage && (
-        <div className="offline-indicator offline" ref={offlineBannerRef}>
-          <div className="offline-content">
-            <span className="offline-icon">📡</span>
-            <div className="offline-text">
-              <strong>You're offline</strong>
-              {/* The service worker keeps an application's archive once it has been opened online */}
-              <p>
-                Applications you've opened while online still work. Others need a connection to
-                load.
-              </p>
+      {/*
+       * The live regions stay in the page, empty while there is nothing to say: screen
+       * readers announce what is added to one, but not always a region added with its text.
+       * Losing the connection changes which applications can load, so it interrupts (alert);
+       * its return needs nothing done, so it waits for a pause (status).
+       */}
+      <div role="alert">
+        {showOfflineMessage && (
+          <div className="offline-indicator offline" ref={offlineBannerRef}>
+            <div className="offline-content">
+              <span className="offline-icon" aria-hidden="true">
+                📡
+              </span>
+              <div className="offline-text">
+                <strong>You're offline</strong>
+                {/* The service worker keeps an application's archive once it has been opened online */}
+                <p>
+                  Applications you've opened while online still work. Others need a connection to
+                  load.
+                </p>
+              </div>
+              <button
+                className="offline-close"
+                onClick={() => setShowOfflineMessage(false)}
+                aria-label="Close offline message"
+              >
+                ✕
+              </button>
             </div>
-            <button
-              className="offline-close"
-              onClick={() => setShowOfflineMessage(false)}
-              aria-label="Close offline message"
-            >
-              ✕
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Online Indicator (brief notification after reconnecting) */}
-      {showOnlineMessage && (
-        <div className="online-indicator">
-          <span className="online-icon">✓</span>
-          <span>Back online</span>
-        </div>
-      )}
+      <div role="status">
+        {showOnlineMessage && (
+          <div className="online-indicator">
+            <span className="online-icon" aria-hidden="true">
+              ✓
+            </span>
+            <span>Back online</span>
+          </div>
+        )}
+      </div>
 
-      {/* Install Prompt */}
+      {/* Install Prompt, a region of the page that screen readers can go to */}
       {showInstallPrompt && !isInstalled && deferredPrompt && (
-        <div className="install-prompt" ref={installPromptRef}>
+        <div
+          className="install-prompt"
+          ref={installPromptRef}
+          role="region"
+          aria-labelledby={installTitleId}
+        >
           <div className="install-content">
-            <div className="install-icon">📱</div>
+            <div className="install-icon" aria-hidden="true">
+              📱
+            </div>
             <div className="install-text">
-              <strong>Install DosKit</strong>
+              <strong id={installTitleId}>Install DosKit</strong>
               <p>Install this app for a better experience and offline access.</p>
             </div>
             <div className="install-actions">
