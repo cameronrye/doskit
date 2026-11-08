@@ -31,7 +31,7 @@ export const squidBbstroZipUrl = '/demos/squid-bbstro.zip';
  * This configuration uses:
  * - Auto CPU core, type and cycles. 'auto' gives it 3,000 cycles/ms, at which it still draws
  *   all 70 frames a second.
- * - AdLib for audio (as specified in the source)
+ * - Sound Blaster 16, whose FM chip plays the AdLib music SQUID1.ASM writes
  * - Standard VGA graphics
  *
  * Features:

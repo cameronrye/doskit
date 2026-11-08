@@ -29,16 +29,10 @@ export const screamTrackerZipUrl = '/demos/scream-tracker.zip';
  * - Some EMS, where it keeps the samples, even with a GUS
  *
  * This configuration uses:
- * - Fixed cycles (12000) on the simple CPU core, for stable audio playback
- * - Sound Blaster 16 for digital audio
- * - Gravis UltraSound for superior wavetable playback
+ * - Fixed cycles (12000) on the simple CPU core
+ * - A Sound Blaster 16 and a Gravis UltraSound, two of the cards ST3.DOC names. ST3 looks for
+ *   a card when it starts and plays through the GUS ("Output: CARD:Gravis Ultrasound IO:240").
  * - DOSBox's default 16 MB of memory, with EMS/XMS enabled
- * - Text mode display
- *
- * ST3 is famous for its excellent GUS support, so we enable both
- * Sound Blaster (for compatibility) and GUS (for quality)
- *
- * Based on the original documentation and community recommendations
  */
 export const screamTrackerDosboxConf = presets
   .musicTracker()

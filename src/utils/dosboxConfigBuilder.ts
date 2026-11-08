@@ -307,31 +307,18 @@ export function createDOSBoxConfig(): DOSBoxConfigBuilder {
 
 /**
  * Preset configurations for common use cases
- * Optimized for performance and audio quality based on research
  *
- * Audio Optimization Research:
- * - Fixed CPU cycles prevent audio stuttering (cycles=max causes issues)
- * - Larger prebuffer values (50+) reduce audio crackling
- * - Sample rate 44100 Hz is standard for DOS audio
- * - There is no blocksize to choose: the backend's mixer always works in 2048-sample blocks
- *
- * Sources:
- * - DOSBox Wiki Performance Guide
- * - VOGONS forum discussions on audio optimization
- * - DOSBox Staging audio recommendations
- *
- * Every preset runs on the simple CPU core with the auto CPU type, and leaves memory at
- * DOSBox's default of 16 MB.
+ * Every preset runs on the simple CPU core with the auto CPU type at a fixed number of cycles
+ * per millisecond, and leaves memory at DOSBox's default of 16 MB. Its mixer runs at 44100 Hz
+ * and keeps 64 ms of audio on top of each 2048-sample block, where DOSBox's default is 40. It
+ * has a Sound Blaster 16 and the PC speaker, and no Gravis UltraSound.
  */
 export const presets = {
   /**
-   * Configuration optimized for music trackers and MOD playback
-   * (Impulse Tracker, FastTracker, ScreamTracker, etc.)
+   * Configuration for music trackers, such as Impulse Tracker
    *
-   * Optimizations:
-   * - Fixed cycles (18000) for stable audio timing
-   * - Increased prebuffer (64 ms) for smooth MOD playback (it goes up to 100)
-   * - EMS and XMS, so large samples can use DOSBox's default 16 MB of RAM
+   * - Fixed cycles (18000)
+   * - EMS and XMS, where trackers keep their samples, out of DOSBox's default 16 MB of RAM
    */
   musicTracker: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
@@ -360,9 +347,10 @@ export const presets = {
       .setJoystick({ joysticktype: 'none' }),
 
   /**
-   * Configuration optimized for demos and graphics applications
-   * Demos often have synchronized audio/video, so stable timing is critical
-   * Uses fixed cycles (30000) for consistent performance
+   * Configuration for demos and intros
+   *
+   * - Fixed cycles (30000): src/dos-apps/README.md says when a program needs 'max' instead
+   * - EMS, XMS and UMB
    */
   demo: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()

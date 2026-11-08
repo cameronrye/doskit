@@ -30,18 +30,10 @@ export const impulseTrackerZipUrl = '/demos/impulse-tracker.zip';
  * - About 500 KB of conventional memory, 600 KB to load almost any song, and an EMM driver for
  *   EMS, where it keeps the samples
  *
- * This configuration uses:
- * - Fixed cycles (18000) on the simple CPU core, for stable audio playback
- * - Sound Blaster 16 for audio output with optimized mixer settings
+ * This configuration is the musicTracker() preset as it is:
+ * - Fixed cycles (18000) on the simple CPU core
+ * - Sound Blaster 16, with the mixer at 44100 Hz and 64 ms of prebuffer (it goes up to 100)
  * - DOSBox's default 16 MB of memory, with EMS/XMS enabled
- * - Text mode display
- * - Optimized mixer settings to prevent audio stuttering
- *
- * Performance optimizations:
- * - Fixed cycles prevent audio timing issues common with auto/max cycles
- * - Mixer prebuffer=64 provides smooth audio buffering (it goes up to 100)
- *
- * Based on community recommendations for music tracker applications
  */
 export const impulseTrackerDosboxConf = presets
   .musicTracker()

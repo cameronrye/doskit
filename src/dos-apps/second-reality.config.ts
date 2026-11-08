@@ -21,11 +21,9 @@ import { presets } from '../utils/dosboxConfigBuilder';
  * This configuration uses:
  * - Gravis UltraSound (the backend's always has 1 MB of memory, and js-dos plays its sound in
  *   mono)
- * - Maximum cycles (best performance) on the simple CPU core
+ * - Maximum cycles on the simple CPU core
  * - DOSBox's default 16 MB of memory, with EMS/XMS enabled
- * - Sound Blaster as fallback
- *
- * Based on Archive.org's working configuration and Second Reality README.1ST
+ * - Sound Blaster 16 too, for the setup's other card
  */
 export const secondRealityDosboxConf = presets
   .demo()
