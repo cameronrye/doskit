@@ -212,6 +212,133 @@ const navigation = (path) => ({
   mode: 'navigate',
   destination: 'document',
 });
+const subresource = (path) => new Request(new URL(path, ORIGIN));
+const requestedPaths = (browser) => browser.server.requests.map(({ path }) => path);
+
+const APP_SHELL = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/logo.svg',
+  '/favicon.svg',
+  '/js-dos.js',
+  '/js-dos.css',
+  ...BUNDLES,
+];
+const DEFAULT_BACKEND = [
+  '/emulators/emulators.js',
+  '/emulators/wdosbox.js',
+  '/emulators/wdosbox.wasm',
+  '/emulators/wlibzip.js',
+  '/emulators/wlibzip.wasm',
+];
+const DOSBOX_X = ['/emulators/wdosbox-x.js', '/emulators/wdosbox-x.wasm'];
+
+describe('install', () => {
+  it('precaches the app shell, the bundles and the default DOSBox backend', async () => {
+    const browser = createBrowser();
+
+    await startWorker(browser).dispatch('install');
+
+    expect(browser.cachedPaths()).toEqual(
+      expect.arrayContaining([...APP_SHELL, ...DEFAULT_BACKEND])
+    );
+    expect(browser.cachedPaths().filter((path) => DOSBOX_X.includes(path))).toEqual([]);
+  });
+});
+
+describe('offline navigation', () => {
+  it.each(['/', '/?app=panic', '/secondreality'])(
+    'serves the cached index.html for %s',
+    async (path) => {
+      const browser = createBrowser();
+      const worker = await installAndActivate(browser);
+      browser.server.online = false;
+
+      const { response } = await worker.dispatch('fetch', { request: navigation(path) });
+
+      expect(await response?.text()).toBe('/index.html from deploy A');
+    }
+  );
+});
+
+describe('emulator files', () => {
+  it('serves the default backend from the precache', async () => {
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    browser.server.requests.length = 0;
+
+    for (const path of DEFAULT_BACKEND) {
+      const { response } = await worker.dispatch('fetch', { request: subresource(path) });
+      expect(await response?.text()).toBe(`${path} from deploy A`);
+    }
+    expect(requestedPaths(browser)).toEqual([]);
+  });
+
+  it('caches DOSBox-X on first use and serves it from the cache, offline too', async () => {
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    browser.server.requests.length = 0;
+
+    for (const path of DOSBOX_X) {
+      await worker.dispatch('fetch', { request: subresource(path) });
+      await worker.dispatch('fetch', { request: subresource(path) });
+    }
+    browser.server.online = false;
+
+    for (const path of DOSBOX_X) {
+      const { response } = await worker.dispatch('fetch', { request: subresource(path) });
+      expect(await response?.text()).toBe(`${path} from deploy A`);
+    }
+    expect(requestedPaths(browser)).toEqual(DOSBOX_X);
+  });
+});
+
+describe('activate', () => {
+  it('replaces the caches of the previous deploy', async () => {
+    const browser = createBrowser();
+    const previous = await installAndActivate(browser, { cacheVersion: 'vA' });
+    await previous.dispatch('fetch', { request: subresource('/humans.txt') });
+    await browser.caches.open('another-app');
+    browser.server.deploy = 'B';
+
+    const worker = await installAndActivate(browser, { cacheVersion: 'vB' });
+
+    const names = await browser.caches.keys();
+    expect(names.filter((name) => name.includes('vA'))).toEqual([]);
+    expect(names).toContain('another-app');
+    browser.server.online = false;
+    const { response } = await worker.dispatch('fetch', { request: navigation('/') });
+    expect(await response?.text()).toBe('/index.html from deploy B');
+  });
+});
+
+describe('messages', () => {
+  it('activates the waiting worker on SKIP_WAITING', async () => {
+    const worker = startWorker(createBrowser());
+    await worker.dispatch('install');
+
+    await worker.dispatch('message', { data: { type: 'SKIP_WAITING' } });
+
+    expect(worker.self.skipWaiting).toHaveBeenCalledOnce();
+  });
+
+  it('ignores other messages', async () => {
+    const browser = createBrowser();
+    const worker = startWorker(browser);
+    await worker.dispatch('install');
+    const cached = browser.contents();
+    browser.server.requests.length = 0;
+
+    for (const data of [{ type: 'CLEAR_CACHE' }, { type: 'CACHE_URLS', urls: ['/x'] }, null]) {
+      await worker.dispatch('message', { data });
+    }
+
+    expect(worker.self.skipWaiting).not.toHaveBeenCalled();
+    expect(browser.contents()).toEqual(cached);
+    expect(requestedPaths(browser)).toEqual([]);
+  });
+});
 
 describe('cache trimming', () => {
   /** Navigates to more distinct URLs than the cache may hold */
