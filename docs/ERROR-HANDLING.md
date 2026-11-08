@@ -28,12 +28,14 @@ DosKit implements a multi-layered error handling strategy to ensure a robust use
 
 **Features:**
 
-- Captures `window.onerror` events
-- Captures `window.onunhandledrejection` events
+- Listens for the window's `error` events
+- Listens for the window's `unhandledrejection` events
 - Filters out known harmless errors (fullscreen API, keyboard lock, etc.)
-- Provides error context (browser info, timestamp, user action)
+- Provides error context (browser info, timestamp, user action, and where an uncaught error was thrown)
 - Integrates with error tracking service
 - Configurable error suppression and filtering
+
+It only sees what nothing else handled. Errors that code catches and logs with `console.error` reach the console as logged, since nothing filters `console.error`, and so do the messages of js-dos's emulator Web Worker (see [Known Console Errors](#known-console-errors)).
 
 **Usage:**
 
@@ -50,12 +52,21 @@ initializeGlobalErrorHandler({
 });
 ```
 
+`main.tsx` calls it once, before rendering. Each call applies its options over the defaults; a second call only warns (`Already initialized`), and `cleanupGlobalErrorHandler()` removes the listeners again, as the tests do.
+
 **Configuration Options:**
 
-- `showUserFriendlyErrors` - Show user-friendly error messages (default: true)
+- `showUserFriendlyErrors` - In production builds, also log the user-friendly message and suggestion for each error (default: true). Nothing is shown on the page.
 - `suppressHarmlessErrors` - Suppress known harmless errors (default: true)
-- `errorFilter` - Custom filter function to exclude specific errors
-- `onError` - Callback when an error is captured
+- `errorFilter` - Custom filter function: return `false` to drop an error, which is then neither logged nor tracked. It receives the error or rejection reason, or the event's message when an uncaught error has no error object.
+- `onError` - Callback when an error is captured. Uncaught errors without an error object, such as cross-origin "Script error." events, skip it.
+
+**Harmless Errors:** An error whose message matches one of `HARMLESS_ERROR_PATTERNS` is dropped with `preventDefault()`, so the browser does not report it either. Development builds log it at debug level.
+
+- `/exitFullscreen/i`, `/requestFullscreen/i`, `/fullscreen.*not supported/i` - Fullscreen calls without a user gesture. js-dos calls `document.exitFullscreen()` on every start and leaves the rejection unhandled.
+- `/lock\(\) request could not be registered/i`, `/keyboard.*lock/i` - Keyboard lock, which js-dos requests when a player starts, without handling the promise
+- `/ResizeObserver loop/i` - ResizeObserver loop errors (benign)
+- `/extension context invalidated/i`, `/chrome-extension:/i` - Browser extensions
 
 ---
 
@@ -113,11 +124,13 @@ Both reporters get the tracker from `getErrorTracker()`, so nothing else changes
 
 **Features:**
 
-- Catches errors in React component tree
+- Catches errors in React component tree: in rendering, lifecycle methods and effects. Errors in event handlers and asynchronous code go to the global error handler instead.
 - Displays fallback UI with error details (dev mode)
 - Integrates with error tracking service
 - Provides reset functionality
 - Customizable fallback UI
+
+The default fallback says "Something went wrong" and offers Refresh Page and Try Again (which renders the children again); development builds add the error message, stack trace and component stack. `main.tsx` wraps App in one boundary and App wraps DosPlayerWithApps in another, so an error in the player area leaves the header and footer in place.
 
 **Usage:**
 
@@ -222,8 +235,8 @@ Each part that loads or starts something handles its own failures: it logs them 
 
 ### 1. Uncaught Error Flow
 
-```
-Error occurs
+```text
+Error occurs (uncaught error or unhandled rejection)
   ↓
 Global Error Handler captures
   ↓
@@ -237,23 +250,25 @@ Track with error tracking service
   ↓
 Call custom onError callback
   ↓
-Show user-friendly message (if enabled)
+Log user-friendly message (production builds, if enabled)
 ```
 
 ### 2. React Error Flow
 
-```
+```text
 Error in React component
   ↓
-Error Boundary catches
+Nearest Error Boundary catches
   ↓
 Update state (hasError = true)
+  ↓
+Render fallback UI
+  ↓
+Log to console
   ↓
 Track with error tracking service
   ↓
 Add breadcrumb
-  ↓
-Render fallback UI
 ```
 
 ### 3. Component Error Flow
@@ -328,6 +343,8 @@ tracker.addBreadcrumb('Started loading archive', 'process', {
 </ErrorBoundary>
 ```
 
+App does this for DosPlayerWithApps.
+
 ### 5. Suppress Known Harmless Errors
 
 The global error handler automatically suppresses:
@@ -336,6 +353,8 @@ The global error handler automatically suppresses:
 - Keyboard lock errors (require user interaction)
 - ResizeObserver loop errors (benign)
 - Browser extension errors
+
+To suppress another, add a pattern to `HARMLESS_ERROR_PATTERNS` in `globalErrorHandler.ts`. Patterns match the messages of uncaught errors and unhandled rejections only, and a suppressed error is neither logged nor tracked, so keep them narrow.
 
 ## Testing
 
@@ -359,6 +378,8 @@ test('catches errors', () => {
   expect(screen.getByText(/Something went wrong/i)).toBeInTheDocument();
 });
 ```
+
+The error handling modules have tests of their own next to them in `src/utils/`: `globalErrorHandler.test.ts`, `errorTracking.test.ts`, `errorMessages.test.ts`, `fetchWithRetry.test.ts` and `diskLoader.test.ts`.
 
 ## Configuration
 
