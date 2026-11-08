@@ -138,6 +138,10 @@ Applications", for readers that only fetch that file. Add the app there in the s
 - My Demo (Some Group, 1994): https://doskit.net/?app=mydemo
 ```
 
+[`ROADMAP.md`](../../ROADMAP.md) lists the apps by name under "Current State" and counts them
+there, under "Key Opportunities" and under "Success Metrics": add the app to the list and update
+the three counts.
+
 If the program comes from the [sceners](https://github.com/sceners) organization, add it to the
 table in [`docs/SCENERS.md`](../../docs/SCENERS.md) as well.
 

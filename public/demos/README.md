@@ -276,7 +276,8 @@ Places to look for programs and for their history:
 ## Size and Caching
 
 An archive is only downloaded when its app opens, but every archive is part of the repository and of
-each deploy: the ten here come to 7.7 MB, the largest being `second-reality.zip` at 2.1 MB.
+each deploy, so each one adds its size to every clone and every deploy. `du -ch public/demos/*.zip`
+gives their total.
 
 Once an app has been opened, the service worker keeps its archive in a cache of its own. The build
 names that cache after a hash of every archive in `dist/demos/`, so adding, replacing or removing an
