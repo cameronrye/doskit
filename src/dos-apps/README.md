@@ -106,7 +106,9 @@ Add an entry to `availableApps` in `src/config/apps.config.ts`:
 ```
 
 Import the config module with `import()`, not statically: each one becomes a small chunk of its
-own that is only downloaded when the app is loaded, or when the selector preloads it on hover.
+own that the page only imports when the app is loaded, or when the selector preloads it on hover.
+(In production builds the service worker still stores every chunk when it installs, so that the
+app can start offline.)
 `loadZipArchive` is already imported at the top of the file; pass it the `onProgress` and
 `signal` the loader receives, so the selector can show progress and cancel the download.
 

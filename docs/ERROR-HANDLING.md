@@ -306,7 +306,7 @@ Aborted on purpose? → Drop it
   ↓
 Log to console
   ↓
-Explain it with getUserFriendlyError (passing navigator.onLine) and set local error state
+Set local error state: a failed load explained with getUserFriendlyError (passing navigator.onLine), a failed start with its own message
   ↓
 Display error UI
 ```
@@ -382,7 +382,7 @@ The global error handler automatically suppresses:
 - ResizeObserver loop errors (benign)
 - Browser extension errors
 
-To suppress another, add a pattern to `HARMLESS_ERROR_PATTERNS` in `globalErrorHandler.ts`. Patterns match the messages of uncaught errors and unhandled rejections only, and a suppressed error is neither logged nor tracked, so keep them narrow.
+To suppress another, add a pattern to `HARMLESS_ERROR_PATTERNS` in `globalErrorHandler.ts`. Patterns match the messages of uncaught errors and unhandled rejections only, and a suppressed error is never tracked, and only development builds log it, at debug level, so keep them narrow.
 
 ## Testing
 
