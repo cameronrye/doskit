@@ -73,33 +73,6 @@ export const useDosEmulator = ({
           console.log('[useDosEmulator] Emulator ready');
         }
         setIsLoading(false);
-
-        // Close the sidebar menu on startup for a cleaner initial view
-        setTimeout(() => {
-          if (dosContainerRef.current) {
-            const toggleButton = dosContainerRef.current.querySelector('[data-dos-sidebar-toggle]');
-            if (toggleButton instanceof HTMLElement) {
-              toggleButton.click();
-              if (import.meta.env.DEV) {
-                console.log('[useDosEmulator] Sidebar closed on startup');
-              }
-            } else {
-              const buttons = dosContainerRef.current.querySelectorAll('button');
-              const menuButton = Array.from(buttons).find(
-                (btn) =>
-                  btn.textContent?.includes('☰') ||
-                  btn.className?.includes('sidebar') ||
-                  btn.className?.includes('menu')
-              );
-              if (menuButton instanceof HTMLElement) {
-                menuButton.click();
-                if (import.meta.env.DEV) {
-                  console.log('[useDosEmulator] Sidebar closed on startup (fallback)');
-                }
-              }
-            }
-          }
-        }, 500);
         break;
 
       case 'ci-ready':
