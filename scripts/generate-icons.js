@@ -4,19 +4,14 @@
  * Icon Generation Script for DosKit PWA
  *
  * This script generates PWA icons in multiple sizes from the logo.svg file.
- *
- * Requirements:
- * - Node.js 18+
- * - sharp package (npm install sharp)
+ * It needs the Node.js version that package.json's engines field gives, and
+ * sharp, one of the devDependencies that npm ci installs.
  *
  * Usage:
- *   node scripts/generate-icons.js
- *
- * Or install sharp and run:
- *   npm install --save-dev sharp
  *   npm run generate-icons
  */
 
+import sharp from 'sharp';
 import { mkdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -48,22 +43,6 @@ const LOGO_PATH = join(PUBLIC_DIR, 'logo.svg');
 
 async function generateIcons() {
   try {
-    // Check if sharp is installed
-    let sharp;
-    try {
-      sharp = (await import('sharp')).default;
-    } catch {
-      console.error('❌ Error: sharp package is not installed.');
-      console.log('\nTo generate icons, install sharp:');
-      console.log('  npm install --save-dev sharp');
-      console.log('\nThen run this script again:');
-      console.log('  node scripts/generate-icons.js');
-      console.log('\nAlternatively, you can use an online tool like:');
-      console.log('  - https://realfavicongenerator.net/');
-      console.log('  - https://www.pwabuilder.com/imageGenerator');
-      process.exit(1);
-    }
-
     // Create icons directory if it doesn't exist
     if (!existsSync(ICONS_DIR)) {
       mkdirSync(ICONS_DIR, { recursive: true });
