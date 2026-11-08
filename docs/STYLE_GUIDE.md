@@ -11,6 +11,9 @@ This document defines the coding standards and naming conventions for the DosKit
 - [React Guidelines](#react-guidelines)
 - [File Organization](#file-organization)
 - [Comments and Documentation](#comments-and-documentation)
+- [Environment-Specific Code](#environment-specific-code)
+- [Testing](#testing)
+- [Linting and Formatting](#linting-and-formatting)
 
 ## General Principles
 
@@ -221,6 +224,8 @@ src/
 ## Code Formatting
 
 ### General Rules
+
+Prettier applies these rules with the settings in `.prettierrc`, so run `npm run format` instead of formatting by hand.
 
 - **Indentation**: 2 spaces (no tabs)
 - **Quotes**: Single quotes for strings (except JSX attributes)
@@ -600,7 +605,7 @@ for (const item of items) {
 ### Development vs Production
 
 - **Use `import.meta.env.DEV`**: For development-only code
-- **Console Logs**: Only in development
+- **Console Logs**: `console.log` only in development; `console.warn` and `console.error` may stay in production code
 - **Debug Features**: Guard with environment checks
 
 ```typescript
@@ -647,20 +652,21 @@ describe('DosPlayer', () => {
 ### Automated Tools
 
 - **ESLint**: Run `npm run lint` to check code
-- **Prettier**: Automatically formats on save
-- **Husky**: Pre-commit hooks enforce standards
+- **Prettier**: Run `npm run format` to format files; CI runs `npm run format:check` and fails on any file Prettier would change
+- **Husky**: The pre-commit hook runs lint-staged on the staged files: `eslint --fix` and `vitest related --run` for TypeScript, `prettier --write` for TypeScript, CSS, Markdown and JSON
 
 ### Before Committing
 
 ```bash
-# Check linting
+# Check linting and formatting
 npm run lint
+npm run format:check
 
 # Run tests
-npm run test:run
+npm test
 
-# Check types
-npm run build
+# Check types, tests included (npm run build runs this first)
+npx tsc -b
 ```
 
 ## Additional Resources
