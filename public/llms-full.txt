@@ -100,23 +100,26 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 ### Component Hierarchy
 
 ```
-ErrorBoundary (main.tsx)
-└── App
-    ├── OfflineIndicator (offline and back-online notices, install prompt)
-    ├── Header (current application, Change Application button)
-    ├── URL error banner (unknown ?app= id)
-    ├── ErrorBoundary
-    │   └── DosPlayerWithApps
-    │       ├── DemoSelector (modal)
-    │       │   └── App selection UI
-    │       ├── Loading overlay
-    │       ├── Error overlay (Try Again, Choose Another Application)
-    │       └── DosPlayer (useDosEmulator hook + DosPlayerUI)
-    │           └── js-dos emulator instance
-    └── Footer (Ready/Loading and Online/Offline badges)
+StrictMode (main.tsx)
+└── ErrorBoundary
+    └── App
+        ├── OfflineIndicator (offline and back-online notices, install prompt)
+        ├── Header (current application, Change Application button)
+        ├── URL error banner (unknown ?app= id)
+        ├── ErrorBoundary
+        │   └── DosPlayerWithApps
+        │       ├── DemoSelector (modal)
+        │       │   └── App selection UI
+        │       ├── Loading overlay
+        │       ├── Error overlay (Try Again, Choose Another Application)
+        │       └── DosPlayer (useDosEmulator hook + DosPlayerUI)
+        │           └── js-dos emulator instance
+        └── Footer (Ready/Loading and Online/Offline badges)
 ```
 
 UpdateNotification is not part of this tree: src/utils/updatePrompt.ts mounts it in a React root of its own when a new service worker is waiting.
+
+In development, StrictMode mounts every component twice at once, so each DosPlayer starts js-dos twice in its element: useDosEmulator stops the first start's player and ignores its events, and on a fresh page the adapter holds the second start back until emulators.js, which the first one loads, has run. Production builds mount each component once.
 
 ### Data Flow
 
