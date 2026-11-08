@@ -1,12 +1,12 @@
 # Error Handling Strategy
 
-**Document Version:** 1.0  
-**Date:** 2025-11-18  
+**Document Version:** 2.0  
+**Date:** 2026-11-07  
 **Status:** Implemented
 
 ## Overview
 
-DosKit implements a comprehensive, multi-layered error handling strategy to ensure a robust user experience and facilitate debugging. The system captures errors at multiple levels, provides user-friendly messages, and integrates with error tracking services.
+DosKit implements a multi-layered error handling strategy to ensure a robust user experience and facilitate debugging. The system captures errors at multiple levels, shows load and start failures where they happen, keeps known harmless browser errors out of the console, and reports the rest through an error tracking interface that logs to the console.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ DosKit implements a comprehensive, multi-layered error handling strategy to ensu
 1. **Global Error Handler** - Captures uncaught errors and unhandled promise rejections
 2. **React Error Boundaries** - Catches React component errors
 3. **Component-Level Error States** - Local error handling in components
-4. **Error Tracking Service** - Centralized error reporting and monitoring
+4. **Error Tracking Service** - Centralized error reporting, to the console until a remote service is added
 5. **User-Friendly Error Messages** - Maps technical errors to readable messages
 
 ## Components
@@ -63,13 +63,12 @@ initializeGlobalErrorHandler({
 
 **File:** `src/utils/errorTracking.ts`
 
-**Purpose:** Abstraction layer for error tracking services (Sentry, LogRocket, etc.)
+**Purpose:** Abstraction layer for error tracking services (Sentry, LogRocket, etc.), so a hosted service can replace the console tracker without changes to the code that reports errors
 
 **Features:**
 
-- Service-agnostic interface
-- Console tracker for development
-- Sentry tracker placeholder for production
+- Service-agnostic interface (`ErrorTrackingService`)
+- Console tracker, in development and production
 - Error severity levels (DEBUG, INFO, WARNING, ERROR, FATAL)
 - Error context tracking
 - Breadcrumb support for user action trails
@@ -81,7 +80,7 @@ initializeGlobalErrorHandler({
 import { initializeErrorTracking, getErrorTracker, ErrorSeverity } from './utils/errorTracking';
 
 // Initialize (in main.tsx)
-initializeErrorTracking('console'); // or 'sentry' with config
+initializeErrorTracking();
 
 // Use in code
 const tracker = getErrorTracker();
@@ -89,16 +88,20 @@ tracker.captureError(error, { userAction: 'Loading app' }, ErrorSeverity.ERROR);
 tracker.addBreadcrumb('User clicked load button', 'user-action');
 ```
 
+`getErrorTracker()` sets up the console tracker itself if nothing has yet, and a second `initializeErrorTracking()` only warns.
+
 **Supported Services:**
 
-- **Console** - Development/fallback (logs to console)
-- **Sentry** - Production error tracking (placeholder, ready for integration)
+- **Console** - The only implementation: logs each error, React error and breadcrumb with an `[ErrorTracking]` prefix, and keeps nothing
 
-**To integrate Sentry:**
+**Who Reports to It:** The global error handler and ErrorBoundary. Errors that components catch themselves (see [Component-Level Error States](#5-component-level-error-states)) are logged to the console, not tracked.
 
-1. Install: `npm install @sentry/react`
-2. Update `SentryErrorTracker` class in `errorTracking.ts`
-3. Initialize with DSN: `initializeErrorTracking('sentry', { dsn: 'YOUR_DSN' })`
+**To add a remote service:**
+
+1. Implement `ErrorTrackingService` in `errorTracking.ts`: `initialize`, `isInitialized`, `captureError`, `captureReactError` and `addBreadcrumb`
+2. Create it in `initializeErrorTracking()` in place of `ConsoleErrorTracker`
+
+Both reporters get the tracker from `getErrorTracker()`, so nothing else changes.
 
 ---
 
@@ -146,15 +149,17 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 **Features:**
 
-- Pattern matching for common errors
+- Pattern matching for common errors (the first match wins)
 - Provides suggestions for resolution
 - Includes original error in dev mode
-- Extensible error mappings
+- Extensible error mappings: add a pattern to `ERROR_MAPPINGS`
+
+The global error handler is its only caller: in production builds it logs the message and suggestion for each error it reports. The messages on the page come from the components themselves (see [Component-Level Error States](#5-component-level-error-states)).
 
 **Usage:**
 
 ```typescript
-import { getUserFriendlyError, formatErrorForDisplay } from './utils/errorMessages';
+import { getUserFriendlyError } from './utils/errorMessages';
 
 try {
   await fetchData();
@@ -169,10 +174,16 @@ try {
 
 **Error Categories:**
 
-- Network errors (fetch failed, timeout, rate limit)
-- File errors (not found, invalid format, too large)
-- Emulator errors (initialization, WASM, configuration)
-- Browser errors (unsupported features, permissions)
+- Network errors (failed fetch, timeout, rate limit)
+- File errors (ZIP archive failed to load, file not found or 404)
+- Service worker errors
+- Emulator and browser feature errors (WebAssembly, fullscreen, keyboard lock)
+- Permission errors (denied, not allowed)
+- Cancelled operations
+- Memory errors
+- Server errors (500, 502, 503)
+
+Anything else is "An unexpected error occurred".
 
 ---
 
@@ -272,13 +283,17 @@ DosKit cannot filter it: the worker logs to a console of its own, which nothing 
 ### 1. Always Use Try/Catch for Async Operations
 
 ```typescript
-const handleLoadApp = async () => {
+const handleLoadApp = async (signal: AbortSignal) => {
   try {
-    await loadApp();
+    await loadApp(signal);
   } catch (error) {
+    // Cancelled or superseded on purpose: not a failure
+    if (signal.aborted) return;
     const friendly = getUserFriendlyError(error);
     setError(friendly.message);
-    getErrorTracker().captureError(error, { userAction: 'Loading app' });
+    getErrorTracker().captureError(error instanceof Error ? error : new Error(String(error)), {
+      userAction: 'Loading app',
+    });
   }
 };
 ```
@@ -291,7 +306,7 @@ tracker.captureError(error, {
   component: 'DemoSelector',
   metadata: {
     appId: 'second-reality',
-    fileCount: 42,
+    zipUrl: '/demos/second-reality.zip',
   },
 });
 ```
@@ -299,8 +314,10 @@ tracker.captureError(error, {
 ### 3. Use Breadcrumbs for User Actions
 
 ```typescript
-tracker.addBreadcrumb('User selected app', 'user-action', { appId: 'doom' });
-tracker.addBreadcrumb('Started loading files', 'process', { fileCount: 10 });
+tracker.addBreadcrumb('User selected app', 'user-action', { appId: 'second-reality' });
+tracker.addBreadcrumb('Started loading archive', 'process', {
+  zipUrl: '/demos/second-reality.zip',
+});
 ```
 
 ### 4. Wrap Critical Components with Error Boundaries
@@ -345,41 +362,44 @@ test('catches errors', () => {
 
 ## Configuration
 
-### Development
+`main.tsx` sets both up before rendering, the same way in every build:
 
 ```typescript
 // main.tsx
-initializeErrorTracking('console');
-initializeGlobalErrorHandler({
-  showUserFriendlyErrors: false, // Show technical errors
-  suppressHarmlessErrors: true,
-});
-```
-
-### Production
-
-```typescript
-// main.tsx
-initializeErrorTracking('sentry', {
-  dsn: import.meta.env.VITE_SENTRY_DSN,
-  environment: 'production',
-});
-
+initializeErrorTracking();
 initializeGlobalErrorHandler({
   showUserFriendlyErrors: true,
   suppressHarmlessErrors: true,
 });
 ```
 
+What differs between builds follows `import.meta.env.DEV`:
+
+### Development
+
+- The logger prints every level, with timestamps, and the global handler logs each suppressed error at debug level
+- ErrorBoundary's fallback shows the error message, stack trace and component stack
+- `getUserFriendlyError()` returns the technical message as `originalError`
+- The global handler logs no user-friendly messages
+
+### Production
+
+- The logger prints warnings and errors only
+- The global handler logs the user-friendly message and suggestion for each error it reports
+- ErrorBoundary's fallback shows only its message and buttons
+- `getUserFriendlyError()` leaves `originalError` out
+
 ## Future Enhancements
 
-1. **Error Recovery Strategies** - Automatic retry logic for transient errors
-2. **Error Analytics** - Track error frequency and patterns
-3. **User Feedback** - Allow users to report errors with context
-4. **Offline Error Queue** - Queue errors when offline, send when online
-5. **Source Maps** - Upload source maps to Sentry for better stack traces
-6. **Performance Monitoring** - Track performance issues alongside errors
+1. **Remote Error Tracking** - Implement `ErrorTrackingService` for a hosted service, and report the load and start errors that components only log today
+2. **User-Facing Messages** - Show the global handler's user-friendly messages on the page, such as in a toast; today it only logs them
+3. **Error Recovery Strategies** - Automatic retry logic for transient errors beyond archive downloads, which `fetchWithRetry` already retries
+4. **Error Analytics** - Track error frequency and patterns
+5. **User Feedback** - Allow users to report errors with context
+6. **Offline Error Queue** - Queue errors when offline, send when online
+7. **Source Maps** - Upload the hidden source maps the build already writes (`sourcemap: 'hidden'`) to the tracking service for better stack traces
+8. **Performance Monitoring** - Track performance issues alongside errors
 
 ## Conclusion
 
-DosKit's error handling strategy provides comprehensive coverage at multiple levels, ensuring errors are caught, logged, tracked, and presented to users in a friendly manner. The system is extensible and ready for production error tracking integration.
+DosKit's error handling strategy provides coverage at multiple levels: errors are caught, logged and tracked, harmless ones are kept quiet, and load and start failures are shown to users where they happen. The tracking interface is ready for a production error tracking service; until one is added, its reports go to the console.
