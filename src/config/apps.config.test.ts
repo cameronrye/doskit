@@ -15,11 +15,15 @@ vi.mock('../utils/diskLoader', () => ({
 const dosboxConfOf = async (app: DosApp): Promise<string> =>
   (await app.loadDosboxConf?.()) ?? app.dosboxConf;
 
-// node:fs comes through importActual, as the tests have the browser's types only
+// node:fs and node:crypto come through importActual, as the tests have the browser's types only
 const { readFileSync, readdirSync } = await vi.importActual<{
   readFileSync(file: URL): Uint8Array;
+  readFileSync(file: URL, encoding: 'utf8'): string;
   readdirSync(dir: URL): string[];
 }>('node:fs');
+const { createHash } = await vi.importActual<{
+  createHash(algorithm: 'md5'): { update(data: Uint8Array): { digest(encoding: 'hex'): string } };
+}>('node:crypto');
 
 /**
  * public/demos, read from disk: the files the build copies to /demos. (Vite would turn
@@ -177,5 +181,29 @@ describe('availableApps', () => {
 
     expect(app?.author).toBe('Draeden of VLA');
     expect(await app?.loadDosboxConf?.()).toMatch(/^echo +by Draeden of VLA \(1993\)$/m);
+  });
+});
+
+describe('public/demos/README.md', () => {
+  const readme = readFileSync(new URL('README.md', DEMOS), 'utf8');
+
+  it('should list every archive in its table', () => {
+    const listed = [...readme.matchAll(/^\| `([^`]+\.zip)` +\|/gm)].map(([, name]) => name);
+
+    expect(listed.sort()).toEqual(archivesInDemos().sort());
+  });
+
+  it.each(archivesInDemos())('should record the size and MD5 of %s as it is', (name) => {
+    // The archive's entry runs from its heading to the next one
+    const entry = readme.split(/^## /m).find((section) => section.startsWith(`\`${name}\``));
+    const archive = readFileSync(new URL(name, DEMOS));
+
+    expect(entry, `${name} has no entry`).toBeDefined();
+    expect(/the ZIP is ([\d,]+)/.exec(entry ?? '')?.[1]?.replaceAll(',', '')).toBe(
+      `${archive.byteLength}`
+    );
+    expect(/MD5\s+`([0-9a-f]{32})`/.exec(entry ?? '')?.[1]).toBe(
+      createHash('md5').update(archive).digest('hex')
+    );
   });
 });

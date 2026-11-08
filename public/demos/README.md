@@ -213,8 +213,8 @@ Rotations".
 
 - **Year**: 1993. The tutorial, 3DROTATE.TXT, is dated 02/22/93, and the source, 3DROTATE.ASM,
   02/25/93.
-- **Contents** (1 file; the ZIP is 2,991): `3DROTATE.EXE` (25,856). It prints "Coded by Draeden of
-  VLA" when it exits.
+- **Contents** (1 file; the ZIP is 2,991, MD5 `2ccf7e21809fa03886a7b1d813c7fe28`): `3DROTATE.EXE`
+  (25,856). It prints "Coded by Draeden of VLA" when it exits.
 - **Source**: the `3DROTATE` folder of
   [github.com/sceners/grumpys-source-pack-collection](https://github.com/sceners/grumpys-source-pack-collection),
   a copy of Grumpy's source pack, a collection of demo and intro source code that the repository
@@ -229,7 +229,8 @@ Rotations".
 **Starfield demo** by Draeden of VLA, the example program of VLA's tutorial "Intro To Starfields".
 
 - **Year**: 1993. The tutorial, STARS.TXT, and the source, STARS.ASM, are dated 03/15/93.
-- **Contents** (1 file; the ZIP is 1,482): `STARS.EXE` (3,787).
+- **Contents** (1 file; the ZIP is 1,482, MD5 `71743add50a7d4b2f6d718836b3d8d13`): `STARS.EXE`
+  (3,787).
 - **Source**: the `STARS` folder of
   [github.com/sceners/grumpys-source-pack-collection](https://github.com/sceners/grumpys-source-pack-collection),
   with the tutorial, the source and VLA.NFO. `STARS.EXE` is byte for byte the one there.
@@ -258,9 +259,11 @@ code, Lizardking and Vogue with the music, Vogue with the graphics and Loot with
 ## Adding an Archive
 
 The steps for adding an app, its archive included, are in
-[`src/dos-apps/README.md`](../../src/dos-apps/README.md). Give each new archive an entry here like
-the ones above: what it holds, where it came from and whether it is that file byte for byte, its
-year and authors with where they come from, and its terms, quoted, or that none were found.
+[`src/dos-apps/README.md`](../../src/dos-apps/README.md). Give each new archive a row in the table
+and an entry here like the ones above: what it holds, with the ZIP's size and MD5, where it came
+from and whether it is that file byte for byte, its year and authors with where they come from, and
+its terms, quoted, or that none were found. `src/config/apps.config.test.ts` checks that the table
+lists every archive and that each entry's size and MD5 match the file.
 
 Places to look for programs and for their history:
 

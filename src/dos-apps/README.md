@@ -101,10 +101,11 @@ without hyphens (`/?app=mydemo`); both forms work.
 
 ### 4. Record where it comes from
 
-Give the archive an entry in [`public/demos/README.md`](../../public/demos/README.md), like the
-others there: the program and its authors, its year and the file that gives it, what the ZIP
-holds, where it came from and whether it is that file byte for byte, and its terms, quoted from
-its own files, or that none were found. The registry entry's `author` and `year` should match it.
+Give the archive a row in the table of [`public/demos/README.md`](../../public/demos/README.md)
+and an entry like the others there: the program and its authors, its year and the file that gives
+it, what the ZIP holds, with its size in bytes and its MD5, where it came from and whether it is
+that file byte for byte, and its terms, quoted from its own files, or that none were found. The
+registry entry's `author` and `year` should match it.
 
 ### 5. List it
 
@@ -124,7 +125,8 @@ table in [`docs/SCENERS.md`](../../docs/SCENERS.md) as well.
   download `/demos/<id>.zip`, which must be a ZIP archive in `public/demos`, its DOSBox
   configuration must leave out the settings the default backend ignores, and its description and
   autoexec banner must not give another year for the release than its `year`. It also checks that
-  every archive in `public/demos` belongs to an app.
+  every archive in `public/demos` belongs to an app and that `public/demos/README.md` lists it and
+  records its size and MD5 as they are.
 - Run `npm run dev` and open `http://localhost:5173/?app=my-demo` (Vite takes the next free port
   if 5173 is in use, and prints the address). The program should start on its own, not stop at a
   DOS prompt or an error.
