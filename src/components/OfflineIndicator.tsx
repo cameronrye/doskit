@@ -55,31 +55,29 @@ function keepHeightIn(property: string) {
 const offlineBannerRef = keepHeightIn('--offline-banner-height');
 const installPromptRef = keepHeightIn('--install-prompt-height');
 
+/** Whether the page runs as the installed app */
+function checkInstalled(): boolean {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  // iOS Safari has a non-standard 'standalone' property
+  const isIOSStandalone =
+    'standalone' in window.navigator &&
+    (window.navigator as { standalone?: boolean }).standalone === true;
+
+  return isStandalone || (isIOS && isIOSStandalone);
+}
+
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkStatusChange }) => {
   // A page opened offline, which the service worker serves, gets no offline event
   const [showOfflineMessage, setShowOfflineMessage] = useState(() => !navigator.onLine);
   const [showOnlineMessage, setShowOnlineMessage] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(checkInstalled);
   const installTitleId = useId();
 
   // Use ref to track if we've already scheduled showing the prompt
   const promptScheduledRef = useRef(false);
-
-  /**
-   * Check if the app is already installed
-   */
-  const checkInstalled = useCallback(() => {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    // iOS Safari has a non-standard 'standalone' property
-    const isIOSStandalone =
-      'standalone' in window.navigator &&
-      (window.navigator as { standalone?: boolean }).standalone === true;
-
-    return isStandalone || (isIOS && isIOSStandalone);
-  }, []);
 
   /**
    * Check if user has permanently dismissed the install prompt
@@ -127,12 +125,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
     }
 
     return true;
-  }, [checkInstalled, isPermanentlyDismissed]);
-
-  // Initialize installed state
-  useEffect(() => {
-    setIsInstalled(checkInstalled());
-  }, [checkInstalled]);
+  }, [isPermanentlyDismissed]);
 
   // Remove the "Back online" toast once its CSS fade-out has finished. It must
   // leave the DOM explicitly: prefers-reduced-motion disables the fade.
