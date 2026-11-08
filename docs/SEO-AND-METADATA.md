@@ -144,6 +144,8 @@ Comprehensive documentation for AI crawlers including:
 - Contributing guidelines
 - Contact information
 
+The llms.txt proposal (see Resources) names its file `/llms.txt`. DosKit's files are `/llm.txt` and `/llm-full.txt`, so tools that look for the proposal's file name will not find them.
+
 ### 5. Standard Web Files
 
 #### robots.txt
@@ -352,7 +354,7 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 - [Schema.org](https://schema.org/)
 - [robots.txt Specification](https://www.robotstxt.org/)
 - [humans.txt](https://humanstxt.org/)
-- [llm.txt Standard](https://llmstxt.org/)
+- [llms.txt Proposal](https://llmstxt.org/)
 - [RFC 9116 - security.txt](https://www.rfc-editor.org/rfc/rfc9116.html)
 - [Well-Known URIs](https://www.iana.org/assignments/well-known-uris/well-known-uris.xhtml)
 
