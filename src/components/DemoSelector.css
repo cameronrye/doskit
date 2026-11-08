@@ -275,7 +275,8 @@
 }
 
 .load-button,
-.cancel-button {
+.cancel-button,
+.cancel-loading-button {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 8px;
@@ -300,14 +301,19 @@
   box-shadow: 0 4px 12px rgba(25, 113, 194, 0.35);
 }
 
-/* The border marks the button out: 3:1 against the footer and the button (WCAG AA) */
-.cancel-button {
+/*
+ * The secondary buttons: Cancel, and Cancel Loading in place of Load Application. The border
+ * marks them out: 3:1 against the footer and the button (WCAG AA).
+ */
+.cancel-button,
+.cancel-loading-button {
   background: #2a2a2a;
   color: #aaa;
   border: 1px solid #808080;
 }
 
-.cancel-button:hover:not(:disabled) {
+.cancel-button:hover:not(:disabled),
+.cancel-loading-button:hover {
   background: #333;
   color: #fff;
 }
