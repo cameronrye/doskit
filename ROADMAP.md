@@ -535,7 +535,7 @@ interface AudioRecorder {
 - Lazy loading optimization: preload popular apps (started: the selector preloads an app's config on hover)
 - Memory usage monitoring and cleanup
 - Startup time reduction: WASM preloading ✅ (`index.html` preloads the DOSBox backend's `wdosbox.wasm`)
-- Service worker prefetching (started: install precaches the app shell, every JS and CSS bundle and the DOSBox backend; application archives are cached on first use)
+- Service worker prefetching (started: install precaches the app shell, every JS and CSS bundle, and the js-dos player with its DOSBox backend; application archives are cached on first use)
 - Progressive image loading
 - Code splitting optimization ✅ (each app's config is a chunk of its own, and so is React)
 

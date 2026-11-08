@@ -45,7 +45,7 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 - **Fullscreen**: The fullscreen button in the js-dos sidebar makes the player fill the browser window, over DosKit's header and footer; js-dos then narrows its sidebar to a strip on the left, which brings back the button when clicked
 - **Touch Controls**: On-screen keyboard in the js-dos sidebar; phones and tablets get DosKit's compact layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key
 - **Type-Safe Development**: Full TypeScript support with comprehensive type definitions
-- **Service Worker Caching**: Emulator files and application archives stay cached across deploys until js-dos or the archives change, and so do the bundles a deploy leaves unchanged
+- **Service Worker Caching**: js-dos's player and emulator files, and the application archives, stay cached across deploys until js-dos or the archives change, and so do the bundles a deploy leaves unchanged
 
 ### PWA Features
 
@@ -136,12 +136,12 @@ UpdateNotification is not part of this tree: src/utils/updatePrompt.ts mounts it
 
 `public/sw.js` is registered in production builds only:
 
-- **Install**: precaches the app shell (/, which serves index.html, the manifest, logo and favicon, js-dos.js and js-dos.css), every JS and CSS bundle, including the lazily loaded app configs, and the DOSBox backend (wdosbox, wlibzip and emulators.js). A bundle that an earlier deploy's cache holds under the same name is copied from there instead of downloaded
+- **Install**: precaches the app shell (/, which serves index.html, the manifest, logo and favicon), every JS and CSS bundle, including the lazily loaded app configs, and js-dos: its player (js-dos.js, js-dos.css) and the DOSBox backend (wdosbox, wlibzip and emulators.js). A bundle that an earlier deploy's cache holds under the same name is copied from there instead of downloaded, and only the js-dos files missing from the cache of their version are downloaded
 - **Pages**: network first with a 5-second timeout; when the network fails or times out, every URL gets the index.html install stored, so deep links open offline too. Pages fetched online are not stored
 - **Bundles** (`/assets/`): cache first; a bundle's name changes with its content, so a cached copy never goes stale
-- **Emulator files** (`/emulators/`): cache first, from a cache named after the js-dos version, which deploys keep; DOSBox-X is not precached and is stored on first use
+- **js-dos's files** (`/js-dos.js`, `/js-dos.css` and `/emulators/`): cache first, from a cache named after the js-dos version, which deploys keep, and never refreshed, so a page always gets the player and the emulator files of the js-dos its worker installed; DOSBox-X is not precached and is stored on first use
 - **Application archives** (`/demos/*.zip`): cache first, from a cache named after a hash of the archives, which deploys keep while the archives stay the same; each is stored on first use
-- **Other assets** (js-dos.js, js-dos.css, the manifest, the logo and icons): stale-while-revalidate, in a cache of at most 100 entries that trims the least recently used, never the precached files
+- **Other assets** (the manifest, the logo and icons): stale-while-revalidate, in a cache of at most 100 entries that trims the least recently used, never the precached files
 - **Updates**: each new build installs as a new worker, which waits until the user accepts the update prompt
 
 ### Error Handling
