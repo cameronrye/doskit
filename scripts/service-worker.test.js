@@ -600,7 +600,8 @@ describe('demo archives', () => {
   });
 
   it('stores nothing of a download the app aborts, and downloads it whole next time', async () => {
-    // The app aborts the download of an app it no longer loads
+    // The app aborts the download of an app it no longer loads. This is a browser that
+    // passes that abort on to the worker; Chromium does not, and stores the whole archive.
     const browser = createBrowser();
     const worker = await installAndActivate(browser);
     const release = browser.server.hold('/demos/second-reality.zip');

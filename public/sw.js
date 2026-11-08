@@ -321,8 +321,12 @@ async function cacheResponse(request, response) {
  * Serve a file cache-first from a cache that deploys keep (the emulator files of this
  * js-dos version, or these demo archives), storing it there on first use. Such a cache is
  * kept until its name changes, so a file must come from the server: a still-fresh HTTP
- * cache entry may hold a previous deploy's copy. The copy of the page's request keeps its
- * signal, so a download the page aborts stops, and Cache.put() then stores nothing of it.
+ * cache entry may hold a previous deploy's copy.
+ *
+ * Cache.put() only stores a whole body, so a download the page aborts never leaves part
+ * of a file behind. The copy of the page's request keeps its signal: where the browser
+ * passes the page's abort on to the worker, the download stops and nothing is stored.
+ * Chromium does not, so there the download finishes and the whole file is stored.
  */
 async function serveCacheFirst(event, cacheName) {
   const { request } = event;
