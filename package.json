@@ -80,7 +80,7 @@
     "lint-staged": "16.2.6",
     "picocolors": "1.1.1",
     "prettier": "3.6.2",
-    "sharp": "0.34.5",
+    "sharp": "0.35.5",
     "typedoc": "0.28.14",
     "typescript": "5.9.3",
     "typescript-eslint": "8.46.4",
