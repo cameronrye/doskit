@@ -28,10 +28,10 @@ The IDs are the app IDs in `src/config/apps.config.ts`, and the authors and year
 
 #### Squid BBS Intro (1994)
 
-- **Size**: 1899 bytes
+- **Size**: 1899 bytes (`SQUID1.COM`)
 - **Features**: Character smoother, mini AdLib player, 8x16 custom charset
 - **URL**: `https://doskit.net/?app=squidbbstro`
-- **Source**: https://github.com/sceners/squid-bbstro
+- **Source**: `squid_bbs1a.zip` from scene.org's lost_found_and_more collection, byte for byte: https://files.scene.org/view/demos/compilations/lost_found_and_more/bbs/squid_bbs1a.zip. The program and its source are also in https://github.com/sceners/squid-bbstro.
 
 #### 3D Rotation Demo (1993)
 
@@ -73,7 +73,7 @@ The IDs are the app IDs in `src/config/apps.config.ts`, and the authors and year
 
 **Demo Bundles** (in `public/demos/`):
 
-- `squid-bbstro.zip` (2.2 KB)
+- `squid-bbstro.zip` (21 KB)
 - `3drotate.zip` (3.0 KB)
 - `stars.zip` (1.5 KB)
 - `crystal-dream-2.zip` (2.0 MB)
@@ -136,7 +136,7 @@ These demos are excellent for:
 ## License Notes
 
 - **Code-Breaker**: Public Domain (Unlicense)
-- **Integrated demos**: [`public/demos/README.md`](../public/demos/README.md) quotes the terms each archive states, or says that none were found. Squid's source calls it freeware; the two VLA tutorials and Crystal Dream 2 state no terms.
+- **Integrated demos**: [`public/demos/README.md`](../public/demos/README.md) quotes the terms each archive states, or says that none were found. Squid's source calls it freeware, and its archive also holds `ADLIBFM2.DOC`, Jeffrey S. Lee's guide to programming the AdLib's FM chips, which may be copied freely as long as its copyright notices stay and its text is not changed, may not be sold for more than the cost of copying it, and may not go into published material or commercial packages without its author's written consent. The two VLA tutorials and Crystal Dream 2 state no terms.
 - **Other repos**: Various scene/historical licenses
 - **Usage**: Educational and historical preservation
 
