@@ -82,7 +82,7 @@ The IDs are the app IDs in `src/config/apps.config.ts`, and the authors and year
 
 For each demo (the full steps, with code, are in [`src/dos-apps/README.md`](../src/dos-apps/README.md)):
 
-1. **Prepare Files** - Copy executable and required data files, create ZIP bundle in `public/demos/`
+1. **Add the Archive** - Put the package in `public/demos/` as its source publishes it, byte for byte, wherever there is one: several authors ask for their files to be passed on unmodified, and a repacked archive loses the file dates that help establish the year. Zip loose files only when no package exists, and record where they came from in `public/demos/README.md`
 2. **Create Config** - Add config file in `src/dos-apps/`, define DOSBox configuration
 3. **Register App** - Add an entry to `availableApps` in `src/config/apps.config.ts`; the app selector lists every registered app, so its UI needs no change
 4. **Record Its Source** - Give the archive an entry in `public/demos/README.md`: where it comes from, its authors and year, and its terms
