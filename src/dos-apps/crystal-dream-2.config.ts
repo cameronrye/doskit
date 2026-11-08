@@ -7,18 +7,14 @@
  * Configuration for running Crystal Dream 2 by Triton (1993)
  */
 
-import { loadZipArchive as loadZip } from '../utils/diskLoader';
 import { presets } from '../utils/dosboxConfigBuilder';
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
 
 /**
  * Crystal Dream 2 by Triton (hosted locally)
  * A legendary 1993 demo that won 1st place at The Computer Crossroads 1993
  *
  * Source: https://files.scene.org/get/demos/groups/triton/cd2-trn.zip
- * License: Scene/Historical
+ * License: none found (see public/demos/README.md)
  * Size: ~2MB
  */
 export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';
@@ -26,16 +22,23 @@ export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';
 /**
  * DOSBox configuration optimized for Crystal Dream 2
  *
- * Crystal Dream 2 requirements:
- * - 486 DX-50 recommended (runs on 386-40)
+ * Crystal Dream 2 requirements: the archive has no readme and CD2.EXE is packed, so these are
+ * what the program shows when it runs
  * - VGA graphics
- * - Sound Blaster compatible sound card
- * - Memory: 4MB recommended
+ * - Sound device, chosen in its setup: Ultrasound, SoundBlaster (mixing at 32000 to 44000 Hz),
+ *   or a mono DAC on LPT1 or LPT2
+ * - A fast enough processor: on a slower one it stops with "System overloaded! Too heavy tasks
+ *   for a too weak processor!"
  *
  * This configuration uses:
- * - 486 CPU with auto cycles
- * - Sound Blaster 16 for audio
+ * - Auto CPU core and type, at maximum cycles. CD2.EXE unpacks itself in real mode, where
+ *   'auto' cycles would hold it at 3,000 cycles/ms for about 46 s before its setup appears;
+ *   at a fixed 30000 cycles the demo stops with "System overloaded!"
+ * - Gravis UltraSound, the setup's first choice: without one, DOSBox sets no ULTRASND and
+ *   that choice ends at the DOS prompt
+ * - Sound Blaster 16 for the setup's second choice
  * - Standard VGA graphics
+ * - DOSBox's default 16 MB of memory
  *
  * Features:
  * - 3D wireframe and filled vector graphics
@@ -47,8 +50,7 @@ export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';
  */
 export const crystalDream2DosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: '486', cycles: 'auto' })
-  .setMemory({ memsize: 4 })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'max' })
   .setSoundBlaster({
     sbtype: 'sb16',
     sbbase: 220,
@@ -56,6 +58,13 @@ export const crystalDream2DosboxConf = presets
     dma: 1,
     hdma: 5,
     oplmode: 'auto',
+  })
+  .setGUS({
+    gus: true,
+    gusbase: 240,
+    gusirq: 5,
+    gusdma: 3,
+    ultradir: 'C:\\ULTRASND',
   })
   .setJoystick({ joysticktype: 'none' })
   .addAutoexec(
@@ -68,8 +77,8 @@ export const crystalDream2DosboxConf = presets
     'echo.',
     'echo 1st Place at The Computer Crossroads 1993',
     'echo.',
-    'echo Audio: Sound Blaster 16',
-    'echo CPU: 486 (Auto Cycles)',
+    'echo Audio: Gravis UltraSound + Sound Blaster 16',
+    'echo CPU: Maximum Cycles',
     'echo Graphics: VGA',
     'echo.',
     'echo Features:',
@@ -89,33 +98,3 @@ export const crystalDream2DosboxConf = presets
     'CD2.EXE'
   )
   .build();
-
-/**
- * Configuration metadata
- */
-export const crystalDream2Metadata = {
-  name: 'Crystal Dream 2',
-  author: 'Triton',
-  year: 1993,
-  description:
-    'Legendary 1993 demo featuring stunning 3D graphics, fractal zoomer, and raytraced scenes. Won 1st place at The Computer Crossroads 1993. One of the most influential PC demos of the early 90s.',
-  requirements: {
-    cpu: '486 DX-50 recommended (runs on 386-40)',
-    memory: '4MB RAM',
-    graphics: 'VGA',
-    sound: 'Sound Blaster compatible',
-  },
-  license: 'Scene/Historical',
-  party: 'The Computer Crossroads 1993',
-  ranking: '1st place',
-  notes: [
-    'One of the most quoted demos of the early-mid 90s',
-    'Competed with Second Reality for impact',
-    "Features music by Lizardking ('Trans Atlantic') and Vogue",
-    'Includes fractal zoomer that keeps zooming',
-    '3D chess scene is a technical masterpiece',
-    'Vector slime effect is highly regarded',
-    'Triton later became Starbreeze Studios (game company)',
-    'Also created FastTracker 2 music tracker',
-  ],
-};

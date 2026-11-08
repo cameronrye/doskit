@@ -6,6 +6,26 @@
  * DosPlayer with Apps Styles
  */
 
+/*
+ * Stacking order. No element of DosKit's between these layers and the page root forms a
+ * stacking context, so their z-indexes compare directly, except the player in js-dos's soft
+ * fullscreen. From the bottom:
+ *   10     header and footer (App.css), and js-dos's sidebar inside the player
+ *   50     the player's own loading and error panels (DosPlayer.css)
+ *   999    js-dos.css's modals and on-screen controls, should js-dos show them, and the
+ *          player in js-dos's soft fullscreen, fixed over the whole page (DosPlayer.css):
+ *          it then holds js-dos's own layers, its toasts included
+ *   1000   the loading and error overlays over the whole player (here)
+ *   1100   the selector's backdrop (here), 1101 the selector (DemoSelector.css)
+ *   9999   the install prompt (OfflineIndicator.css)
+ *   10000  the offline and back-online notices (OfflineIndicator.css), and the update
+ *          prompt (UpdateNotification.css), whose root comes later in the page
+ * The offline banner and the install prompt are above the selector, but the selector is
+ * kept clear of them by layout, not by z-index: while one is shown, OfflineIndicator keeps
+ * its height in --offline-banner-height or --install-prompt-height on the root element,
+ * and DemoSelector.css fits the selector in the space the two leave.
+ */
+
 .dos-player-with-apps {
   position: relative;
   width: 100%;
@@ -23,7 +43,7 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
-  z-index: 999;
+  z-index: 1100;
 }
 
 /* Loading Overlay */
@@ -38,19 +58,21 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 1000;
 }
 
-.loading-spinner {
+/* Named apart from js-dos.css's classes and keyframes, which apply to the whole page: its
+   .loading-spinner masks an element to a 24px icon */
+.dos-app-loading-spinner {
   width: 50px;
   height: 50px;
   border: 4px solid rgba(255, 255, 255, 0.1);
   border-top-color: var(--color-accent, #4a9eff);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: dos-app-loading-spin 1s linear infinite;
 }
 
-@keyframes spin {
+@keyframes dos-app-loading-spin {
   to {
     transform: rotate(360deg);
   }
@@ -60,6 +82,24 @@
   margin-top: 1rem;
   color: white;
   font-size: 1.1rem;
+}
+
+/* Cancel, on the overlay's dark ground in either colour scheme */
+.loading-overlay button {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  color: #ccc;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.loading-overlay button:hover {
+  background: #333;
+  color: #fff;
 }
 
 /* Error Overlay */
@@ -73,7 +113,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .error-box {
@@ -81,6 +121,7 @@
   border: 2px solid var(--color-error, #ff4444);
   border-radius: 8px;
   padding: 2rem;
+  margin: 1rem;
   max-width: 500px;
   text-align: center;
 }
@@ -90,16 +131,49 @@
   color: var(--color-error, #ff4444);
 }
 
+/* What went wrong, what to do, and the technical message on request */
 .error-box p {
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text-primary, #fff);
+}
+
+.error-box .error-suggestion {
   color: var(--color-text-secondary, #ccc);
 }
 
+.error-box .error-details {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #aaa);
+}
+
+.error-box .error-details summary {
+  cursor: pointer;
+}
+
+.error-box .error-details code {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+/* Try Again, and Choose Another Application beside it, or under it on narrow screens */
+.error-box .error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* Try Again's white text on a blue of its own, dark enough for it (5:1, and 6:1 on hover):
+   the page's accent colour, lighter, would give it 2.75:1, or 3.12:1 in the light scheme */
 .error-box button {
   padding: 0.75rem 1.5rem;
-  background: var(--color-accent, #4a9eff);
+  background: #1971c2;
   color: white;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 4px;
   font-size: 1rem;
   font-weight: 600;
@@ -108,79 +182,23 @@
 }
 
 .error-box button:hover {
-  background: var(--color-accent-hover, #3a8eef);
+  background: #1864ab;
   transform: translateY(-1px);
 }
 
-/* Control Bar - REMOVED: Now in App header */
-/* The control bar has been moved to the main app header to save vertical space */
-/*
-.app-control-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: var(--color-bg-secondary, #2a2a2a);
-  border-bottom: 1px solid var(--color-border, #333);
-}
-
-.current-app-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.app-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-text-primary, #fff);
-}
-
-.app-meta {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary, #aaa);
-}
-
-.select-app-button,
-.change-app-button {
-  padding: 0.5rem 1rem;
-  background: var(--color-accent, #4a9eff);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.select-app-button:hover,
-.change-app-button:hover {
-  background: var(--color-accent-hover, #3a8eef);
-  transform: translateY(-1px);
-}
-
-.change-app-button {
+.error-box .error-secondary-action {
   background: transparent;
-  border: 1px solid var(--color-border, #333);
-  color: var(--color-text-secondary, #aaa);
+  color: var(--color-text-secondary, #ccc);
+  border-color: currentColor;
 }
 
-.change-app-button:hover {
+.error-box .error-secondary-action:hover {
   background: var(--color-bg-tertiary, #333);
   color: var(--color-text-primary, #fff);
-  transform: none;
 }
-*/
 
 /* DOS Player Instance */
 .dos-player-instance {
   flex: 1;
   min-height: 0;
 }
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  /* Control bar styles removed - now in App header */
-}
-

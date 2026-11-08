@@ -3,82 +3,155 @@
  * Provides offline functionality and caching for the PWA
  */
 
-// Cache version - increment this to force cache update
+// Replaced by scripts/inject-sw-version.js with a hash of the site the build made, so a
+// deploy that changes what the site serves, or this worker, installs a new worker with a
+// fresh copy of the app shell, and one that changes neither installs none
 const CACHE_VERSION = 'v1';
 const CACHE_NAME = `doskit-${CACHE_VERSION}`;
+const METADATA_CACHE_NAME = `${CACHE_NAME}-metadata`;
+
+// js-dos's files, its player and the emulator files the player loads, only change with
+// js-dos, so they have a cache of their own that deploys keep. The build replaces this
+// with the version of js-dos it copied into the site.
+const JS_DOS_VERSION = 'dev';
+const EMULATOR_CACHE_NAME = `doskit-emulators-${JS_DOS_VERSION}`;
+
+// Demo archives only change when one is replaced, so deploys keep their cache too. The
+// build replaces this with a hash of the archives in dist/demos, so a deploy that changes
+// any of them starts a new cache.
+const DEMOS_HASH = 'dev';
+const DEMO_CACHE_NAME = `doskit-demos-${DEMOS_HASH}`;
+// The archives that hash covers
+const DEMO_ARCHIVE = /^\/demos\/[^/]+\.zip$/;
 
 // Configuration
 const CONFIG = {
   NETWORK_TIMEOUT_BASE: 5000, // Base timeout: 5 seconds for small files
-  NETWORK_TIMEOUT_PER_MB: 2000, // Additional 2 seconds per MB
   NETWORK_TIMEOUT_MAX: 60000, // Maximum timeout: 60 seconds
-  MAX_CACHE_SIZE: 100, // Maximum number of items in cache
-  MAX_CACHE_AGE: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+  MAX_CACHE_SIZE: 100, // Entry limit of CACHE_NAME; trimming removes runtime entries only
 };
 
-// Base path handling for GitHub Pages vs local
-const getBasePath = () => {
-  // Check if we're on GitHub Pages
-  if (self.location.pathname.startsWith('/doskit/')) {
-    return '/doskit';
-  }
-  return '';
-};
+// The page of every route: GitHub Pages answers / (whatever the query) with index.html,
+// and a path it has no file for, such as /secondreality, with 404.html, a copy of it.
+// Install stores it once, under this URL, and it answers every navigation offline.
+const APP_PAGE = '/';
 
-const BASE_PATH = getBasePath();
-
-// Assets to cache on install
+// Assets to cache on install. The build appends every JS and CSS file in dist/assets,
+// the chunks imported lazily too: offline, an app needs its config chunk to start.
 const STATIC_ASSETS = [
-  `${BASE_PATH}/`,
-  `${BASE_PATH}/index.html`,
-  `${BASE_PATH}/offline.html`,
-  `${BASE_PATH}/manifest.json`,
-  `${BASE_PATH}/logo.svg`,
-  `${BASE_PATH}/favicon.svg`,
-  `${BASE_PATH}/js-dos.js`,
-  `${BASE_PATH}/js-dos.css`,
+  '/', // APP_PAGE, written out for the build, which checks every path listed here
+  '/manifest.json',
+  '/logo.svg',
+  '/favicon.svg',
 ];
 
-// WASM and emulator files to cache
+// What install puts in EMULATOR_CACHE_NAME: the js-dos player, which index.html loads, and
+// the files of its default "dosbox" backend, which every app runs on. They are served from
+// there and never refreshed, so a page gets the player and the emulator files of the js-dos
+// its worker installed until a worker with another js-dos version takes over: the page's
+// next player can then get that version's emulator files. A deploy that changes js-dos
+// brings its own copies with its worker, which serves them once it takes over.
+//
+// DOSBox-X (wdosbox-x.*, 6.6 MB) is left out: js-dos offers its backend picker only before
+// a run, which autoStart with countDownStart 0 skips, so users cannot switch to it. Should
+// anything request it, cache-first stores it on first use like any emulator file.
 const EMULATOR_ASSETS = [
-  `${BASE_PATH}/emulators/wdosbox.wasm`,
-  `${BASE_PATH}/emulators/wdosbox.js`,
-  `${BASE_PATH}/emulators/wdosbox-x.wasm`,
-  `${BASE_PATH}/emulators/wdosbox-x.js`,
-  `${BASE_PATH}/emulators/wlibzip.wasm`,
-  `${BASE_PATH}/emulators/wlibzip.js`,
-  `${BASE_PATH}/emulators/emulators.js`,
+  '/js-dos.js',
+  '/js-dos.css',
+  '/emulators/wdosbox.wasm',
+  '/emulators/wdosbox.js',
+  '/emulators/wlibzip.wasm',
+  '/emulators/wlibzip.js',
+  '/emulators/emulators.js',
 ];
 
-// Install event - cache static assets
+const absoluteUrl = (path) => new URL(path, self.location.origin).href;
+
+// Lookups ignore Vary: every file the worker caches is the same for every request, and
+// Vary would make a request miss whose headers differ from the stored request's. Chrome
+// sends Origin with the crossorigin requests of index.html (its module scripts, its
+// stylesheet and the wasm preload), install's requests carry none, and some hosts (vite
+// preview, not GitHub Pages) answer with Vary: Origin.
+const MATCH_OPTIONS = { ignoreVary: true };
+
+// What install puts in CACHE_NAME: trimming leaves these alone, since APP_PAGE answers
+// every navigation offline and the app cannot start without the rest
+const PRECACHED_URLS = new Set(STATIC_ASSETS.map(absoluteUrl));
+
+// A request the browser sends to the server even when its HTTP cache holds a fresh copy;
+// the server answers 304 when the file has not changed
+const fromServer = (input) => new Request(input, { cache: 'no-cache' });
+
+// The JS and CSS Vite emits, named after a hash of their content
+const isBundle = (path) => path.startsWith('/assets/');
+
+// js-dos's player, and the emulator files it loads from /emulators/ (the pathPrefix of
+// src/config/jsdos.config.ts), DOSBox-X's included
+const isJsDosFile = (path) =>
+  path === '/js-dos.js' || path === '/js-dos.css' || path.startsWith('/emulators/');
+
+/**
+ * Copy into the cache the bundles that the cache of an earlier deploy holds under the
+ * same name, and return those none holds. The name changes with the content, so the copy
+ * is this deploy's file; GitHub Pages gives every file a new ETag on each deploy, so once
+ * the HTTP cache's copy is 10 minutes old it would be downloaded again in full.
+ */
+async function takeCachedBundles(cache, bundles) {
+  const taken = await Promise.all(
+    bundles.map(async (path) => {
+      const response = await caches.match(path, MATCH_OPTIONS);
+      if (response) {
+        await cache.put(path, response);
+      }
+      return Boolean(response);
+    })
+  );
+  return bundles.filter((_, i) => !taken[i]);
+}
+
+async function precacheAppShell() {
+  const cache = await caches.open(CACHE_NAME);
+  const bundles = STATIC_ASSETS.filter(isBundle);
+  const missing = await takeCachedBundles(cache, bundles);
+  // GitHub Pages lets browsers reuse a file for 10 minutes, so a worker installed that
+  // soon after a visit could store the previous deploy's index.html, which loads bundles
+  // this deploy no longer has. A bundle's name changes with its content, so whatever the
+  // HTTP cache holds under that name is current, and saves downloading it again.
+  await cache.addAll([
+    ...STATIC_ASSETS.filter((path) => !isBundle(path)).map(fromServer),
+    ...missing,
+  ]);
+  console.log(
+    `[Service Worker] ✅ Static assets cached (${STATIC_ASSETS.length} files, ` +
+      `${bundles.length - missing.length} bundles taken from an earlier deploy's cache)`
+  );
+}
+
+/**
+ * Precache the js-dos player and the default backend into the cache of this js-dos
+ * version. Only files that are not there yet are downloaded, so a deploy that keeps
+ * js-dos fetches none.
+ */
+async function precacheEmulator() {
+  const cache = await caches.open(EMULATOR_CACHE_NAME);
+  const cachedUrls = new Set((await cache.keys()).map((request) => request.url));
+  const missing = EMULATOR_ASSETS.filter((path) => !cachedUrls.has(absoluteUrl(path)));
+  // A cached js-dos file is kept until js-dos changes, so it must come from the server:
+  // an HTTP cache entry that is still fresh may hold the previous js-dos version's file
+  await cache.addAll(missing.map(fromServer));
+  console.log(
+    `[Service Worker] ✅ js-dos cached in ${EMULATOR_CACHE_NAME} ` +
+      `(${missing.length} downloaded, ${EMULATOR_ASSETS.length - missing.length} kept)`
+  );
+}
+
+// Install event - cache the app shell, and js-dos with its default emulator
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing service worker...', CACHE_NAME);
 
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[Service Worker] Caching static assets');
-        console.log(`[Service Worker] Total assets to cache: ${STATIC_ASSETS.length + EMULATOR_ASSETS.length}`);
-
-        // Cache static assets first (critical for app to work)
-        return cache.addAll(STATIC_ASSETS)
-          .then(() => {
-            console.log(`[Service Worker] ✅ Static assets cached (${STATIC_ASSETS.length} files)`);
-            // Then cache emulator assets (these are larger)
-            return cache.addAll(EMULATOR_ASSETS);
-          })
-          .then(() => {
-            console.log(`[Service Worker] ✅ Emulator assets cached (${EMULATOR_ASSETS.length} files)`);
-          })
-          .catch((error) => {
-            console.error('[Service Worker] ❌ Failed to cache assets:', error);
-            // Log which asset failed
-            if (error.message) {
-              console.error('[Service Worker] Error details:', error.message);
-            }
-            throw error; // Re-throw to fail the installation
-          });
-      })
+    precacheAppShell()
+      .then(precacheEmulator)
       .then(() => {
         console.log('[Service Worker] ✅ Installation complete - all assets cached');
         console.log('[Service Worker] Waiting for user to activate update...');
@@ -92,16 +165,19 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - delete the caches of earlier deploys, other js-dos versions and other
+// demo archives
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating service worker...', CACHE_NAME);
+  const currentCaches = [CACHE_NAME, METADATA_CACHE_NAME, EMULATOR_CACHE_NAME, DEMO_CACHE_NAME];
 
   event.waitUntil(
-    caches.keys()
+    caches
+      .keys()
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName.startsWith('doskit-') && cacheName !== CACHE_NAME) {
+            if (cacheName.startsWith('doskit-') && !currentCaches.includes(cacheName)) {
               console.log('[Service Worker] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
@@ -121,7 +197,7 @@ self.addEventListener('activate', (event) => {
 });
 
 /**
- * Calculate dynamic timeout based on file type and estimated size
+ * Calculate dynamic timeout based on file type
  * @param {Request} request - The fetch request
  * @returns {number} Timeout in milliseconds
  */
@@ -130,8 +206,12 @@ function calculateTimeout(request) {
   const pathname = url.pathname.toLowerCase();
 
   // Large file types get longer timeouts
-  if (pathname.endsWith('.wasm') || pathname.endsWith('.zip') ||
-      pathname.endsWith('.iso') || pathname.endsWith('.img')) {
+  if (
+    pathname.endsWith('.wasm') ||
+    pathname.endsWith('.zip') ||
+    pathname.endsWith('.iso') ||
+    pathname.endsWith('.img')
+  ) {
     // WASM and archive files: 30 seconds
     return Math.min(30000, CONFIG.NETWORK_TIMEOUT_MAX);
   }
@@ -141,7 +221,7 @@ function calculateTimeout(request) {
     return 10000;
   }
 
-  if (pathname.endsWith('.html') || pathname === BASE_PATH + '/') {
+  if (pathname.endsWith('.html') || pathname === '/') {
     // HTML documents: 5 seconds (should be fast)
     return CONFIG.NETWORK_TIMEOUT_BASE;
   }
@@ -162,21 +242,17 @@ function fetchWithTimeout(request, timeout = null) {
     fetch(request),
     new Promise((_, reject) =>
       setTimeout(() => reject(new Error(`Network timeout after ${actualTimeout}ms`)), actualTimeout)
-    )
+    ),
   ]);
 }
 
 /**
- * Utility: Trim cache to maximum size
- * Removes oldest entries when cache exceeds MAX_CACHE_SIZE
- */
-/**
- * Get cache metadata from IndexedDB
- * Stores timestamps for LRU cache management
+ * Read the LRU timestamps (last use of each cached URL), which Cache Storage keeps
+ * as one JSON entry in a cache of their own
  */
 async function getCacheMetadata() {
   try {
-    const cache = await caches.open(`${CACHE_NAME}-metadata`);
+    const cache = await caches.open(METADATA_CACHE_NAME);
     const response = await cache.match('metadata');
     if (response) {
       return await response.json();
@@ -195,17 +271,21 @@ async function updateCacheMetadata(url, timestamp = Date.now()) {
     const metadata = await getCacheMetadata();
     metadata[url] = timestamp;
 
-    const cache = await caches.open(`${CACHE_NAME}-metadata`);
-    await cache.put('metadata', new Response(JSON.stringify(metadata), {
-      headers: { 'Content-Type': 'application/json' }
-    }));
+    const cache = await caches.open(METADATA_CACHE_NAME);
+    await cache.put(
+      'metadata',
+      new Response(JSON.stringify(metadata), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
   } catch (error) {
     console.error('[Service Worker] Error updating cache metadata:', error);
   }
 }
 
 /**
- * Trim cache using LRU (Least Recently Used) strategy with timestamps
+ * Trim the cache to MAX_CACHE_SIZE entries, removing the least recently used
+ * runtime entries first (LRU by the metadata timestamps)
  */
 async function trimCache(cacheName) {
   try {
@@ -213,17 +293,24 @@ async function trimCache(cacheName) {
     const keys = await cache.keys();
 
     if (keys.length > CONFIG.MAX_CACHE_SIZE) {
-      console.log(`[Service Worker] Cache size (${keys.length}) exceeds limit (${CONFIG.MAX_CACHE_SIZE}), trimming...`);
+      console.log(
+        `[Service Worker] Cache size (${keys.length}) exceeds limit (${CONFIG.MAX_CACHE_SIZE}), trimming...`
+      );
 
       // Get metadata with timestamps
       const metadata = await getCacheMetadata();
 
-      // Create array of entries with timestamps
-      const entries = keys.map(request => ({
-        request,
-        url: request.url,
-        timestamp: metadata[request.url] || 0
-      }));
+      // Runtime entries with their timestamps; what install precached is never trimmed.
+      // A runtime entry without one was just cached: its timestamp write is still pending
+      // (or lost to a concurrent one), so it must not count as the oldest.
+      const now = Date.now();
+      const entries = keys
+        .filter((request) => !PRECACHED_URLS.has(request.url))
+        .map((request) => ({
+          request,
+          url: request.url,
+          timestamp: metadata[request.url] ?? now,
+        }));
 
       // Sort by timestamp (oldest first)
       entries.sort((a, b) => a.timestamp - b.timestamp);
@@ -233,23 +320,108 @@ async function trimCache(cacheName) {
       const keysToDelete = entries.slice(0, deleteCount);
 
       // Delete oldest entries
-      await Promise.all(keysToDelete.map(entry => cache.delete(entry.request)));
+      await Promise.all(keysToDelete.map((entry) => cache.delete(entry.request)));
 
       // Update metadata to remove deleted entries
       const updatedMetadata = await getCacheMetadata();
-      keysToDelete.forEach(entry => {
+      keysToDelete.forEach((entry) => {
         delete updatedMetadata[entry.url];
       });
 
-      const metadataCache = await caches.open(`${CACHE_NAME}-metadata`);
-      await metadataCache.put('metadata', new Response(JSON.stringify(updatedMetadata), {
-        headers: { 'Content-Type': 'application/json' }
-      }));
+      const metadataCache = await caches.open(METADATA_CACHE_NAME);
+      await metadataCache.put(
+        'metadata',
+        new Response(JSON.stringify(updatedMetadata), {
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
 
-      console.log(`[Service Worker] Deleted ${keysToDelete.length} old cache entries using LRU strategy`);
+      console.log(
+        `[Service Worker] Deleted ${keysToDelete.length} old cache entries using LRU strategy`
+      );
     }
   } catch (error) {
     console.error('[Service Worker] Error trimming cache:', error);
+  }
+}
+
+/**
+ * Store a response in CACHE_NAME, then record its use and trim the cache. Cache.put()
+ * reads the whole body before it writes the entry, so a trim that ran alongside it would
+ * count the cache without that entry and leave it over its limit.
+ */
+async function cacheResponse(request, response) {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(request, response);
+  } catch (error) {
+    // Such as a body that broke off because the page stopped loading it
+    console.error('[Service Worker] Error caching response:', request.url, error);
+    return;
+  }
+  await updateCacheMetadata(request.url);
+  await trimCache(CACHE_NAME);
+}
+
+/**
+ * Serve a file cache-first from a cache that deploys keep (the files of this js-dos
+ * version, or these demo archives), storing it there on first use. Such a cache is kept
+ * until its name changes, so a file must come from the server: a still-fresh HTTP cache
+ * entry may hold a previous deploy's copy.
+ *
+ * Cache.put() only stores a whole body, so a download the page aborts never leaves part
+ * of a file behind. The copy of the page's request keeps its signal: where the browser
+ * passes the page's abort on to the worker, the download stops and nothing is stored.
+ * Chromium does not, so there the download finishes and the whole file is stored.
+ */
+async function serveCacheFirst(event, cacheName) {
+  const { request } = event;
+  const cache = await caches.open(cacheName);
+  const cachedResponse = await cache.match(request, MATCH_OPTIONS);
+  if (cachedResponse) {
+    console.log('[Service Worker] Serving from cache (cache-first):', request.url);
+    return cachedResponse;
+  }
+
+  console.log('[Service Worker] Fetching from network (cache-first):', request.url);
+  const networkResponse = await fetchWithTimeout(fromServer(request));
+  if (networkResponse.status === 200) {
+    event.waitUntil(
+      cache
+        .put(request, networkResponse.clone())
+        .catch((error) => console.error('[Service Worker] Error caching', request.url, error))
+    );
+  }
+  return networkResponse;
+}
+
+/**
+ * Serve a page from the network first, revalidated with the server: GitHub Pages lets
+ * browsers reuse a page for 10 minutes, so the HTTP cache may still hold the previous
+ * deploy's index.html, which loads bundles this deploy's cache lacks. The response is
+ * passed on as it came, including the 404 status GitHub Pages gives a path-style link
+ * such as /secondreality, whose 404.html is a copy of index.html.
+ *
+ * Nothing is stored: when the network fails or times out, the page is APP_PAGE, the
+ * index.html install stored along with the bundles it loads, whatever the URL. A page
+ * fetched later may come from a newer deploy, whose bundles this cache does not have.
+ *
+ * Changing a navigation's cache mode takes a copy, which Request() makes a same-origin
+ * request, since it takes no mode 'navigate'. The copy keeps the redirect mode 'manual':
+ * the browser must follow a redirect itself, and refuses a response that followed one as
+ * the answer to a navigation.
+ */
+async function servePage(request) {
+  try {
+    return await fetchWithTimeout(fromServer(request));
+  } catch (error) {
+    const cache = await caches.open(CACHE_NAME);
+    const page = await cache.match(APP_PAGE, MATCH_OPTIONS);
+    if (!page) {
+      throw error;
+    }
+    console.log('[Service Worker] Serving the cached page:', request.url, error.message);
+    return page;
   }
 }
 
@@ -268,213 +440,123 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first strategy for HTML documents to ensure fresh content
-  if (request.mode === 'navigate' || request.destination === 'document' ||
-      url.pathname.endsWith('.html') || url.pathname === BASE_PATH + '/') {
-    event.respondWith(
-      fetchWithTimeout(request)
-        .then((networkResponse) => {
-          // Cache the fresh HTML
-          if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseToCache);
-              // Update timestamp for LRU cache
-              updateCacheMetadata(request.url);
-              // Trim cache after adding new entry
-              trimCache(CACHE_NAME);
-            });
-          }
-          return networkResponse;
-        })
-        .catch((error) => {
-          // Network failed or timed out, fallback to cache
-          console.log('[Service Worker] Network failed/timeout, serving cached HTML:', request.url, error.message);
-          return caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-              // Update timestamp when serving from cache
-              updateCacheMetadata(request.url);
-            }
-            return cachedResponse || caches.match(`${BASE_PATH}/index.html`);
-          });
-        })
-    );
+  // The worker script always comes from the server. Browsers fetch it for updates
+  // without asking the worker; the page fetches it to check that the worker still
+  // exists (serviceWorkerRegistration.ts), which a cached copy would keep confirming.
+  if (url.pathname === self.location.pathname) {
     return;
   }
 
-  // Cache-first strategy for WASM files (immutable, large, expensive to fetch)
-  if (url.pathname.endsWith('.wasm') || url.pathname.endsWith('.wasm.gz')) {
-    event.respondWith(
-      caches.match(request)
-        .then((cachedResponse) => {
-          if (cachedResponse) {
-            console.log('[Service Worker] Serving WASM from cache:', request.url);
-            // Update timestamp when serving from cache
-            updateCacheMetadata(request.url);
-            return cachedResponse;
-          }
-
-          // Not in cache, fetch from network
-          console.log('[Service Worker] Fetching WASM from network:', request.url);
-          return fetchWithTimeout(request)
-            .then((networkResponse) => {
-              if (networkResponse && networkResponse.status === 200) {
-                const responseToCache = networkResponse.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                  cache.put(request, responseToCache);
-                  updateCacheMetadata(request.url);
-                  trimCache(CACHE_NAME);
-                });
-              }
-              return networkResponse;
-            });
-        })
-    );
+  // Network-first for pages, falling back to the one copy of index.html install stored
+  if (
+    request.mode === 'navigate' ||
+    request.destination === 'document' ||
+    url.pathname.endsWith('.html') ||
+    url.pathname === '/'
+  ) {
+    event.respondWith(servePage(request));
     return;
   }
 
-  // Stale-while-revalidate for JS/CSS and other assets
-  event.respondWith(
-    caches.match(request)
-      .then((cachedResponse) => {
+  // Cache-first for the js-dos player and the emulator files it loads, from the cache of
+  // this js-dos version, so that a page gets them all from one version until a worker with
+  // another one takes over
+  if (isJsDosFile(url.pathname)) {
+    event.respondWith(serveCacheFirst(event, EMULATOR_CACHE_NAME));
+    return;
+  }
+
+  // Cache-first for demo archives, from the cache of these archives
+  if (DEMO_ARCHIVE.test(url.pathname)) {
+    event.respondWith(serveCacheFirst(event, DEMO_CACHE_NAME));
+    return;
+  }
+
+  // Cache-first for bundles, whose names change with their content, so a cached copy
+  // never goes stale, and for other WASM: large, and unchanged within a deploy (a build
+  // that changes any file gets a new CACHE_VERSION, so activation drops stale copies).
+  // Stale-while-revalidate would download each of them again on every use.
+  if (
+    isBundle(url.pathname) ||
+    url.pathname.endsWith('.wasm') ||
+    url.pathname.endsWith('.wasm.gz')
+  ) {
+    event.respondWith(
+      caches.match(request, MATCH_OPTIONS).then((cachedResponse) => {
         if (cachedResponse) {
-          // Return cached response and update cache in background
-          console.log('[Service Worker] Serving from cache:', request.url);
-
+          console.log('[Service Worker] Serving from cache (cache-first):', request.url);
           // Update timestamp when serving from cache
           updateCacheMetadata(request.url);
-
-          // Stale-while-revalidate: return cache immediately, update in background
-          event.waitUntil(
-            fetchWithTimeout(request)
-              .then((networkResponse) => {
-                if (networkResponse && networkResponse.status === 200) {
-                  return caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(request, networkResponse.clone());
-                    // Update timestamp for LRU cache
-                    updateCacheMetadata(request.url);
-                    // Trim cache after adding new entry
-                    trimCache(CACHE_NAME);
-                    return networkResponse;
-                  });
-                }
-                return networkResponse;
-              })
-              .catch(() => {
-                // Network failed, but we already returned cache
-              })
-          );
-
           return cachedResponse;
         }
 
         // Not in cache, fetch from network
-        console.log('[Service Worker] Fetching from network:', request.url);
-        return fetchWithTimeout(request)
-          .then((networkResponse) => {
-            // Cache successful responses
-            if (networkResponse && networkResponse.status === 200) {
-              // Clone the response before caching
-              const responseToCache = networkResponse.clone();
-
-              caches.open(CACHE_NAME)
-                .then((cache) => {
-                  // Cache the new resource
-                  cache.put(request, responseToCache);
-                  // Update timestamp for LRU cache
-                  updateCacheMetadata(request.url);
-                  // Trim cache after adding new entry
-                  trimCache(CACHE_NAME);
-                });
-            }
-
-            return networkResponse;
-          })
-          .catch((error) => {
-            console.error('[Service Worker] Fetch failed:', error);
-
-            // Return offline page for navigation requests
-            if (request.mode === 'navigate') {
-              return caches.match(`${BASE_PATH}/offline.html`)
-                .then((offlineResponse) => {
-                  if (offlineResponse) {
-                    return offlineResponse;
-                  }
-                  // Fallback to index.html if offline.html not cached
-                  return caches.match(`${BASE_PATH}/index.html`);
-                });
-            }
-
-            // For other requests, throw the error
-            throw error;
-          });
+        console.log('[Service Worker] Fetching from network (cache-first):', request.url);
+        return fetchWithTimeout(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            event.waitUntil(cacheResponse(request, networkResponse.clone()));
+          }
+          return networkResponse;
+        });
       })
+    );
+    return;
+  }
+
+  // Stale-while-revalidate for everything else, such as the manifest and the icons
+  event.respondWith(
+    caches.match(request, MATCH_OPTIONS).then((cachedResponse) => {
+      if (cachedResponse) {
+        // Return cached response and update cache in background
+        console.log('[Service Worker] Serving from cache:', request.url);
+
+        // Update timestamp when serving from cache
+        updateCacheMetadata(request.url);
+
+        // Stale-while-revalidate: return cache immediately, update in background
+        event.waitUntil(
+          fetchWithTimeout(request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                return cacheResponse(request, networkResponse);
+              }
+            })
+            .catch(() => {
+              // Network failed, but we already returned cache
+            })
+        );
+
+        return cachedResponse;
+      }
+
+      // Not in cache, fetch from network
+      console.log('[Service Worker] Fetching from network:', request.url);
+      return fetchWithTimeout(request)
+        .then((networkResponse) => {
+          // Cache successful responses
+          if (networkResponse && networkResponse.status === 200) {
+            event.waitUntil(cacheResponse(request, networkResponse.clone()));
+          }
+
+          return networkResponse;
+        })
+        .catch((error) => {
+          console.error('[Service Worker] Fetch failed:', error);
+          throw error;
+        });
+    })
   );
 });
 
 // Message event - handle messages from the app
 self.addEventListener('message', (event) => {
   console.log('[Service Worker] Message received:', event.data);
-  
+
+  // Sent by the update prompt (UpdateNotification) when the user accepts an update
   if (event.data && event.data.type === 'SKIP_WAITING') {
     console.log('[Service Worker] SKIP_WAITING message received - activating new version');
     self.skipWaiting();
   }
-  
-  if (event.data && event.data.type === 'CACHE_URLS') {
-    event.waitUntil(
-      caches.open(CACHE_NAME)
-        .then((cache) => {
-          return cache.addAll(event.data.urls);
-        })
-    );
-  }
-  
-  if (event.data && event.data.type === 'CLEAR_CACHE') {
-    event.waitUntil(
-      caches.keys()
-        .then((cacheNames) => {
-          return Promise.all(
-            cacheNames.map((cacheName) => {
-              if (cacheName.startsWith('doskit-')) {
-                return caches.delete(cacheName);
-              }
-            })
-          );
-        })
-    );
-  }
-});
-
-// Background sync for future enhancements
-self.addEventListener('sync', (event) => {
-  console.log('[Service Worker] Background sync:', event.tag);
-  
-  if (event.tag === 'sync-dos-state') {
-    event.waitUntil(
-      // Future: sync DOS state when online
-      Promise.resolve()
-    );
-  }
-});
-
-// Push notifications for future enhancements
-self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push notification received');
-  
-  const options = {
-    body: event.data ? event.data.text() : 'New update available',
-    icon: `${BASE_PATH}/icons/icon-192x192.png`,
-    badge: `${BASE_PATH}/icons/icon-72x72.png`,
-    vibrate: [200, 100, 200],
-    tag: 'doskit-notification',
-    requireInteraction: false,
-  };
-  
-  event.waitUntil(
-    self.registration.showNotification('DosKit', options)
-  );
 });
 
 console.log('[Service Worker] Service worker script loaded');
-

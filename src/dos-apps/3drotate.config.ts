@@ -4,21 +4,18 @@
  * Licensed under the MIT License
  *
  * 3D Rotate Demo Configuration
- * Configuration for running the 3D rotation demo from Grumpy's collection
+ * Configuration for running Draeden of VLA's 3D rotation demo (1993), from Grumpy's
+ * source pack collection
  */
 
-import { loadZipArchive as loadZip } from '../utils/diskLoader';
 import { presets } from '../utils/dosboxConfigBuilder';
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
 
 /**
  * 3D Rotate Demo (hosted locally)
- * A classic 3D rotation demo effect
+ * A classic 3D rotation demo effect, from VLA's "Intro To 3d Rotations" by Draeden
  *
  * Source: https://github.com/sceners/grumpys-source-pack-collection
- * License: Scene/Historical
+ * License: none found (see public/demos/README.md)
  */
 export const rotate3dZipUrl = '/demos/3drotate.zip';
 
@@ -26,28 +23,29 @@ export const rotate3dZipUrl = '/demos/3drotate.zip';
  * DOSBox configuration optimized for 3D Rotate Demo
  *
  * Requirements:
- * - 286 CPU minimum
+ * - 386 CPU minimum (3DROTATE.TXT: "requires a 386 or better")
  * - VGA graphics
  * - Memory: Minimal (runs in 640KB)
  *
  * This configuration uses:
- * - 486 CPU with auto cycles
+ * - Auto CPU core and type, at a fixed 30000 cycles. 'auto' would give it 3,000 cycles/ms, at
+ *   which it needs two frames to draw the cube and turns it at half speed.
  * - Standard VGA graphics
  */
 export const rotate3dDosboxConf = presets
   .demo()
-  .setCPU({ core: 'auto', cputype: '486', cycles: 'auto' })
-  .setMemory({ memsize: 4 })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 30000 })
   .setJoystick({ joysticktype: 'none' })
   .addAutoexec(
     '@echo off',
     'echo.',
     'echo ========================================',
     'echo   3D Rotation Demo',
+    'echo   by Draeden of VLA (1993)',
     "echo   From Grumpy's Source Pack Collection",
     'echo ========================================',
     'echo.',
-    'echo CPU: 486 (Auto Cycles)',
+    'echo CPU: 30000 cycles',
     'echo Graphics: VGA',
     'echo.',
     'echo Mounting C: drive...',
@@ -59,27 +57,3 @@ export const rotate3dDosboxConf = presets
     '3DROTATE.EXE'
   )
   .build();
-
-/**
- * Configuration metadata
- */
-export const rotate3dMetadata = {
-  name: '3D Rotation Demo',
-  author: "Grumpy's Collection",
-  year: 1990,
-  description:
-    'Classic 3D rotation demo effect showcasing real-time 3D object rotation in VGA mode.',
-  requirements: {
-    cpu: '286 or better',
-    memory: '640KB RAM',
-    graphics: 'VGA',
-    sound: 'None',
-  },
-  license: 'Scene/Historical',
-  repository: 'https://github.com/sceners/grumpys-source-pack-collection',
-  notes: [
-    "Part of Grumpy's extensive demo effects collection",
-    'Educational example of 3D graphics programming',
-    'Demonstrates real-time 3D rotation algorithms',
-  ],
-};

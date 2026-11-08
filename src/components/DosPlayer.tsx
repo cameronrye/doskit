@@ -7,11 +7,11 @@
  * Main component that orchestrates the DOS emulator using the useDosEmulator hook
  */
 
-import React from "react";
-import type { DosOptions, CommandInterface } from "../types/js-dos";
-import { defaultDosboxConfig } from "../config/dosbox.conf";
-import { useDosEmulator } from "../hooks/useDosEmulator";
-import { DosPlayerUI } from "./DosPlayerUI";
+import React from 'react';
+import type { DosOptions, CommandInterface } from '../types/js-dos';
+import { defaultDosboxConfig } from '../config/dosbox.conf';
+import { useDosEmulator } from '../hooks/useDosEmulator';
+import { DosPlayerUI } from './DosPlayerUI';
 
 // js-dos is loaded via local script and available globally
 // Type declaration is in src/types/js-dos.d.ts
@@ -23,8 +23,13 @@ export interface DosPlayerProps {
   options?: Partial<DosOptions>;
   /** Callback when the emulator is ready */
   onReady?: (ci: CommandInterface) => void;
-  /** Callback when the emulator exits */
+  /**
+   * Callback when a ready emulator is gone: DOS exited, or unmounting stopped it. Called
+   * once per onReady.
+   */
   onExit?: () => void;
+  /** Callback when the emulator cannot start, with the error the player shows */
+  onError?: (error: string) => void;
   /** Custom CSS class name */
   className?: string;
   /** Custom inline styles */
@@ -40,7 +45,8 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
   options = {},
   onReady,
   onExit,
-  className = "",
+  onError,
+  className = '',
   style = {},
 }) => {
   const { dosContainerRef, isLoading, error } = useDosEmulator({
@@ -48,6 +54,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
     options,
     onReady,
     onExit,
+    onError,
   });
 
   return (
@@ -60,5 +67,3 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
     />
   );
 };
-
-export default DosPlayer;

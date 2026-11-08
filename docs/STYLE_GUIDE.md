@@ -11,6 +11,9 @@ This document defines the coding standards and naming conventions for the DosKit
 - [React Guidelines](#react-guidelines)
 - [File Organization](#file-organization)
 - [Comments and Documentation](#comments-and-documentation)
+- [Environment-Specific Code](#environment-specific-code)
+- [Testing](#testing)
+- [Linting and Formatting](#linting-and-formatting)
 
 ## General Principles
 
@@ -77,12 +80,12 @@ This document defines the coding standards and naming conventions for the DosKit
 
   ```typescript
   // Good
-  function loadDiskImage(url: string): Promise<Uint8Array> { ... }
-  function validateFileSize(size: number): void { ... }
+  function normalizeAppId(urlId: string): string | null { ... }
+  function updateDocumentTitle(appName?: string): void { ... }
 
   // Bad
-  function LoadDiskImage(url: string) { ... }
-  function validate_file_size(size: number) { ... }
+  function NormalizeAppId(urlId: string) { ... }
+  function update_document_title(appName?: string) { ... }
   ```
 
 - **Variables**: Use `camelCase` with descriptive nouns
@@ -90,11 +93,11 @@ This document defines the coding standards and naming conventions for the DosKit
   ```typescript
   // Good
   const dosContainerRef = useRef<HTMLDivElement>(null);
-  const isLoading = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Bad
   const DosContainerRef = useRef<HTMLDivElement>(null);
-  const is_loading = useState(false);
+  const [is_loading, set_is_loading] = useState(false);
   ```
 
 - **Boolean Variables**: Prefix with `is`, `has`, `should`, or `can`
@@ -112,15 +115,15 @@ This document defines the coding standards and naming conventions for the DosKit
 
   ```typescript
   // Good
-  export const MAX_FILE_SIZE = 50 * 1024 * 1024;
-  export const DEFAULT_TIMEOUT = 5000;
+  const STALL_TIMEOUT_MS = 20_000;
+  const DEFAULT_RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
   // Bad
-  export const maxFileSize = 50 * 1024 * 1024;
-  export const default_timeout = 5000;
+  const stallTimeoutMs = 20_000;
+  const default_retryable_status_codes = [408, 429, 500, 502, 503, 504];
   ```
 
-- **Exported Configuration Objects**: Use `camelCase`
+- **Exported Configuration Objects**: Use `camelCase` for the configurations of the apps, js-dos and DOSBox; fixed values grouped in an object, such as `PWA_CONFIG` in `src/constants/app.ts`, are constants
   ```typescript
   // Good
   export const defaultDosboxConfig = '...';
@@ -134,11 +137,11 @@ This document defines the coding standards and naming conventions for the DosKit
   ```typescript
   // Good
   export class DOSBoxConfigBuilder { ... }
-  export class ErrorHandler { ... }
+  export class JsDosAdapter implements EmulatorAdapter { ... }
 
   // Bad
   export class dosboxConfigBuilder { ... }
-  export class error_handler { ... }
+  export class js_dos_adapter implements EmulatorAdapter { ... }
   ```
 
 - **Interfaces**: Use `PascalCase`
@@ -156,8 +159,8 @@ This document defines the coding standards and naming conventions for the DosKit
 - **Type Aliases**: Use `PascalCase`
   ```typescript
   // Good
-  export type DosEvent = "emu-ready" | "ci-ready" | "exit";
-  export type LoadMethod = "files" | "zip" | "diskImage";
+  export type DosEvent = 'emu-ready' | 'ci-ready' | 'bnd-play' | 'open-key' | 'fullscreen-change';
+  export type InitFsEntry = Uint8Array | InitFileEntry;
   ```
 
 ### Acronyms in Names
@@ -222,52 +225,49 @@ src/
 
 ### General Rules
 
+Prettier applies these rules with the settings in `.prettierrc`, so run `npm run format` instead of formatting by hand.
+
 - **Indentation**: 2 spaces (no tabs)
 - **Quotes**: Single quotes for strings (except JSX attributes)
 - **Semicolons**: Always required
 - **Line Length**: Maximum 100 characters (soft limit)
 - **Trailing Commas**: Use in multi-line arrays and objects
 
+<!-- prettier-ignore -->
 ```typescript
 // Good
 const config = {
-  name: "DosKit",
-  version: "1.0.0",
-  features: ["emulator", "pwa"],
+  name: 'DosKit',
+  version: '1.0.0',
+  features: ['emulator', 'pwa'],
 };
 
 // Bad
 const config = {
   name: "DosKit",
   version: "1.0.0",
-  features: ["emulator", "pwa"],
+  features: ["emulator", "pwa"]
 };
 ```
 
 ### Imports
 
-- **Order**: External packages → Internal modules → Types → Styles
-- **Grouping**: Separate groups with blank lines
-- **Sorting**: Alphabetical within groups
+- **One block**: The imports come right after the file's header comment, with no blank lines between them
+- **Order**: Packages first, then the project's own modules, in no fixed order among themselves; a package's stylesheet right after the package, and a component's own stylesheet last
+- **Types**: A type comes from the module that declares it, next to that module's other imports: `import type { ... }` when only types come from it, an inline `type` beside values otherwise. With `verbatimModuleSyntax`, `import { type X }` alone would still load the module at run time, and ESLint (`@typescript-eslint/no-import-type-side-effects`) rejects it.
+- **Stylesheet order**: CSS imports land in the built CSS in the order they run, so `main.tsx` imports `index.css`, the page's base styles, before `App`, whose stylesheets then come after it and win ties
+
+Prettier and ESLint check neither order, so keep to what the files around yours do. From `src/components/DemoSelector.tsx`:
 
 ```typescript
-// Good
-import React, { useState, useEffect } from "react";
-import { vi, describe, it, expect } from "vitest";
-
-import { DosPlayer } from "./components/DosPlayer";
-import { useDosEmulator } from "./hooks/useDosEmulator";
-import { loadDiskImage } from "./utils/diskLoader";
-
-import type { DosOptions, CommandInterface } from "./types/js-dos";
-
-import "./App.css";
-
-// Bad
-import "./App.css";
-import { DosPlayer } from "./components/DosPlayer";
-import React, { useState, useEffect } from "react";
-import type { DosOptions } from "./types/js-dos";
+import { useState, useCallback, useRef, useEffect, useId } from 'react';
+import { FloppyDisk, LIGHT_FLOPPY_THEME, type FloppyLabel, type FloppyTheme } from 'retro-floppy';
+import 'retro-floppy/dist/retro-floppy.css';
+import type { DosApp } from '../types/dos-app';
+import type { LoadProgress } from '../utils/diskLoader';
+import { getUserFriendlyError, type FriendlyError } from '../utils/errorMessages';
+import { availableApps } from '../config/apps.config';
+import './DemoSelector.css';
 ```
 
 ### Spacing
@@ -277,6 +277,7 @@ import type { DosOptions } from "./types/js-dos";
 - **Before Braces**: Always add space
 - **Empty Lines**: Use to separate logical blocks
 
+<!-- prettier-ignore -->
 ```typescript
 // Good
 const sum = a + b;
@@ -286,9 +287,9 @@ if (condition) {
 }
 
 // Bad
-const sum = a + b;
-const items = [1, 2, 3];
-if (condition) {
+const sum=a+b;
+const items = [1,2,3];
+if(condition){
   doSomething();
 }
 ```
@@ -327,8 +328,8 @@ interface DosPlayerProps {
   options?: Partial<DosOptions>;
 }
 
-type DosEvent = "emu-ready" | "ci-ready" | "exit";
-type LoadMethod = "files" | "zip" | "diskImage";
+type DosEvent = 'emu-ready' | 'ci-ready' | 'bnd-play' | 'open-key' | 'fullscreen-change';
+type InitFs = InitFsEntry | InitFsEntry[];
 
 // Acceptable but less preferred
 type DosPlayerProps = {
@@ -350,7 +351,7 @@ function findUser(id: string): User | null {
 }
 
 function processData(data: unknown): void {
-  if (typeof data === "string") {
+  if (typeof data === 'string') {
     // Type narrowed to string
   }
 }
@@ -400,24 +401,29 @@ export const DosPlayer = (props: any) => {
 
 ### Hooks
 
-- **Order**: useState → useRef → useEffect → Custom hooks
-- **Dependencies**: Always specify complete dependency arrays
+- **Order**: Call hooks at the top level of a component or custom hook, never in a condition, a loop or a nested function, so that every render calls them in the same order ([the rules of hooks](https://react.dev/reference/rules/rules-of-hooks), which `npm run lint` checks). There is no fixed order beyond that: `useDosEmulator`, for one, keeps the refs that hold its callbacks next to the effect that updates them.
+- **Dependencies**: Always specify complete dependency arrays. The effect in `useDosEmulator` that starts js-dos is the one exception: it runs once per mount, and DosPlayerWithApps remounts DosPlayer, by its key, for each session: each app it starts, the one already running included when it is picked again, and each return to the default DOS prompt.
 - **Cleanup**: Return cleanup functions from useEffect
+- **StrictMode**: `main.tsx` renders the app in `<StrictMode>`, so in development React runs each effect's setup, its cleanup and its setup again when a component mounts. Effects must cope with that, as `useDosEmulator` does: its cleanup aborts the start and stops the player, so a start still waiting for `emulators.js` is never made, and one that finishes after its mount is gone stops the player it got and passes on none of its events. Production builds run each effect once.
 
 ```typescript
-// Good
-export const DosPlayer: React.FC<DosPlayerProps> = ({ dosboxConf }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
+// Good: DosPlayer leaves starting and stopping js-dos to useDosEmulator
+export const DosPlayer: React.FC<DosPlayerProps> = ({
+  dosboxConf = defaultDosboxConfig,
+  options = {},
+  onReady,
+  onExit,
+  onError,
+}) => {
+  const { dosContainerRef, isLoading, error } = useDosEmulator({
+    dosboxConf,
+    options,
+    onReady,
+    onExit,
+    onError,
+  });
 
-  useEffect(() => {
-    const cleanup = initializeEmulator();
-    return cleanup;
-  }, [dosboxConf]);
-
-  const { data } = useDosEmulator(dosboxConf);
-
-  return <div ref={containerRef}>...</div>;
+  return <DosPlayerUI dosContainerRef={dosContainerRef} isLoading={isLoading} error={error} />;
 };
 ```
 
@@ -491,21 +497,29 @@ src/
 ├── types/            # TypeScript type definitions
 │   └── js-dos.d.ts
 ├── config/           # Configuration files
+│   ├── apps.config.ts
 │   ├── dosbox.conf.ts
 │   └── jsdos.config.ts
 ├── dos-apps/         # DOS application configs
 │   └── second-reality.config.ts
-├── assets/           # Static assets
-│   └── images/
+├── adapters/         # Emulator adapter around js-dos
+│   └── EmulatorAdapter.ts
+├── constants/        # Shared constants
+│   └── app.ts
+├── integration/      # Integration tests
+│   └── dosAppLoading.integration.test.tsx
+├── test/             # Test setup
+│   └── setup.ts
 ├── App.tsx           # Root component
 └── main.tsx          # Entry point
 ```
 
+Static assets, such as icons and the app archives in `demos/`, live in `public/`, outside `src/`.
+
 ### File Size
 
-- **Components**: Keep under 300 lines
-- **Utilities**: Keep under 200 lines
-- **Refactor**: Split large files into smaller modules
+- **No line limit**: Several files run to a few hundred lines, `DemoSelector.tsx` and `dosboxConfigBuilder.ts` among them
+- **Split by job**: Move a part that has a job of its own into a module of its own, as `DosPlayer` leaves running js-dos to the `useDosEmulator` hook and its markup to `DosPlayerUI`
 
 ## Comments and Documentation
 
@@ -519,21 +533,23 @@ src/
 
 ````typescript
 /**
- * Load a disk image from a URL
+ * Load a ZIP archive for js-dos
  *
- * @param url - The URL of the disk image to load
- * @param maxSizeMB - Maximum file size in megabytes (default: 50)
- * @returns A promise that resolves to the disk image data
- * @throws {Error} If the file size exceeds the maximum
+ * @param zipUrl - The URL of the ZIP archive to load
+ * @param onProgress - Optional callback for progress updates
+ * @param signal - Optional AbortSignal that cancels the download
+ * @returns A promise that resolves to the archive's bytes
+ * @throws {Error} If the download fails or is aborted
  *
  * @example
  * ```typescript
- * const image = await loadDiskImage('https://example.com/disk.img');
+ * const archive = await loadZipArchive('/demos/stars.zip');
  * ```
  */
-export async function loadDiskImage(
-  url: string,
-  maxSizeMB = 50,
+export async function loadZipArchive(
+  zipUrl: string,
+  onProgress?: (progress: LoadProgress) => void,
+  signal?: AbortSignal
 ): Promise<Uint8Array> {
   // Implementation
 }
@@ -547,9 +563,10 @@ export async function loadDiskImage(
 
 ```typescript
 // Good
-// Suppress fullscreen errors as they're expected when user denies permission
-if (error.message.includes("fullscreen")) {
-  return;
+// Vite's dev and preview servers answer a missing archive with 200 and index.html,
+// which js-dos would start as an empty C: drive
+if (!isZipArchive(zipData)) {
+  throw new Error('Failed to load ZIP: not a ZIP archive');
 }
 
 // TODO: Add retry logic for network failures
@@ -568,7 +585,7 @@ for (const item of items) {
 
 ### File Headers
 
-- **Copyright**: Include in all source files
+- **Copyright**: At the top of each of the app's modules in `src/`; most tests, the scripts in `scripts/` and `public/sw.js` begin with their description alone, and the config files at the repository's root (`vite.config.ts`, `vitest.config.ts`, `eslint.config.js`) begin with their imports
 - **Description**: Brief file purpose
 
 ```typescript
@@ -587,17 +604,21 @@ for (const item of items) {
 ### Development vs Production
 
 - **Use `import.meta.env.DEV`**: For development-only code
-- **Console Logs**: Only in development
+- **Console Logs**: `console.log` only in development; `console.warn` and `console.error` may stay in production code. `public/sw.js`, which Vite copies rather than builds, has no `import.meta.env`, so its `console.log` calls run in production too.
+- **Logger**: `logger.debug` and `logger.info` from `src/utils/logger.ts` print in development only, so they need no guard; `logger.warn` and `logger.error` print in every build. Code that only production builds run, such as the service worker's registration and the update prompt it shows, prints nothing through `logger.info`: `main.tsx` passes `register()` no callbacks that log for that reason.
 - **Debug Features**: Guard with environment checks
 
 ```typescript
 // Good
 if (import.meta.env.DEV) {
-  console.log("[DosPlayer] Initializing emulator");
+  console.log('[DosPlayer] Initializing emulator');
 }
 
+// Good: the logger prints info and debug messages in development only
+logger.info('GlobalErrorHandler', 'Initialized');
+
 // Bad
-console.log("[DosPlayer] Initializing emulator");
+console.log('[DosPlayer] Initializing emulator');
 ```
 
 ## Testing
@@ -609,21 +630,21 @@ console.log("[DosPlayer] Initializing emulator");
 
 ```typescript
 // Good
-describe("DosPlayer", () => {
-  describe("Initialization", () => {
-    it("should initialize js-dos on mount", () => {
+describe('DosPlayer', () => {
+  describe('Initialization', () => {
+    it('should initialize js-dos on mount', () => {
       // Test implementation
     });
 
-    it("should handle initialization errors gracefully", () => {
+    it('should handle initialization errors gracefully', () => {
       // Test implementation
     });
   });
 });
 
 // Bad
-describe("DosPlayer", () => {
-  it("test1", () => {
+describe('DosPlayer', () => {
+  it('test1', () => {
     // Test implementation
   });
 });
@@ -633,22 +654,25 @@ describe("DosPlayer", () => {
 
 ### Automated Tools
 
-- **ESLint**: Run `npm run lint` to check code
-- **Prettier**: Automatically formats on save
-- **Husky**: Pre-commit hooks enforce standards
+- **ESLint**: Run `npm run lint`, as CI does, to check the TypeScript, the config files, the scripts in `scripts/` and the service worker `public/sw.js`. The scripts are linted as ES modules, with Node's globals but not CommonJS's `require` or `__dirname`, and with Vitest's too in their tests; `public/sw.js` as a classic script with a service worker's globals, through ESLint's own parser, which rejects `import` and `export` there as the browser would. The rest of `public/`, the js-dos copy included, is not linted.
+- **Prettier**: Run `npm run format` to format files; CI runs `npm run format:check` and fails on any file Prettier would change
+- **Husky**: The pre-commit hook runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats what `npm run format:check` checks and skips the rest. Files that tests read from disk rather than import therefore get no tests from the hook: the stylesheets, `index.html`, `public/manifest.json`, the icons and `public/og-image.png`, `robots.txt`, the licenses page and its `gpl-2.0.txt`, `eslint.config.js`, and the archives in `public/demos/` with their `README.md`. Run `npm test` after changing one; CI runs every test. `public/sw.js` is the exception: staging it runs the whole suite, since `vitest.config.ts` lists it among Vitest's force-rerun triggers.
 
 ### Before Committing
 
 ```bash
-# Check linting
+# Check linting and formatting
 npm run lint
+npm run format:check
 
-# Run tests
-npm run test:run
+# Run tests, measuring coverage as CI does
+npm run test:coverage
 
-# Check types
-npm run build
+# Check types, tests included (npm run build runs this first)
+npx tsc -b
 ```
+
+Coverage counts every `.ts` and `.tsx` file in `src/` but the tests, `src/test/` and the type declarations (`*.d.ts`), so a source file that no test loads counts as uncovered. The run fails when coverage drops below the thresholds in `vitest.config.ts`.
 
 ## Additional Resources
 

@@ -3,14 +3,67 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import { OfflineIndicator } from './OfflineIndicator';
+import { PWA_CONFIG } from '../constants/app';
+import {
+  applyStylesheet,
+  classesIn,
+  contrastRatio,
+  keyframesIn,
+  readStylesheets,
+  styles,
+} from '../test/stylesheets';
 
 // Type definition for BeforeInstallPromptEvent
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
   preventDefault: () => void;
+}
+
+/** Fire the browser's beforeinstallprompt, then wait out the delay before the prompt shows */
+function offerInstall(outcome: 'accepted' | 'dismissed' = 'accepted') {
+  const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
+  event.prompt = vi.fn().mockResolvedValue(undefined);
+  event.userChoice = Promise.resolve({ outcome });
+  fireEvent(window, event);
+  act(() => {
+    vi.advanceTimersByTime(PWA_CONFIG.INSTALL_PROMPT_DELAY);
+  });
+}
+
+/**
+ * Like a browser's ResizeObserver, this one reports an element once it starts observing it,
+ * and resizeAll() reports a change in the size of every element observed. The one
+ * src/test/setup.ts gives jsdom never reports anything.
+ */
+class FakeResizeObserver {
+  static observing = new Set<FakeResizeObserver>();
+  readonly callback: ResizeObserverCallback;
+
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+  }
+
+  observe() {
+    FakeResizeObserver.observing.add(this);
+    this.report();
+  }
+
+  unobserve() {}
+
+  disconnect() {
+    FakeResizeObserver.observing.delete(this);
+  }
+
+  report() {
+    this.callback([], this as unknown as ResizeObserver);
+  }
+
+  static resizeAll() {
+    FakeResizeObserver.observing.forEach((observer) => observer.report());
+  }
 }
 
 describe('OfflineIndicator', () => {
@@ -34,7 +87,7 @@ describe('OfflineIndicator', () => {
     // Mock matchMedia
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: vi.fn().mockImplementation(query => ({
+      value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
@@ -56,6 +109,7 @@ describe('OfflineIndicator', () => {
     });
     localStorage.clear();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('Online/Offline status', () => {
@@ -64,25 +118,78 @@ describe('OfflineIndicator', () => {
       expect(screen.queryByText(/You're offline/i)).not.toBeInTheDocument();
     });
 
+    it('does not announce "Back online" when the page loads while online', () => {
+      render(<OfflineIndicator />);
+      expect(screen.queryByText('Back online')).not.toBeInTheDocument();
+    });
+
+    it('announces "Back online" after reconnecting, then removes it', () => {
+      vi.useFakeTimers();
+      try {
+        render(<OfflineIndicator />);
+
+        Object.defineProperty(window.navigator, 'onLine', { value: false, writable: true });
+        fireEvent(window, new Event('offline'));
+        Object.defineProperty(window.navigator, 'onLine', { value: true, writable: true });
+        fireEvent(window, new Event('online'));
+
+        expect(screen.getByText('Back online')).toBeInTheDocument();
+
+        // Must leave the DOM on its own: with prefers-reduced-motion the CSS
+        // fade-out animation is disabled and would otherwise never hide it
+        act(() => {
+          vi.advanceTimersByTime(5000);
+        });
+        expect(screen.queryByText('Back online')).not.toBeInTheDocument();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('shows the offline banner when the page opens offline', () => {
+      // A page the service worker serves offline gets no offline event
+      Object.defineProperty(window.navigator, 'onLine', { value: false, writable: true });
+
+      render(<OfflineIndicator />);
+
+      expect(screen.getByText("You're offline")).toBeInTheDocument();
+      expect(screen.queryByText('Back online')).not.toBeInTheDocument();
+    });
+
     it('should show offline message when offline event fires', async () => {
       render(<OfflineIndicator />);
-      
+
       // Simulate going offline
       Object.defineProperty(window.navigator, 'onLine', { value: false, writable: true });
       fireEvent(window, new Event('offline'));
-      
+
       await waitFor(() => {
         expect(screen.getByText(/You're offline/i)).toBeInTheDocument();
       });
     });
 
+    it('says that only the applications opened while online still work', () => {
+      render(<OfflineIndicator />);
+
+      fireEvent(window, new Event('offline'));
+
+      // The service worker stores an application's archive the first time it is opened
+      // online; any other fails to load ("This application isn't available offline yet")
+      expect(
+        screen.getByText(
+          "Applications you've opened while online still work. Others need a connection to load."
+        )
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/continue to work/)).not.toBeInTheDocument();
+    });
+
     it('should hide offline message when online event fires', async () => {
       render(<OfflineIndicator />);
-      
+
       // Go offline
       Object.defineProperty(window.navigator, 'onLine', { value: false, writable: true });
       fireEvent(window, new Event('offline'));
-      
+
       await waitFor(() => {
         expect(screen.getByText(/You're offline/i)).toBeInTheDocument();
       });
@@ -90,7 +197,7 @@ describe('OfflineIndicator', () => {
       // Go back online
       Object.defineProperty(window.navigator, 'onLine', { value: true, writable: true });
       fireEvent(window, new Event('online'));
-      
+
       await waitFor(() => {
         expect(screen.queryByText(/You're offline/i)).not.toBeInTheDocument();
       });
@@ -99,10 +206,10 @@ describe('OfflineIndicator', () => {
     it('should call onNetworkStatusChange when going offline', async () => {
       const onNetworkStatusChange = vi.fn();
       render(<OfflineIndicator onNetworkStatusChange={onNetworkStatusChange} />);
-      
+
       Object.defineProperty(window.navigator, 'onLine', { value: false, writable: true });
       fireEvent(window, new Event('offline'));
-      
+
       await waitFor(() => {
         expect(onNetworkStatusChange).toHaveBeenCalledWith(false);
       });
@@ -111,11 +218,11 @@ describe('OfflineIndicator', () => {
     it('should call onNetworkStatusChange when going online', async () => {
       const onNetworkStatusChange = vi.fn();
       render(<OfflineIndicator onNetworkStatusChange={onNetworkStatusChange} />);
-      
+
       // Go offline first
       Object.defineProperty(window.navigator, 'onLine', { value: false, writable: true });
       fireEvent(window, new Event('offline'));
-      
+
       await waitFor(() => {
         expect(onNetworkStatusChange).toHaveBeenCalledWith(false);
       });
@@ -125,7 +232,7 @@ describe('OfflineIndicator', () => {
       // Go back online
       Object.defineProperty(window.navigator, 'onLine', { value: true, writable: true });
       fireEvent(window, new Event('online'));
-      
+
       await waitFor(() => {
         expect(onNetworkStatusChange).toHaveBeenCalledWith(true);
       });
@@ -133,20 +240,75 @@ describe('OfflineIndicator', () => {
 
     it('should allow closing offline message', async () => {
       render(<OfflineIndicator />);
-      
+
       Object.defineProperty(window.navigator, 'onLine', { value: false, writable: true });
       fireEvent(window, new Event('offline'));
-      
+
       await waitFor(() => {
         expect(screen.getByText(/You're offline/i)).toBeInTheDocument();
       });
 
       const closeButton = screen.getByRole('button', { name: /Close offline message/i });
       fireEvent.click(closeButton);
-      
+
       await waitFor(() => {
         expect(screen.queryByText(/You're offline/i)).not.toBeInTheDocument();
       });
+    });
+  });
+
+  // Screen readers announce what is added to a live region already in the page, but not
+  // always a live region added with its text, so each region is there before its notice
+  describe('what screen readers are told', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('tells them at once that the connection is lost', () => {
+      render(<OfflineIndicator />);
+      const alert = screen.getByRole('alert');
+      expect(alert).toBeEmptyDOMElement();
+
+      fireEvent(window, new Event('offline'));
+
+      expect(alert).toHaveTextContent(/You're offline.*opened while online still work/);
+    });
+
+    it('tells them, when it is their turn, that the connection is back', () => {
+      vi.useFakeTimers();
+      render(<OfflineIndicator />);
+      fireEvent(window, new Event('offline'));
+      const status = screen.getByRole('status');
+      expect(status).toBeEmptyDOMElement();
+
+      fireEvent(window, new Event('online'));
+
+      expect(status).toHaveTextContent('Back online');
+      expect(screen.getByRole('alert')).toBeEmptyDOMElement();
+    });
+
+    it('names the install prompt as a region of the page', () => {
+      vi.useFakeTimers();
+      render(<OfflineIndicator />);
+
+      offerInstall();
+
+      expect(screen.getByRole('region', { name: 'Install DosKit' })).toHaveTextContent(
+        'Install this app for a better experience and offline access.'
+      );
+    });
+
+    it('does not read out the emoji the notices show', () => {
+      vi.useFakeTimers();
+      render(<OfflineIndicator />);
+      offerInstall();
+      fireEvent(window, new Event('offline'));
+      expect(screen.getByText('📡')).toHaveAttribute('aria-hidden', 'true');
+      expect(screen.getByText('📱')).toHaveAttribute('aria-hidden', 'true');
+
+      fireEvent(window, new Event('online'));
+
+      expect(screen.getByText('✓')).toHaveAttribute('aria-hidden', 'true');
     });
   });
 
@@ -161,118 +323,72 @@ describe('OfflineIndicator', () => {
 
       render(<OfflineIndicator />);
 
-      expect(addEventListenerSpy).toHaveBeenCalledWith(
-        'beforeinstallprompt',
-        expect.any(Function)
-      );
+      expect(addEventListenerSpy).toHaveBeenCalledWith('beforeinstallprompt', expect.any(Function));
     });
 
-    it('should not show install prompt if already installed (standalone mode)', () => {
-      // Mock standalone mode
-      Object.defineProperty(window, 'matchMedia', {
-        writable: true,
-        value: vi.fn().mockImplementation(query => ({
-          matches: query === '(display-mode: standalone)',
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
+    // Each waits out the delay inside act(), so that a prompt the delay shows is rendered
+    // before the check; 'offers the install again once the cooldown has passed' and 'still
+    // offers to install the app when site data is blocked' show that it then is
+    describe('once the delay has passed', () => {
+      beforeEach(() => {
+        vi.useFakeTimers({ now: new Date('2026-03-01T12:00:00.000Z') });
       });
 
-      vi.useFakeTimers();
+      afterEach(() => {
+        vi.useRealTimers();
+      });
 
-      render(<OfflineIndicator />);
+      it('does not offer to install an app that runs installed (standalone)', () => {
+        Object.defineProperty(window, 'matchMedia', {
+          writable: true,
+          value: vi.fn().mockImplementation((query) => ({
+            matches: query === '(display-mode: standalone)',
+            media: query,
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+          })),
+        });
+        render(<OfflineIndicator />);
 
-      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
-      event.prompt = vi.fn();
-      event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
-      event.preventDefault = vi.fn();
-      
-      fireEvent(window, event);
-      vi.advanceTimersByTime(5000);
-      
-      expect(screen.queryByText(/Install DosKit/i)).not.toBeInTheDocument();
-      
-      vi.useRealTimers();
-    });
+        offerInstall();
 
-    it('should not show install prompt if permanently dismissed', async () => {
-      localStorage.setItem('pwa-install-dismissed', 'permanent');
-      
-      vi.useFakeTimers();
+        expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      });
 
-      render(<OfflineIndicator />);
+      it('does not offer to install once the prompt was turned down for good', () => {
+        localStorage.setItem('pwa-install-dismissed', 'permanent');
+        render(<OfflineIndicator />);
 
-      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
-      event.prompt = vi.fn();
-      event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
-      event.preventDefault = vi.fn();
+        offerInstall();
 
-      fireEvent(window, event);
-      vi.advanceTimersByTime(5000);
+        expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      });
 
-      expect(screen.queryByText(/Install DosKit/i)).not.toBeInTheDocument();
+      it('does not offer to install once the prompt was dismissed the most times allowed', () => {
+        localStorage.setItem(
+          'pwa-install-dismissed-count',
+          String(PWA_CONFIG.MAX_INSTALL_DISMISSALS)
+        );
+        render(<OfflineIndicator />);
 
-      vi.useRealTimers();
-    });
+        offerInstall();
 
-    it('should not show install prompt if dismissed too many times', async () => {
-      localStorage.setItem('pwa-install-dismissed-count', '3');
+        expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      });
 
-      vi.useFakeTimers();
+      it('does not offer to install within the cooldown after a dismissal', () => {
+        localStorage.setItem('pwa-install-dismissed-count', '1');
+        localStorage.setItem('pwa-install-last-dismissed', '2026-02-27T12:00:00.000Z'); // 2 days ago
+        render(<OfflineIndicator />);
 
-      render(<OfflineIndicator />);
+        offerInstall();
 
-      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
-      event.prompt = vi.fn();
-      event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
-      event.preventDefault = vi.fn();
-      
-      fireEvent(window, event);
-      vi.advanceTimersByTime(5000);
-      
-      expect(screen.queryByText(/Install DosKit/i)).not.toBeInTheDocument();
-      
-      vi.useRealTimers();
-    });
-
-    it('should not show install prompt if in cooldown period', async () => {
-      const now = new Date();
-      const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-      localStorage.setItem('pwa-install-last-dismissed', twoDaysAgo.toISOString());
-      
-      vi.useFakeTimers();
-
-      render(<OfflineIndicator />);
-
-      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
-      event.prompt = vi.fn();
-      event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
-      event.preventDefault = vi.fn();
-      
-      fireEvent(window, event);
-      vi.advanceTimersByTime(5000);
-      
-      expect(screen.queryByText(/Install DosKit/i)).not.toBeInTheDocument();
-      
-      vi.useRealTimers();
-    });
-
-    it('should respect cooldown period in localStorage', () => {
-      const now = new Date();
-      const eightDaysAgo = new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000);
-      localStorage.setItem('pwa-install-last-dismissed', eightDaysAgo.toISOString());
-      localStorage.setItem('pwa-install-dismissed-count', '1');
-
-      render(<OfflineIndicator />);
-
-      // Component should read from localStorage
-      expect(localStorage.getItem('pwa-install-last-dismissed')).toBe(eightDaysAgo.toISOString());
-      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe('1');
+        expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      });
     });
   });
 
@@ -282,27 +398,347 @@ describe('OfflineIndicator', () => {
 
       render(<OfflineIndicator />);
 
-      expect(addEventListenerSpy).toHaveBeenCalledWith(
-        'beforeinstallprompt',
-        expect.any(Function)
+      expect(addEventListenerSpy).toHaveBeenCalledWith('beforeinstallprompt', expect.any(Function));
+    });
+  });
+
+  describe('Dismissal tracking', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ now: new Date('2026-03-01T12:00:00.000Z') });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('offers the install again once the cooldown has passed', () => {
+      localStorage.setItem('pwa-install-dismissed-count', '1');
+      localStorage.setItem('pwa-install-last-dismissed', '2026-02-21T12:00:00.000Z'); // 8 days ago
+      render(<OfflineIndicator />);
+
+      offerInstall();
+
+      expect(screen.getByText('Install DosKit')).toBeInTheDocument();
+    });
+
+    it('records when the prompt was dismissed and how often', () => {
+      localStorage.setItem('pwa-install-dismissed-count', '1');
+      localStorage.setItem('pwa-install-last-dismissed', '2026-02-01T12:00:00.000Z');
+      render(<OfflineIndicator />);
+      offerInstall();
+
+      vi.setSystemTime(new Date('2026-03-01T12:30:00.000Z'));
+      fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+
+      expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe('2');
+      expect(localStorage.getItem('pwa-install-last-dismissed')).toBe('2026-03-01T12:30:00.000Z');
+    });
+
+    it('counts declining the browser install dialog as a dismissal', async () => {
+      render(<OfflineIndicator />);
+      offerInstall('dismissed');
+
+      vi.setSystemTime(new Date('2026-03-01T12:30:00.000Z'));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+      });
+
+      expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe('1');
+      expect(localStorage.getItem('pwa-install-last-dismissed')).toBe('2026-03-01T12:30:00.000Z');
+    });
+
+    it('forgets past dismissals when the user installs from the prompt', async () => {
+      localStorage.setItem('pwa-install-dismissed-count', '1');
+      localStorage.setItem('pwa-install-last-dismissed', '2026-02-01T12:00:00.000Z');
+      render(<OfflineIndicator />);
+      offerInstall('accepted');
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+      });
+
+      expect(localStorage.getItem('pwa-install-dismissed-count')).toBeNull();
+      expect(localStorage.getItem('pwa-install-last-dismissed')).toBeNull();
+    });
+
+    it('forgets past dismissals once the app is installed', () => {
+      localStorage.setItem('pwa-install-dismissed', 'permanent');
+      localStorage.setItem('pwa-install-dismissed-count', '3');
+      localStorage.setItem('pwa-install-last-dismissed', '2026-02-01T12:00:00.000Z');
+      render(<OfflineIndicator />);
+
+      fireEvent(window, new Event('appinstalled'));
+
+      expect(localStorage.getItem('pwa-install-dismissed')).toBeNull();
+      expect(localStorage.getItem('pwa-install-dismissed-count')).toBeNull();
+      expect(localStorage.getItem('pwa-install-last-dismissed')).toBeNull();
+    });
+  });
+
+  // The selector keeps clear of the notices, which stay above it (DemoSelector.css)
+  describe('the space the notices take', () => {
+    /** The rendered heights jsdom lacks, by the notice's first class */
+    const heights: Record<string, number> = {};
+    const rootProperty = (name: string) => document.documentElement.style.getPropertyValue(name);
+
+    beforeEach(() => {
+      FakeResizeObserver.observing.clear();
+      vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+      heights['offline-indicator'] = 84;
+      heights['install-prompt'] = 234;
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (
+        this: HTMLElement
+      ) {
+        return heights[this.classList[0] ?? ''] ?? 0;
+      });
+    });
+
+    it("keeps the offline banner's height on the root element until it is closed", () => {
+      render(<OfflineIndicator />);
+
+      fireEvent(window, new Event('offline'));
+      expect(rootProperty('--offline-banner-height')).toBe('84px');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Close offline message' }));
+      expect(rootProperty('--offline-banner-height')).toBe('');
+      expect(FakeResizeObserver.observing.size).toBe(0);
+    });
+
+    it("drops the offline banner's height when the connection comes back", () => {
+      render(<OfflineIndicator />);
+      fireEvent(window, new Event('offline'));
+
+      fireEvent(window, new Event('online'));
+
+      expect(rootProperty('--offline-banner-height')).toBe('');
+    });
+
+    it("follows the offline banner's height when its text wraps differently", () => {
+      render(<OfflineIndicator />);
+      fireEvent(window, new Event('offline'));
+
+      heights['offline-indicator'] = 165; // in a narrower window
+      act(() => FakeResizeObserver.resizeAll());
+
+      expect(rootProperty('--offline-banner-height')).toBe('165px');
+    });
+
+    it("keeps the install prompt's height on the root element until it is dismissed", () => {
+      vi.useFakeTimers();
+      try {
+        render(<OfflineIndicator />);
+
+        offerInstall();
+        expect(rootProperty('--install-prompt-height')).toBe('234px');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+        expect(rootProperty('--install-prompt-height')).toBe('');
+        expect(FakeResizeObserver.observing.size).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
+  describe('in a production build', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.stubEnv('DEV', false);
+      vi.resetModules();
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      vi.useRealTimers();
+    });
+
+    /** The component as a production build has it: its logger keeps to warnings and errors */
+    const importForProduction = async () => (await import('./OfflineIndicator')).OfflineIndicator;
+
+    /** Everything logged below warnings, as one string per call */
+    function captureInformation() {
+      const lines: string[] = [];
+      for (const method of ['log', 'info', 'debug'] as const) {
+        vi.spyOn(console, method).mockImplementation((...args: unknown[]) => {
+          lines.push(args.join(' '));
+        });
+      }
+      return lines;
+    }
+
+    it('logs nothing below warnings when the app is installed from the prompt', async () => {
+      const Indicator = await importForProduction();
+      const lines = captureInformation();
+      render(<Indicator />);
+
+      offerInstall('accepted');
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+      });
+      offerInstall('accepted');
+      fireEvent(window, new Event('appinstalled'));
+
+      expect(lines).toEqual([]);
+    });
+
+    it('logs nothing below warnings when the prompt is turned down for good', async () => {
+      localStorage.setItem(
+        'pwa-install-dismissed-count',
+        String(PWA_CONFIG.MAX_INSTALL_DISMISSALS - 2)
+      );
+      const Indicator = await importForProduction();
+      const lines = captureInformation();
+      render(<Indicator />);
+
+      offerInstall('dismissed');
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+      });
+      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe(
+        String(PWA_CONFIG.MAX_INSTALL_DISMISSALS - 1)
+      );
+      localStorage.removeItem('pwa-install-last-dismissed');
+      cleanup();
+      render(<Indicator />);
+      offerInstall();
+      fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+
+      expect(localStorage.getItem('pwa-install-dismissed')).toBe('permanent');
+      expect(lines).toEqual([]);
+    });
+
+    it('still reports an install dialog that fails to open', async () => {
+      const Indicator = await importForProduction();
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+      render(<Indicator />);
+      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
+      event.prompt = vi.fn().mockRejectedValue(new Error('prompt() failed'));
+      event.userChoice = Promise.resolve({ outcome: 'accepted' });
+      fireEvent(window, event);
+      act(() => {
+        vi.advanceTimersByTime(PWA_CONFIG.INSTALL_PROMPT_DELAY);
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+      });
+
+      expect(errors).toHaveBeenCalledWith(
+        expect.stringContaining('Error showing install prompt'),
+        expect.any(Error)
       );
     });
+  });
 
-    it('should use localStorage for dismissal tracking', () => {
-      render(<OfflineIndicator />);
+  describe('its stylesheet', () => {
+    const OWN = 'src/components/OfflineIndicator.css';
 
-      // Component should be able to read/write to localStorage
-      localStorage.setItem('pwa-install-dismissed-count', '1');
-      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe('1');
+    it('names its animations so that no other stylesheet replaces them', async () => {
+      // Keyframes are global: of two with one name, the page uses the one it loads last
+      const sheets = await readStylesheets();
+      const own = keyframesIn(sheets.get(OWN)!);
+      const others = [...sheets]
+        .filter(([file]) => file !== OWN)
+        .flatMap(([, css]) => keyframesIn(css));
+
+      expect(own).not.toEqual([]);
+      expect(own.filter((name, i) => others.includes(name) || own.indexOf(name) !== i)).toEqual([]);
     });
 
-    it('should respect max dismissals setting', () => {
-      localStorage.setItem('pwa-install-dismissed-count', '3');
+    it("styles no class that js-dos's stylesheet styles too", async () => {
+      const sheets = await readStylesheets();
 
+      expect(
+        classesIn(sheets.get(OWN)!).filter((name) => styles(sheets.get('js-dos.css')!, name))
+      ).toEqual([]);
+    });
+
+    it("keeps the Install button's label readable, at 4.5:1 against the button", async () => {
+      const sheet = applyStylesheet((await readStylesheets()).get(OWN)!);
+      vi.useFakeTimers();
+      try {
+        render(<OfflineIndicator />);
+        offerInstall();
+
+        const { color, backgroundColor } = getComputedStyle(
+          screen.getByRole('button', { name: 'Install' })
+        );
+        expect(contrastRatio(color, backgroundColor)).toBeGreaterThanOrEqual(4.5);
+      } finally {
+        vi.useRealTimers();
+        sheet.remove();
+      }
+    });
+  });
+
+  describe('when the browser refuses storage', () => {
+    const originalStorage = Object.getOwnPropertyDescriptor(window, 'localStorage')!;
+    const uncaughtError = vi.fn();
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      window.addEventListener('error', uncaughtError);
+    });
+
+    afterEach(() => {
+      window.removeEventListener('error', uncaughtError);
+      Object.defineProperty(window, 'localStorage', originalStorage);
+      vi.useRealTimers();
+    });
+
+    /** Site data is blocked: even reading window.localStorage throws */
+    const blockStorage = () =>
+      Object.defineProperty(window, 'localStorage', {
+        configurable: true,
+        get() {
+          throw new DOMException('Access is denied for this document.', 'SecurityError');
+        },
+      });
+
+    /** Storage is full: reads work, writes throw */
+    const fillStorage = () => {
+      const storage = localStorage;
+      Object.defineProperty(window, 'localStorage', {
+        configurable: true,
+        value: {
+          getItem: (key: string) => storage.getItem(key),
+          setItem() {
+            throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+          },
+          removeItem: (key: string) => storage.removeItem(key),
+        },
+      });
+    };
+
+    it('still offers to install the app when site data is blocked', () => {
+      blockStorage();
       render(<OfflineIndicator />);
 
-      // Component should read the dismissal count
-      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe('3');
+      offerInstall();
+
+      expect(screen.getByText('Install DosKit')).toBeInTheDocument();
+    });
+
+    it('hides the prompt on "Not now" when the dismissal cannot be saved', () => {
+      fillStorage();
+      render(<OfflineIndicator />);
+      offerInstall();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+
+      expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      expect(uncaughtError).not.toHaveBeenCalled();
+    });
+
+    it('reports no error when the app is installed while site data is blocked', () => {
+      blockStorage();
+      render(<OfflineIndicator />);
+
+      fireEvent(window, new Event('appinstalled'));
+
+      expect(uncaughtError).not.toHaveBeenCalled();
     });
   });
 });

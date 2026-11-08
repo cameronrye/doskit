@@ -2,16 +2,15 @@
 # https://securitytxt.org/
 
 Contact: mailto:cameron@rye.dev
-Contact: https://github.com/cameronrye/doskit/security/advisories/new
-Expires: 2026-12-31T23:59:59.000Z
+Expires: 2027-10-31T23:59:59.000Z
 Preferred-Languages: en
 Canonical: https://doskit.net/.well-known/security.txt
 
 # Security Policy
 Policy: https://github.com/cameronrye/doskit/blob/main/SECURITY.md
 
-# Acknowledgments
-Acknowledgments: https://github.com/cameronrye/doskit#acknowledgments
+# Reporters are credited in the published advisories
+Acknowledgments: https://github.com/cameronrye/doskit/security/advisories
 
 # Encryption
 # PGP key available upon request

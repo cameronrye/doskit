@@ -1,12 +1,12 @@
 # Error Handling Strategy
 
-**Document Version:** 1.0  
-**Date:** 2025-11-18  
+**Document Version:** 2.0  
+**Date:** 2026-11-08  
 **Status:** Implemented
 
 ## Overview
 
-DosKit implements a comprehensive, multi-layered error handling strategy to ensure a robust user experience and facilitate debugging. The system captures errors at multiple levels, provides user-friendly messages, and integrates with error tracking services.
+DosKit implements a multi-layered error handling strategy to ensure a robust user experience and facilitate debugging. The system captures errors at multiple levels, shows load and start failures where they happen, keeps known harmless browser errors out of the console, and reports the rest through an error tracking interface that logs to the console.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ DosKit implements a comprehensive, multi-layered error handling strategy to ensu
 1. **Global Error Handler** - Captures uncaught errors and unhandled promise rejections
 2. **React Error Boundaries** - Catches React component errors
 3. **Component-Level Error States** - Local error handling in components
-4. **Error Tracking Service** - Centralized error reporting and monitoring
+4. **Error Tracking Service** - Centralized error reporting, to the console until a remote service is added
 5. **User-Friendly Error Messages** - Maps technical errors to readable messages
 
 ## Components
@@ -28,34 +28,51 @@ DosKit implements a comprehensive, multi-layered error handling strategy to ensu
 
 **Features:**
 
-- Captures `window.onerror` events
-- Captures `window.onunhandledrejection` events
-- Filters out known harmless errors (fullscreen API, keyboard lock, etc.)
-- Provides error context (browser info, timestamp, user action)
+- Listens for the window's `error` events
+- Listens for the window's `unhandledrejection` events
+- Filters out known harmless errors (keyboard lock, ResizeObserver loops, browser extensions)
+- Provides error context (browser info, timestamp, user action, and where an uncaught error was thrown)
 - Integrates with error tracking service
 - Configurable error suppression and filtering
+
+It only sees what nothing else handled. Errors that code catches and logs with `console.error` reach the console as logged, since nothing filters `console.error`, and so do the messages of js-dos's emulator Web Worker (see [Known Console Errors](#known-console-errors)).
+
+For each error it reports, the handler logs one line, the console tracker's `[ErrorTracking]` report. The browser still reports the error itself, since only harmless and filtered errors get `preventDefault()`.
 
 **Usage:**
 
 ```typescript
-import { initializeGlobalErrorHandler } from "./utils/globalErrorHandler";
+import { initializeGlobalErrorHandler } from './utils/globalErrorHandler';
 
 initializeGlobalErrorHandler({
   showUserFriendlyErrors: true,
   suppressHarmlessErrors: true,
   onError: (error, context) => {
     // Custom error handling logic
-    console.error("Error captured:", error, context);
+    console.error('Error captured:', error, context);
   },
 });
 ```
 
+`main.tsx` calls it once, before rendering. Each call applies its options over the defaults; a second call only warns (`Already initialized`), and `cleanupGlobalErrorHandler()` removes the listeners again, as the tests do.
+
 **Configuration Options:**
 
-- `showUserFriendlyErrors` - Show user-friendly error messages (default: true)
+- `showUserFriendlyErrors` - In production builds, add the user-friendly message and suggestion to each error's report, as `metadata.friendlyError` (default: true). Nothing is shown on the page.
 - `suppressHarmlessErrors` - Suppress known harmless errors (default: true)
-- `errorFilter` - Custom filter function to exclude specific errors
-- `onError` - Callback when an error is captured
+- `errorFilter` - Custom filter function: return `false` to drop an error, which is then neither logged nor tracked. It receives the error or rejection reason, or the event's message when an uncaught error has no error object.
+- `onError` - Callback when an error is captured. Uncaught errors without an error object, such as cross-origin "Script error." events, skip it.
+
+**Harmless Errors:** An error whose message matches one of `HARMLESS_ERROR_PATTERNS` is dropped with `preventDefault()`, so the browser does not report it either. Development builds log it at debug level.
+
+- `/lock\(\) request could not be registered/i`, `/keyboard.*lock/i` - Keyboard lock, which js-dos requests when a player starts, without handling the promise
+- `/superseded by a subsequent lock\(\) method call/i` - When two players start milliseconds apart, such as when an app is left the moment its player starts, Chromium rejects the older keyboard lock with an `AbortError`, "This request has been superseded by a subsequent lock() method call."; the newer lock holds. In development, where `StrictMode` starts each player twice, the first start's lock is superseded the same way. Only that message matches: other `AbortError`s are still reported.
+- `/ResizeObserver loop/i` - ResizeObserver loop errors (benign)
+- `/extension context invalidated/i`, `/chrome-extension:/i` - Browser extensions
+
+Fullscreen API failures are not among them. Given a `fullScreen` option at all, even `false`, js-dos calls the Fullscreen API at every start, `document.exitFullscreen()` for `false`, which rejects outside fullscreen without anything handling it. DosKit leaves that option unset, and with `softFullscreen`, js-dos's fullscreen button fills the window with CSS, so neither js-dos nor DosKit calls the Fullscreen API, and a failure of it is reported like any other error.
+
+Whatever was thrown or rejected, the handler reports an `Error`: the value itself when it is one, or else an `Error` with its text, which is its `message` property if it has one. A value with no text, such as `Object.create(null)`, for which `String()` throws, gets the browser's message for the uncaught error (Chromium's is "Uncaught exception"), or "Promise rejected with a value that has no text" for a rejection.
 
 ---
 
@@ -63,13 +80,12 @@ initializeGlobalErrorHandler({
 
 **File:** `src/utils/errorTracking.ts`
 
-**Purpose:** Abstraction layer for error tracking services (Sentry, LogRocket, etc.)
+**Purpose:** Abstraction layer for error tracking services (Sentry, LogRocket, etc.), so a hosted service can replace the console tracker without changes to the code that reports errors
 
 **Features:**
 
-- Service-agnostic interface
-- Console tracker for development
-- Sentry tracker placeholder for production
+- Service-agnostic interface (`ErrorTrackingService`)
+- Console tracker, in development and production; breadcrumbs are logged in development only
 - Error severity levels (DEBUG, INFO, WARNING, ERROR, FATAL)
 - Error context tracking
 - Breadcrumb support for user action trails
@@ -78,31 +94,31 @@ initializeGlobalErrorHandler({
 **Usage:**
 
 ```typescript
-import {
-  initializeErrorTracking,
-  getErrorTracker,
-  ErrorSeverity,
-} from "./utils/errorTracking";
+import { initializeErrorTracking, getErrorTracker, ErrorSeverity } from './utils/errorTracking';
 
 // Initialize (in main.tsx)
-initializeErrorTracking("console"); // or 'sentry' with config
+initializeErrorTracking();
 
 // Use in code
 const tracker = getErrorTracker();
-tracker.captureError(error, { userAction: "Loading app" }, ErrorSeverity.ERROR);
-tracker.addBreadcrumb("User clicked load button", "user-action");
+tracker.captureError(error, { userAction: 'Loading app' }, ErrorSeverity.ERROR);
+tracker.addBreadcrumb('User clicked load button', 'user-action');
 ```
+
+`getErrorTracker()` sets up the console tracker itself if nothing has yet, and a second `initializeErrorTracking()` only warns.
 
 **Supported Services:**
 
-- **Console** - Development/fallback (logs to console)
-- **Sentry** - Production error tracking (placeholder, ready for integration)
+- **Console** - The only implementation, which keeps nothing. It logs each error and React error with `console.error` and an `[ErrorTracking]` prefix, in every build. Breadcrumbs and its "[ErrorTracking] Console tracker initialized" line are `console.log` calls behind `import.meta.env.DEV`, so a production build logs neither.
 
-**To integrate Sentry:**
+**Who Reports to It:** The global error handler and ErrorBoundary. Errors that components catch themselves (see [Component-Level Error States](#5-component-level-error-states)) are logged to the console, not tracked.
 
-1. Install: `npm install @sentry/react`
-2. Update `SentryErrorTracker` class in `errorTracking.ts`
-3. Initialize with DSN: `initializeErrorTracking('sentry', { dsn: 'YOUR_DSN' })`
+**To add a remote service:**
+
+1. Implement `ErrorTrackingService` in `errorTracking.ts`: `initialize`, `isInitialized`, `captureError`, `captureReactError` and `addBreadcrumb`
+2. Create it in `initializeErrorTracking()` in place of `ConsoleErrorTracker`
+
+Both reporters get the tracker from `getErrorTracker()`, so nothing else changes.
 
 ---
 
@@ -114,11 +130,15 @@ tracker.addBreadcrumb("User clicked load button", "user-action");
 
 **Features:**
 
-- Catches errors in React component tree
+- Catches errors in React component tree: in rendering, lifecycle methods and effects. Errors in event handlers and asynchronous code go to the global error handler instead.
 - Displays fallback UI with error details (dev mode)
 - Integrates with error tracking service
 - Provides reset functionality
 - Customizable fallback UI
+
+The default fallback says "Something went wrong" and offers Refresh Page and Try Again (which renders the children again); development builds add the error message, stack trace and component stack. `main.tsx` wraps App in one boundary and App wraps DosPlayerWithApps in another, so an error in the player area leaves the header and footer in place. Each fallback fills the element it renders in, the page or the player's area between the header and the footer, and scrolls when its card is taller; in windows under 500px tall the card is smaller, so both buttons show.
+
+The boundary leaves logging to the tracker: the tracker's report, with the component stack, is the one line it logs for an error, and React logs the error too (its default `onCaughtError`, which `main.tsx`'s `createRoot` keeps). It also calls its `onError` prop with each error it catches, once its children have been replaced: App's boundary uses it to show Error in the footer, since a player that has gone reports no status, until Try Again remounts the player.
 
 **Usage:**
 
@@ -140,6 +160,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 </ErrorBoundary>
 ```
 
+A custom fallback is `(error: Error, errorInfo: ErrorInfo | null, reset: () => void) => ReactNode`. React renders it before `componentDidCatch` has the component stack, so `errorInfo` is `null` on its first render.
+
 ---
 
 ### 4. User-Friendly Error Messages
@@ -150,23 +172,24 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 **Features:**
 
-- Pattern matching for common errors
+- Matches the error's name, its message and the HTTP status the message names, in a fixed order (the first match wins)
 - Provides suggestions for resolution
-- Includes original error in dev mode
-- Extensible error mappings
+- Returns the technical message as `originalError`, in every build; a value without text has none
+- Extensible error mappings: add a pattern to `ERROR_MAPPINGS`
+
+DemoSelector and DosPlayerWithApps show its explanation of a failed load on the page (see [Component-Level Error States](#5-component-level-error-states)), and pass `{ online: navigator.onLine }`. The global error handler passes no options: in production builds it adds the message and suggestion to each error's report (`metadata.friendlyError`).
+
+`getUserFriendlyError(error, { online })` takes any value, `undefined` and values without a string form included, and returns `{ message, suggestion, originalError }`. Only `online: false` changes the result, since `navigator.onLine` being true only means that a network interface is up.
 
 **Usage:**
 
 ```typescript
-import {
-  getUserFriendlyError,
-  formatErrorForDisplay,
-} from "./utils/errorMessages";
+import { getUserFriendlyError } from './utils/errorMessages';
 
 try {
   await fetchData();
 } catch (error) {
-  const friendly = getUserFriendlyError(error);
+  const friendly = getUserFriendlyError(error, { online: navigator.onLine });
   console.error(friendly.message);
   if (friendly.suggestion) {
     console.info(friendly.suggestion);
@@ -174,21 +197,72 @@ try {
 }
 ```
 
-**Error Categories:**
+**Error Categories**, checked in this order:
 
-- Network errors (fetch failed, timeout, rate limit)
-- File errors (not found, invalid format, too large)
-- Emulator errors (initialization, WASM, configuration)
-- Browser errors (unsupported features, permissions)
+1. An error named `AbortError`: "Operation was cancelled" / "The operation was stopped before it could complete. Please try again."
+2. A network failure: "Unable to connect to the server" / "Please check your internet connection and try again." With `online: false`, it is "This application isn't available offline yet" / "Each application works offline once it has been opened while online. Connect to the internet and try again." instead. A network failure is recognized by each browser's wording: Chrome and Edge's "Failed to fetch" (also "Failed to fetch dynamically imported module"), Firefox's "NetworkError when attempting to fetch resource." and "error loading dynamically imported module", Safari's "Load failed" and "Importing a module script failed.", and `fetchWithRetry`'s own "Fetch failed after retries". "Load failed" counts wherever it is in the message: with the service worker in control, Safari and every other browser on iOS reject a download the worker could not make either with "FetchEvent.respondWith received an error: TypeError: Load failed".
+3. "timeout", "time out" or "timed out" in the message: "The request took too long to complete" / "The connection or the server might be slow. Please try again."
+4. "abort", "cancelled" or "canceled" in the message: cancelled, as in 1.
+5. An HTTP status, read from `HTTP <code>` in the message: 404 and 410 give "The requested file was not found" / "It might have moved in an update of DosKit. Reload the page and try again."; any 5xx gives "The server is temporarily unavailable" / "Please try again in a few minutes."; 408 is a timeout, as in 3; 429 gives "Too many requests". Other statuses go on to the patterns below. A number anywhere else in the message is not a status.
+6. Patterns in the message: rate limit (too many requests); a ZIP that failed to load with any other status, such as 403, or that is not a ZIP archive ("Unable to load the application archive"); file not found; service worker; WebAssembly; fullscreen; keyboard lock; permission denied or not allowed; out of memory.
+
+Anything else is "An unexpected error occurred".
 
 ---
+
+### 5. Component-Level Error States
+
+**Files:** `src/components/DemoSelector.tsx`, `src/components/DosPlayerWithApps.tsx`, `src/hooks/useDosEmulator.ts`, `src/adapters/EmulatorAdapter.ts`, `src/utils/diskLoader.ts`
+
+**Purpose:** Shows load and start failures where they happen
+
+Each part that loads or starts something handles its own failures: it logs them with `console.error` and shows them in place, without passing them to the error tracker. A load the user cancelled, or that a newer navigation superseded, is aborted on purpose, and shows and logs nothing.
+
+The selector and the error overlay explain a failed load the same way: they log the raw error, then show `getUserFriendlyError(error, { online: navigator.onLine })`'s message, its suggestion, and a collapsed "Details" disclosure with the technical message, such as "Failed to fetch" or "Failed to load ZIP: HTTP 404". Offline, a network failure reads "This application isn't available offline yet".
+
+**DemoSelector** (apps picked in the selector):
+
+- A failed load shows that explanation in an alert below the disks, with the selected app. Load Application tries again.
+- A download that receives no data for 20 seconds fails as "The request took too long to complete" / "The connection or the server might be slow. Please try again.", with "Download timed out: no data received for 20 seconds" under Details (see diskLoader below). One that keeps receiving data has no time limit.
+- A load whose download has not started 20 seconds after it began fails the same way, with "Loading timed out: nothing arrived for 20 seconds" under Details. The download reports its start as it makes its request, so this covers only the app's config chunk, which its loader imports first: from the request on, retries included, the download's own limit applies.
+- Cancel Loading, Escape, closing the selector, choosing another disk (a click or Space) or loading one (Enter or a double-click) aborts the load quietly. During a download the arrow keys only move the focus, so they abort nothing.
+
+**DosPlayerWithApps** (apps the URL asks for: deep links, back/forward):
+
+- A failed load shows the "Error Loading Application" overlay (`role="alert"`) with that explanation and two buttons. Try Again loads the same app again, behind the loading overlay, and shows the error overlay again if that fails too; offline, an app that is not cached fails again at once, since a download fails at once while the browser reports being offline. Choose Another Application boots the default DOS prompt and opens the selector.
+- Try Again takes the keyboard focus when the overlay appears, or, if the selector is open over it, once the selector closes, so Enter tries again
+- A download that stalls ends in the same overlay, as the timeout described under diskLoader below, so Try Again is offered. Nothing times out the app's config chunk on this path: the loading overlay's Cancel stops the load and does what Choose Another Application does.
+- Nothing runs behind the overlay: a requested app stops the running one as its load starts
+- A newer request, a pick in the selector, Cancel or unmounting aborts the load and drops its result or error
+- The loading overlay's "Loading application..." is a status region, which screen readers announce without its Cancel button
+
+**useDosEmulator, the adapter and DosPlayerUI** (starting js-dos):
+
+- Without `window.Dos`: "DOS emulator library not loaded. Please refresh the page.", logged as "[useDosEmulator] Emulator not available"
+- If `window.Dos()` throws: its message, which the adapter prefixes with "Failed to initialize js-dos:", keeping js-dos's error as the `cause`
+- If `emulators.js`, which js-dos's first start loads, fails to download: "The DOS emulator could not be loaded: /emulators/emulators.js failed to download. Check your connection, then reload the page." js-dos logs an error of its own for any failed download of it: "Unable to init emulators.js Error: Unable to add emulators.js. Probably you should set the 'pathPrefix' option to point to the js-dos folder."
+- If `emulators.js` runs without setting up the emulator: "The DOS emulator could not be loaded: /emulators/emulators.js ran but did not set up the emulator. Reload the page."
+- Every start that waits for `emulators.js` gets that error (see [Adapter Pattern](ARCHITECTURE.md#6-adapter-pattern)), and the adapter removes its script tag, so that the next start, such as a pick in the selector, downloads it again
+- Each shows an Error panel with a Reload Page button, an alert that screen readers announce at once; the player's "Loading DOS emulator..." panel before it is a status region. For all but a missing `window.Dos`, the hook logs "[useDosEmulator] Failed to initialize emulator:" with the error. A start that fails after the player unmounted is ignored, and failing to unmute audio or to stop a player is only logged.
+- DosPlayer passes the error it shows to its `onError` while it is mounted, and DosPlayerWithApps then reports the status `error`, which the footer shows as Error
+- A failure that js-dos handles itself after `Dos()` has returned, such as a `wdosbox.wasm` or `wdosbox.js` that does not download, shows only in js-dos's own window, "Oops... Something went wrong...". js-dos sends no event for it, so DosKit shows no error of its own, and the footer goes on saying Loading.
+
+**diskLoader and fetchWithRetry** (archive downloads):
+
+- `fetchWithRetry` retries network failures (a `TypeError`, whatever the browser's wording) and HTTP 408, 429, 500, 502, 503 and 504 up to 3 times, waiting about 1, 2 and 4 seconds. A status that persists comes back as the response; the last network failure, or any other error, is thrown.
+- A network failure while `navigator.onLine` is false is thrown at once, since every retry would fail the same way. This is checked at each failure, so a connection lost between retries ends them too. `navigator.onLine` being true only means that a network interface is up, so a network failure then is still retried.
+- `loadZipArchive` turns an error response into `Failed to load ZIP: HTTP <status> <status text>`, without the text when there is none: "Failed to load ZIP: HTTP 404" over HTTP/2, which GitHub Pages serves and which has no status text, or "Failed to load ZIP: HTTP 404 Not Found" over HTTP/1.1.
+- It fails a download that receives no data for 20 seconds, counted from the request, again at each retry, from the response and from each chunk of the archive, with a `TimeoutError`: "Download timed out: no data received for 20 seconds". A download that keeps receiving data has no time limit.
+- An archive that does not start with the ZIP signature fails as "Failed to load ZIP: not a ZIP archive", with the response's Content-Type in parentheses when it has one, and reads "Unable to load the application archive". Vite's dev and preview servers answer a missing archive with 200 and `index.html`, which would otherwise start as an empty drive: on the dev server, that gives "Failed to load ZIP: not a ZIP archive (text/html)".
+- It logs a failure unless the caller aborted, and rethrows, so a failed download is logged twice: by `[DiskLoader]`, then by the selector or DosPlayerWithApps.
+- An abort by the caller rejects at once with the abort's reason, an `AbortError` for the selector's and DosPlayerWithApps' aborts, and no progress is reported after it. On its own, `fetchWithRetry` rejects with `Operation aborted` before a request or during a wait.
 
 ## Error Flow
 
 ### 1. Uncaught Error Flow
 
-```
-Error occurs
+```text
+Error occurs (uncaught error or unhandled rejection)
   ↓
 Global Error Handler captures
   ↓
@@ -196,59 +270,73 @@ Check if harmless → Suppress if yes
   ↓
 Apply custom filter → Suppress if filtered
   ↓
-Log to console (logger)
+Add the user-friendly message to the report (production builds, if enabled)
   ↓
-Track with error tracking service
+Track with error tracking service (the console tracker logs it; the browser still reports the error)
   ↓
 Call custom onError callback
-  ↓
-Show user-friendly message (if enabled)
 ```
 
 ### 2. React Error Flow
 
-```
+```text
 Error in React component
   ↓
-Error Boundary catches
+Nearest Error Boundary catches
   ↓
 Update state (hasError = true)
   ↓
-Track with error tracking service
+Render fallback UI
+  ↓
+Track with error tracking service (the console tracker logs it, with the component stack; React logs it too)
   ↓
 Add breadcrumb
   ↓
-Render fallback UI
+Call onError (App's boundary: the footer shows Error)
 ```
 
 ### 3. Component Error Flow
 
-```
-Error in async operation
+```text
+Error in async operation (load or start)
   ↓
-Catch in try/catch
+Catch in try/catch or a rejection handler
   ↓
-Set local error state
+Aborted on purpose? → Drop it
   ↓
-Map to user-friendly message
+Log to console
+  ↓
+Set local error state: a failed load explained with getUserFriendlyError (passing navigator.onLine), a failed start with its own message
   ↓
 Display error UI
-  ↓
-Optionally track with error service
 ```
+
+## Known Console Errors
+
+**`ExitStatus`** - Every time a player stops, as on each app switch or a return to the start page, the console shows an `ExitStatus` error (`Program terminated with exit(0)`). That is js-dos stopping the emulator normally: `stop()` asks DOSBox to exit, Emscripten's `exit(0)` throws `ExitStatus`, and the asyncify loop in js-dos's emulator Web Worker passes it to `console.error` before js-dos treats exit code 0 as a clean shutdown and terminates the worker.
+
+DosKit cannot filter it: the worker logs to a console of its own, which nothing in the page can reach, and js-dos offers no way to stop a player without `exit(0)`. `stopPlayer()` in `src/hooks/useDosEmulator.ts` notes this where the player is stopped.
+
+**Too many active WebGL contexts (Safari)** - From the 17th player in a page, Safari logs "There are too many active WebGL contexts" and "loseContext: context already lost" at each app switch. DosKit loses each stopped player's WebGL context, but Safari counts a lost context until it is garbage-collected, and js-dos's `stop()` leaves document listeners that keep each stopped player reachable. Chrome no longer warns ([PERFORMANCE-OPTIMIZATIONS.md](PERFORMANCE-OPTIMIZATIONS.md#4-webgl-rendering-backend)).
+
+**Preloaded but not used** - A browser warning about `wdosbox.wasm`, which `index.html` preloads: in Chrome only when no player starts within a few seconds of the page loading, in Safari on every page load ([PERFORMANCE-OPTIMIZATIONS.md](PERFORMANCE-OPTIMIZATIONS.md#6-wasm-module-preloading)).
 
 ## Best Practices
 
 ### 1. Always Use Try/Catch for Async Operations
 
 ```typescript
-const handleLoadApp = async () => {
+const handleLoadApp = async (signal: AbortSignal) => {
   try {
-    await loadApp();
+    await loadApp(signal);
   } catch (error) {
-    const friendly = getUserFriendlyError(error);
-    setError(friendly.message);
-    getErrorTracker().captureError(error, { userAction: "Loading app" });
+    // Cancelled or superseded on purpose: not a failure
+    if (signal.aborted) return;
+    // Message, suggestion and technical details, as the selector shows them
+    setError(getUserFriendlyError(error, { online: navigator.onLine }));
+    getErrorTracker().captureError(error instanceof Error ? error : new Error(String(error)), {
+      userAction: 'Loading app',
+    });
   }
 };
 ```
@@ -257,11 +345,11 @@ const handleLoadApp = async () => {
 
 ```typescript
 tracker.captureError(error, {
-  userAction: "Loading Second Reality demo",
-  component: "DemoSelector",
+  userAction: 'Loading Second Reality demo',
+  component: 'DemoSelector',
   metadata: {
-    appId: "second-reality",
-    fileCount: 42,
+    appId: 'second-reality',
+    zipUrl: '/demos/second-reality.zip',
   },
 });
 ```
@@ -269,8 +357,10 @@ tracker.captureError(error, {
 ### 3. Use Breadcrumbs for User Actions
 
 ```typescript
-tracker.addBreadcrumb("User selected app", "user-action", { appId: "doom" });
-tracker.addBreadcrumb("Started loading files", "process", { fileCount: 10 });
+tracker.addBreadcrumb('User selected app', 'user-action', { appId: 'second-reality' });
+tracker.addBreadcrumb('Started loading archive', 'process', {
+  zipUrl: '/demos/second-reality.zip',
+});
 ```
 
 ### 4. Wrap Critical Components with Error Boundaries
@@ -281,14 +371,18 @@ tracker.addBreadcrumb("Started loading files", "process", { fileCount: 10 });
 </ErrorBoundary>
 ```
 
+App does this for DosPlayerWithApps.
+
 ### 5. Suppress Known Harmless Errors
 
 The global error handler automatically suppresses:
 
-- Fullscreen API errors (require user interaction)
-- Keyboard lock errors (require user interaction)
+- Keyboard lock errors (js-dos asks for a lock at every start, without handling the promise)
+- Keyboard lock requests that a newer one superseded
 - ResizeObserver loop errors (benign)
 - Browser extension errors
+
+To suppress another, add a pattern to `HARMLESS_ERROR_PATTERNS` in `globalErrorHandler.ts`. Patterns match the messages of uncaught errors and unhandled rejections only, and a suppressed error is never tracked, and only development builds log it, at debug level, so keep them narrow.
 
 ## Testing
 
@@ -313,43 +407,47 @@ test('catches errors', () => {
 });
 ```
 
+The error handling modules have tests of their own next to them in `src/utils/`: `globalErrorHandler.test.ts`, `errorTracking.test.ts`, `errorMessages.test.ts`, `fetchWithRetry.test.ts` and `diskLoader.test.ts`. `src/components/ErrorBoundary.test.tsx` covers the boundary: its fallback, its tracker calls, Try Again, a custom fallback and the development-only details.
+
 ## Configuration
 
-### Development
+`main.tsx` sets both up before rendering, the same way in every build:
 
 ```typescript
 // main.tsx
-initializeErrorTracking("console");
-initializeGlobalErrorHandler({
-  showUserFriendlyErrors: false, // Show technical errors
-  suppressHarmlessErrors: true,
-});
-```
-
-### Production
-
-```typescript
-// main.tsx
-initializeErrorTracking("sentry", {
-  dsn: import.meta.env.VITE_SENTRY_DSN,
-  environment: "production",
-});
-
+initializeErrorTracking();
 initializeGlobalErrorHandler({
   showUserFriendlyErrors: true,
   suppressHarmlessErrors: true,
 });
 ```
 
+What differs between builds follows `import.meta.env.DEV`. `getUserFriendlyError()` returns the technical message as `originalError` in both, so the Details line of a failed load is there in production too.
+
+### Development
+
+- The logger prints every level, with timestamps, and the global handler logs each suppressed error at debug level
+- ErrorBoundary's fallback shows the error message, stack trace and component stack
+- The global handler's reports carry no user-friendly message
+
+### Production
+
+- The logger prints warnings and errors only
+- The error tracker logs errors and React errors, but no breadcrumbs
+- Each report from the global handler, the one line it logs per error, carries the user-friendly message and suggestion as `metadata.friendlyError`
+- ErrorBoundary's fallback shows only its message and buttons
+
 ## Future Enhancements
 
-1. **Error Recovery Strategies** - Automatic retry logic for transient errors
-2. **Error Analytics** - Track error frequency and patterns
-3. **User Feedback** - Allow users to report errors with context
-4. **Offline Error Queue** - Queue errors when offline, send when online
-5. **Source Maps** - Upload source maps to Sentry for better stack traces
-6. **Performance Monitoring** - Track performance issues alongside errors
+1. **Remote Error Tracking** - Implement `ErrorTrackingService` for a hosted service, and report the load and start errors that components only log today
+2. **User-Facing Messages** - Show the user-friendly messages of the errors that reach the global handler on the page, such as in a toast. Failed loads already show theirs; the global handler only adds its own to the error's report.
+3. **Error Recovery Strategies** - Automatic retry logic for transient errors beyond archive downloads, which `fetchWithRetry` already retries
+4. **Error Analytics** - Track error frequency and patterns
+5. **User Feedback** - Allow users to report errors with context
+6. **Offline Error Queue** - Queue errors when offline, send when online
+7. **Source Maps** - Upload the hidden source maps the build already writes (`sourcemap: 'hidden'`) to the tracking service for better stack traces
+8. **Performance Monitoring** - Track performance issues alongside errors
 
 ## Conclusion
 
-DosKit's error handling strategy provides comprehensive coverage at multiple levels, ensuring errors are caught, logged, tracked, and presented to users in a friendly manner. The system is extensible and ready for production error tracking integration.
+DosKit's error handling strategy provides coverage at multiple levels: errors are caught, logged and tracked, harmless ones are kept quiet, and load and start failures are shown to users where they happen. The tracking interface is ready for a production error tracking service; until one is added, its reports go to the console.

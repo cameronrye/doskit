@@ -8,10 +8,13 @@
  */
 
 import type { DosApp } from '../types/dos-app';
+import { loadZipArchive } from '../utils/diskLoader';
 
 /**
  * Available DOS applications and demos
- * Uses lazy loading to reduce initial bundle size
+ * Each app's config module (src/dos-apps) is imported lazily, so the page only imports its
+ * code when the app is loaded or its config preloaded (production builds still store every
+ * chunk in the service worker's cache when it installs, for offline use)
  */
 export const availableApps: DosApp[] = [
   {
@@ -22,10 +25,9 @@ export const availableApps: DosApp[] = [
     year: 1993,
     loadMethod: 'zip',
     dosboxConf: '', // Loaded dynamically
-    loader: async (onProgress) => {
+    loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/second-reality.config');
-      const { loadZipArchive } = await import('../utils/diskLoader');
-      return loadZipArchive(config.secondRealityZipUrl, onProgress);
+      return loadZipArchive(config.secondRealityZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/second-reality.config');
@@ -37,12 +39,13 @@ export const availableApps: DosApp[] = [
     name: 'Impulse Tracker',
     description: 'Classic music tracker software',
     author: 'Jeffrey Lim',
-    year: 1995,
+    year: 1997,
     loadMethod: 'zip',
     dosboxConf: '',
-    loader: async (onProgress) => {
+    warnBeforeLeaving: true, // a song in progress
+    loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/impulse-tracker.config');
-      return config.loadZipArchive(config.impulseTrackerZipUrl, onProgress);
+      return loadZipArchive(config.impulseTrackerZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/impulse-tracker.config');
@@ -57,9 +60,9 @@ export const availableApps: DosApp[] = [
     year: 1993,
     loadMethod: 'zip',
     dosboxConf: '',
-    loader: async (onProgress) => {
+    loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/starport-bbstro.config');
-      return config.loadZipArchive(config.starportBbstroZipUrl, onProgress);
+      return loadZipArchive(config.starportBbstroZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/starport-bbstro.config');
@@ -74,9 +77,10 @@ export const availableApps: DosApp[] = [
     year: 1994,
     loadMethod: 'zip',
     dosboxConf: '',
-    loader: async (onProgress) => {
+    warnBeforeLeaving: true, // a song in progress; its Ctrl-W (save) can close the tab
+    loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/scream-tracker.config');
-      return config.loadZipArchive(config.screamTrackerZipUrl, onProgress);
+      return loadZipArchive(config.screamTrackerZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/scream-tracker.config');
@@ -91,9 +95,9 @@ export const availableApps: DosApp[] = [
     year: 1992,
     loadMethod: 'zip',
     dosboxConf: '',
-    loader: async (onProgress) => {
+    loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/unreal.config');
-      return config.loadZipArchive(config.unrealZipUrl, onProgress);
+      return loadZipArchive(config.unrealZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/unreal.config');
@@ -103,14 +107,14 @@ export const availableApps: DosApp[] = [
   {
     id: 'panic',
     name: 'Panic',
-    description: 'Classic 1992 demo by Future Crew',
+    description: 'Classic 1993 demo by Future Crew',
     author: 'Future Crew',
-    year: 1992,
+    year: 1993,
     loadMethod: 'zip',
     dosboxConf: '',
-    loader: async (onProgress) => {
+    loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/panic.config');
-      return config.loadZipArchive(config.panicZipUrl, onProgress);
+      return loadZipArchive(config.panicZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/panic.config');
@@ -125,9 +129,9 @@ export const availableApps: DosApp[] = [
     year: 1994,
     loadMethod: 'zip',
     dosboxConf: '',
-    loader: async (onProgress) => {
+    loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/squid-bbstro.config');
-      return config.loadZipArchive(config.squidBbstroZipUrl, onProgress);
+      return loadZipArchive(config.squidBbstroZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/squid-bbstro.config');
@@ -138,13 +142,13 @@ export const availableApps: DosApp[] = [
     id: '3drotate',
     name: '3D Rotation Demo',
     description: "Classic 3D rotation effect from Grumpy's collection",
-    author: "Grumpy's Collection",
-    year: 1990,
+    author: 'Draeden of VLA',
+    year: 1993,
     loadMethod: 'zip',
     dosboxConf: '',
-    loader: async (onProgress) => {
+    loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/3drotate.config');
-      return config.loadZipArchive(config.rotate3dZipUrl, onProgress);
+      return loadZipArchive(config.rotate3dZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/3drotate.config');
@@ -155,13 +159,13 @@ export const availableApps: DosApp[] = [
     id: 'stars',
     name: 'Starfield Effect',
     description: 'Classic starfield effect simulating flying through space',
-    author: "Grumpy's Collection",
-    year: 1990,
+    author: 'Draeden of VLA',
+    year: 1993,
     loadMethod: 'zip',
     dosboxConf: '',
-    loader: async (onProgress) => {
+    loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/stars.config');
-      return config.loadZipArchive(config.starsZipUrl, onProgress);
+      return loadZipArchive(config.starsZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/stars.config');
@@ -176,9 +180,9 @@ export const availableApps: DosApp[] = [
     year: 1993,
     loadMethod: 'zip',
     dosboxConf: '',
-    loader: async (onProgress) => {
+    loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/crystal-dream-2.config');
-      return config.loadZipArchive(config.crystalDream2ZipUrl, onProgress);
+      return loadZipArchive(config.crystalDream2ZipUrl, onProgress, signal);
     },
     loadDosboxConf: async () => {
       const config = await import('../dos-apps/crystal-dream-2.config');
@@ -205,26 +209,26 @@ export function getUrlFriendlyId(appId: string): string {
 }
 
 /**
+ * An empty mapping with no prototype: a URL's ?app=constructor or ?app=__proto__ must find
+ * nothing, not the Object function or Object.prototype every plain object inherits
+ */
+const emptyMapping = (): Record<string, string> => Object.create(null);
+
+/**
  * Auto-generated URL mapping from available apps
  * Maps both URL-friendly IDs (no hyphens) and original IDs to internal IDs
  */
-export const APP_ID_MAPPING: Record<string, string> = availableApps.reduce(
-  (acc, app) => {
-    const urlFriendly = getUrlFriendlyId(app.id);
-    acc[urlFriendly] = app.id;
-    acc[app.id] = app.id;
-    return acc;
-  },
-  {} as Record<string, string>
-);
+export const APP_ID_MAPPING: Record<string, string> = availableApps.reduce((acc, app) => {
+  const urlFriendly = getUrlFriendlyId(app.id);
+  acc[urlFriendly] = app.id;
+  acc[app.id] = app.id;
+  return acc;
+}, emptyMapping());
 
 /**
  * Reverse mapping: Internal ID -> URL-friendly ID
  */
-export const INTERNAL_TO_URL_MAPPING: Record<string, string> = availableApps.reduce(
-  (acc, app) => {
-    acc[app.id] = getUrlFriendlyId(app.id);
-    return acc;
-  },
-  {} as Record<string, string>
-);
+export const INTERNAL_TO_URL_MAPPING: Record<string, string> = availableApps.reduce((acc, app) => {
+  acc[app.id] = getUrlFriendlyId(app.id);
+  return acc;
+}, emptyMapping());

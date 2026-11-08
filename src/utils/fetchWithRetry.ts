@@ -44,7 +44,7 @@ const DEFAULT_RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
-      reject(new Error("Operation aborted"));
+      reject(new Error('Operation aborted'));
       return;
     }
 
@@ -52,12 +52,12 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 
     if (signal) {
       signal.addEventListener(
-        "abort",
+        'abort',
         () => {
           clearTimeout(timeout);
-          reject(new Error("Operation aborted"));
+          reject(new Error('Operation aborted'));
         },
-        { once: true },
+        { once: true }
       );
     }
   });
@@ -77,12 +77,23 @@ function calculateDelay(
   attempt: number,
   initialDelay: number,
   maxDelay: number,
-  backoffMultiplier: number,
+  backoffMultiplier: number
 ): number {
   const exponentialDelay = initialDelay * Math.pow(backoffMultiplier, attempt);
   // Add jitter (random variation) to prevent thundering herd
   const jitter = Math.random() * 0.3 * exponentialDelay;
   return Math.min(exponentialDelay + jitter, maxDelay);
+}
+
+/**
+ * Whether the browser reports having no connection. Only an offline report can be
+ * trusted: online only means that a network interface is up, not that the server can
+ * be reached.
+ * @returns true if navigator.onLine is false
+ * @private
+ */
+function isOffline(): boolean {
+  return typeof navigator !== 'undefined' && navigator.onLine === false;
 }
 
 /**
@@ -92,13 +103,13 @@ function calculateDelay(
  * @returns true if the error is retryable, false otherwise
  * @private
  */
-function isRetryableError(
-  error: unknown,
-  retryableStatusCodes: number[],
-): boolean {
-  // Network errors are retryable
-  if (error instanceof TypeError && error.message.includes("fetch")) {
-    return true;
+function isRetryableError(error: unknown, retryableStatusCodes: number[]): boolean {
+  // fetch() rejects with a TypeError on network failure. The message varies by
+  // browser ("Failed to fetch", "NetworkError ...", WebKit's "Load failed").
+  // Offline, such as for an archive the service worker has not stored, every retry
+  // would fail the same way.
+  if (error instanceof TypeError) {
+    return !isOffline();
   }
 
   // Check if it's a Response with a retryable status code
@@ -111,6 +122,9 @@ function isRetryableError(
 
 /**
  * Fetch with automatic retry and exponential backoff
+ *
+ * Retries network errors and the retryable status codes. A network error while the
+ * browser reports being offline is thrown at once.
  *
  * @param input - URL or Request object
  * @param init - Fetch options
@@ -133,7 +147,7 @@ function isRetryableError(
 export async function fetchWithRetry(
   input: RequestInfo | URL,
   init?: RequestInit,
-  options: RetryOptions = {},
+  options: RetryOptions = {}
 ): Promise<Response> {
   const {
     maxRetries = 3,
@@ -151,7 +165,7 @@ export async function fetchWithRetry(
     try {
       // Check if operation was aborted
       if (signal?.aborted) {
-        throw new Error("Operation aborted");
+        throw new Error('Operation aborted');
       }
 
       // Merge signal from options with init
@@ -162,14 +176,19 @@ export async function fetchWithRetry(
 
       const response = await fetch(input, fetchInit);
 
-      // Check if response status is retryable
-      if (!response.ok && retryableStatusCodes.includes(response.status)) {
+      // Retry retryable statuses; on the last attempt hand the response back so
+      // callers can report it via response.ok / statusText like any other HTTP error.
+      if (!response.ok && retryableStatusCodes.includes(response.status) && attempt < maxRetries) {
         throw response;
       }
 
       return response;
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+      if (error instanceof Response) {
+        lastError = new Error(`HTTP ${error.status} ${error.statusText}`.trim());
+      } else {
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
 
       // Don't retry if we've exhausted attempts
       if (attempt >= maxRetries) {
@@ -182,12 +201,7 @@ export async function fetchWithRetry(
       }
 
       // Calculate delay for next retry
-      const retryDelay = calculateDelay(
-        attempt,
-        initialDelay,
-        maxDelay,
-        backoffMultiplier,
-      );
+      const retryDelay = calculateDelay(attempt, initialDelay, maxDelay, backoffMultiplier);
 
       // Call onRetry callback if provided
       if (onRetry) {
@@ -200,5 +214,5 @@ export async function fetchWithRetry(
   }
 
   // All retries exhausted
-  throw lastError || new Error("Fetch failed after retries");
+  throw lastError || new Error('Fetch failed after retries');
 }

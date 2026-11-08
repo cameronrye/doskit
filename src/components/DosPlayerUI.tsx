@@ -7,8 +7,8 @@
  * Handles the UI rendering for the DOS player (loading, error, container)
  */
 
-import React from "react";
-import "./DosPlayer.css";
+import React from 'react';
+import './DosPlayer.css';
 
 export interface DosPlayerUIProps {
   /** Ref to attach to the DOS container */
@@ -31,22 +31,22 @@ export const DosPlayerUI: React.FC<DosPlayerUIProps> = ({
   dosContainerRef,
   isLoading,
   error,
-  className = "",
+  className = '',
   style = {},
 }) => {
   return (
     <div className={`dos-player-wrapper ${className}`} style={style}>
-      {/* Loading indicator */}
+      {/* Loading indicator, which screen readers announce */}
       {isLoading && !error && (
-        <div className="dos-player-loading">
+        <div className="dos-player-loading" role="status">
           <div className="dos-player-spinner"></div>
           <p>Loading DOS emulator...</p>
         </div>
       )}
 
-      {/* Error message */}
+      {/* Error message, which screen readers announce at once */}
       {error && (
-        <div className="dos-player-error">
+        <div className="dos-player-error" role="alert">
           <h3>Error</h3>
           <p>{error}</p>
           <button onClick={() => window.location.reload()}>Reload Page</button>
@@ -57,10 +57,8 @@ export const DosPlayerUI: React.FC<DosPlayerUIProps> = ({
       <div
         ref={dosContainerRef}
         className="dos-player-container"
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: '100%', height: '100%' }}
       />
     </div>
   );
 };
-
-export default DosPlayerUI;

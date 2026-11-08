@@ -6,8 +6,7 @@
  * DOS Application Type Definitions
  */
 
-import type { InitFileEntry } from "./js-dos";
-import type { LoadProgress } from "../utils/diskLoader";
+import type { LoadProgress } from '../utils/diskLoader';
 
 /**
  * Represents a DOS application that can be loaded and run in the emulator
@@ -23,20 +22,27 @@ export interface DosApp {
   author?: string;
   /** Year of release */
   year?: number;
-  /** URL to thumbnail image */
-  thumbnail?: string;
-  /** Method used to load the application files */
-  loadMethod: "files" | "zip" | "disk-image";
+  /** How the application's files arrive, shown on its disk in the selector: every app is a ZIP */
+  loadMethod: 'zip';
   /** DOSBox configuration string */
   dosboxConf: string;
   /**
+   * Ask before the page is closed or reloaded while this app runs. For apps whose work a
+   * closed page loses, such as a song in a tracker: on Windows, Linux and ChromeOS, browsers
+   * keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, so a DOS program's Ctrl-W can close the
+   * tab at once.
+   */
+  warnBeforeLeaving?: boolean;
+  /**
    * Function to load the application files
    * @param onProgress - Optional callback for progress updates
-   * @returns Promise resolving to file entries or disk image data
+   * @param signal - Optional AbortSignal that cancels the download
+   * @returns Promise resolving to the bytes of the app's ZIP archive
    */
   loader: (
     onProgress?: (progress: LoadProgress) => void,
-  ) => Promise<InitFileEntry[] | Uint8Array>;
+    signal?: AbortSignal
+  ) => Promise<Uint8Array>;
   /**
    * Lazy load the DOSBox configuration
    * @returns Promise resolving to DOSBox configuration string

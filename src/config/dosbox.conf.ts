@@ -3,45 +3,36 @@
  * Copyright (c) 2025 Cameron Rye
  * Licensed under the MIT License
  *
- * DOSBox configuration for interactive DOS prompt
- * Optimized for performance and high-quality audio
- * Based on research of DOSBox performance optimization techniques
+ * DOSBox configuration for the interactive DOS prompt
  *
- * Audio Optimization Notes:
- * - Fixed CPU cycles (25000) instead of "max" to prevent audio stuttering/crackling
- * - Mixer prebuffer increased to 64 for smoother audio buffering
- *   (can go up to 8192 max for extremely problematic cases)
- * - Blocksize 2048 provides good balance between latency and stability
- * - Sample rate 44100 Hz is standard for DOS audio (CD quality)
+ * - A fixed 25000 cycles per millisecond on the simple CPU core
+ * - A mixer at 44100 Hz that keeps 64 ms of audio on top of each block, where DOSBox's default
+ *   is 40 (it goes up to 100: DOSBox lowers anything higher to 100). There is no blocksize: the
+ *   backend's mixer never reads it and always works in 2048-sample blocks.
+ * - A Sound Blaster 16 and the PC speaker, and no Gravis UltraSound
  *
- * Research Sources:
- * - DOSBox Wiki Performance Guide
- * - Community feedback on cycles=max causing audio issues
- * - DOSBox Staging audio optimization recommendations
+ * Every setting here is one the default js-dos backend ("dosbox", see jsdos.config.ts)
+ * applies; it drops or resets anything else without a warning. That backend has no
+ * dynamic core, reports DOS 5.00 and runs with 16 MB of memory (its default memsize).
  */
 
 export const defaultDosboxConfig = `
 [cpu]
-core=dynamic
+core=simple
 cputype=auto
 cycles=25000
-
-[video]
-vmemsize=8
 
 [render]
 scaler=none
 aspect=false
 
 [dos]
-ver=7.1
 umb=true
 ems=true
 xms=true
 
 [mixer]
 rate=44100
-blocksize=2048
 prebuffer=64
 
 [sblaster]

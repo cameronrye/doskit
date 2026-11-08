@@ -6,62 +6,87 @@
  * DOSBox Configuration Builder
  * Provides a fluent API for building DOSBox configuration strings
  * Reduces duplication across dos-apps config files
+ *
+ * The settings and values here are the ones the default js-dos backend ("dosbox",
+ * wdosbox.wasm, chosen in src/config/jsdos.config.ts) applies. DOSBox drops sections and
+ * properties it does not have, and resets values it does not accept to the default,
+ * without a warning, so a setting this backend lacks would only make a config claim
+ * something that never runs.
  */
 
 export interface CPUConfig {
-  core?: "auto" | "dynamic" | "normal" | "simple";
-  cputype?: "auto" | "386" | "486" | "pentium" | "pentium_mmx";
-  cycles?: number | "auto" | "max";
-}
-
-export interface VideoConfig {
-  vmemsize?: number;
+  /** The backend has no dynamic core */
+  core?: 'auto' | 'normal' | 'simple';
+  /**
+   * The backend has no plain 486, Pentium or Pentium MMX type.
+   * `386_prefetch` needs core `normal` or `auto`; with `simple` the backend stops.
+   */
+  cputype?: 'auto' | '386' | '386_slow' | '486_slow' | 'pentium_slow' | '386_prefetch';
+  cycles?: number | 'auto' | 'max';
 }
 
 export interface RenderConfig {
-  scaler?:
-    | "none"
-    | "normal2x"
-    | "normal3x"
-    | "hardware2x"
-    | "advmame2x"
-    | "advmame3x";
+  /**
+   * Only `none`, the backend's one scaler. It resets any other value, `normal2x` included, to
+   * the setting's default, `normal2x`, which `config -get render scaler` then reports, but
+   * frames reach js-dos at the program's own resolution either way: `none` is the value that
+   * says so.
+   */
+  scaler?: 'none';
   aspect?: boolean;
 }
 
+/**
+ * The backend has no `ver` setting: DOS reports version 5.00. To report another
+ * version, run `VER SET 7 10` (major, minor) in the autoexec.
+ */
 export interface DOSConfig {
-  ver?: string;
   umb?: boolean;
   ems?: boolean;
   xms?: boolean;
 }
 
-export interface MemoryConfig {
-  memsize?: number;
-}
+/**
+ * The sample rates, in Hz, the backend has for the mixer, the OPL, the PC speaker and the
+ * Tandy sound. It resets any other rate to 44100.
+ */
+export type SampleRate = 8000 | 11025 | 16000 | 22050 | 32000 | 44100 | 48000 | 49716;
 
+/** The whole numbers from 0 to Max */
+export type UpTo<Max extends number, Counted extends number[] = []> = Counted['length'] extends Max
+  ? Counted[number] | Max
+  : UpTo<Max, [...Counted, Counted['length']]>;
+
+/**
+ * There is no `blocksize`: the backend's mixer never reads it, always works in 2048-sample
+ * blocks, and hands the page 512 to 2048 samples at a time.
+ */
 export interface MixerConfig {
   nosound?: boolean;
-  rate?: number;
-  blocksize?: number;
-  prebuffer?: number;
+  rate?: SampleRate;
+  /**
+   * How many milliseconds of audio the mixer keeps on top of each block, from 0 to 100:
+   * DOSBox lowers anything above 100 to 100. Left out, it is 40.
+   */
+  prebuffer?: UpTo<100>;
 }
 
 export interface SoundBlasterConfig {
-  sbtype?: "none" | "sb1" | "sb2" | "sbpro1" | "sbpro2" | "sb16";
+  sbtype?: 'none' | 'sb1' | 'sb2' | 'sbpro1' | 'sbpro2' | 'sb16';
+  /** I/O port, read as hex: 220 means 220h */
   sbbase?: number;
   irq?: number;
   dma?: number;
   hdma?: number;
   sbmixer?: boolean;
-  oplmode?: "auto" | "cms" | "opl2" | "dualopl2" | "opl3" | "none";
-  oplemu?: "default" | "compat" | "fast";
-  oplrate?: number;
+  oplmode?: 'auto' | 'cms' | 'opl2' | 'dualopl2' | 'opl3' | 'none';
+  oplemu?: 'default' | 'compat' | 'fast';
+  oplrate?: SampleRate;
 }
 
 export interface GUSConfig {
   gus?: boolean;
-  gusrate?: number;
+  /** I/O port, read as hex: 240 means 240h */
   gusbase?: number;
   gusirq?: number;
   gusdma?: number;
@@ -70,14 +95,14 @@ export interface GUSConfig {
 
 export interface SpeakerConfig {
   pcspeaker?: boolean;
-  pcrate?: number;
-  tandy?: "auto" | "on" | "off";
-  tandyrate?: number;
+  pcrate?: SampleRate;
+  tandy?: 'auto' | 'on' | 'off';
+  tandyrate?: SampleRate;
   disney?: boolean;
 }
 
 export interface JoystickConfig {
-  joysticktype?: "auto" | "none" | "2axis" | "4axis" | "fcs" | "ch";
+  joysticktype?: 'auto' | 'none' | '2axis' | '4axis' | 'fcs' | 'ch';
 }
 
 export interface SerialConfig {
@@ -93,10 +118,8 @@ export interface SerialConfig {
  */
 export class DOSBoxConfigBuilder {
   private cpu: CPUConfig = {};
-  private video: VideoConfig = {};
   private render: RenderConfig = {};
   private dos: DOSConfig = {};
-  private memory: MemoryConfig = {};
   private mixer: MixerConfig = {};
   private soundBlaster: SoundBlasterConfig = {};
   private gus: GUSConfig = {};
@@ -116,16 +139,6 @@ export class DOSBoxConfigBuilder {
   }
 
   /**
-   * Set video configuration
-   * @param config - Video configuration options (vmemsize)
-   * @returns This builder instance for method chaining
-   */
-  setVideo(config: VideoConfig): this {
-    this.video = { ...this.video, ...config };
-    return this;
-  }
-
-  /**
    * Set render configuration
    * @param config - Render configuration options (scaler, aspect)
    * @returns This builder instance for method chaining
@@ -137,7 +150,7 @@ export class DOSBoxConfigBuilder {
 
   /**
    * Set DOS configuration
-   * @param config - DOS configuration options (ver, umb, ems, xms)
+   * @param config - DOS configuration options (umb, ems, xms)
    * @returns This builder instance for method chaining
    */
   setDOS(config: DOSConfig): this {
@@ -146,18 +159,8 @@ export class DOSBoxConfigBuilder {
   }
 
   /**
-   * Set memory configuration
-   * @param config - Memory configuration options (memsize)
-   * @returns This builder instance for method chaining
-   */
-  setMemory(config: MemoryConfig): this {
-    this.memory = { ...this.memory, ...config };
-    return this;
-  }
-
-  /**
    * Set mixer configuration
-   * @param config - Mixer configuration options (nosound, rate, blocksize, prebuffer)
+   * @param config - Mixer configuration options (nosound, rate, prebuffer)
    * @returns This builder instance for method chaining
    */
   setMixer(config: MixerConfig): this {
@@ -177,7 +180,7 @@ export class DOSBoxConfigBuilder {
 
   /**
    * Set Gravis UltraSound configuration
-   * @param config - GUS configuration options (gus, gusrate, gusbase, etc.)
+   * @param config - GUS configuration options (gus, gusbase, gusirq, etc.)
    * @returns This builder instance for method chaining
    */
   setGUS(config: GUSConfig): this {
@@ -227,7 +230,7 @@ export class DOSBoxConfigBuilder {
 
   /**
    * Build a configuration section from a config object
-   * @param name - The section name (e.g., 'cpu', 'video')
+   * @param name - The section name (e.g., 'cpu', 'dos')
    * @param config - The configuration object with key-value pairs
    * @returns The formatted configuration section string, or empty string if no entries
    * @private
@@ -236,9 +239,9 @@ export class DOSBoxConfigBuilder {
     const entries = Object.entries(config)
       .filter(([, value]) => value !== undefined)
       .map(([key, value]) => `${key}=${value}`)
-      .join("\n");
+      .join('\n');
 
-    return entries ? `[${name}]\n${entries}\n` : "";
+    return entries ? `[${name}]\n${entries}\n` : '';
   }
 
   /**
@@ -249,54 +252,46 @@ export class DOSBoxConfigBuilder {
     const sections: string[] = [];
 
     if (Object.keys(this.cpu).length > 0) {
-      sections.push(this.buildSection("cpu", this.cpu));
-    }
-
-    if (Object.keys(this.video).length > 0) {
-      sections.push(this.buildSection("video", this.video));
+      sections.push(this.buildSection('cpu', this.cpu));
     }
 
     if (Object.keys(this.render).length > 0) {
-      sections.push(this.buildSection("render", this.render));
+      sections.push(this.buildSection('render', this.render));
     }
 
     if (Object.keys(this.dos).length > 0) {
-      sections.push(this.buildSection("dos", this.dos));
-    }
-
-    if (Object.keys(this.memory).length > 0) {
-      sections.push(this.buildSection("memory", this.memory));
+      sections.push(this.buildSection('dos', this.dos));
     }
 
     if (Object.keys(this.mixer).length > 0) {
-      sections.push(this.buildSection("mixer", this.mixer));
+      sections.push(this.buildSection('mixer', this.mixer));
     }
 
     if (Object.keys(this.soundBlaster).length > 0) {
-      sections.push(this.buildSection("sblaster", this.soundBlaster));
+      sections.push(this.buildSection('sblaster', this.soundBlaster));
     }
 
     if (Object.keys(this.gus).length > 0) {
-      sections.push(this.buildSection("gus", this.gus));
+      sections.push(this.buildSection('gus', this.gus));
     }
 
     if (Object.keys(this.speaker).length > 0) {
-      sections.push(this.buildSection("speaker", this.speaker));
+      sections.push(this.buildSection('speaker', this.speaker));
     }
 
     if (Object.keys(this.joystick).length > 0) {
-      sections.push(this.buildSection("joystick", this.joystick));
+      sections.push(this.buildSection('joystick', this.joystick));
     }
 
     if (Object.keys(this.serial).length > 0) {
-      sections.push(this.buildSection("serial", this.serial));
+      sections.push(this.buildSection('serial', this.serial));
     }
 
     if (this.autoexec.length > 0) {
-      sections.push(`[autoexec]\n${this.autoexec.join("\n")}\n`);
+      sections.push(`[autoexec]\n${this.autoexec.join('\n')}\n`);
     }
 
-    return sections.join("\n");
+    return sections.join('\n');
   }
 }
 
@@ -307,7 +302,7 @@ export class DOSBoxConfigBuilder {
  * ```typescript
  * const config = createDOSBoxConfig()
  *   .setCPU({ core: 'auto', cycles: 'max' })
- *   .setVideo({ vmemsize: 8 })
+ *   .setDOS({ ems: true })
  *   .build();
  * ```
  */
@@ -317,127 +312,74 @@ export function createDOSBoxConfig(): DOSBoxConfigBuilder {
 
 /**
  * Preset configurations for common use cases
- * Optimized for performance and audio quality based on research
  *
- * Audio Optimization Research:
- * - Fixed CPU cycles prevent audio stuttering (cycles=max causes issues)
- * - Larger prebuffer values (50+) reduce audio crackling
- * - Blocksize 2048 balances latency and stability
- * - Sample rate 44100 Hz is standard for DOS audio
- *
- * Sources:
- * - DOSBox Wiki Performance Guide
- * - VOGONS forum discussions on audio optimization
- * - DOSBox Staging audio recommendations
+ * Every preset runs on the simple CPU core with the auto CPU type at a fixed number of cycles
+ * per millisecond, and leaves memory at DOSBox's default of 16 MB. Its mixer runs at 44100 Hz
+ * and keeps 64 ms of audio on top of each 2048-sample block, where DOSBox's default is 40. It
+ * has a Sound Blaster 16 and the PC speaker, and no Gravis UltraSound.
  */
 export const presets = {
   /**
-   * Default configuration for general DOS applications
-   * Optimized for performance with high-quality audio
-   * Uses fixed cycles (25000) to prevent audio stuttering
-   */
-  default: (): DOSBoxConfigBuilder =>
-    createDOSBoxConfig()
-      .setCPU({ core: "dynamic", cputype: "auto", cycles: 25000 })
-      .setVideo({ vmemsize: 8 })
-      .setRender({ scaler: "none", aspect: false })
-      .setDOS({ ver: "7.1", umb: true, ems: true, xms: true })
-      .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 64 })
-      .setSoundBlaster({
-        sbtype: "sb16",
-        sbbase: 220,
-        irq: 7,
-        dma: 1,
-        hdma: 5,
-        sbmixer: true,
-        oplmode: "auto",
-        oplemu: "default",
-        oplrate: 44100,
-      })
-      .setGUS({ gus: false })
-      .setSpeaker({
-        pcspeaker: true,
-        pcrate: 44100,
-        tandy: "auto",
-        tandyrate: 44100,
-        disney: true,
-      })
-      .setJoystick({ joysticktype: "auto" })
-      .setSerial({
-        serial1: "dummy",
-        serial2: "dummy",
-        serial3: "disabled",
-        serial4: "disabled",
-      }),
-
-  /**
-   * Configuration optimized for music trackers and MOD playback
-   * (Impulse Tracker, FastTracker, ScreamTracker, etc.)
+   * Configuration for music trackers, such as Impulse Tracker
    *
-   * Optimizations:
-   * - Fixed cycles (18000) for stable audio timing
-   * - Pentium CPU for better instruction set support
-   * - Increased prebuffer (64) for smooth MOD playback (max 8192 if needed)
-   * - Blocksize 2048 for optimal buffering
-   * - 16MB RAM for loading large samples
+   * - Fixed cycles (18000)
+   * - EMS and XMS, where trackers keep their samples, out of DOSBox's default 16 MB of RAM
    */
   musicTracker: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: "dynamic", cputype: "pentium", cycles: 18000 })
-      .setVideo({ vmemsize: 2 })
-      .setDOS({ ver: "7.1", umb: true, ems: true, xms: true })
-      .setMemory({ memsize: 16 })
-      .setMixer({ nosound: false, rate: 44100, blocksize: 2048, prebuffer: 64 })
+      .setCPU({ core: 'simple', cputype: 'auto', cycles: 18000 })
+      .setDOS({ umb: true, ems: true, xms: true })
+      .setMixer({ nosound: false, rate: 44100, prebuffer: 64 })
       .setSoundBlaster({
-        sbtype: "sb16",
+        sbtype: 'sb16',
         sbbase: 220,
         irq: 7,
         dma: 1,
         hdma: 5,
         sbmixer: true,
-        oplmode: "auto",
-        oplemu: "default",
+        oplmode: 'auto',
+        oplemu: 'default',
         oplrate: 44100,
       })
       .setGUS({ gus: false })
       .setSpeaker({
         pcspeaker: true,
         pcrate: 44100,
-        tandy: "auto",
+        tandy: 'auto',
         tandyrate: 44100,
         disney: true,
       })
-      .setJoystick({ joysticktype: "none" }),
+      .setJoystick({ joysticktype: 'none' }),
 
   /**
-   * Configuration optimized for demos and graphics applications
-   * Demos often have synchronized audio/video, so stable timing is critical
-   * Uses fixed cycles (30000) for consistent performance
+   * Configuration for demos and intros
+   *
+   * - Fixed cycles (30000): src/dos-apps/README.md says when a program needs 'max' instead
+   * - EMS, XMS and UMB
    */
   demo: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
-      .setCPU({ core: "dynamic", cputype: "auto", cycles: 30000 })
-      .setVideo({ vmemsize: 8 })
-      .setDOS({ ver: "7.1", umb: true, ems: true, xms: true })
-      .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 64 })
+      .setCPU({ core: 'simple', cputype: 'auto', cycles: 30000 })
+      .setDOS({ umb: true, ems: true, xms: true })
+      .setMixer({ rate: 44100, prebuffer: 64 })
       .setSoundBlaster({
-        sbtype: "sb16",
+        sbtype: 'sb16',
         sbbase: 220,
         irq: 7,
         dma: 1,
         hdma: 5,
         sbmixer: true,
-        oplmode: "auto",
-        oplemu: "default",
+        oplmode: 'auto',
+        oplemu: 'default',
         oplrate: 44100,
       })
       .setGUS({ gus: false })
       .setSpeaker({
         pcspeaker: true,
         pcrate: 44100,
-        tandy: "auto",
+        tandy: 'auto',
         tandyrate: 44100,
         disney: true,
       })
-      .setJoystick({ joysticktype: "auto" }),
+      .setJoystick({ joysticktype: 'auto' }),
 };

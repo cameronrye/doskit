@@ -40,7 +40,7 @@
   <rect x="300" y="236" width="26" height="6" fill="#00ff00" class="cursor"/>
   
   <!-- Description text -->
-  <text x="140" y="340" font-family="'Courier New', monospace" font-size="26" fill="rgba(255,255,255,0.9)">Run classic DOS applications and games</text>
+  <text x="140" y="340" font-family="'Courier New', monospace" font-size="26" fill="rgba(255,255,255,0.9)">Run classic DOS applications and demos</text>
   <text x="140" y="380" font-family="'Courier New', monospace" font-size="26" fill="rgba(255,255,255,0.9)">directly in your browser with WebAssembly</text>
   
   <!-- Features -->

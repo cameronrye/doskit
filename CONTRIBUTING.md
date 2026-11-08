@@ -6,8 +6,8 @@ Thank you for your interest in contributing to DosKit! This document provides gu
 
 ### Prerequisites
 
-- **Node.js**: Version 24.x or higher
-- **npm**: Version 10.x or higher
+- **Node.js**: The version in `.nvmrc` (`nvm use` picks it up), which CI uses too
+- **npm**: Comes with Node.js
 - **Git**: For version control
 
 ### Development Setup
@@ -27,11 +27,15 @@ Thank you for your interest in contributing to DosKit! This document provides gu
    npm install
    ```
 
+   This also installs the pre-commit hook (see [Making Changes](#making-changes)).
+
 4. **Start the development server**:
 
    ```bash
    npm run dev
    ```
+
+   `npm run dev` and `npm run build` first copy the js-dos runtime from `node_modules` into `public/` (`scripts/copy-js-dos.js`); the copies are gitignored. If you start Vite another way, such as `npx vite`, run `node scripts/copy-js-dos.js` once first, and again after updating js-dos.
 
 5. **Open your browser** to `http://localhost:5173`
 
@@ -47,7 +51,7 @@ Use descriptive branch names that follow this pattern:
 - `refactor/description` - For code refactoring
 - `test/description` - For test additions or updates
 
-Example: `feature/add-gamepad-support`
+Example: `feature/add-screenshot-capture`
 
 ### Making Changes
 
@@ -67,27 +71,39 @@ Example: `feature/add-gamepad-support`
    npm test
    ```
 
-5. **Run the linter** to check code style:
+5. **Run the linter and the format check**:
 
    ```bash
    npm run lint
+   npm run format:check
    ```
 
+   CI fails on files Prettier would change; `npm run format` formats them.
+
 6. **Build the project** to ensure it compiles:
+
    ```bash
    npm run build
    ```
+
+   The build starts with `tsc -b`, which type-checks the app, the tests (through `tsconfig.test.json`) and the Vite and Vitest configs. Run `npx tsc -b` for the type check alone.
+
+When you commit, the pre-commit hook (Husky) runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats the CSS, HTML, JSON, Markdown and YAML files that `npm run format:check` checks, and skips files Prettier has no parser for or that `.gitignore` or `.prettierignore` lists.
+
+A staged service worker, `public/sw.js`, makes the hook run every test: its tests, `scripts/service-worker.test.js` and `scripts/inject-sw-version.test.js`, read it as text instead of importing it, so `vitest.config.ts` makes it one of Vitest's force-rerun triggers. Other files that tests read from disk rather than import get no tests from the hook: the stylesheets, `index.html`, the manifest, the icons and the Open Graph image (`public/og-image.png`), `public/robots.txt`, `public/licenses/`, the archives and `README.md` in `public/demos/` (which `src/config/apps.config.test.ts` checks) and `eslint.config.js`. After changing one of them, run `npm test`; CI runs every test on every pull request.
+
+Pull requests to `main` run CI (`.github/workflows/ci.yml`): ESLint, the format check, the tests with coverage, the build and a check that its CSS works in the oldest supported browsers (`scripts/check-built-css.js`), the type check, and `npm audit`, which fails on a high or critical advisory in a production dependency.
 
 ### Commit Messages
 
 Write clear, concise commit messages that describe what changed and why:
 
 ```
-feat: add gamepad support for DOS games
+feat: add screenshot capture
 
-- Implement gamepad API integration
-- Add configuration options for button mapping
-- Update documentation with gamepad usage
+- Save the emulator's screen as a PNG with ci.screenshot()
+- Add a Screenshot button to the header
+- Document it in the README
 
 Closes #123
 ```
@@ -96,11 +112,14 @@ Closes #123
 
 - `feat:` - New feature
 - `fix:` - Bug fix
+- `perf:` - Performance improvement
 - `docs:` - Documentation changes
 - `style:` - Code style changes (formatting, etc.)
 - `refactor:` - Code refactoring
 - `test:` - Test additions or updates
-- `chore:` - Build process or auxiliary tool changes
+- `build:` - Build system or dependency changes
+- `ci:` - GitHub Actions workflow changes
+- `chore:` - Other maintenance, such as tooling configuration
 
 ### Pull Requests
 
@@ -112,7 +131,7 @@ Closes #123
 
 2. **Create a Pull Request** on GitHub from your fork to the main repository
 
-3. **Fill out the PR template** with:
+3. **Describe the PR** with:
    - Description of changes
    - Related issue numbers
    - Testing performed
@@ -129,8 +148,8 @@ Closes #123
 ### TypeScript
 
 - Use **TypeScript** for all new code
-- Enable **strict mode** type checking
-- Avoid using `any` type - use `unknown`, specific types, or proper generics
+- Pass **strict mode** type checking (`strict` is on for the app, the tests and the configs)
+- Avoid using `any` type - use `unknown`, specific types, or proper generics (ESLint reports explicit `any` as an error)
 - Document complex types with JSDoc comments
 
 ### React
@@ -142,35 +161,46 @@ Closes #123
 
 ### Code Formatting
 
-- **ESLint**: All code must pass ESLint checks
+- **ESLint**: All code must pass ESLint checks: the TypeScript, the Node scripts in `scripts/` (as ES modules with Node's globals, plus Vitest's in their tests) and the service worker, `public/sw.js` (as a classic script with a service worker's globals). The rest of `public/`, the js-dos copy included, is not linted
+- **Prettier**: Applies the rules below, with the settings in `.prettierrc`
 - **Indentation**: 2 spaces
-- **Quotes**: Single quotes for strings
+- **Quotes**: Single quotes for strings (double quotes in JSX attributes)
 - **Semicolons**: Required
 - **Line length**: Maximum 100 characters (soft limit)
 
-Run the linter to auto-fix many style issues:
+Let the tools fix what they can:
 
 ```bash
-npm run lint
+# Format every file with Prettier
+npm run format
+
+# Apply ESLint's automatic fixes
+npm run lint -- --fix
 ```
 
 ### File Organization
 
 ```
 src/
+├── adapters/       # Emulator adapter around js-dos
 ├── components/     # React components
 ├── config/         # Configuration files
+├── constants/      # Shared constants
+├── dos-apps/       # One config module per DOS app
 ├── hooks/          # Custom React hooks
+├── integration/    # Integration tests
+├── test/           # Test setup
 ├── types/          # TypeScript type definitions
-├── utils/          # Utility functions
-└── assets/         # Static assets
+└── utils/          # Utility functions
 ```
+
+Static files, such as icons and the DOS app archives in `public/demos/`, live in `public/`. `scripts/` holds the Node scripts and the tests for code outside `src/`. [`src/dos-apps/README.md`](src/dos-apps/README.md) explains how to add a DOS app.
 
 ## Testing Guidelines
 
 ### Test Requirements
 
-- **Coverage**: Maintain minimum 70% code coverage
+- **Coverage**: Stay at or above the thresholds in `vitest.config.ts`; `npm run test:coverage`, which CI runs, fails below them. It counts every `.ts` and `.tsx` file in `src/` but the tests (`*.test.ts`, `*.test.tsx`), `src/test/` and the type declarations (`*.d.ts`), so a source file that no test imports counts as uncovered instead of being left out
 - **Unit tests**: Required for all new features and bug fixes
 - **Component tests**: Required for all React components
 - **Integration tests**: Recommended for complex features
@@ -203,18 +233,23 @@ describe('DosPlayer', () => {
 ### Running Tests
 
 ```bash
-# Run tests in watch mode
+# Run tests once
 npm test
 
-# Run tests once
-npm run test:run
+# Run tests in watch mode
+npm run test:watch
 
 # Run tests with coverage
 npm run test:coverage
 
 # Run tests with UI
 npm run test:ui
+
+# Run one test file
+npx vitest run src/utils/urlRouting.test.ts
 ```
+
+Vitest does not type-check the tests; `npx tsc -b` does, through `tsconfig.test.json`, and so does `npm run build`.
 
 ## Documentation
 
@@ -251,17 +286,19 @@ Example:
 
 ```typescript
 /**
- * Load files from URLs with progress tracking
+ * Load a ZIP archive for js-dos
  *
- * @param urls - Array of file URLs to load
+ * @param zipUrl - URL of the ZIP archive
  * @param onProgress - Optional callback for progress updates
- * @returns Promise that resolves to array of loaded files
- * @throws {Error} If any file fails to load
+ * @param signal - Optional AbortSignal that cancels the download
+ * @returns Promise that resolves to the archive's bytes
+ * @throws {Error} If the download fails or is aborted
  */
-export async function loadFilesFromUrls(
-  urls: string[],
-  onProgress?: (progress: LoadProgress) => void
-): Promise<InitFileEntry[]> {
+export async function loadZipArchive(
+  zipUrl: string,
+  onProgress?: (progress: LoadProgress) => void,
+  signal?: AbortSignal
+): Promise<Uint8Array> {
   // Implementation...
 }
 ```
@@ -298,12 +335,12 @@ Use **conventional commits** for automatic versioning and changelog generation:
 - `chore:` - Maintenance tasks
 - `refactor:` - Code refactoring
 - `test:` - Test changes
-- `BREAKING CHANGE:` - Breaking changes (major version bump)
+- `BREAKING CHANGE:` footer, or `!` after the type (`feat!:`) - Breaking changes (major version bump)
 
 Examples:
 
 ```bash
-git commit -m "feat: add gamepad support"
+git commit -m "feat: add screenshot capture"
 git commit -m "fix: resolve audio sync issue"
 git commit -m "docs: update installation guide"
 ```
@@ -326,8 +363,8 @@ Releases are **fully automated** using [release-please](https://github.com/googl
 After merging PRs to main, release-please automatically creates a **Release PR**:
 
 1. **Check for Release PR** - Look for a PR titled "chore(main): release X.Y.Z"
-2. **Review the Release PR** - Check version number and auto-generated changelog
-3. **Merge the Release PR** - This triggers the GitHub release creation
+2. **Review the Release PR** - Check version number and auto-generated changelog. CI does not run on it: release-please opens it with the workflow's `GITHUB_TOKEN`, and GitHub starts no workflows for what that token does
+3. **Merge the Release PR** - This triggers the GitHub release creation, and, as any push to `main` does, CI and the deploy
 
 ### Versioning
 

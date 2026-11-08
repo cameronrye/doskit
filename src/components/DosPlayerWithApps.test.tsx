@@ -2,16 +2,19 @@
  * Tests for DosPlayerWithApps component
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { DosPlayerWithApps } from "./DosPlayerWithApps";
-import type { DosApp } from "../types/dos-app";
-import type { LoadedApp } from "./DemoSelector";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act, render, screen, waitFor, fireEvent, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { DosPlayerWithApps } from './DosPlayerWithApps';
+import type { DosApp } from '../types/dos-app';
+import type { DosOptions } from '../types/js-dos';
+import type { LoadedApp } from './DemoSelector';
 
 // Type definitions for test mocks
 interface DemoSelectorProps {
   onSelect: (loadedApp: LoadedApp) => void;
   onCancel: () => void;
+  notice?: string | null;
 }
 
 interface WindowWithMockApp extends Window {
@@ -21,158 +24,272 @@ interface WindowWithMockApp extends Window {
 
 // Create a mock app
 const mockApp: DosApp = {
-  id: "test-app",
-  name: "Test App",
-  description: "A test application",
-  author: "Test Author",
+  id: 'test-app',
+  name: 'Test App',
+  description: 'A test application',
+  author: 'Test Author',
   year: 2024,
-  loadMethod: "zip",
-  dosboxConf: "[cpu]\ncore=auto",
+  loadMethod: 'zip',
+  dosboxConf: '[cpu]\ncore=auto',
   loader: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
 };
 
 const mockLoadedApp: LoadedApp = {
   app: mockApp,
   files: new Uint8Array([1, 2, 3]),
-  dosboxConf: "[cpu]\ncore=auto",
+  dosboxConf: '[cpu]\ncore=auto',
 };
 
+// Chrome's words for a download that cannot reach the server
 const mockAppWithError: DosApp = {
   ...mockApp,
-  id: "error-app",
-  loader: vi.fn().mockRejectedValue(new Error("Failed to load")),
+  id: 'error-app',
+  loader: vi.fn().mockRejectedValue(new TypeError('Failed to fetch')),
 };
 
+/**
+ * Every emulator start, in order: the DOSBox config an app ran with, or 'default' for
+ * the DOS prompt (no files)
+ */
+const boots = vi.hoisted(() => [] as string[]);
+
+/** Every emulator stop, in order, named as in boots */
+const stops = vi.hoisted(() => [] as string[]);
+
 // Mock DosPlayer component
-vi.mock("./DosPlayer", () => ({
-  DosPlayer: ({
-    onReady,
-    onExit,
-  }: {
-    onReady?: () => void;
-    onExit?: () => void;
-  }) => (
-    <div data-testid="dos-player-mock">
-      <button onClick={onReady}>Trigger Ready</button>
-      <button onClick={onExit}>Trigger Exit</button>
-    </div>
-  ),
+vi.mock('./DosPlayer', async () => {
+  const { useEffect, useState } = await import('react');
+  return {
+    DosPlayer: ({
+      onReady,
+      onExit,
+      onError,
+      dosboxConf,
+      options,
+    }: {
+      onReady?: () => void;
+      onExit?: () => void;
+      onError?: (error: string) => void;
+      dosboxConf?: string;
+      options?: Partial<DosOptions>;
+    }) => {
+      // Like useDosEmulator, which starts js-dos once per mount and stops it on unmount
+      const [boot] = useState(options?.initFs ? (dosboxConf ?? 'no config') : 'default');
+      useEffect(() => {
+        boots.push(boot);
+        return () => {
+          stops.push(boot);
+        };
+      }, [boot]);
+      return (
+        <div data-testid="dos-player-mock" data-dosbox-conf={dosboxConf ?? 'default'}>
+          <button onClick={onReady}>Trigger Ready</button>
+          <button onClick={onExit}>Trigger Exit</button>
+          <button onClick={() => onError?.('Failed to initialize js-dos')}>Trigger Error</button>
+        </div>
+      );
+    },
+  };
+});
+
+const selectorDownload = vi.hoisted(() => ({
+  /** Finishes the download started with "Start Download", once there is one */
+  finish: (() => {}) as (loadedApp: LoadedApp) => void,
 }));
 
 // Mock DemoSelector component
-vi.mock("./DemoSelector", () => ({
-  DemoSelector: ({ onSelect, onCancel }: DemoSelectorProps) => (
-    <div data-testid="demo-selector-mock">
-      <button
-        onClick={() => onSelect((window as WindowWithMockApp).__mockLoadedApp!)}
-      >
-        Select App
-      </button>
-      <button onClick={onCancel}>Cancel</button>
-    </div>
-  ),
-}));
+vi.mock('./DemoSelector', async () => {
+  const { useEffect, useState } = await import('react');
+  return {
+    DemoSelector: ({ onSelect, onCancel, notice }: DemoSelectorProps) => {
+      // Like the real selector, a download still running when it unmounts is aborted
+      // and never delivered
+      const [controller] = useState(() => new AbortController());
+      useEffect(() => () => controller.abort(), [controller]);
+      const startDownload = () => {
+        new Promise<LoadedApp>((resolve) => {
+          selectorDownload.finish = resolve;
+        }).then((loadedApp) => {
+          if (!controller.signal.aborted) onSelect(loadedApp);
+        });
+      };
+      return (
+        <div data-testid="demo-selector-mock">
+          {notice && <p data-testid="selector-notice">{notice}</p>}
+          <button onClick={() => onSelect((window as WindowWithMockApp).__mockLoadedApp!)}>
+            Select App
+          </button>
+          <button onClick={startDownload}>Start Download</button>
+          <button onClick={onCancel}>Cancel</button>
+        </div>
+      );
+    },
+  };
+});
 
-describe("DosPlayerWithApps", () => {
+/** An app whose download finishes or fails when the test says so */
+function deferredApp(id: string) {
+  let finish: (files: Uint8Array) => void = () => {};
+  let fail: (error: unknown) => void = () => {};
+  const loader = vi.fn<DosApp['loader']>(
+    () =>
+      new Promise<Uint8Array>((resolve, reject) => {
+        finish = resolve;
+        fail = reject;
+      })
+  );
+  const app: DosApp = { ...mockApp, id, name: id, dosboxConf: `conf:${id}`, loader };
+  // Let the component's promise callbacks and the renders they cause run
+  const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+  return {
+    app,
+    loader,
+    /** The AbortSignal the component gave the download */
+    signal: () => loader.mock.lastCall?.[1],
+    finish: async () => {
+      finish(new Uint8Array([1]));
+      await settle();
+    },
+    fail: async (error: unknown) => {
+      fail(error);
+      await settle();
+    },
+  };
+}
+
+/**
+ * A stylesheet beside this file, read from disk: Vitest keeps imported CSS out of tests.
+ * node:fs comes through importActual, as the tests have the browser's types only.
+ */
+async function readStylesheet(file: string): Promise<string> {
+  const fs = await vi.importActual<{ readFileSync(file: URL, encoding: 'utf8'): string }>(
+    'node:fs'
+  );
+  return fs.readFileSync(new URL(file, import.meta.url), 'utf8');
+}
+
+/** WCAG's contrast ratio between two opaque colours as getComputedStyle gives them */
+function contrastRatio(foreground: string, background: string): number {
+  const luminance = (color: string) => {
+    const [r = 0, g = 0, b = 0, alpha = 1] = (color.match(/[\d.]+/g) ?? []).map(Number);
+    if (alpha < 1) throw new Error(`${color} is not an opaque colour`);
+    const linear = (channel: number) => {
+      const c = channel / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+  };
+  const [lighter = 0, darker = 0] = [luminance(foreground), luminance(background)].sort(
+    (a, b) => b - a
+  );
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+describe('DosPlayerWithApps', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    boots.length = 0;
+    stops.length = 0;
     // Store mock app and loaded app in window for the mock selector to use
     (window as WindowWithMockApp).__mockApp = mockApp;
     (window as WindowWithMockApp).__mockLoadedApp = mockLoadedApp;
   });
 
-  describe("Rendering", () => {
-    it("should render without crashing", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('Rendering', () => {
+    it('should render without crashing', () => {
       render(<DosPlayerWithApps />);
-      expect(screen.getByTestId("dos-player-mock")).toBeInTheDocument();
+      expect(screen.getByTestId('dos-player-mock')).toBeInTheDocument();
     });
 
-    it("should render DosPlayer component", () => {
+    it('should render DosPlayer component', () => {
       render(<DosPlayerWithApps />);
-      expect(screen.getByTestId("dos-player-mock")).toBeInTheDocument();
+      expect(screen.getByTestId('dos-player-mock')).toBeInTheDocument();
     });
 
-    it("should not show selector by default", () => {
+    it('should not show selector by default', () => {
       render(<DosPlayerWithApps showSelector={false} />);
-      expect(
-        screen.queryByTestId("demo-selector-mock"),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
     });
 
-    it("should show selector when showSelector prop is true", () => {
+    it('should show selector when showSelector prop is true', () => {
       render(<DosPlayerWithApps showSelector={true} />);
-      expect(screen.getByTestId("demo-selector-mock")).toBeInTheDocument();
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+    });
+
+    it('gives the selector the notice its parent passes, such as a link that named no app', () => {
+      render(<DosPlayerWithApps showSelector={true} selectorNotice='Application "x" not found.' />);
+
+      expect(screen.getByTestId('selector-notice')).toHaveTextContent('Application "x" not found.');
     });
   });
 
-  describe("Prop synchronization", () => {
-    it("should update selector visibility when showSelector prop changes", async () => {
+  describe('Prop synchronization', () => {
+    it('should update selector visibility when showSelector prop changes', async () => {
       const { rerender } = render(<DosPlayerWithApps showSelector={false} />);
 
       // Initially, selector should not be visible
-      expect(
-        screen.queryByTestId("demo-selector-mock"),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
 
       // Update the prop to show the selector
       rerender(<DosPlayerWithApps showSelector={true} />);
 
       // Selector should now be visible
       await waitFor(() => {
-        expect(screen.getByTestId("demo-selector-mock")).toBeInTheDocument();
+        expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
       });
     });
 
-    it("should hide selector when showSelector prop changes from true to false", async () => {
+    it('should hide selector when showSelector prop changes from true to false', async () => {
       const { rerender } = render(<DosPlayerWithApps showSelector={true} />);
 
       // Initially, selector should be visible
-      expect(screen.getByTestId("demo-selector-mock")).toBeInTheDocument();
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
 
       // Update the prop to hide the selector
       rerender(<DosPlayerWithApps showSelector={false} />);
 
       // Selector should now be hidden
       await waitFor(() => {
-        expect(
-          screen.queryByTestId("demo-selector-mock"),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
       });
     });
 
-    it("should respond to multiple prop changes", async () => {
+    it('should respond to multiple prop changes', async () => {
       const { rerender } = render(<DosPlayerWithApps showSelector={false} />);
 
       // Show selector
       rerender(<DosPlayerWithApps showSelector={true} />);
       await waitFor(() => {
-        expect(screen.getByTestId("demo-selector-mock")).toBeInTheDocument();
+        expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
       });
 
       // Hide selector
       rerender(<DosPlayerWithApps showSelector={false} />);
       await waitFor(() => {
-        expect(
-          screen.queryByTestId("demo-selector-mock"),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
       });
 
       // Show selector again
       rerender(<DosPlayerWithApps showSelector={true} />);
       await waitFor(() => {
-        expect(screen.getByTestId("demo-selector-mock")).toBeInTheDocument();
+        expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
       });
     });
   });
 
-  describe("Callbacks", () => {
-    it("should call onSelectorVisibilityChange when prop changes", async () => {
+  describe('Callbacks', () => {
+    // The parent knows: it is the one that opened it
+    it('does not report a selector that the showSelector prop opens', async () => {
       const onSelectorVisibilityChange = vi.fn();
       const { rerender } = render(
         <DosPlayerWithApps
           showSelector={false}
           onSelectorVisibilityChange={onSelectorVisibilityChange}
-        />,
+        />
       );
 
       // Update the prop to show the selector
@@ -180,92 +297,194 @@ describe("DosPlayerWithApps", () => {
         <DosPlayerWithApps
           showSelector={true}
           onSelectorVisibilityChange={onSelectorVisibilityChange}
-        />,
+        />
       );
 
       // Wait for the selector to be visible
       await waitFor(() => {
-        expect(screen.getByTestId("demo-selector-mock")).toBeInTheDocument();
+        expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
       });
+      expect(onSelectorVisibilityChange).not.toHaveBeenCalled();
     });
 
-    it("should call onReady callback when DosPlayer is ready", () => {
+    it('should call onReady callback when DosPlayer is ready', () => {
       const onReady = vi.fn();
       render(<DosPlayerWithApps onReady={onReady} />);
 
-      const readyButton = screen.getByText("Trigger Ready");
-      readyButton.click();
+      // fireEvent clicks inside act(), as the status a ready player sets is React state
+      fireEvent.click(screen.getByText('Trigger Ready'));
 
       expect(onReady).toHaveBeenCalled();
     });
 
-    it("should call onExit callback when DosPlayer exits", () => {
+    it('should call onExit callback when DosPlayer exits', () => {
       const onExit = vi.fn();
       render(<DosPlayerWithApps onExit={onExit} />);
 
-      const exitButton = screen.getByText("Trigger Exit");
-      exitButton.click();
+      fireEvent.click(screen.getByText('Trigger Exit'));
 
       expect(onExit).toHaveBeenCalled();
     });
   });
 
-  describe("Selector overlay", () => {
-    it("should render overlay when selector is shown", () => {
+  // What the page's footer shows
+  describe('Status', () => {
+    it('reports loading until js-dos reports the emulator ready', () => {
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps onStatusChange={onStatusChange} />);
+
+      expect(onStatusChange.mock.calls).toEqual([['loading']]);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['ready']]);
+    });
+
+    // A DOS prompt whose emulator failed, such as when emulators.js failed to download, which
+    // the next start loads again: the prompt the start page brings back starts afresh
+    it('reports loading for a new DOS prompt after an earlier one failed to start', () => {
+      const onStatusChange = vi.fn();
+      const { rerender } = render(<DosPlayerWithApps onStatusChange={onStatusChange} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Error' }));
+      expect(onStatusChange).toHaveBeenLastCalledWith('error');
+
+      // An app is requested, then the start page again before it has loaded
+      rerender(
+        <DosPlayerWithApps
+          requestedApp={deferredApp('stars').app}
+          onStatusChange={onStatusChange}
+        />
+      );
+      rerender(<DosPlayerWithApps requestedApp={null} onStatusChange={onStatusChange} />);
+
+      expect(onStatusChange).toHaveBeenLastCalledWith('loading');
+    });
+
+    it('reports loading while a requested app downloads and its emulator starts', async () => {
+      const stars = deferredApp('stars');
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps requestedApp={stars.app} onStatusChange={onStatusChange} />);
+
+      await stars.finish();
+
+      expect(onStatusChange.mock.calls).toEqual([['loading']]);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      expect(onStatusChange).toHaveBeenLastCalledWith('ready');
+    });
+
+    it('reports an error while the load error shows, and loading again on Try Again', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const stars = deferredApp('stars');
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps requestedApp={stars.app} onStatusChange={onStatusChange} />);
+
+      await stars.fail(new TypeError('Failed to fetch'));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['error']]);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['error'], ['loading']]);
+    });
+
+    it('reports an error when the emulator cannot start', () => {
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps onStatusChange={onStatusChange} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Error' }));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['error']]);
+    });
+
+    it('reports loading for the next app until its emulator is ready', () => {
+      const onStatusChange = vi.fn();
+      const { rerender } = render(<DosPlayerWithApps onStatusChange={onStatusChange} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      rerender(<DosPlayerWithApps showSelector={true} onStatusChange={onStatusChange} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['ready'], ['loading']]);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      expect(onStatusChange).toHaveBeenLastCalledWith('ready');
+    });
+
+    // Nothing runs then until the next start, as the footer said before
+    it('reports loading once DOS has exited', () => {
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps onStatusChange={onStatusChange} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Exit' }));
+
+      expect(onStatusChange.mock.calls).toEqual([['loading'], ['ready'], ['loading']]);
+    });
+
+    it('still passes the ready emulator and its exit on', () => {
+      const onReady = vi.fn();
+      const onExit = vi.fn();
+      render(<DosPlayerWithApps onReady={onReady} onExit={onExit} onStatusChange={() => {}} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Exit' }));
+
+      expect(onReady).toHaveBeenCalledOnce();
+      expect(onExit).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('Selector overlay', () => {
+    it('should render overlay when selector is shown', () => {
       const { container } = render(<DosPlayerWithApps showSelector={true} />);
-      const overlay = container.querySelector(".selector-overlay");
+      const overlay = container.querySelector('.selector-overlay');
       expect(overlay).toBeInTheDocument();
     });
 
-    it("should not render overlay when selector is hidden", () => {
+    it('should not render overlay when selector is hidden', () => {
       const { container } = render(<DosPlayerWithApps showSelector={false} />);
-      const overlay = container.querySelector(".selector-overlay");
+      const overlay = container.querySelector('.selector-overlay');
       expect(overlay).not.toBeInTheDocument();
     });
   });
 
-  describe("CSS classes", () => {
-    it("should apply custom className", () => {
-      const { container } = render(
-        <DosPlayerWithApps className="custom-class" />,
-      );
-      const wrapper = container.querySelector(".dos-player-with-apps");
-      expect(wrapper).toHaveClass("custom-class");
+  describe('CSS classes', () => {
+    it('should apply custom className', () => {
+      const { container } = render(<DosPlayerWithApps className="custom-class" />);
+      const wrapper = container.querySelector('.dos-player-with-apps');
+      expect(wrapper).toHaveClass('custom-class');
     });
 
-    it("should have default class", () => {
+    it('should have default class', () => {
       const { container } = render(<DosPlayerWithApps />);
-      const wrapper = container.querySelector(".dos-player-with-apps");
+      const wrapper = container.querySelector('.dos-player-with-apps');
       expect(wrapper).toBeInTheDocument();
     });
   });
 
-  describe("Overlay click handling", () => {
-    it("should close selector when overlay is clicked", async () => {
+  describe('Overlay click handling', () => {
+    it('should close selector when overlay is clicked', async () => {
       const { container } = render(<DosPlayerWithApps showSelector={true} />);
-      const overlay = container.querySelector(".selector-overlay");
+      const overlay = container.querySelector('.selector-overlay');
 
       expect(overlay).toBeInTheDocument();
 
       fireEvent.click(overlay!);
 
       await waitFor(() => {
-        expect(
-          screen.queryByTestId("demo-selector-mock"),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
       });
     });
 
-    it("should call onSelectorVisibilityChange when overlay is clicked", async () => {
+    it('should call onSelectorVisibilityChange when overlay is clicked', async () => {
       const onSelectorVisibilityChange = vi.fn();
       const { container } = render(
         <DosPlayerWithApps
           showSelector={true}
           onSelectorVisibilityChange={onSelectorVisibilityChange}
-        />,
+        />
       );
 
-      const overlay = container.querySelector(".selector-overlay");
+      const overlay = container.querySelector('.selector-overlay');
       fireEvent.click(overlay!);
 
       await waitFor(() => {
@@ -274,41 +493,35 @@ describe("DosPlayerWithApps", () => {
     });
   });
 
-  describe("App selection and loading", () => {
-    it("should accept loaded app from DemoSelector", async () => {
+  describe('App selection and loading', () => {
+    it('should accept loaded app from DemoSelector', async () => {
       render(<DosPlayerWithApps showSelector={true} />);
 
-      const selectButton = screen.getByText("Select App");
+      const selectButton = screen.getByText('Select App');
       fireEvent.click(selectButton);
 
       await waitFor(() => {
         // The mock DemoSelector passes the loaded app directly, so no loader call here
-        expect(
-          screen.queryByTestId("demo-selector-mock"),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
       });
     });
 
-    it("should hide selector after app is loaded", async () => {
+    it('should hide selector after app is loaded', async () => {
       render(<DosPlayerWithApps showSelector={true} />);
 
-      const selectButton = screen.getByText("Select App");
+      const selectButton = screen.getByText('Select App');
       fireEvent.click(selectButton);
 
       await waitFor(() => {
-        expect(
-          screen.queryByTestId("demo-selector-mock"),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
       });
     });
 
-    it("should call onAppChange when app is loaded", async () => {
+    it('should call onAppChange when app is loaded', async () => {
       const onAppChange = vi.fn();
-      render(
-        <DosPlayerWithApps showSelector={true} onAppChange={onAppChange} />,
-      );
+      render(<DosPlayerWithApps showSelector={true} onAppChange={onAppChange} />);
 
-      const selectButton = screen.getByText("Select App");
+      const selectButton = screen.getByText('Select App');
       fireEvent.click(selectButton);
 
       await waitFor(() => {
@@ -316,16 +529,16 @@ describe("DosPlayerWithApps", () => {
       });
     });
 
-    it("should call onSelectorVisibilityChange when app is loaded", async () => {
+    it('should call onSelectorVisibilityChange when app is loaded', async () => {
       const onSelectorVisibilityChange = vi.fn();
       render(
         <DosPlayerWithApps
           showSelector={true}
           onSelectorVisibilityChange={onSelectorVisibilityChange}
-        />,
+        />
       );
 
-      const selectButton = screen.getByText("Select App");
+      const selectButton = screen.getByText('Select App');
       fireEvent.click(selectButton);
 
       await waitFor(() => {
@@ -333,220 +546,669 @@ describe("DosPlayerWithApps", () => {
       });
     });
 
-    it("should show loading overlay while loading app", async () => {
-      const slowLoader = vi.fn().mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  files: [
-                    { path: "/test.exe", content: new Uint8Array([1, 2, 3]) },
-                  ],
-                  dosboxConf: "",
-                }),
-              100,
-            ),
-          ),
+    it('should handle app loading errors', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent('Error Loading Application');
+      // Explained, not the browser's own words
+      expect(alert).toHaveTextContent('Unable to connect to the server');
+      expect(alert).toHaveTextContent('Please check your internet connection and try again.');
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+    });
+
+    it('keeps the technical message in a collapsed details line', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+
+      const alert = await screen.findByRole('alert');
+      const technical = within(alert).getByText('Failed to fetch');
+      expect(technical.closest('details')).not.toHaveAttribute('open');
+      expect(technical).not.toBeVisible();
+      expect(within(alert).getByText('Details')).toBeVisible();
+    });
+
+    it('says that the app needs a connection until it has been opened online', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent("This application isn't available offline yet");
+      expect(alert).toHaveTextContent(
+        'Each application works offline once it has been opened while online.'
       );
-      const slowApp = { ...mockApp, loader: slowLoader };
-
-      render(<DosPlayerWithApps showSelector={false} />);
-
-      // Dispatch load-app-from-url event to trigger the loader
-      const event = new CustomEvent("load-app-from-url", {
-        detail: { app: slowApp },
-      });
-      window.dispatchEvent(event);
-
-      await waitFor(() => {
-        expect(screen.getByText("Loading application...")).toBeInTheDocument();
-      });
     });
 
-    it("should handle app loading errors", async () => {
-      const consoleError = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-
-      render(<DosPlayerWithApps showSelector={false} />);
-
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent("load-app-from-url", {
-        detail: { app: mockAppWithError },
-      });
-      window.dispatchEvent(event);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Error Loading Application"),
-        ).toBeInTheDocument();
-        expect(screen.getByText("Failed to load")).toBeInTheDocument();
-      });
-
-      consoleError.mockRestore();
-    });
-
-    it("should handle non-Error exceptions during loading", async () => {
-      const consoleError = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-      const appWithStringError: DosApp = {
+    it('explains an archive the server does not have', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const missing: DosApp = {
         ...mockApp,
-        loader: vi.fn().mockRejectedValue("String error"),
+        id: 'missing-app',
+        loader: vi.fn().mockRejectedValue(new Error('Failed to load ZIP: HTTP 404')),
       };
 
-      render(<DosPlayerWithApps showSelector={false} />);
+      render(<DosPlayerWithApps requestedApp={missing} />);
 
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent("load-app-from-url", {
-        detail: { app: appWithStringError },
-      });
-      window.dispatchEvent(event);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Failed to load application"),
-        ).toBeInTheDocument();
-      });
-
-      consoleError.mockRestore();
-    });
-
-    it("should show Try Again button on error", async () => {
-      vi.spyOn(console, "error").mockImplementation(() => {});
-
-      render(<DosPlayerWithApps showSelector={false} />);
-
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent("load-app-from-url", {
-        detail: { app: mockAppWithError },
-      });
-      window.dispatchEvent(event);
-
-      await waitFor(() => {
-        expect(
-          screen.getByRole("button", { name: /Try Again/i }),
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("should reset state when Try Again is clicked", async () => {
-      vi.spyOn(console, "error").mockImplementation(() => {});
-
-      render(<DosPlayerWithApps showSelector={false} />);
-
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent("load-app-from-url", {
-        detail: { app: mockAppWithError },
-      });
-      window.dispatchEvent(event);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Error Loading Application"),
-        ).toBeInTheDocument();
-      });
-
-      const tryAgainButton = screen.getByRole("button", { name: /Try Again/i });
-      fireEvent.click(tryAgainButton);
-
-      await waitFor(() => {
-        expect(
-          screen.queryByText("Error Loading Application"),
-        ).not.toBeInTheDocument();
-        expect(screen.getByTestId("demo-selector-mock")).toBeInTheDocument();
-      });
-    });
-
-    it("should call onAppChange with null when reset", async () => {
-      vi.spyOn(console, "error").mockImplementation(() => {});
-      const onAppChange = vi.fn();
-
-      render(
-        <DosPlayerWithApps showSelector={false} onAppChange={onAppChange} />,
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'The requested file was not found'
       );
-
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent("load-app-from-url", {
-        detail: { app: mockAppWithError },
-      });
-      window.dispatchEvent(event);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Error Loading Application"),
-        ).toBeInTheDocument();
-      });
-
-      onAppChange.mockClear();
-
-      const tryAgainButton = screen.getByRole("button", { name: /Try Again/i });
-      fireEvent.click(tryAgainButton);
-
-      await waitFor(() => {
-        expect(onAppChange).toHaveBeenCalledWith(null);
-      });
     });
 
-    it("should call onSelectorVisibilityChange with true when reset", async () => {
-      vi.spyOn(console, "error").mockImplementation(() => {});
-      const onSelectorVisibilityChange = vi.fn();
+    it('should handle non-Error exceptions during loading', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const appWithStringError: DosApp = {
+        ...mockApp,
+        loader: vi.fn().mockRejectedValue('String error'),
+      };
 
-      render(
-        <DosPlayerWithApps
-          showSelector={false}
-          onSelectorVisibilityChange={onSelectorVisibilityChange}
-        />,
-      );
+      render(<DosPlayerWithApps requestedApp={appWithStringError} />);
 
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent("load-app-from-url", {
-        detail: { app: mockAppWithError },
-      });
-      window.dispatchEvent(event);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Error Loading Application"),
-        ).toBeInTheDocument();
-      });
-
-      onSelectorVisibilityChange.mockClear();
-
-      const tryAgainButton = screen.getByRole("button", { name: /Try Again/i });
-      fireEvent.click(tryAgainButton);
-
-      await waitFor(() => {
-        expect(onSelectorVisibilityChange).toHaveBeenCalledWith(true);
-      });
+      expect(await screen.findByRole('alert')).toHaveTextContent('An unexpected error occurred');
     });
   });
 
-  describe("Cancel functionality", () => {
-    it("should hide selector when Cancel is clicked", async () => {
+  describe('Error overlay', () => {
+    beforeEach(() => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    it('offers Try Again and Choose Another Application', async () => {
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+
+      const alert = await screen.findByRole('alert');
+      expect(within(alert).getByRole('button', { name: 'Try Again' })).toBeInTheDocument();
+      expect(
+        within(alert).getByRole('button', { name: 'Choose Another Application' })
+      ).toBeInTheDocument();
+    });
+
+    it('loads the app that failed again on Try Again', async () => {
+      const stars = deferredApp('stars');
+      const onAppChange = vi.fn();
+      const onSelectorVisibilityChange = vi.fn();
+      render(
+        <DosPlayerWithApps
+          requestedApp={stars.app}
+          onAppChange={onAppChange}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+      await stars.fail(new Error('Failed to load ZIP: HTTP 503'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+
+      expect(stars.loader).toHaveBeenCalledTimes(2);
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+      expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
+
+      await stars.finish();
+
+      expect(boots).toEqual(['conf:stars']);
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(stars.app);
+      expect(onSelectorVisibilityChange).not.toHaveBeenCalled();
+    });
+
+    it('shows the error again when Try Again fails too', async () => {
+      const stars = deferredApp('stars');
+      render(<DosPlayerWithApps requestedApp={stars.app} />);
+      await stars.fail(new TypeError('Failed to fetch'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+      await stars.fail(new Error('Failed to load ZIP: HTTP 404'));
+
+      expect(screen.getByRole('alert')).toHaveTextContent('The requested file was not found');
+      expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
+      expect(boots).toEqual([]);
+    });
+
+    // Normal-size text needs 4.5:1. On the page's accent colour, Try Again's white text had
+    // 2.75:1, and 3.12:1 in the light colour scheme.
+    it('draws Try Again in colours of its own, with 4.5:1 contrast between them', async () => {
+      const sheet = document.createElement('style');
+      sheet.textContent = await readStylesheet('DosPlayerWithApps.css');
+      document.head.append(sheet);
+      try {
+        render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+
+        const style = getComputedStyle(await screen.findByRole('button', { name: 'Try Again' }));
+
+        expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+      } finally {
+        sheet.remove();
+      }
+    });
+
+    it('focuses Try Again when the error appears', async () => {
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+
+      // The button can be in the page a moment before the effect that focuses it has run
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus());
+    });
+
+    it('reaches both buttons from the keyboard', async () => {
+      const user = userEvent.setup();
+      const stars = deferredApp('stars');
+      render(<DosPlayerWithApps requestedApp={stars.app} />);
+      await stars.fail(new TypeError('Failed to fetch'));
+
+      await user.tab();
+      expect(screen.getByRole('button', { name: 'Choose Another Application' })).toHaveFocus();
+      await user.tab({ shift: true });
+      expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
+      await user.keyboard('{Enter}');
+
+      expect(stars.loader).toHaveBeenCalledTimes(2);
+    });
+
+    it('leaves the focus in a selector opened during the load', async () => {
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      rerender(<DosPlayerWithApps requestedApp={stars.app} showSelector={true} />);
+      const pick = screen.getByRole('button', { name: 'Select App' });
+      act(() => pick.focus());
+
+      await stars.fail(new TypeError('Failed to fetch'));
+
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(pick).toHaveFocus();
+
+      // Closing the selector hands the focus to Try Again
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
+    });
+
+    it('runs the default DOS prompt under the selector on Choose Another Application', async () => {
+      const onAppChange = vi.fn();
+      const onSelectorVisibilityChange = vi.fn();
+      render(
+        <DosPlayerWithApps
+          requestedApp={mockAppWithError}
+          onAppChange={onAppChange}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+      await screen.findByRole('alert');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Choose Another Application' }));
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+      expect(boots).toEqual(['default']);
+      expect(mockAppWithError.loader).toHaveBeenCalledOnce();
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(null);
+      expect(onSelectorVisibilityChange).toHaveBeenCalledExactlyOnceWith(true);
+    });
+
+    it("boots the default DOS config on Choose Another Application, not the last app's", async () => {
+      const { rerender } = render(<DosPlayerWithApps showSelector={true} />);
+
+      // Run an app with its own DOSBox config
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      expect(screen.getByTestId('dos-player-mock')).toHaveAttribute(
+        'data-dosbox-conf',
+        '[cpu]\ncore=auto'
+      );
+
+      // A later load fails and the user picks another application
+      rerender(<DosPlayerWithApps showSelector={true} requestedApp={mockAppWithError} />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Choose Another Application' }));
+
+      expect(screen.getByTestId('dos-player-mock')).toHaveAttribute('data-dosbox-conf', 'default');
+    });
+  });
+
+  describe('Requested apps', () => {
+    it('runs a requested app without booting the default prompt first', async () => {
+      const stars = deferredApp('stars');
+      render(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+      expect(boots).toEqual([]);
+
+      await stars.finish();
+
+      expect(boots).toEqual(['conf:stars']);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+    });
+
+    // Every app in apps.config.ts has an empty dosboxConf and loads its config, autoexec and
+    // all, on demand
+    it('boots a requested app with the DOSBox config it loads', async () => {
+      const stars = deferredApp('stars');
+      const app: DosApp = {
+        ...stars.app,
+        dosboxConf: '',
+        loadDosboxConf: vi.fn(async () => '[autoexec]\nSTARS.EXE'),
+      };
+      render(<DosPlayerWithApps requestedApp={app} />);
+
+      await stars.finish();
+
+      expect(boots).toEqual(['[autoexec]\nSTARS.EXE']);
+      expect(screen.getByTestId('dos-player-mock')).toHaveAttribute(
+        'data-dosbox-conf',
+        '[autoexec]\nSTARS.EXE'
+      );
+    });
+
+    it('reports the requested app once it runs', async () => {
+      const stars = deferredApp('stars');
+      const onAppChange = vi.fn();
+      render(<DosPlayerWithApps requestedApp={stars.app} onAppChange={onAppChange} />);
+
+      expect(onAppChange).not.toHaveBeenCalled();
+
+      await stars.finish();
+
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(stars.app);
+    });
+
+    it('switches to a newly requested app once it has loaded', async () => {
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={null} />);
+
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+      await stars.finish();
+
+      expect(boots).toEqual(['default', 'conf:stars']);
+    });
+
+    it('stops the running app as soon as another app is requested', async () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      await stars.finish();
+
+      // Going back or forward to another app's URL
+      rerender(<DosPlayerWithApps requestedApp={rotate.app} />);
+
+      // Nothing runs, or plays sound, while the next app downloads
+      expect(stops).toEqual(['conf:stars']);
+      expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+
+      await rotate.finish();
+
+      expect(boots).toEqual(['conf:stars', 'conf:3drotate']);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+    });
+
+    it('stops the default prompt as soon as an app is requested', () => {
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={null} />);
+
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      expect(stops).toEqual(['default']);
+      expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
+    });
+
+    it('runs nothing behind the error of a newly requested app that fails to load', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const stars = deferredApp('stars');
+      const broken = deferredApp('broken');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      await stars.finish();
+
+      rerender(<DosPlayerWithApps requestedApp={broken.app} />);
+      await broken.fail(new TypeError('Failed to fetch'));
+
+      expect(screen.getByRole('alert')).toHaveTextContent('Error Loading Application');
+      expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
+      expect(boots).toEqual(['conf:stars']);
+      expect(stops).toEqual(['conf:stars']);
+    });
+
+    it('does not reload an app picked in the selector when it is requested next', () => {
+      // App mirrors the pick into requestedApp once the selector reports it
+      const { rerender } = render(<DosPlayerWithApps showSelector={true} requestedApp={null} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      rerender(<DosPlayerWithApps showSelector={true} requestedApp={mockApp} />);
+
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+      expect(mockApp.loader).not.toHaveBeenCalled();
+      expect(boots).toEqual(['default', '[cpu]\ncore=auto']);
+      // The picked app goes on running
+      expect(stops).toEqual(['default']);
+    });
+
+    // Such as a demo that has ended at the DOS prompt, or a program the user quit
+    it('starts the running app again when it is picked in the selector again', () => {
+      const { rerender } = render(<DosPlayerWithApps showSelector={true} requestedApp={null} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      // App mirrors the pick into requestedApp, and opens the selector on Change Application
+      rerender(<DosPlayerWithApps showSelector={false} requestedApp={mockApp} />);
+      rerender(<DosPlayerWithApps showSelector={true} requestedApp={mockApp} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(boots).toEqual(['default', '[cpu]\ncore=auto', '[cpu]\ncore=auto']);
+      expect(stops).toEqual(['default', '[cpu]\ncore=auto']);
+    });
+
+    it('keeps the DOS prompt Choose Another Application started when no app is requested next', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const onAppChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps requestedApp={mockAppWithError} onAppChange={onAppChange} />
+      );
+      fireEvent.click(await screen.findByRole('button', { name: 'Choose Another Application' }));
+
+      // App takes the app out of the URL once it is told
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(null);
+      rerender(<DosPlayerWithApps requestedApp={null} onAppChange={onAppChange} />);
+
+      expect(boots).toEqual(['default']);
+      expect(stops).toEqual([]);
+    });
+
+    it('leaves the selector open when a requested app finishes loading behind it', async () => {
+      const stars = deferredApp('stars');
+      const onSelectorVisibilityChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps
+          requestedApp={stars.app}
+          showSelector={false}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+
+      // The user opens the selector while the deep link is still loading
+      rerender(
+        <DosPlayerWithApps
+          requestedApp={stars.app}
+          showSelector={true}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+      await stars.finish();
+
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+      expect(onSelectorVisibilityChange).not.toHaveBeenCalledWith(false);
+    });
+
+    it('stops the running app and boots the default prompt when no app is requested', async () => {
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      await stars.finish();
+
+      rerender(<DosPlayerWithApps requestedApp={null} />);
+
+      expect(boots).toEqual(['conf:stars', 'default']);
+      expect(screen.getByTestId('dos-player-mock')).toHaveAttribute('data-dosbox-conf', 'default');
+    });
+
+    it('replaces a load error with the default prompt when no app is requested', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { rerender } = render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+      expect(await screen.findByText('Error Loading Application')).toBeInTheDocument();
+
+      rerender(<DosPlayerWithApps requestedApp={null} />);
+
+      expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+      expect(boots).toEqual(['default']);
+    });
+
+    it('clears an earlier load error when another app is requested', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+      expect(await screen.findByText('Error Loading Application')).toBeInTheDocument();
+
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+      await stars.finish();
+      expect(boots).toEqual(['conf:stars']);
+    });
+  });
+
+  // A download that stalls would keep it up for good
+  describe('Loading overlay', () => {
+    it('tells screen readers that the app is loading', () => {
+      render(<DosPlayerWithApps requestedApp={deferredApp('stars').app} />);
+
+      // Only the message: the Cancel button is no part of what is announced
+      expect(screen.getByRole('status')).toHaveTextContent(/^Loading application\.\.\.$/);
+    });
+
+    it('stops the load on Cancel and runs the default DOS prompt under the selector', async () => {
+      const stars = deferredApp('stars');
+      const onAppChange = vi.fn();
+      const onSelectorVisibilityChange = vi.fn();
+      render(
+        <DosPlayerWithApps
+          requestedApp={stars.app}
+          onAppChange={onAppChange}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(stars.signal()?.aborted).toBe(true);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+      expect(boots).toEqual(['default']);
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(null);
+      expect(onSelectorVisibilityChange).toHaveBeenCalledExactlyOnceWith(true);
+
+      // A download that finishes all the same is dropped
+      await stars.finish();
+
+      expect(boots).toEqual(['default']);
+      expect(onAppChange).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('Overlapping loads', () => {
+    it('aborts the download of a request that a newer one supersedes', () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      expect(stars.signal()?.aborted).toBe(false);
+
+      rerender(<DosPlayerWithApps requestedApp={rotate.app} />);
+
+      expect(stars.signal()?.aborted).toBe(true);
+      expect(rotate.signal()?.aborted).toBe(false);
+    });
+
+    it('ignores a superseded load that finishes after the newer one', async () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const onAppChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps requestedApp={stars.app} onAppChange={onAppChange} />
+      );
+      rerender(<DosPlayerWithApps requestedApp={rotate.app} onAppChange={onAppChange} />);
+
+      await rotate.finish();
+      await stars.finish();
+
+      expect(boots).toEqual(['conf:3drotate']);
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(rotate.app);
+    });
+
+    it('ignores a superseded load that finishes before the newer one', async () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      rerender(<DosPlayerWithApps requestedApp={rotate.app} />);
+
+      await stars.finish();
+
+      expect(boots).toEqual([]);
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+
+      await rotate.finish();
+
+      expect(boots).toEqual(['conf:3drotate']);
+    });
+
+    it('does not report a superseded load that fails', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const broken = deferredApp('broken');
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={broken.app} />);
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      await broken.fail(new Error('Network down'));
+
+      expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+      expect(consoleError).not.toHaveBeenCalled();
+      await stars.finish();
+      expect(boots).toEqual(['conf:stars']);
+    });
+
+    it('drops a load still running when no app is requested', async () => {
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={null} />);
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      rerender(<DosPlayerWithApps requestedApp={null} />);
+
+      expect(stars.signal()?.aborted).toBe(true);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+      await stars.finish();
+      // The request for stars stopped the default prompt, which starts again
+      expect(boots).toEqual(['default', 'default']);
+    });
+
+    it('loads the stopped app again when the request returns to it during another load', async () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={rotate.app} />);
+      await rotate.finish();
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      rerender(<DosPlayerWithApps requestedApp={rotate.app} />);
+
+      expect(stars.signal()?.aborted).toBe(true);
+      expect(rotate.loader).toHaveBeenCalledTimes(2);
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+      await stars.finish();
+      await rotate.finish();
+      expect(boots).toEqual(['conf:3drotate', 'conf:3drotate']);
+    });
+
+    it('lets an app picked in the selector win over a load that stopped the running app', async () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const onAppChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps requestedApp={rotate.app} onAppChange={onAppChange} />
+      );
+      await rotate.finish();
+      rerender(<DosPlayerWithApps requestedApp={stars.app} onAppChange={onAppChange} />);
+      // The user opens the selector during the download and picks another app
+      rerender(
+        <DosPlayerWithApps requestedApp={stars.app} showSelector={true} onAppChange={onAppChange} />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(stars.signal()?.aborted).toBe(true);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+      await stars.finish();
+      expect(boots).toEqual(['conf:3drotate', '[cpu]\ncore=auto']);
+      expect(onAppChange).toHaveBeenLastCalledWith(mockApp);
+    });
+
+    it('lets an app picked in the selector win over a requested app still loading', async () => {
+      const stars = deferredApp('stars');
+      const onAppChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps requestedApp={stars.app} onAppChange={onAppChange} />
+      );
+      // The user opens the selector during the download and picks another app
+      rerender(
+        <DosPlayerWithApps requestedApp={stars.app} showSelector={true} onAppChange={onAppChange} />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(stars.signal()?.aborted).toBe(true);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+      await stars.finish();
+      expect(boots).toEqual(['[cpu]\ncore=auto']);
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(mockApp);
+    });
+
+    it('clears a load error when an app is picked in the selector', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { rerender } = render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+      expect(await screen.findByText('Error Loading Application')).toBeInTheDocument();
+      rerender(<DosPlayerWithApps requestedApp={mockAppWithError} showSelector={true} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+      expect(boots).toEqual(['[cpu]\ncore=auto']);
+    });
+
+    it('drops a download the selector still has running when a new request arrives', async () => {
+      const stars = deferredApp('stars');
+      const onAppChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps requestedApp={stars.app} onAppChange={onAppChange} />
+      );
+      await stars.finish();
+      // The user starts another app from the selector, then goes back to the start page,
+      // which keeps the selector open
+      rerender(
+        <DosPlayerWithApps requestedApp={stars.app} showSelector={true} onAppChange={onAppChange} />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Start Download' }));
+      rerender(
+        <DosPlayerWithApps requestedApp={null} showSelector={true} onAppChange={onAppChange} />
+      );
+
+      await act(async () => selectorDownload.finish(mockLoadedApp));
+
+      expect(boots).toEqual(['conf:stars', 'default']);
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(stars.app);
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+    });
+
+    it('aborts a requested load when unmounted', () => {
+      const stars = deferredApp('stars');
+      const { unmount } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      unmount();
+
+      expect(stars.signal()?.aborted).toBe(true);
+    });
+  });
+
+  describe('Cancel functionality', () => {
+    it('should hide selector when Cancel is clicked', async () => {
       render(<DosPlayerWithApps showSelector={true} />);
 
-      const cancelButton = screen.getByText("Cancel");
+      const cancelButton = screen.getByText('Cancel');
       fireEvent.click(cancelButton);
 
       await waitFor(() => {
-        expect(
-          screen.queryByTestId("demo-selector-mock"),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
       });
     });
 
-    it("should call onSelectorVisibilityChange when Cancel is clicked", async () => {
+    it('should call onSelectorVisibilityChange when Cancel is clicked', async () => {
       const onSelectorVisibilityChange = vi.fn();
       render(
         <DosPlayerWithApps
           showSelector={true}
           onSelectorVisibilityChange={onSelectorVisibilityChange}
-        />,
+        />
       );
 
-      const cancelButton = screen.getByText("Cancel");
+      const cancelButton = screen.getByText('Cancel');
       fireEvent.click(cancelButton);
 
       await waitFor(() => {

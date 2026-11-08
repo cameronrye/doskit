@@ -4,106 +4,72 @@
  * Licensed under the MIT License
  *
  * Panic Configuration
- * Configuration for running the Panic demo by Future Crew (1992)
+ * Configuration for running the Panic demo by Future Crew (1993)
  */
 
-import { loadZipArchive as loadZip } from "../utils/diskLoader";
-import { presets } from "../utils/dosboxConfigBuilder";
-
-// Re-export for lazy loading
-export { loadZip as loadZipArchive };
+import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * Panic demo (hosted locally)
- * A classic demo by Future Crew (1992)
+ * A classic demo by Future Crew (1993)
  *
  * Source: https://files.scene.org/view/demos/groups/future_crew/demos/panic.zip
  * License: Freeware
- * Released at The Party 1992 (2nd place)
+ * Shown at The Party 1992 (2nd place), released on 4 February 1993
  */
-export const panicZipUrl = "/demos/panic.zip";
+export const panicZipUrl = '/demos/panic.zip';
 
 /**
  * DOSBox configuration optimized for Panic
  *
- * Panic requirements:
- * - 386 CPU minimum (486 recommended)
- * - VGA graphics
- * - Sound Blaster compatible sound card
- * - Memory: 4MB RAM
- * - Requires EMS memory
+ * Panic requirements (PANIC.NFO):
+ * - A fast 386 or 486, and a fast VGA adapter
+ * - About 600 KB of conventional memory
+ * - For the music, a Sound Blaster or Sound Blaster Pro and 1 MB of EMS
  *
  * This configuration uses:
- * - 486 CPU with auto cycles
+ * - Auto CPU core and type, at a fixed 30000 cycles. 'auto' would give it 3,000 cycles/ms, at
+ *   which its opening runs seconds behind and some effects drop to 22-45 frames a second; at
+ *   'max' it plays no sound.
  * - Sound Blaster 16 for audio
  * - Standard VGA graphics
- * - 4MB memory with EMS enabled
- *
- * Based on the original demo requirements
+ * - DOSBox's default 16 MB of memory, with EMS enabled
  */
 export const panicDosboxConf = presets
   .demo()
-  .setCPU({ core: "auto", cputype: "486", cycles: "auto" })
-  .setMemory({ memsize: 4 })
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 30000 })
   .setSoundBlaster({
-    sbtype: "sb16",
+    sbtype: 'sb16',
     sbbase: 220,
     irq: 7,
     dma: 1,
     hdma: 5,
-    oplmode: "auto",
+    oplmode: 'auto',
   })
-  .setJoystick({ joysticktype: "none" })
+  .setJoystick({ joysticktype: 'none' })
   .addAutoexec(
-    "@echo off",
-    "echo.",
-    "echo ========================================",
-    "echo   Panic by Future Crew",
-    "echo   1992 - The Party 1992 (2nd place)",
-    "echo ========================================",
-    "echo.",
-    "echo A classic demo featuring:",
-    "echo - Voxel fractals",
-    "echo - Shadebobs",
-    "echo - Hard techno music by Purple Motion",
-    "echo - Dark atmosphere",
-    "echo.",
-    "echo Audio: Sound Blaster 16",
-    "echo CPU: 486 (Auto Cycles)",
-    "echo.",
-    "echo Mounting C: drive...",
-    "mount c .",
-    "c:",
-    "echo.",
-    "echo Starting Panic...",
-    "echo.",
-    "PANIC.EXE",
+    '@echo off',
+    'echo.',
+    'echo ========================================',
+    'echo   Panic by Future Crew',
+    'echo   1993 - 2nd at The Party 1992',
+    'echo ========================================',
+    'echo.',
+    'echo A classic demo featuring:',
+    'echo - Voxel fractals',
+    'echo - Shadebobs',
+    'echo - Hard techno music by Purple Motion',
+    'echo - Dark atmosphere',
+    'echo.',
+    'echo Audio: Sound Blaster 16',
+    'echo CPU: 30000 cycles',
+    'echo.',
+    'echo Mounting C: drive...',
+    'mount c .',
+    'c:',
+    'echo.',
+    'echo Starting Panic...',
+    'echo.',
+    'PANIC.EXE'
   )
   .build();
-
-/**
- * Configuration metadata
- */
-export const panicMetadata = {
-  name: "Panic",
-  author: "Future Crew",
-  year: 1992,
-  description:
-    "A classic demo that came 2nd at The Party 1992. Features voxel fractals, shadebobs, and hard techno music with a dark atmosphere.",
-  requirements: {
-    cpu: "386 or better (486 recommended)",
-    memory: "4MB RAM",
-    graphics: "VGA",
-    sound: "Sound Blaster compatible",
-  },
-  license: "Freeware",
-  party: "The Party 1992",
-  ranking: "2nd place",
-  notes: [
-    "Came 2nd place at The Party 1992",
-    "Features impressive voxel fractal rendering",
-    "Music by Purple Motion (Jonne Valtonen)",
-    "Known for its dark atmosphere and hard techno soundtrack",
-    "Released between Unreal and Second Reality",
-  ],
-};

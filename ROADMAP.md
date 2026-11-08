@@ -2,62 +2,75 @@
 
 > **Mission**: Preserve and celebrate vintage DOS demoscene productions, audio applications, and legacy software through modern web technology.
 
-**Current Status**: Foundation Complete (v1.0.1)
+**Current Status**: Foundation Complete • Phase 1 (Content Expansion) in progress  
 **Focus Areas**: Demoscene Productions • Music Trackers • Legacy Productivity Software  
 **Explicitly Excluded**: Gaming applications (this is not a DOS game emulator)
 
+The plan no longer carries target dates: the quarters it first set, Q2 2025 to Q2 2026, have passed, and no new ones have been set. The phases keep their original order.
+
 ---
 
-## Current State (Q1 2025)
+## Current State (November 2026)
 
 ### ✅ Completed
 
 - Solid technical foundation (React 19, TypeScript, js-dos WebAssembly)
-- Cross-platform PWA with offline support
-- Performance optimizations (WebGL, OffscreenCanvas, worker threads)
-- Comprehensive documentation and test coverage (70%+)
-- Deep linking support
+- Cross-platform PWA with offline support: after the first visit the app and its DOS prompt work offline, and each application does once it has been opened online
+- Performance optimizations (WebGL rendering, DOSBox in a worker thread)
+- Comprehensive documentation and test coverage (about 98% of lines)
+- Deep linking support (`/?app=<id>`)
 - Mobile-responsive design
-- 2 DOS applications configured:
+- CI on every pull request to `main` (lint, formatting, type check, tests, the build and a check of its CSS against the oldest supported browsers, and an audit of the production dependencies); `main` deploys only once it passes
+- 10 DOS applications configured:
   - **Second Reality** (1993 demo by Future Crew)
-  - **Impulse Tracker** (1995 music tracker by Jeffrey Lim)
+  - **Unreal** (1992 demo by Future Crew)
+  - **Panic** (1993 demo by Future Crew)
+  - **Crystal Dream 2** (1993 demo by Triton)
+  - **Starport BBS Intro II** (1993 BBS intro by Future Crew)
+  - **Squid BBS Intro** (1994 BBS intro by cld & The Doctor)
+  - **3D Rotation Demo** (1993 tutorial example by Draeden of VLA)
+  - **Starfield Effect** (1993 tutorial example by Draeden of VLA)
+  - **Impulse Tracker** (music tracker by Jeffrey Lim, in its 1997 release)
+  - **Scream Tracker 3** (1994 music tracker by Future Crew)
 
 ### 🎯 Key Opportunities
 
-- Expand application library from 2 to 50+ applications
+- Expand application library from 10 to 50+ applications
 - Add demoscene-specific features (party metadata, rankings)
 - Implement save state management
-- Build community features and contribution system
+- Build community features (the contribution path for new applications is in place, see Phase 5)
 - Create curated collections and playlists
 
 ---
 
-## Phase 1: Content Expansion (Q2 2025)
+## Phase 1: Content Expansion (In Progress)
 
 **Goal**: Establish DosKit as a comprehensive demoscene and audio application platform
+
+DosKit runs DOS programs only, so an entry below that was released for another platform, such as Windows or the Amiga, needs a DOS version before it can be added.
 
 ### Priority 1: Expand Demo Library
 
 **Target**: Add 15 classic demoscene productions
 
+**Progress**: Unreal, Panic and Crystal Dream 2 from the list below are in, along with Starport BBS Intro II, Squid BBS Intro, 3D Rotation Demo and Starfield Effect.
+
 #### Legendary Demos to Add
 
-- **Future Crew**: Unreal (1992), Panic (1992)
-- **Triton**: Crystal Dream 2 (1993)
+- **Future Crew**: Unreal (1992), Panic (1993) ✅
+- **Triton**: Crystal Dream 2 (1993) ✅
 - **Orange**: X14 (1995)
-- **Farbrausch**: fr-08: .the .product (2000)
-- **Conspiracy**: Debris (2007)
-- **Fairlight**: Uncovering Static (2008)
-- **Andromeda Software Development**: Lifeforce (2007)
-- **Rgba**: Elevated (2009) - 4KB intro
-- **Mercury**: Blue Flame (1996)
-- **Sanity**: World of Commodore (1992)
+- **Farbrausch**: fr-08: .the .product (2000, Windows), fr-041: debris. (2007, Windows)
+- **Fairlight & Alcatraz**: Uncovering Static (2011, Windows)
+- **Andromeda Software Development**: Lifeforce (2007, Windows)
+- **Rgba & TBC**: Elevated (2009, Windows) - 4KB intro
+- **Sanity**: World of Commodore (1992, Amiga)
 
 **Implementation**:
 
-- Create config files in `src/dos-apps/demos/`
+- Create config files in `src/dos-apps/` (`src/dos-apps/README.md` walks through adding an app)
 - Host ZIP archives in `public/demos/`
-- Add comprehensive metadata (party, year, ranking, credits)
+- Add comprehensive metadata (party, year, ranking, credits); the app registry has author and year so far
 - Include links to Pouet.net, YouTube, Scene.org
 - Add screenshots/thumbnails for each demo
 
@@ -68,15 +81,15 @@
 #### Trackers to Add
 
 - **FastTracker II** (1994) - Most popular tracker, XM format
-- **Scream Tracker 3** (1994) - S3M format creator
+- **Scream Tracker 3** (1994) - S3M format creator ✅
 - **ModPlug Tracker** (1997) - Advanced features
 - **Protracker** (DOS version) - Classic Amiga-style
 - **Adlib Tracker II** (1995) - FM synthesis specialist
 
 **Implementation**:
 
-- Optimize `musicTracker()` DOSBox preset for each
-- Include sample module files for testing
+- Optimize `musicTracker()` DOSBox preset for each (Impulse Tracker and Scream Tracker 3 start from it)
+- Include sample module files for testing (the Impulse Tracker and Scream Tracker 3 archives ship with example modules)
 - Add keyboard shortcut documentation
 - Create tracker comparison guide
 
@@ -96,14 +109,14 @@
 
 **Deliverables**:
 
-- 25 total DOS applications (from 2)
+- 25 total DOS applications
 - Rich metadata for all applications
 - Screenshots and thumbnails
 - Comprehensive documentation
 
 ---
 
-## Phase 2: Core Features (Q3 2025)
+## Phase 2: Core Features (Not Started)
 
 **Goal**: Essential user experience improvements
 
@@ -139,7 +152,7 @@ interface SearchFilters {
 
 **Capabilities**:
 
-- Save/load emulator state to IndexedDB
+- Save/load an application's DOS file system to IndexedDB (js-dos saves files, such as saved modules and settings, not the running machine)
 - Multiple save slots per application
 - Auto-save on exit (optional)
 - Quick save/load keyboard shortcuts
@@ -148,30 +161,33 @@ interface SearchFilters {
 **js-dos Integration**:
 
 ```typescript
-// Save state
-const state = await ci.save();
-await saveToIndexedDB(appId, slotId, state);
+// Save state: js-dos packs the changes to the DOS file system into a bundle
+const changes = await ci.persist(true);
+if (changes) await saveToIndexedDB(appId, slotId, changes);
 
-// Load state
-const state = await loadFromIndexedDB(appId, slotId);
-await ci.load(state);
+// Load state: there is no ci.load(); restart the app with the saved bundle after its archive
+// (js-dos unpacks initFs's bundles in order, so the saved changes land on top of the archive)
+const saved = await loadFromIndexedDB(appId, slotId);
+Dos(container, { ...options, initFs: [archive, saved] });
 ```
 
 ### Feature 3: User Preferences & Settings
 
 **Impact**: MEDIUM | **Effort**: LOW
 
+**Status**: js-dos's settings panel already keeps the volume, the mouse sensitivity, the aspect ratio, the image rendering, the theme and the on-screen controls' scale in `localStorage`, and DosKit passes them to each new player (`getStoredSettings()` in `src/config/jsdos.config.ts`), so they last through app switches and reloads; the rest below is open.
+
 **Settings to Persist**:
 
-- Volume level
+- Volume level ✅
 - Render backend preference (WebGL/Canvas)
 - CPU cycles preference
-- Aspect ratio preference
+- Aspect ratio preference ✅
 - Recently used applications (last 10)
 - Favorites/bookmarks
 - Auto-save preference
 
-**Storage**: Use localStorage for preferences, IndexedDB for save states
+**Storage**: Use localStorage for preferences, IndexedDB for save states (`src/utils/storage.ts` already wraps localStorage so that blocked or full storage never throws)
 
 ### Feature 4: Screenshot Capture
 
@@ -197,6 +213,8 @@ downloadBlob(blob, `${appName}-${timestamp}.png`);
 
 **Impact**: MEDIUM | **Effort**: LOW
 
+The application selector already works from the keyboard (the arrow keys, Home, End, Space, Enter and Escape); DosKit has none of the global shortcuts below yet. While the page has the focus, js-dos sends every key to the DOS program, so a shortcut DosKit takes is a key the program loses: `Ctrl+S` below, for one, is Scream Tracker 3's quicksave.
+
 **Global Shortcuts**:
 
 - `Ctrl+O` - Open application selector
@@ -218,7 +236,7 @@ downloadBlob(blob, `${appName}-${timestamp}.png`);
 
 ---
 
-## Phase 3: Demoscene Features (Q4 2025)
+## Phase 3: Demoscene Features (Not Started)
 
 **Goal**: Demoscene-specific enhancements and community features
 
@@ -333,7 +351,7 @@ interface DemoCollection {
 
 ---
 
-## Phase 4: Audio Features (Q1 2026)
+## Phase 4: Audio Features (Not Started)
 
 **Goal**: Enhanced music tracker and audio application support
 
@@ -452,13 +470,15 @@ interface AudioRecorder {
 
 ---
 
-## Phase 5: Community & Polish (Q2 2026)
+## Phase 5: Community & Polish (Partly Done)
 
 **Goal**: Community engagement and platform refinement
 
 ### Feature 1: Contribution System
 
 **Impact**: HIGH | **Effort**: MEDIUM
+
+**Status**: Largely in place. `src/dos-apps/README.md` gives the steps and templates for a new application, CI runs `src/config/apps.config.test.ts` on every pull request to check each registered application, CONTRIBUTING.md sets out the guidelines, and `main` deploys once CI passes. A community review process is still open.
 
 **Capabilities**:
 
@@ -479,6 +499,8 @@ interface AudioRecorder {
 ### Feature 2: Share Links with Timestamps
 
 **Impact**: MEDIUM | **Effort**: LOW
+
+**Status**: Links to an application (`?app=secondreality`) work; timestamps, share buttons, embed codes and QR codes do not exist yet.
 
 **Capabilities**:
 
@@ -510,16 +532,18 @@ interface AudioRecorder {
 
 **Optimizations**:
 
-- Lazy loading optimization (preload popular apps)
-- Memory usage monitoring and cleanup
-- Startup time reduction (WASM preloading)
-- Service worker prefetching
+- Lazy loading optimization: preload popular apps (started: the selector preloads an app's config on hover)
+- Memory usage monitoring and cleanup (started: DosKit releases each stopped player's WebGL context, while js-dos 8.3.20 still keeps every stopped player in memory)
+- Startup time reduction: WASM preloading ✅ (`index.html` preloads the DOSBox backend's `wdosbox.wasm`, which Chromium uses; Safari does not, and downloads the file twice on a first visit)
+- Service worker prefetching (started: install precaches the app shell, every JS and CSS bundle, and the js-dos player with its DOSBox backend; application archives are cached on first use)
 - Progressive image loading
-- Code splitting optimization
+- Code splitting optimization ✅ (each app's config is a chunk of its own, and so is React)
 
 ### Feature 5: Mobile Experience Improvements
 
 **Impact**: MEDIUM | **Effort**: MEDIUM
+
+**Status**: Mobile devices get DosKit's compact on-screen keyboard layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key (`mobileJsDosConfig` in `src/config/jsdos.config.ts`). In windows under 500px tall, such as a phone held sideways, the header and footer keep to one row, and on iPhones the page keeps clear of the notch, the status bar and the home indicator. The enhancements below are open.
 
 **Enhancements**:
 
@@ -544,7 +568,7 @@ interface AudioRecorder {
 
 ### State Management Migration
 
-**Priority**: HIGH | **Timeline**: Q3 2025
+**Priority**: HIGH | **Timeline**: Not scheduled (was Q3 2025)
 
 **Current**: Props drilling and local state
 **Target**: Zustand or Context API
@@ -570,9 +594,9 @@ interface AppStore {
 
 ### Component Refactoring
 
-**Priority**: MEDIUM | **Timeline**: Q4 2025
+**Priority**: MEDIUM | **Timeline**: Not scheduled (was Q4 2025)
 
-**Current**: Some large components (DosPlayerWithApps)
+**Current**: Some large components (DemoSelector, DosPlayerWithApps); DosPlayer is already split into the `useDosEmulator` hook and `DosPlayerUI`
 **Target**: Smaller, focused components
 **Benefit**: Better testability, reusability, maintainability
 
@@ -587,20 +611,21 @@ interface AppStore {
 
 **Priority**: MEDIUM | **Timeline**: Ongoing
 
-**Current**: 70%+ coverage
-**Target**: 85%+ coverage
+**Current**: About 98% of lines, 97% of statements, 96% of functions and 91% of branches, over every source file in `src/` (`npm run test:coverage`, November 2026)
+**Floor**: `npm run test:coverage`, which CI runs, fails below the thresholds in `vitest.config.ts`, about 3 points under these figures
+**Target**: 85%+ coverage (met)
 **Benefit**: Fewer bugs, easier refactoring, better documentation
 
 **Focus Areas**:
 
-- Integration tests for user flows
+- Integration tests for user flows (started: `src/integration/` renders the whole app with js-dos faked)
 - E2E tests for critical paths
 - Visual regression tests
 - Performance tests
 
 ### Performance Monitoring
 
-**Priority**: LOW | **Timeline**: Q1 2026
+**Priority**: LOW | **Timeline**: Not scheduled (was Q1 2026)
 
 **Current**: No performance tracking
 **Target**: Comprehensive performance monitoring
@@ -608,10 +633,10 @@ interface AppStore {
 
 **Tools**:
 
-- Web Vitals (LCP, FID, CLS)
+- Web Vitals (LCP, INP, CLS)
 - Performance Observer API
 - Custom performance metrics
-- Error tracking (Sentry integration)
+- Error tracking (Sentry integration); errors go to a console tracker (`src/utils/errorTracking.ts`) for now
 
 ### Documentation Improvements
 
@@ -621,7 +646,7 @@ interface AppStore {
 
 - Generate API docs with TypeDoc (already configured)
 - Create user-facing documentation
-- Expand contribution guide with examples
+- Expand contribution guide with examples (started: `src/dos-apps/README.md` walks through adding an app)
 - Add video tutorials
 - Create FAQ section
 
@@ -631,10 +656,10 @@ interface AppStore {
 
 ### Application Library
 
-- **Current**: 2 applications
-- **Q2 2025**: 25 applications
-- **Q4 2025**: 50 applications
-- **Q2 2026**: 100+ applications
+- **Current**: 10 applications (November 2026)
+- **Next**: 25 applications
+- **Then**: 50 applications
+- **Long term**: 100+ applications
 
 ### User Engagement
 
@@ -738,9 +763,9 @@ DosKit aims to become the premier platform for preserving and experiencing vinta
 
 **Next Steps**:
 
-1. Begin Phase 1: Content Expansion (Q2 2025)
+1. Continue Phase 1: Content Expansion
 2. Gather community feedback on priorities
-3. Establish contribution guidelines and templates
+3. Establish contribution guidelines and templates ✅ (CONTRIBUTING.md, `src/dos-apps/README.md`)
 4. Build momentum with quick wins
 
 **Join us in preserving DOS-era creative software!**

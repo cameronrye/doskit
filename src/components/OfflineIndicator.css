@@ -9,11 +9,14 @@
   left: 0;
   right: 0;
   background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-  color: white;
-  padding: 1rem;
+  /* 6.1:1 or more on the orange; white was 2.2 to 2.9:1 */
+  color: #1a1a1a;
+  /* Its text clear of an installed iPhone app's status bar, and of the notch sideways */
+  padding: calc(1rem + env(safe-area-inset-top, 0px)) calc(1rem + env(safe-area-inset-right, 0px))
+    1rem calc(1rem + env(safe-area-inset-left, 0px));
   z-index: 10000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  animation: slideDown 0.3s ease-out;
+  animation: offline-indicator-slide-down 0.3s ease-out;
 }
 
 .offline-content {
@@ -46,9 +49,9 @@
 }
 
 .offline-close {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.12);
   border: none;
-  color: white;
+  color: #1a1a1a;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -62,16 +65,31 @@
 }
 
 .offline-close:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.2);
 }
 
-/* Online Indicator (brief notification) */
+/* Dark on orange: the page's own focus ring, #646cff, was 1.5:1 against it */
+.offline-close:focus,
+.offline-close:focus-visible {
+  outline-color: #1a1a1a;
+}
+
+/*
+ * Online Indicator (brief notification), at the top in the middle: the header's Change
+ * Application button and the selector's Close button are at the top right, which it would
+ * cover for its 3 seconds
+ */
 .online-indicator {
   position: fixed;
-  top: 1rem;
-  right: 1rem;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
+  left: 0;
+  right: 0;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  margin: 0 auto;
   background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
-  color: white;
+  /* 4.8:1 or more on the green; white was 2.9 to 3.7:1 */
+  color: #1a1a1a;
   padding: 0.75rem 1.25rem;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -79,7 +97,9 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  animation: slideInRight 0.3s ease-out, fadeOut 0.3s ease-out 2.7s forwards;
+  animation:
+    online-indicator-slide-in 0.3s ease-out,
+    online-indicator-fade-out 0.3s ease-out 2.7s forwards;
 }
 
 .online-icon {
@@ -96,18 +116,22 @@
 /* Install Prompt */
 .install-prompt {
   position: fixed;
-  bottom: 1rem;
-  left: 1rem;
-  right: 1rem;
+  /* Clear of the home indicator, and of the notch on a phone held sideways */
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  right: calc(1rem + env(safe-area-inset-right, 0px));
   max-width: 500px;
   margin: 0 auto;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* A 15% dark veil keeps white text at 4.85:1 or more anywhere on the purple, as in the header */
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)),
+    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 1.25rem;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   z-index: 9999;
-  animation: slideUp 0.4s ease-out;
+  animation: install-prompt-slide-up 0.4s ease-out;
 }
 
 .install-content {
@@ -130,7 +154,6 @@
 .install-text p {
   margin: 0;
   font-size: 0.95rem;
-  opacity: 0.95;
   line-height: 1.4;
 }
 
@@ -151,9 +174,15 @@
   transition: all 0.2s;
 }
 
+/* White on purple: the page's own focus ring, #646cff, hardly shows against it */
+.install-button:focus {
+  outline-color: white;
+}
+
 .install-button.primary {
   background: white;
-  color: #667eea;
+  /* The prompt's purple, darkened to keep a 4.5:1 contrast on white */
+  color: #4c5fd5;
 }
 
 .install-button.primary:hover {
@@ -162,57 +191,18 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+/* A dark tint, not a light one, which brought its white label under 4.5:1 */
 .install-button.secondary {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
   color: white;
 }
 
 .install-button.secondary:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* Connection Status Badge */
-.connection-badge {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(10px);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  z-index: 1000;
-  transition: all 0.3s;
-  opacity: 0.6;
-}
-
-.connection-badge:hover {
-  opacity: 1;
-}
-
-.connection-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #27ae60;
-  animation: pulse 2s infinite;
-}
-
-.connection-badge.offline .connection-dot {
-  background: #e74c3c;
-  animation: none;
-}
-
-.connection-text {
-  font-weight: 500;
+  background: rgba(0, 0, 0, 0.3);
 }
 
 /* Animations */
-@keyframes slideDown {
+@keyframes offline-indicator-slide-down {
   from {
     transform: translateY(-100%);
     opacity: 0;
@@ -223,7 +213,7 @@
   }
 }
 
-@keyframes slideUp {
+@keyframes install-prompt-slide-up {
   from {
     transform: translateY(100%);
     opacity: 0;
@@ -234,33 +224,24 @@
   }
 }
 
-@keyframes slideInRight {
+@keyframes online-indicator-slide-in {
   from {
-    transform: translateX(100%);
+    transform: translateY(-100%);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
+    transform: translateY(0);
     opacity: 1;
   }
 }
 
-@keyframes fadeOut {
+@keyframes online-indicator-fade-out {
   from {
     opacity: 1;
   }
   to {
     opacity: 0;
     visibility: hidden;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
   }
 }
 
@@ -272,20 +253,83 @@
   }
 
   .install-prompt {
-    left: 0.5rem;
-    right: 0.5rem;
-    bottom: 0.5rem;
+    left: calc(0.5rem + env(safe-area-inset-left, 0px));
+    right: calc(0.5rem + env(safe-area-inset-right, 0px));
+    bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   .install-actions {
     flex-direction: column;
   }
+}
 
-  .connection-badge {
-    bottom: 0.5rem;
-    right: 0.5rem;
-    font-size: 0.75rem;
-    padding: 0.4rem 0.8rem;
+/*
+ * In a short window, such as a phone's held sideways, the install prompt keeps to one row,
+ * so that the selector keeps room between it and the offline banner. After the rules above,
+ * which it overrides on a narrow phone too.
+ */
+@media (max-height: 450px) {
+  .install-prompt {
+    bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.5rem 0.75rem;
+  }
+
+  .install-content {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .install-icon,
+  .install-text p {
+    display: none;
+  }
+
+  .install-text {
+    flex: 1;
+  }
+
+  .install-text strong {
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+
+  .install-actions {
+    flex-direction: row;
+    margin-top: 0;
+  }
+
+  .install-button {
+    flex: none;
+    padding: 0.5rem 1rem;
+  }
+}
+
+/*
+ * In a short window, such as a phone held sideways or a window zoomed to 200%, the offline
+ * banner keeps to one line too: the header moves below it, so its height comes out of the
+ * player's. After the narrow-window rules above, which it overrides.
+ */
+@media (max-height: 500px) {
+  .offline-indicator {
+    padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+    padding-bottom: 0.5rem;
+  }
+
+  .offline-content {
+    flex-direction: row;
+    text-align: left;
+    gap: 0.75rem;
+  }
+
+  .offline-icon,
+  .offline-text p {
+    display: none;
+  }
+
+  .offline-text strong {
+    margin-bottom: 0;
+    font-size: 1rem;
   }
 }
 
@@ -296,9 +340,4 @@
   .install-prompt {
     animation: none;
   }
-
-  .connection-dot {
-    animation: none;
-  }
 }
-

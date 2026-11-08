@@ -1,14 +1,14 @@
 {
   "name": "DosKit - Cross-Platform DOS Emulator",
   "short_name": "DosKit",
-  "description": "A robust, cross-platform DOS emulator powered by js-dos WebAssembly technology. Run classic DOS applications and games directly in your browser.",
+  "description": "A robust, cross-platform DOS emulator powered by js-dos WebAssembly technology. Run classic DOS applications and demos directly in your browser.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "theme_color": "#667eea",
   "background_color": "#1a1a1a",
-  "categories": ["games", "entertainment", "utilities"],
+  "categories": ["entertainment", "utilities"],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",

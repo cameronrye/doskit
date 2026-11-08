@@ -4,367 +4,199 @@
  * Licensed under the MIT License
  *
  * Disk Loader Utility
- * Utilities for loading DOS files and disk images into the emulator
+ * Downloads the ZIP archives that DOS applications are packaged in
  */
 
-import type { InitFileEntry } from "../types/js-dos";
-import { fetchWithRetry } from "./fetchWithRetry";
+import { fetchWithRetry } from './fetchWithRetry';
 
-export interface DosFile {
-  path: string;
-  url: string;
+/** How much of an archive has arrived */
+export interface LoadProgress {
+  /** Bytes received so far */
+  loadedBytes: number;
+  /**
+   * The archive's size from the response's Content-Length, or null before the response,
+   * when it gives none that can be read, or once more bytes have arrived than it said
+   */
+  totalBytes: number | null;
 }
 
-export interface LoadProgress {
-  loaded: number;
-  total: number;
-  currentFile: string;
+/** The size in a Content-Length header, or null for a missing or malformed one */
+function parseContentLength(header: string | null): number | null {
+  const value = header?.trim();
+  return value && /^\d+$/.test(value) ? Number(value) : null;
 }
 
 /**
- * Load multiple files from URLs and prepare them for js-dos initFs
- * @param files Array of file definitions with path and URL
- * @param onProgress Optional progress callback
- * @param signal Optional AbortSignal to cancel the operation
- * @returns Array of InitFileEntry objects ready for js-dos
+ * How long a download may receive nothing before it fails: from the start of the request,
+ * retries included, and again from its response and from each chunk of the archive
  */
-export async function loadFilesFromUrls(
-  files: DosFile[],
-  onProgress?: (progress: LoadProgress) => void,
-  signal?: AbortSignal,
-): Promise<InitFileEntry[]> {
-  const initFs: InitFileEntry[] = [];
-  let loaded = 0;
-  const total = files.length;
+const STALL_TIMEOUT_MS = 20_000;
 
-  for (const file of files) {
-    try {
-      // Check if operation was aborted
-      if (signal?.aborted) {
-        throw new Error("Operation aborted");
-      }
+/**
+ * Settle as the promise does, or reject with the signal's reason as soon as it aborts. A
+ * body that does not come from the network, such as one built in a test, does not stop
+ * when the request's signal aborts.
+ */
+function untilAborted<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    // Firefox before 97 gives an abort no reason
+    const abort = () =>
+      reject(signal.reason ?? new DOMException('The operation was aborted.', 'AbortError'));
+    signal.addEventListener('abort', abort, { once: true });
+    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+    if (signal.aborted) abort();
+  });
+}
 
-      if (onProgress) {
-        onProgress({ loaded, total, currentFile: file.path });
-      }
-
-      const response = await fetchWithRetry(
-        file.url,
-        { signal },
-        {
-          maxRetries: 3,
-          initialDelay: 1000,
-          onRetry: (attempt, error, delay) => {
-            if (import.meta.env.DEV) {
-              console.log(
-                `[DiskLoader] Retry ${attempt} for ${file.path} after ${delay}ms:`,
-                error.message,
-              );
-            }
-          },
-          signal,
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to load ${file.path}: ${response.statusText}`);
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      initFs.push({
-        path: file.path,
-        contents: new Uint8Array(arrayBuffer),
-      });
-
-      loaded++;
-      if (import.meta.env.DEV) {
-        console.log(`[DiskLoader] Loaded ${file.path} (${loaded}/${total})`);
-      }
-    } catch (error) {
-      console.error(`[DiskLoader] Error loading ${file.path}:`, error);
-      throw error;
+/** Read a response's body to its end, chunk by chunk, until the signal aborts */
+async function readBody(
+  response: Response,
+  signal: AbortSignal,
+  onChunk: (chunk: Uint8Array) => void
+): Promise<void> {
+  const reader = response.body?.getReader();
+  if (!reader) return;
+  const nextChunk = () => untilAborted(reader.read(), signal);
+  try {
+    for (let chunk = await nextChunk(); !chunk.done; chunk = await nextChunk()) {
+      onChunk(chunk.value);
     }
+  } catch (error) {
+    // Let go of a body given up halfway
+    reader.cancel().catch(() => {});
+    throw error;
   }
+}
 
-  if (onProgress) {
-    onProgress({ loaded, total, currentFile: "Complete" });
+/** How a ZIP archive starts: the signature of its first local file header, "PK\x03\x04" */
+const ZIP_SIGNATURE = [0x50, 0x4b, 0x03, 0x04];
+
+function isZipArchive(data: Uint8Array): boolean {
+  return ZIP_SIGNATURE.every((byte, index) => data[index] === byte);
+}
+
+/** The chunks of a download, joined in one array */
+function joinChunks(chunks: Uint8Array[], length: number): Uint8Array {
+  const data = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    data.set(chunk, offset);
+    offset += chunk.byteLength;
   }
-
-  return initFs;
+  return data;
 }
 
 /**
  * Load a ZIP archive for js-dos
  * js-dos can automatically extract ZIP files
  * @param zipUrl URL to the ZIP file
- * @param onProgress Optional progress callback
+ * @param onProgress Optional progress callback: as the request starts, once the response
+ *   arrives, and after each chunk of the archive, but never once the download is aborted
  * @param signal Optional AbortSignal to cancel the operation
  * @returns Uint8Array of the ZIP file
+ * @throws {Error} A "TimeoutError" when no data arrives for 20 seconds
  */
 export async function loadZipArchive(
   zipUrl: string,
   onProgress?: (progress: LoadProgress) => void,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<Uint8Array> {
-  try {
-    if (onProgress) {
-      onProgress({
-        loaded: 0,
-        total: 1,
-        currentFile: "Downloading ZIP archive...",
-      });
-    }
+  // Aborted by the caller, or when the download stalls
+  const download = new AbortController();
+  const abortWithCaller = () => download.abort(signal?.reason);
+  if (signal?.aborted) abortWithCaller();
+  signal?.addEventListener('abort', abortWithCaller, { once: true });
 
-    const response = await fetchWithRetry(
-      zipUrl,
-      { signal },
-      {
-        maxRetries: 3,
-        initialDelay: 1000,
-        onRetry: (attempt, error, delay) => {
-          if (import.meta.env.DEV) {
-            console.log(
-              `[DiskLoader] Retry ${attempt} for ZIP after ${delay}ms:`,
-              error.message,
-            );
-          }
-        },
-        signal,
-      },
+  const timedOut = Object.assign(
+    new Error(`Download timed out: no data received for ${STALL_TIMEOUT_MS / 1000} seconds`),
+    { name: 'TimeoutError' }
+  );
+  // Kept here rather than read from the signal's reason, which Firefox before 97 lacks
+  let stalled = false;
+  let stallTimer: ReturnType<typeof setTimeout> | undefined;
+  const restartStallTimer = () => {
+    clearTimeout(stallTimer);
+    stallTimer = setTimeout(() => {
+      stalled = true;
+      download.abort(timedOut);
+    }, STALL_TIMEOUT_MS);
+  };
+  // A chunk can arrive just before an abort and be handled after it: a caller that has
+  // moved on gets no progress of the download it gave up
+  const report = (progress: LoadProgress) => {
+    if (!download.signal.aborted) onProgress?.(progress);
+  };
+
+  try {
+    restartStallTimer();
+    // From here on the download times itself out, which its caller may want to know
+    report({ loadedBytes: 0, totalBytes: null });
+    const response = await untilAborted(
+      fetchWithRetry(
+        zipUrl,
+        { signal: download.signal },
+        {
+          maxRetries: 3,
+          initialDelay: 1000,
+          onRetry: (attempt, error, delay) => {
+            // A retry follows an answer or a failed attempt, which a stalled request never gets
+            restartStallTimer();
+            if (import.meta.env.DEV) {
+              console.log(`[DiskLoader] Retry ${attempt} for ZIP after ${delay}ms:`, error.message);
+            }
+          },
+          signal: download.signal,
+        }
+      ),
+      download.signal
     );
+    restartStallTimer();
 
     if (!response.ok) {
-      throw new Error(`Failed to load ZIP: ${response.statusText}`);
+      // Name the code: HTTP/2, which GitHub Pages serves, sends no status text
+      const status = `HTTP ${response.status} ${response.statusText}`.trim();
+      throw new Error(`Failed to load ZIP: ${status}`);
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-    const zipData = new Uint8Array(arrayBuffer);
+    // Read the body chunk by chunk, to report the bytes as they arrive
+    let totalBytes = parseContentLength(response.headers.get('Content-Length'));
+    let loadedBytes = 0;
+    const chunks: Uint8Array[] = [];
+    report({ loadedBytes, totalBytes });
+    await readBody(response, download.signal, (chunk) => {
+      restartStallTimer();
+      chunks.push(chunk);
+      loadedBytes += chunk.byteLength;
+      // Content-Length can count fewer bytes than the body gives, as for a compressed
+      // response: the size is then unknown
+      if (totalBytes !== null && loadedBytes > totalBytes) totalBytes = null;
+      report({ loadedBytes, totalBytes });
+    });
+    const zipData = joinChunks(chunks, loadedBytes);
 
-    if (onProgress) {
-      onProgress({ loaded: 1, total: 1, currentFile: "ZIP archive loaded" });
+    // Vite's dev and preview servers answer a missing archive with 200 and index.html,
+    // which js-dos would start as an empty C: drive
+    if (!isZipArchive(zipData)) {
+      const type = response.headers.get('Content-Type');
+      throw new Error(`Failed to load ZIP: not a ZIP archive${type ? ` (${type})` : ''}`);
     }
 
     if (import.meta.env.DEV) {
-      console.log(
-        `[DiskLoader] Loaded ZIP archive: ${zipUrl} (${zipData.length} bytes)`,
-      );
+      console.log(`[DiskLoader] Loaded ZIP archive: ${zipUrl} (${zipData.length} bytes)`);
     }
 
     return zipData;
   } catch (error) {
-    console.error(`[DiskLoader] Error loading ZIP:`, error);
-    throw error;
-  }
-}
-
-/**
- * Load a disk image file (.img, .ima, .iso)
- * @param imageUrl URL to the disk image
- * @param mountPath Path where the image will be stored in the virtual FS
- * @param signal Optional AbortSignal to cancel the operation
- * @returns InitFileEntry for the disk image
- */
-export async function loadDiskImage(
-  imageUrl: string,
-  mountPath: string = "/disk.img",
-  signal?: AbortSignal,
-): Promise<InitFileEntry> {
-  try {
-    const response = await fetchWithRetry(
-      imageUrl,
-      { signal },
-      {
-        maxRetries: 3,
-        initialDelay: 1000,
-        onRetry: (attempt, error, delay) => {
-          if (import.meta.env.DEV) {
-            console.log(
-              `[DiskLoader] Retry ${attempt} for disk image after ${delay}ms:`,
-              error.message,
-            );
-          }
-        },
-        signal,
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to load disk image: ${response.statusText}`);
+    // Whatever a stalled download failed with on its way out, it timed out
+    const failure = stalled ? timedOut : error;
+    // An abort is the caller's own doing (the selector's Cancel, a navigation that
+    // supersedes the load): it still rejects, but is no failure to log
+    if (!signal?.aborted) {
+      console.error(`[DiskLoader] Error loading ZIP:`, failure);
     }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const imageData = new Uint8Array(arrayBuffer);
-
-    if (import.meta.env.DEV) {
-      console.log(
-        `[DiskLoader] Loaded disk image: ${imageUrl} (${imageData.length} bytes)`,
-      );
-    }
-
-    return {
-      path: mountPath,
-      contents: imageData,
-    };
-  } catch (error) {
-    console.error(`[DiskLoader] Error loading disk image:`, error);
-    throw error;
+    throw failure;
+  } finally {
+    clearTimeout(stallTimer);
+    signal?.removeEventListener('abort', abortWithCaller);
   }
-}
-
-/**
- * Load files from a directory structure
- * Useful for loading entire application directories
- * @param baseUrl Base URL for the files
- * @param fileList List of relative file paths
- * @param basePath Base path in the virtual file system (default: '/')
- * @param signal Optional AbortSignal to cancel the operation
- * @returns Array of InitFileEntry objects
- */
-export async function loadDirectory(
-  baseUrl: string,
-  fileList: string[],
-  basePath: string = "/",
-  signal?: AbortSignal,
-): Promise<InitFileEntry[]> {
-  const files: DosFile[] = fileList.map((file) => ({
-    path: `${basePath}${file}`,
-    url: `${baseUrl}${file}`,
-  }));
-
-  return loadFilesFromUrls(files, undefined, signal);
-}
-
-/**
- * Create a text file in memory
- * Useful for creating config files, batch files, etc.
- * @param path Path in the virtual file system
- * @param content Text content
- * @returns InitFileEntry for the text file
- */
-export function createTextFile(path: string, content: string): InitFileEntry {
-  const encoder = new TextEncoder();
-  return {
-    path,
-    contents: encoder.encode(content),
-  };
-}
-
-/**
- * Validate file size before loading
- * @param url URL to check
- * @param maxSizeMB Maximum allowed size in megabytes
- * @param signal Optional AbortSignal to cancel the operation
- * @returns true if file is within size limit
- */
-export async function validateFileSize(
-  url: string,
-  maxSizeMB: number = 50,
-  signal?: AbortSignal,
-): Promise<boolean> {
-  try {
-    const response = await fetch(url, { method: "HEAD", signal });
-    const contentLength = response.headers.get("content-length");
-
-    if (!contentLength) {
-      console.warn(`[DiskLoader] Could not determine file size for ${url}`);
-      return true; // Allow if we can't determine size
-    }
-
-    const sizeMB = parseInt(contentLength) / (1024 * 1024);
-    const isValid = sizeMB <= maxSizeMB;
-
-    if (!isValid) {
-      console.warn(
-        `[DiskLoader] File ${url} exceeds size limit: ${sizeMB.toFixed(2)}MB > ${maxSizeMB}MB`,
-      );
-    }
-
-    return isValid;
-  } catch (error) {
-    console.error(`[DiskLoader] Error validating file size:`, error);
-    return true; // Allow on error
-  }
-}
-
-/**
- * Cache files in browser storage for offline use
- * Uses IndexedDB via Cache API
- * @param files Array of file definitions
- * @param cacheName Name for the cache
- */
-export async function cacheFiles(
-  files: DosFile[],
-  cacheName: string = "doskit-files",
-): Promise<void> {
-  if (!("caches" in window)) {
-    console.warn("[DiskLoader] Cache API not available");
-    return;
-  }
-
-  try {
-    const cache = await caches.open(cacheName);
-    const urls = files.map((f) => f.url);
-    await cache.addAll(urls);
-
-    if (import.meta.env.DEV) {
-      console.log(`[DiskLoader] Cached ${urls.length} files`);
-    }
-  } catch (error) {
-    console.error("[DiskLoader] Error caching files:", error);
-  }
-}
-
-/**
- * Load files with caching support
- * Tries to load from cache first, falls back to network
- * @param files Array of file definitions
- * @param cacheName Name for the cache
- * @returns Array of InitFileEntry objects
- */
-export async function loadFilesWithCache(
-  files: DosFile[],
-  cacheName: string = "doskit-files",
-): Promise<InitFileEntry[]> {
-  const initFs: InitFileEntry[] = [];
-
-  for (const file of files) {
-    try {
-      let response: Response;
-
-      // Try cache first
-      if ("caches" in window) {
-        const cache = await caches.open(cacheName);
-        const cachedResponse = await cache.match(file.url);
-
-        if (cachedResponse) {
-          response = cachedResponse;
-          if (import.meta.env.DEV) {
-            console.log(`[DiskLoader] Loaded ${file.path} from cache`);
-          }
-        } else {
-          response = await fetch(file.url);
-          // Cache for next time
-          await cache.put(file.url, response.clone());
-          if (import.meta.env.DEV) {
-            console.log(
-              `[DiskLoader] Loaded ${file.path} from network and cached`,
-            );
-          }
-        }
-      } else {
-        response = await fetch(file.url);
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      initFs.push({
-        path: file.path,
-        contents: new Uint8Array(arrayBuffer),
-      });
-    } catch (error) {
-      console.error(`[DiskLoader] Error loading ${file.path}:`, error);
-      throw error;
-    }
-  }
-
-  return initFs;
 }

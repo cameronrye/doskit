@@ -16,11 +16,13 @@
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  padding: 1rem;
-  animation: fadeIn 0.3s ease-out;
+  /* The prompt clear of the notch and the home indicator, as well as the window's edges */
+  padding: max(1rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+  animation: update-notification-fade-in 0.3s ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes update-notification-fade-in {
   from {
     opacity: 0;
   }
@@ -30,17 +32,20 @@
 }
 
 .update-notification {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* A 15% dark veil keeps white text at 4.85:1 or more anywhere on the purple, as in the header */
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)),
+    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 16px;
   padding: 2rem;
   max-width: 400px;
   width: 100%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease-out;
+  animation: update-notification-slide-up 0.3s ease-out;
   color: white;
 }
 
-@keyframes slideUp {
+@keyframes update-notification-slide-up {
   from {
     transform: translateY(20px);
     opacity: 0;
@@ -63,10 +68,10 @@
 }
 
 .update-notification-icon svg {
-  animation: rotate 2s linear infinite;
+  animation: update-notification-rotate 2s linear infinite;
 }
 
-@keyframes rotate {
+@keyframes update-notification-rotate {
   from {
     transform: rotate(0deg);
   }
@@ -90,7 +95,7 @@
   font-size: 0.95rem;
   line-height: 1.5;
   margin: 0;
-  color: rgba(255, 255, 255, 0.9);
+  color: white;
 }
 
 .update-notification-actions {
@@ -110,9 +115,15 @@
   font-family: inherit;
 }
 
+/* White on purple: the page's own focus ring, #646cff, hardly shows against it */
+.update-notification-button:focus {
+  outline-color: white;
+}
+
 .update-notification-button-primary {
   background-color: white;
-  color: #667eea;
+  /* The prompt's purple, darkened to keep a 4.5:1 contrast on white */
+  color: #4c5fd5;
 }
 
 .update-notification-button-primary:hover {
@@ -125,18 +136,19 @@
   transform: translateY(0);
 }
 
+/* A dark tint, not a light one, which brought its white label under 4.5:1 */
 .update-notification-button-secondary {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.2);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .update-notification-button-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 .update-notification-button-secondary:active {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(0, 0, 0, 0.35);
 }
 
 /* Mobile optimizations */
@@ -161,4 +173,3 @@
     -webkit-appearance: none;
   }
 }
-

@@ -4,80 +4,109 @@
  * Licensed under the MIT License
  */
 
-import { useState, useEffect, useRef } from "react";
-import { DosPlayerWithApps, type DosApp } from "./components/DosPlayerWithApps";
-import { OfflineIndicator } from "./components/OfflineIndicator";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { findAppById } from "./components/DemoSelector";
-import {
-  getAppIdFromUrl,
-  updateUrlWithApp,
-  updateDocumentTitle,
-} from "./utils/urlRouting";
-import "./App.css";
+import { useState, useEffect } from 'react';
+import { DosPlayerWithApps, type PlayerStatus } from './components/DosPlayerWithApps';
+import { OfflineIndicator } from './components/OfflineIndicator';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { findAppById } from './config/apps.config';
+import type { DosApp } from './types/dos-app';
+import { getAppRequestFromUrl, updateUrlWithApp, updateDocumentTitle } from './utils/urlRouting';
+import { keepKeyFromDos, watchKeysAroundDos } from './utils/keysAroundDos';
+import './App.css';
+
+/** What the URL asks App to show */
+interface UrlRoute {
+  /** The app to run, or null for the start page */
+  app: DosApp | null;
+  /** What the selector tells the user when the URL's ?app= parameter names no app */
+  error: string | null;
+}
+
+function readUrlRoute(): UrlRoute {
+  const { appId, unknownApp, unknownAppId } = getAppRequestFromUrl();
+  // A value with no safe characters, or too long to show, is left out of the message
+  const named = unknownAppId ? ` "${unknownAppId}"` : '';
+  return {
+    app: appId ? (findAppById(appId) ?? null) : null,
+    error: unknownApp
+      ? `Application${named} not found. Please select from available applications.`
+      : null,
+  };
+}
+
+/**
+ * Set the title for a route, and bring the URL to the form the app pushes without a new
+ * history entry: /?app=<id> for an app (also for /stars or ?app=Stars), and no app
+ * parameter for an unknown one. Apps reporting in once loaded then find their URL in place.
+ */
+function applyUrlRoute(route: UrlRoute): void {
+  if (route.app) {
+    updateUrlWithApp(route.app.id, true);
+  } else if (route.error) {
+    updateUrlWithApp(null, true);
+  }
+  updateDocumentTitle(route.app?.name);
+}
+
+/** "Author (year)" for the header, or whichever of the two an app gives, or null for neither */
+function describeRelease({ author, year }: DosApp): string | null {
+  if (author && year) {
+    return `${author} (${year})`;
+  }
+  return author || year?.toString() || null;
+}
+
+/**
+ * js-dos listens for keys on window, sends each one to DOS and cancels the browser's own
+ * handling of it. Keys pressed on DosKit's own controls stop here, once React has handled
+ * them, so Tab, Enter and Space work on those controls and keys meant for the selector never
+ * reach the running program; keysAroundDos keeps their releases from it too. Keys pressed
+ * in the player, or with nothing focused, still reach DOS.
+ */
+function keepKeysFromDos(event: React.KeyboardEvent) {
+  if (!(event.target instanceof Element && event.target.closest('.dos-player-container'))) {
+    keepKeyFromDos(event);
+  }
+}
+
+/** What the footer's DOS badge shows for each status of the player */
+const STATUS_BADGES: Record<PlayerStatus, { className: string; label: string; title: string }> = {
+  loading: { className: 'is-loading', label: 'Loading', title: 'Loading DOS emulator' },
+  ready: { className: 'ready', label: 'Ready', title: 'DOS emulator is ready' },
+  error: {
+    className: 'is-error',
+    label: 'Error',
+    title: 'The application could not be loaded or started',
+  },
+};
 
 function App() {
-  const [isReady, setIsReady] = useState(false);
+  const [playerStatus, setPlayerStatus] = useState<PlayerStatus>('loading');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Initialize state based on URL on first render
-  const [currentApp, setCurrentApp] = useState<DosApp | null>(() => {
-    const appIdFromUrl = getAppIdFromUrl();
-    return appIdFromUrl ? (findAppById(appIdFromUrl) ?? null) : null;
-  });
-
-  const [showAppSelector, setShowAppSelector] = useState(() => {
-    // Hide selector if there's a valid app in URL
-    const appIdFromUrl = getAppIdFromUrl();
-    const app = appIdFromUrl ? findAppById(appIdFromUrl) : null;
-    return !app;
-  });
-
-  const [urlError, setUrlError] = useState<string | null>(() => {
-    // Check for invalid app ID on initial render
-    const appIdFromUrl = getAppIdFromUrl();
-    if (appIdFromUrl && !findAppById(appIdFromUrl)) {
-      return `Application "${appIdFromUrl}" not found. Please select from available applications.`;
-    }
-    return null;
-  });
-  const isInitialMount = useRef(true);
-  const isHandlingPopState = useRef(false);
-
-  const handleDosReady = () => {
-    if (import.meta.env.DEV) {
-      console.log("[App] DOS is ready!");
-    }
-    setIsReady(true);
-  };
-
-  const handleDosExit = () => {
-    if (import.meta.env.DEV) {
-      console.log("[App] DOS exited");
-    }
-    setIsReady(false);
-  };
+  // The route the page was loaded with
+  const [initialRoute] = useState(readUrlRoute);
+  // The app the URL asks for: DosPlayerWithApps runs it, and reports apps picked in the selector
+  const [currentApp, setCurrentApp] = useState(initialRoute.app);
+  const [showAppSelector, setShowAppSelector] = useState(!initialRoute.app);
+  const [urlError, setUrlError] = useState(initialRoute.error);
 
   const handleNetworkStatusChange = (online: boolean) => {
     if (import.meta.env.DEV) {
-      console.log(
-        "[App] Network status changed:",
-        online ? "online" : "offline",
-      );
+      console.log('[App] Network status changed:', online ? 'online' : 'offline');
     }
     setIsOnline(online);
   };
 
   const handleAppChange = (app: DosApp | null) => {
     if (import.meta.env.DEV) {
-      console.log("[App] Application changed:", app?.name || "none");
+      console.log('[App] Application changed:', app?.name || 'none');
     }
     setCurrentApp(app);
 
-    // Update URL when app changes (but not during popstate handling to avoid loops)
-    if (!isHandlingPopState.current) {
-      updateUrlWithApp(app?.id || null);
-    }
+    // Apps requested by a deep link or back/forward report in once loaded, when the URL
+    // already shows them; updateUrlWithApp then adds no history entry
+    updateUrlWithApp(app?.id || null);
 
     // Update document title
     updateDocumentTitle(app?.name);
@@ -90,106 +119,74 @@ function App() {
 
   const handleSelectorVisibilityChange = (visible: boolean) => {
     if (import.meta.env.DEV) {
-      console.log("[App] Selector visibility changed:", visible);
+      console.log('[App] Selector visibility changed:', visible);
     }
     setShowAppSelector(visible);
+    // The selector showed the URL's error: it has been seen once the selector closes
+    if (!visible) {
+      setUrlError(null);
+    }
   };
 
   const handleChangeAppClick = () => {
     setShowAppSelector(true);
   };
 
-  // Handle initial URL-based app loading on mount
   useEffect(() => {
-    if (!isInitialMount.current) return;
-    isInitialMount.current = false;
+    applyUrlRoute(initialRoute);
+  }, [initialRoute]);
 
-    const appIdFromUrl = getAppIdFromUrl();
+  // A key's release follows its press, whatever has the focus when it comes up
+  useEffect(() => watchKeysAroundDos(), []);
 
-    if (appIdFromUrl) {
-      if (import.meta.env.DEV) {
-        console.log("[App] Loading app from URL:", appIdFromUrl);
-      }
-
-      const app = findAppById(appIdFromUrl);
-
-      if (app) {
-        // Valid app ID in URL - state already initialized, just update title and trigger load
-        updateDocumentTitle(app.name);
-
-        // Trigger app loading by simulating selection
-        // The app will be loaded by DosPlayerWithApps when it receives the app change
-        setTimeout(() => {
-          // This ensures the component is mounted before we try to load
-          const event = new CustomEvent("load-app-from-url", {
-            detail: { app },
-          });
-          window.dispatchEvent(event);
-        }, 100);
-      } else {
-        // Invalid app ID in URL - error already set in state initializer
-        if (import.meta.env.DEV) {
-          console.warn("[App] Invalid app ID in URL:", appIdFromUrl);
-        }
-        // Clear the invalid app parameter from URL
-        updateUrlWithApp(null, true);
-      }
-    } else {
-      // No app in URL - show selector (default behavior)
-      updateDocumentTitle();
-    }
-  }, []);
-
-  // Handle browser back/forward navigation
+  // Browser back/forward: run what the URL asks for, or the default prompt with the selector
   useEffect(() => {
     const handlePopState = () => {
-      isHandlingPopState.current = true;
-
-      const appIdFromUrl = getAppIdFromUrl();
+      const route = readUrlRoute();
 
       if (import.meta.env.DEV) {
-        console.log("[App] Popstate event - app ID from URL:", appIdFromUrl);
+        console.log('[App] Popstate event - app from URL:', route.app?.id ?? null);
       }
 
-      if (appIdFromUrl) {
-        const app = findAppById(appIdFromUrl);
-
-        if (app) {
-          setCurrentApp(app);
-          setShowAppSelector(false);
-          updateDocumentTitle(app.name);
-
-          // Trigger app loading
-          const event = new CustomEvent("load-app-from-url", {
-            detail: { app },
-          });
-          window.dispatchEvent(event);
-        } else {
-          setUrlError(`Application "${appIdFromUrl}" not found.`);
-          setShowAppSelector(true);
-        }
-      } else {
-        // No app in URL - show selector
-        setCurrentApp(null);
-        setShowAppSelector(true);
-        updateDocumentTitle();
+      applyUrlRoute(route);
+      setCurrentApp(route.app);
+      setShowAppSelector(!route.app);
+      if (route.error) {
+        setUrlError(route.error);
       }
-
-      // Reset flag after a short delay
-      setTimeout(() => {
-        isHandlingPopState.current = false;
-      }, 100);
     };
 
-    window.addEventListener("popstate", handlePopState);
+    window.addEventListener('popstate', handlePopState);
 
     return () => {
-      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
+  // Ask before the page goes while an app people make things in runs. Its work lives only
+  // in the emulator's memory, and on Windows, Linux and ChromeOS browsers keep keys such as
+  // Ctrl+W (Scream Tracker's save) for themselves, so one key press could close the tab.
+  // Only once its player is ready: while it downloads, or after it failed, there is nothing
+  // to lose.
+  const warnBeforeLeaving = (currentApp?.warnBeforeLeaving ?? false) && playerStatus === 'ready';
+  useEffect(() => {
+    if (!warnBeforeLeaving) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      // Chrome and Edge before 119 ask only when returnValue is set
+      event.returnValue = true;
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [warnBeforeLeaving]);
+
+  const release = currentApp && describeRelease(currentApp);
+  const statusBadge = STATUS_BADGES[playerStatus];
+
   return (
-    <div className="app">
+    <div className="app" onKeyDown={keepKeysFromDos}>
       {/* PWA Offline Indicator and Install Prompt */}
       <OfflineIndicator onNetworkStatusChange={handleNetworkStatusChange} />
 
@@ -203,48 +200,29 @@ function App() {
             <div className="header-center">
               <div className="header-app-info">
                 <span className="header-app-name">{currentApp.name}</span>
-                {currentApp.author && currentApp.year && (
-                  <span className="header-app-meta">
-                    {currentApp.author} ({currentApp.year})
-                  </span>
-                )}
+                {release && <span className="header-app-meta">{release}</span>}
               </div>
             </div>
           )}
           <div className="header-right">
-            <button
-              className="header-change-app-button"
-              onClick={handleChangeAppClick}
-            >
-              {currentApp ? "Change Application" : "Select Application"}
+            <button className="header-change-app-button" onClick={handleChangeAppClick}>
+              {currentApp ? 'Change Application' : 'Select Application'}
             </button>
           </div>
         </div>
       </header>
 
       <main className="app-main">
-        {/* URL Error Message */}
-        {urlError && (
-          <div className="url-error-banner">
-            <span className="error-icon">⚠️</span>
-            <span className="error-message">{urlError}</span>
-            <button
-              className="error-dismiss"
-              onClick={() => setUrlError(null)}
-              aria-label="Dismiss error"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        <ErrorBoundary>
+        {/* A render error takes the player down with it, and no status comes from it then */}
+        <ErrorBoundary onError={() => setPlayerStatus('error')}>
           <DosPlayerWithApps
-            onReady={handleDosReady}
-            onExit={handleDosExit}
+            requestedApp={currentApp}
             showSelector={showAppSelector}
             onAppChange={handleAppChange}
             onSelectorVisibilityChange={handleSelectorVisibilityChange}
+            onStatusChange={setPlayerStatus}
+            // An unknown app in the URL opens the selector, which says so above the disks
+            selectorNotice={urlError}
             className="dos-player"
           />
         </ErrorBoundary>
@@ -252,52 +230,41 @@ function App() {
 
       <footer className="app-footer">
         <div className="info">
-          <div className="status-indicators">
+          {/* A polite live region: screen readers announce each change of the badges */}
+          <div className="status-indicators" role="status">
             {/* DOS Status */}
-            {isReady ? (
-              <span
-                className="status-badge ready"
-                title="DOS emulator is ready"
-              >
-                <span className="status-dot"></span>
-                <span>Ready</span>
-              </span>
-            ) : (
-              <span
-                className="status-badge loading"
-                title="Loading DOS emulator"
-              >
-                <span className="status-dot"></span>
-                <span>Loading</span>
-              </span>
-            )}
+            <span className={`status-badge ${statusBadge.className}`} title={statusBadge.title}>
+              <span className="status-dot"></span>
+              <span>{statusBadge.label}</span>
+            </span>
 
             {/* Network Status */}
             <span
-              className={`status-badge ${isOnline ? "online" : "offline"}`}
-              title={
-                isOnline ? "Connected to internet" : "No internet connection"
-              }
+              className={`status-badge ${isOnline ? 'online' : 'offline'}`}
+              title={isOnline ? 'Connected to internet' : 'No internet connection'}
             >
               <span className="status-dot"></span>
-              <span>{isOnline ? "Online" : "Offline"}</span>
+              <span>{isOnline ? 'Online' : 'Offline'}</span>
             </span>
           </div>
         </div>
         <div className="made-with">
-          Made with <span className="heart">❤️</span> by{" "}
+          Made with <span className="heart">❤️</span> by{' '}
           <a href="https://rye.dev/" target="_blank" rel="noopener noreferrer">
             Cameron Rye
           </a>
         </div>
         <div className="credits">
-          Powered by{" "}
-          <a
-            href="https://js-dos.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            js-dos v8.3.20
+          <span className="credits-js-dos">
+            Powered by{' '}
+            <a href="https://js-dos.com" target="_blank" rel="noopener noreferrer">
+              js-dos v{import.meta.env.VITE_JSDOS_VERSION}
+            </a>
+            <span aria-hidden="true"> · </span>
+          </span>
+          {/* The GPL notices of js-dos and DOSBox, which DosKit ships */}
+          <a href="/licenses/" target="_blank" rel="noopener noreferrer">
+            Licenses
           </a>
         </div>
       </footer>

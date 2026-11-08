@@ -14,43 +14,43 @@ import {
 } from '../config/apps.config';
 
 /**
- * Get the app ID from the current URL
- * Supports both query parameter (?app=secondreality) and path-based routing (/secondreality)
- * @returns The internal app ID if found, null otherwise
+ * The application a URL asks for
  */
-export function getAppIdFromUrl(): string | null {
-  // First, try query parameter
-  const params = new URLSearchParams(window.location.search);
-  const appParam = params.get('app');
+export interface AppRequest {
+  /** Internal ID of the app the URL names, or null for the start page */
+  appId: string | null;
+  /** Whether the URL has an ?app= parameter that names no known app */
+  unknownApp: boolean;
+  /**
+   * That parameter's value reduced to safe characters, or null when none are left or there
+   * are more than 100 to show
+   */
+  unknownAppId: string | null;
+}
 
-  if (appParam) {
-    const sanitized = sanitizeInput(appParam);
-    if (sanitized) {
-      return normalizeAppId(sanitized);
-    }
+/**
+ * Read the app the current URL asks for
+ * Supports both query parameter (?app=secondreality) and path-based routing (/secondreality).
+ * An ?app= parameter decides when present, even an empty one. A path that names no app,
+ * such as /index.html, is the start page.
+ */
+export function getAppRequestFromUrl(): AppRequest {
+  const appParam = new URLSearchParams(window.location.search).get('app');
+  if (appParam !== null) {
+    const fromQuery = sanitizeInput(appParam);
+    const appId = fromQuery ? normalizeAppId(fromQuery) : null;
+    return appId
+      ? { appId, unknownApp: false, unknownAppId: null }
+      : { appId: null, unknownApp: true, unknownAppId: fromQuery };
   }
 
-  // Then, try path-based routing (e.g., /secondreality)
-  const path = window.location.pathname;
-  const pathSegments = path.split('/').filter((segment) => segment.length > 0);
-
-  // If there's a path segment, try to use it as an app ID
-  if (pathSegments.length > 0) {
-    const potentialAppId = pathSegments[0];
-    if (potentialAppId) {
-      const sanitized = sanitizeInput(potentialAppId);
-      if (sanitized) {
-        const normalizedId = normalizeAppId(sanitized);
-
-        // Only return if it's a valid app ID (exists in mapping)
-        if (normalizedId) {
-          return normalizedId;
-        }
-      }
-    }
-  }
-
-  return null;
+  const firstSegment = window.location.pathname.split('/').find((segment) => segment.length > 0);
+  const fromPath = firstSegment ? sanitizeInput(firstSegment) : null;
+  return {
+    appId: fromPath ? normalizeAppId(fromPath) : null,
+    unknownApp: false,
+    unknownAppId: null,
+  };
 }
 
 /**
@@ -102,18 +102,28 @@ export function getUrlFriendlyId(appId: string): string {
 
 /**
  * Update the browser URL with the specified app ID
- * Uses query parameter approach: ?app=secondreality
+ * Uses query parameter approach: /?app=secondreality, the one form of an app URL, so
+ * replacing also rewrites path-style links (/secondreality) and other spellings
  * @param appId - The internal app ID, or null to remove the app parameter
  * @param replace - If true, replaces the current history entry instead of adding a new one
  */
 export function updateUrlWithApp(appId: string | null, replace: boolean = false): void {
   const url = new URL(window.location.href);
+  // The start page's path either way: a path-style link (/stars) names an app too, and
+  // would run it on a reload
+  url.pathname = '/';
 
   if (appId) {
-    const urlFriendlyId = getUrlFriendlyId(appId);
-    url.searchParams.set('app', urlFriendlyId);
+    url.searchParams.set('app', getUrlFriendlyId(appId));
   } else {
     url.searchParams.delete('app');
+  }
+
+  // Apps report themselves after loading asynchronously (deep links, back/forward),
+  // when the URL already matches. Pushing again would duplicate the entry and
+  // discard forward history.
+  if (url.href === window.location.href) {
+    return;
   }
 
   // Update the URL without reloading the page
@@ -134,44 +144,4 @@ export function updateDocumentTitle(appName?: string): void {
   } else {
     document.title = 'DosKit - Cross-Platform DOS Emulator';
   }
-}
-
-/**
- * Check if the current URL has an app parameter
- * @returns true if an app parameter is present in the URL
- */
-export function hasAppInUrl(): boolean {
-  return getAppIdFromUrl() !== null;
-}
-
-/**
- * Get the current URL as a shareable link
- * @returns The current URL as a string
- */
-export function getShareableUrl(): string {
-  return window.location.href;
-}
-
-/**
- * Register a new app ID mapping
- * Useful for dynamically added apps
- * @param urlFriendlyId - The URL-friendly identifier (e.g., 'myapp')
- * @param internalId - The internal app ID (e.g., 'my-app')
- */
-export function registerAppIdMapping(urlFriendlyId: string, internalId: string): void {
-  // Sanitize inputs to prevent XSS
-  const sanitizedUrlId = sanitizeInput(urlFriendlyId);
-  const sanitizedInternalId = sanitizeInput(internalId);
-
-  if (!sanitizedUrlId || !sanitizedInternalId) {
-    console.warn('[urlRouting] Invalid app ID mapping rejected:', {
-      urlFriendlyId,
-      internalId,
-    });
-    return;
-  }
-
-  APP_ID_MAPPING[sanitizedUrlId.toLowerCase()] = sanitizedInternalId;
-  APP_ID_MAPPING[sanitizedInternalId.toLowerCase()] = sanitizedInternalId; // Also support the internal ID directly
-  INTERNAL_TO_URL_MAPPING[sanitizedInternalId] = sanitizedUrlId;
 }

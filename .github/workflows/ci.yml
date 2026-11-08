@@ -1,57 +1,60 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  # Pushes to main run these jobs from deploy.yml, which deploys only if they all pass
+  workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v7
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version-file: '.nvmrc'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run ESLint
         run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
 
   test:
     name: Test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v7
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version-file: '.nvmrc'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
-      - name: Run tests
-        run: npm run test
-      
-      - name: Generate coverage report
+
+      - name: Run tests with coverage
         run: npm run test:coverage
-      
+
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           fail_ci_if_error: false
           files: ./coverage/coverage-final.json
@@ -61,65 +64,77 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v7
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version-file: '.nvmrc'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build project
         run: npm run build
-      
+
+      # The CSS minifier writes for build.target, which must keep the oldest browsers
+      # README supports: their media queries and their 100vh fallbacks
+      - name: Check the CSS against the oldest supported browsers
+        run: node scripts/check-built-css.js
+
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
+          # Keep .nojekyll and .well-known/ so the artifact matches the deployed site
+          include-hidden-files: true
           retention-days: 7
 
   type-check:
     name: Type Check
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v7
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version-file: '.nvmrc'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run TypeScript type checking
-        run: npx tsc --noEmit
+        run: npx tsc -b
 
   security:
     name: Security Audit
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v7
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version-file: '.nvmrc'
           cache: 'npm'
-      
-      - name: Run npm audit
+
+      # Report only: it covers the development tools, whose advisories rarely reach the site
+      - name: Audit all dependencies
         run: npm audit --audit-level=moderate
         continue-on-error: true
 
+      # Fails CI: the dependencies the site is built from, React and js-dos among them,
+      # must have no high or critical advisories
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high

@@ -4,18 +4,19 @@
  * Licensed under the MIT License
  */
 
-import { Component } from "react";
-import type { ReactNode, ErrorInfo } from "react";
-import { getErrorTracker } from "../utils/errorTracking";
-import "./ErrorBoundary.css";
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { getErrorTracker } from '../utils/errorTracking';
+import './ErrorBoundary.css';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
-  fallback?: (
-    error: Error,
-    errorInfo: ErrorInfo,
-    reset: () => void,
-  ) => ReactNode;
+  /**
+   * Shown instead of the default fallback. React renders it before componentDidCatch has
+   * the error's component stack, so errorInfo is null at first.
+   */
+  fallback?: (error: Error, errorInfo: ErrorInfo | null, reset: () => void) => ReactNode;
+  /** Called with each error it catches, once its children have been replaced */
+  onError?: (error: Error) => void;
 }
 
 interface ErrorBoundaryState {
@@ -28,10 +29,7 @@ interface ErrorBoundaryState {
  * ErrorBoundary component catches React errors in child components
  * and displays a fallback UI instead of crashing the entire app.
  */
-export class ErrorBoundary extends Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -50,30 +48,29 @@ export class ErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Log error details for debugging
-    console.error("[ErrorBoundary] Caught error:", error);
-    console.error("[ErrorBoundary] Error info:", errorInfo);
-
     // Update state with error info
     this.setState({
       errorInfo,
     });
 
-    // Track error with error tracking service
+    // The boundary logs nothing itself: the console tracker logs the error with its component
+    // stack, and React logs it too, through the default onCaughtError createRoot keeps
     const tracker = getErrorTracker();
     tracker.captureReactError(error, errorInfo, {
-      component: "ErrorBoundary",
-      userAction: "React component error",
+      component: 'ErrorBoundary',
+      userAction: 'React component error',
       metadata: {
         componentStack: errorInfo.componentStack,
       },
     });
 
     // Add breadcrumb for debugging
-    tracker.addBreadcrumb("React Error Boundary caught error", "error", {
+    tracker.addBreadcrumb('React Error Boundary caught error', 'error', {
       errorMessage: error.message,
       errorName: error.name,
     });
+
+    this.props.onError?.(error);
   }
 
   handleReset = (): void => {
@@ -88,11 +85,7 @@ export class ErrorBoundary extends Component<
     if (this.state.hasError && this.state.error) {
       // If a custom fallback is provided, use it
       if (this.props.fallback) {
-        return this.props.fallback(
-          this.state.error,
-          this.state.errorInfo!,
-          this.handleReset,
-        );
+        return this.props.fallback(this.state.error, this.state.errorInfo, this.handleReset);
       }
 
       // Default fallback UI
@@ -102,8 +95,7 @@ export class ErrorBoundary extends Component<
             <div className="error-boundary-icon">⚠️</div>
             <h1 className="error-boundary-title">Something went wrong</h1>
             <p className="error-boundary-message">
-              We're sorry, but an unexpected error occurred. Please try
-              refreshing the page.
+              We're sorry, but an unexpected error occurred. Please try refreshing the page.
             </p>
 
             <div className="error-boundary-actions">
@@ -113,10 +105,7 @@ export class ErrorBoundary extends Component<
               >
                 Refresh Page
               </button>
-              <button
-                className="error-boundary-button secondary"
-                onClick={this.handleReset}
-              >
+              <button className="error-boundary-button secondary" onClick={this.handleReset}>
                 Try Again
               </button>
             </div>

@@ -6,6 +6,8 @@
 **GitHub Repository**: https://github.com/caiiiycuk/js-dos  
 **License**: GPL-2.0
 
+> **DosKit note:** This is a copy of a third-party reference, kept as it was written; the notes marked DosKit note are DosKit's. Checked against the code of js-dos 8.3.20, which DosKit runs, several parts are wrong: options and methods it does not have (`offscreenCanvas`, `setOffscreenCanvas`, `sockdrivePreload`, `startIpxServer`, `connectIpxAddress`), an option that does less than it says (`scaleControls`) and one that does more (`fullScreen`), a `stop()` that frees less, an `error` event it never sends, command interface methods that resolve to other values (`fsDeleteFile()`, `persist()`) and an event the listing leaves out (`onUnload`), on-screen keyboard layouts in a form it cannot render, the browser's key codes where it takes its own, and browser minimums that are too low. A note follows each of them. [`src/types/js-dos.d.ts`](../src/types/js-dos.d.ts) declares what DosKit uses.
+
 ---
 
 ## Table of Contents
@@ -365,6 +367,8 @@ interface DosOptions {
 }
 ```
 
+> **DosKit note:** js-dos reads none of `offscreenCanvas`, `sockdrivePreload`, `startIpxServer` and `connectIpxAddress`: its player's code never names them. Its networking options are `ipx` (the IPX servers to offer, by name; by default it offers one of its own), `ipxBackend` (the one to select), `room`, and `noNetworking`, which is true by default and hides the network button. `softKeyboardLayout` takes rows of key names separated by spaces: see the note under Mobile Support. `scaleControls` sizes only the touch controls js-dos builds from a bundle's `.jsdos/jsdos.json` (a `layersConfig` there), by 1 + its value; it does not change the on-screen keyboard. `fullScreen`, given at all, has js-dos call the browser's Fullscreen API as the player starts, before it applies `softFullscreen`: `false` calls `document.exitFullscreen()`, which rejects outside fullscreen, and nothing handles the rejection. DosKit leaves `fullScreen` unset.
+
 ### DosProps Interface
 
 Methods returned by `Dos()` for controlling the player:
@@ -421,6 +425,8 @@ interface DosProps {
     stop(): Promise<void>;           // Stop and dispose player
 }
 ```
+
+> **DosKit note:** js-dos's player has no `setOffscreenCanvas`. It also has `setIpx`, `setIpxBackend`, `setRoom` and `setNoNetworking`, for the options of the same names, and `setFrame("network")`, which opens its network panel.
 
 ### Events System
 
@@ -526,6 +532,8 @@ interface CommandInterfaceEvents {
     onNetworkDisconnected(consumer: (networkType: NetworkType) => void): void;
 }
 ```
+
+> **DosKit note:** js-dos's emulators package, which provides the command interface, declares it a little differently. `fsDeleteFile()` resolves to whether the file was deleted, a boolean, and `persist()` can also resolve to `{ drives: { url, persist }[] }`: with `onlyChanges`, the default, a bundle that mounts sockdrives gets the changes of each drive. The events also have `onUnload(consumer: () => Promise<void>)`, which only the DOSBox-X backend reports. Of the types named above, `DosConfig` is `{ dosboxConf: string; jsdosConf: { version: string } }`; `FsNode` is `{ name, size, nodes }`, where a folder's size and a file's nodes are null; `NetworkType` is a numeric enum whose only member is `NETWORK_DOSBOX_IPX`, 0; and `AsyncifyStats` holds the emulator's counters and each sockdrive's reads and writes. [`src/types/js-dos.d.ts`](../src/types/js-dos.d.ts) declares them all as the package does.
 
 **Example Usage:**
 
@@ -799,6 +807,8 @@ Dos(element, {
 });
 ```
 
+> **DosKit note:** js-dos has neither `startIpxServer` nor `connectIpxAddress`, so neither player above starts or joins anything. Its players connect from its network panel, each to the same room on one of the IPX servers in `ipx`; `noNetworking: false` shows the panel's button. DosKit uses no networking.
+
 ---
 
 ## Advanced Features
@@ -849,6 +859,8 @@ type SockdrivePreload =
     | "all"       // Preload entire drive
     | "default";  // Smart preloading
 ```
+
+> **DosKit note:** js-dos reads no `sockdrivePreload` option: the example's `sockdrivePreload: "default"` does nothing, and these modes cannot be chosen that way.
 
 ### Cloud Storage
 
@@ -942,6 +954,8 @@ Dos(element, {
 });
 ```
 
+> **DosKit note:** js-dos cannot use either example. It reads a `softKeyboardLayout` whose first element is a list as layouts of columns of rows, so the list of lists above throws "TypeError: e.map is not a function" when the keyboard opens. A row is one string of key names separated by spaces, and a key is a letter, a digit, one of a few punctuation marks, or a name in braces such as `{esc}`, `{f1}`, `{space}`, `{enter}` or `{up}`; "Esc" or "F1" press nothing. In that form the layout is `['{esc} {f1} {f2} {f3}', '1 2 3 4', 'q w e r']`. Labels go by those names, so the arrows' symbols are `[{ '{up}': '↑', '{down}': '↓', '{left}': '←', '{right}': '→' }]`. A one-character name that js-dos does not map itself is looked up as the browser key code equal to its character code in upper case. That types the letters and digits, but `\` and `/` press nothing and `` ` `` presses keypad 0, even on js-dos's own full keyboard, while the names `Ü`, `¿` and `À` press `\`, `/` and `` ` ``: DosKit's layouts use those, labelled with the characters they type. `JS_DOS_KEYS` in [`src/config/jsdos.config.test.ts`](../src/config/jsdos.config.test.ts) lists every name and what it presses. The example's `scaleControls` does not size the keyboard either: see the note under DosOptions Interface.
+
 ### Performance Optimization
 
 #### OffscreenCanvas (Experimental)
@@ -953,6 +967,8 @@ Dos(element, {
     workerThread: true      // Required for OffscreenCanvas
 });
 ```
+
+> **DosKit note:** js-dos has no `offscreenCanvas` option. It draws every frame on the page's own canvas, on the main thread; only the emulator runs in the worker.
 
 #### Render Backend Selection
 
@@ -972,6 +988,8 @@ const props = Dos(element, { url: "game.jsdos" });
 // Later...
 await props.stop();  // Frees all resources
 ```
+
+> **DosKit note:** `stop()` frees less than that: it hides the player and exits the emulator, but leaves the `fullscreenchange`, `pointerlockchange` and `visibilitychange` listeners each `Dos()` call adds to the document, the IndexedDB connection it opens and the canvas's WebGL context. The listeners keep the stopped player reachable, so a page that starts many players keeps them all. DosKit loses each player's WebGL context itself before it stops the player, in [`src/hooks/useDosEmulator.ts`](../src/hooks/useDosEmulator.ts).
 
 ### Aspect Ratio Control
 
@@ -1110,6 +1128,8 @@ Dos(element, {
        z-index: 9999 !important;
    }
    ```
+
+> **DosKit note:** With `softFullscreen`, step 3 is needed. js-dos's own rule, in `js-dos.css`, is `.jsdos-rso .jsdos-fullscreen-workaround`, for an element inside its root, but its fullscreen button marks the root itself, the element given to `Dos()`, which also has `jsdos-rso`. Without a rule of the page's own, the player keeps its size. DosKit's rule is in [`src/components/DosPlayer.css`](../src/components/DosPlayer.css), at the `z-index` js-dos's own rule has, 999: the 9999 above would put the player over DosKit's selector, at 1101.
 
 #### Issue 7: File System Operations Failing
 
@@ -1280,6 +1300,8 @@ Dos(element, {
 | Edge | 90+ | Full support |
 | Opera | 76+ | Full support |
 
+> **DosKit note:** These minimums are too low. js-dos's player calls `structuredClone()` once a second while it runs, so in a browser without it each of those calls fails with an error. The first versions with `structuredClone()` are DosKit's minimums, listed in the README's [Browser Compatibility](../README.md#browser-compatibility).
+
 #### Required Features
 
 - **WebAssembly**: Required for emulation
@@ -1289,6 +1311,8 @@ Dos(element, {
 - **Fullscreen API**: Required for fullscreen mode
 - **IndexedDB**: Required for caching and storage
 - **WebSocket**: Required for networking features
+
+> **DosKit note:** js-dos does not use OffscreenCanvas.
 
 #### Mobile Browsers
 
@@ -1380,6 +1404,8 @@ Dos(element, {
 });
 ```
 
+> **DosKit note:** js-dos sends only the five events under Events System, so `"error"` never arrives here. It sends no event at all when a start fails after `Dos()` has returned, such as when a backend file like `wdosbox.wasm` does not download: it shows the error in its own window, and `ci-ready` never comes.
+
 ### 4. Mobile Optimization
 
 **Responsive Design:**
@@ -1402,6 +1428,8 @@ Dos(element, {
     ]
 });
 ```
+
+> **DosKit note:** As under Mobile Support, js-dos cannot render this layout, and "↑", "←" or "Space" press nothing. In its form the layout is `['{up}', '{left} {space} {right}', '{down}']`, and `softKeyboardSymbols` can label the arrows. `scaleControls` does not make these keys larger: see the note under DosOptions Interface.
 
 ### 5. Security
 
@@ -1689,6 +1717,8 @@ document.getElementById("joinBtn").onclick = () => {
 };
 ```
 
+> **DosKit note:** `startIpxServer` and `connectIpxAddress` do nothing in js-dos, so neither `hostGame()` nor `joinGame()` connects anyone: see the note under Pattern 7.
+
 ---
 
 ## Resources
@@ -1725,6 +1755,8 @@ document.getElementById("joinBtn").onclick = () => {
 ## Appendix
 
 ### A. DOSBox Configuration Reference
+
+> **DosKit note:** DosKit runs every app on js-dos's default `dosbox` backend (`wdosbox.wasm`), which drops or resets some of the settings below without a warning. It has no dynamic core (`core=dynamic` runs the simple core), no `486`, `pentium` or `pentium_mmx` CPU type (reset to `auto`), no `[video]` section or `vmemsize`, no `[dos] ver` (DOS reports 5.00) and no `sb16vibra` Sound Blaster type (reset to `sb16`). It has no `[memory]` section or `[gus] gusrate` either: memory is `[dosbox] memsize`, 16 MB by default. Pasted as printed, the block's inline comments break it too: DOSBox only skips lines that start with `#`, so a comment after a value becomes part of it, and even `core=auto` resets to `simple`. See [`src/dos-apps/README.md`](../src/dos-apps/README.md) for the settings DosKit's app configs use.
 
 Common DOSBox configuration options:
 
@@ -1763,6 +1795,8 @@ Common keyboard codes for `simulateKeyPress()`:
 | F2 | 113 | F3 | 114 |
 | Ctrl | 17 | Alt | 18 |
 | Shift | 16 | Tab | 9 |
+
+> **DosKit note:** These are the browser's key codes, which `simulateKeyPress()` and `sendKeyEvent()` do not take: js-dos hands their codes to the emulator as they are, in its own numbering. There Enter is 257, Esc 256, Tab 258, the arrows 262 (right), 263 (left), 264 (down) and 265 (up), F1 to F3 290 to 292, and the left Shift, Ctrl and Alt 340, 341 and 342; Space (32), the digits and the uppercase letters keep their ASCII codes. js-dos maps the browser's codes to its own for real key presses, with a table in `js-dos.js`.
 
 ### C. File System Structure
 

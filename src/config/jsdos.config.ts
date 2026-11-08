@@ -7,27 +7,41 @@
  * Centralized configuration for the DOS emulator
  */
 
-import type { DosOptions } from "../types/js-dos";
+import type { DosOptions } from '../types/js-dos';
+import { safeLocalStorage } from '../utils/storage';
 
 /**
- * Default js-dos configuration
- * Optimized for performance and audio quality
- * Based on research of WebAssembly, DOSBox, and browser optimization techniques
+ * The options DosKit gives js-dos's Dos() on desktop browsers. mobileJsDosConfig adds
+ * on-screen keyboard layouts to them for phones and tablets.
  */
 export const defaultJsDosConfig: Partial<DosOptions> = {
   // Emulator Settings
-  backend: "dosbox", // Use DOSBox for better performance (20-40% faster than DOSBox-X)
-  backendLocked: false, // Allow users to switch backends if needed
-  workerThread: true, // Use worker thread for non-blocking UI (HIGH impact)
-  offscreenCanvas: true, // Enable for 10-30% FPS improvement (Chrome 69+, Firefox 105+, Safari 16.4+)
+  // The DOSBox configs in src/config/dosbox.conf.ts and src/dos-apps/ are written for this
+  // backend: they only use settings it applies. It is also the only backend whose files
+  // public/sw.js precaches for offline use.
+  backend: 'dosbox',
+  backendLocked: false, // js-dos shows its backend picker only before a run; autoStart skips that
+  // Run the emulator in a Web Worker rather than on the page's main thread. js-dos still draws
+  // every frame on the page.
+  workerThread: true,
 
   // Display Settings
-  theme: "dark",
-  imageRendering: "pixelated", // Authentic DOS look + 5-15% performance gain
-  renderBackend: "webgl", // WebGL for 2-5x rendering performance vs Canvas 2D
-  renderAspect: "4/3", // Classic DOS aspect ratio
-  fullScreen: false,
-  softFullscreen: true, // Better cross-platform fullscreen support
+  theme: 'dark',
+  // The emulator's canvas has the DOS screen's resolution, and js-dos sets its CSS
+  // image-rendering to this, so the browser scales it up without smoothing the pixels
+  // ('smooth' leaves the browser's default smoothing)
+  imageRendering: 'pixelated',
+  renderBackend: 'webgl', // Draw frames with WebGL; js-dos uses Canvas 2D if WebGL cannot start
+  renderAspect: '4/3', // Classic DOS aspect ratio
+  // fullScreen is left unset, which keeps js-dos off the Fullscreen API at a start: set to
+  // false, it has js-dos call document.exitFullscreen() at every start, which rejects outside
+  // fullscreen and leaves the rejection unhandled, and set to true, requestFullscreen().
+  // With softFullscreen, js-dos's fullscreen button makes the player fill the window with CSS
+  // instead of the browser's Fullscreen API, adding the class jsdos-fullscreen-workaround to
+  // the player's element. js-dos 8.3.20 styles that class only inside its root
+  // (.jsdos-rso .jsdos-fullscreen-workaround), and the root is the player's element itself,
+  // so the rule that does it is DosPlayer.css's.
+  softFullscreen: true,
 
   // Input Settings
   mouseCapture: false, // Don't auto-capture mouse
@@ -40,54 +54,129 @@ export const defaultJsDosConfig: Partial<DosOptions> = {
   // Behavior Settings
   autoStart: true, // Auto-start the emulator
   countDownStart: 0, // No countdown
-  autoSave: false, // Manual save control
+  // js-dos saves only bundles loaded from a url, so it saves nothing of DosKit's players
+  // either way
+  autoSave: false,
   kiosk: false, // Show UI controls
 
   // UI Settings
-  lang: "en",
+  lang: 'en',
   thinSidebar: false,
-  scaleControls: 0.3, // Mobile-friendly control size
 
   // Cloud/Network Settings
   noCloud: true, // Disable cloud features by default
 
   // Advanced Settings
-  pathPrefix: "/emulators/", // Local WASM files (copied from node_modules/js-dos/dist/emulators)
+  pathPrefix: '/emulators/', // Local WASM files (copied from node_modules/js-dos/dist/emulators)
 };
 
 /**
- * Mobile-optimized configuration
+ * The on-screen keyboard's layouts, each a list of columns of rows of key names separated by
+ * spaces (see SoftKeyboardLayout in src/types/js-dos.d.ts for the names). Its {layout} key,
+ * labelled ⎘, switches to the next layout, and from the last back to the first.
+ */
+const softKeyboardLayout: string[][][] = [
+  // DosKit's compact layout, which fits upright phones: the keys most programs need
+  [
+    [
+      '{esc} {f1} {f2} {f3} {f5}',
+      '1 2 3 4 5 {bksp}',
+      'q w e r t',
+      'a s d f g',
+      'z x c v b',
+      '{layout} {ctrl} {alt} {space} {enter}',
+      '{up}',
+      '{left} {down} {right}',
+    ],
+  ],
+  // js-dos 8.3.20's own two layouts, which its keyboard shows, function keys and a keypad
+  // first, unless given others (softKeyboardLayout in its src/store/dos.ts). Here the full
+  // keyboard comes first, then function keys and a keypad. Three of its keys do not press
+  // what they show: js-dos presses nothing for \ and / and keypad 0 for `. It reads a
+  // one-character name as the browser key code equal to its character code, and the browser's
+  // codes for those keys are those of Ü, ¿ and À, so here those are their names, which the
+  // labels below show as \ / and `. Its {symbols} key, which switches to its labels in
+  // Russian, is left out: DosKit gives one set of labels.
+  [
+    [
+      '{esc} À 1 2 3 4 5 6 7 8 9 0 ( ) - = {bksp} {enter}',
+      '{tab} q w e r t y u i o p { } Ü [ ] {up}',
+      "{shift} {left} {right} a s d f g h j k l : ; ' [ {down}",
+      '{layout} {alt} {ctrl} z x c v b n m , . ¿ ] {space}',
+    ],
+  ],
+  [
+    [
+      '{esc} {f1} {f2} {f3} {f4}',
+      '0 1 2 3 4',
+      '5 6 7 8 9',
+      '{ } ( ) {shift}',
+      '{layout} {ctrl} {alt} {space}',
+    ],
+    ['{f5} {f6} {f7} {f8}', '{pgup} {pgdown} {bksp}', '', '{up}', '{left} {down} {right}'],
+    [
+      '{f9} {f10} {f11} {f12}',
+      '{del} {kp7} {kp8} {kp9}',
+      '{tab} {kp4} {kp5} {kp6}',
+      '- {kp1} {kp2} {kp3}',
+      '+ {kp0} . {enter}',
+    ],
+  ],
+];
+
+/**
+ * Labels for the keys, by key name: js-dos 8.3.20's own (the first of its two sets, in its
+ * src/store/dos.ts) but for {symbols}, and \ / and ` for the keys named Ü, ¿ and À. A key
+ * without one shows its name, capitalised and without braces ({ctrl} shows Ctrl).
+ */
+const softKeyboardSymbols: Record<string, string>[] = [
+  {
+    '{esc}': '␛',
+    '{bksp}': '⌫',
+    '{enter}': '↵',
+    '{up}': '↑',
+    '{down}': '↓',
+    '{left}': '←',
+    '{right}': '→',
+    '{shift}': '⇑',
+    '{layout}': '⎘',
+    '{pgup}': 'PgUp',
+    '{pgdown}': 'PgDown',
+    '{kp7}': '↖',
+    '{kp8}': '↑',
+    '{kp9}': '↗',
+    '{kp5}': '5',
+    '{kp4}': '←',
+    '{kp6}': '→',
+    '{kp1}': '↙',
+    '{kp2}': '↓',
+    '{kp3}': '↘',
+    '{kp0}': '0',
+    Ü: '\\',
+    '¿': '/',
+    À: '`',
+  },
+];
+
+/**
+ * The options for phones and tablets, as isMobileDevice() tells them: the desktop ones, with
+ * the on-screen keyboard layouts above
  */
 export const mobileJsDosConfig: Partial<DosOptions> = {
   ...defaultJsDosConfig,
   softFullscreen: true,
-  scaleControls: 0.4, // Larger controls for touch
   mouseCapture: false,
-  softKeyboardLayout: [
-    ["Esc", "F1", "F2", "F3", "F5"],
-    ["1", "2", "3", "4", "5"],
-    ["Q", "W", "E", "R", "T"],
-    ["A", "S", "D", "F", "G"],
-    ["Z", "X", "C", "V", "B"],
-    ["Ctrl", "Alt", "Space", "Enter"],
-  ],
-  softKeyboardSymbols: [
-    {
-      "↑": "ArrowUp",
-      "↓": "ArrowDown",
-      "←": "ArrowLeft",
-      "→": "ArrowRight",
-    },
-  ],
+  // The on-screen keyboard behind the keyboard button in the js-dos sidebar: DosKit's compact
+  // layout first, then js-dos's own two
+  softKeyboardLayout,
+  softKeyboardSymbols,
 };
 
 /**
  * Detect if the user is on a mobile device
  */
 export function isMobileDevice(): boolean {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent,
-  );
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
 /**
@@ -98,4 +187,54 @@ export function getDefaultConfig(): Partial<DosOptions> {
     return mobileJsDosConfig;
   }
   return defaultJsDosConfig;
+}
+
+type RenderAspect = NonNullable<DosOptions['renderAspect']>;
+type ImageRendering = NonNullable<DosOptions['imageRendering']>;
+
+const RENDER_ASPECTS: readonly RenderAspect[] = [
+  'AsIs',
+  '1/1',
+  '5/4',
+  '4/3',
+  '16/10',
+  '16/9',
+  'Fit',
+];
+const IMAGE_RENDERINGS: readonly ImageRendering[] = ['pixelated', 'smooth'];
+
+/**
+ * The choices made in js-dos's settings panel for the options Dos() takes: volume, mouse
+ * sensitivity, aspect ratio, image rendering, theme and the on-screen controls' scale (its
+ * Mirror controls has no option, so it goes back to the page's first value at each new
+ * player until a reload). js-dos 8.3.20 keeps them in
+ * localStorage (src/store/dos.ts and src/store/ui.ts, under the prefix of
+ * src/host/lstorage.ts), but reads them only when js-dos.js loads, and applies the options
+ * each Dos() call gets over them. Passed in place of DosKit's, they last through app
+ * switches and reloads. A value js-dos would not have stored is left out, as is everything
+ * when the browser refuses storage.
+ */
+export function getStoredSettings(): Partial<DosOptions> {
+  const stored = (key: string) => safeLocalStorage.getItem(`jsdos.8.${key}`);
+  // js-dos's sliders go from 0 to 1
+  const fraction = (key: string) => {
+    const value = Number.parseFloat(stored(key) ?? '');
+    return value >= 0 && value <= 1 ? value : undefined;
+  };
+  const oneOf = <T extends string>(key: string, values: readonly T[]) =>
+    values.find((value) => value === stored(key));
+
+  const settings: Partial<DosOptions> = {
+    volume: fraction('volume'),
+    mouseSensitivity: fraction('mouse_sensitivity'),
+    renderAspect: oneOf('renderAspect', RENDER_ASPECTS),
+    imageRendering: oneOf('imageRendering', IMAGE_RENDERINGS),
+    theme: stored('theme') || undefined,
+    scaleControls: fraction('scaleControls'),
+  };
+  // What is not stored is left to DosKit's options, which an undefined would replace
+  for (const key of Object.keys(settings) as (keyof DosOptions)[]) {
+    if (settings[key] === undefined) delete settings[key];
+  }
+  return settings;
 }

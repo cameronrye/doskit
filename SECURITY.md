@@ -62,27 +62,27 @@ When using DosKit, we recommend:
 
 1. **Keep dependencies updated**: Regularly update to the latest version of DosKit
 2. **Use HTTPS**: Always serve your application over HTTPS in production
-3. **Content Security Policy**: Implement a strict CSP that allows js-dos CDN resources
-4. **Subresource Integrity**: The project uses SRI hashes for CDN resources - do not remove them
-5. **Sanitize user input**: If you allow users to upload DOS programs, validate and sanitize all inputs
+3. **Content Security Policy**: DosKit sets none. If you add one, it must allow what js-dos needs: see [Browser Security](#browser-security)
+4. **Sanitize user input**: If you allow users to upload DOS programs, validate and sanitize all inputs
 
 ### For Contributors
 
 1. **No secrets in code**: Never commit API keys, passwords, or other secrets
-2. **Dependency audits**: Run `npm audit` before submitting PRs
+2. **Dependency audits**: Run `npm audit` before submitting PRs. CI fails when a production dependency has a high or critical advisory (`npm audit --omit=dev --audit-level=high`), and only reports the rest
 3. **Input validation**: Always validate and sanitize user inputs
 4. **XSS prevention**: Be cautious with `dangerouslySetInnerHTML` and user-generated content
 5. **Follow secure coding practices**: Review OWASP guidelines for web applications
 
 ## Known Security Considerations
 
-### js-dos CDN Dependency
+### js-dos
 
-DosKit loads js-dos from a CDN (`https://v8.js-dos.com/latest/`). We use Subresource Integrity (SRI) hashes to ensure the integrity of these resources. However, users should be aware:
+DosKit serves js-dos from its own origin, not from a CDN. `package.json` pins an exact version, and `scripts/copy-js-dos.js` copies its player (`js-dos.js`, `js-dos.css`) and emulator files (`emulators/`) from `node_modules` into `public/` before every dev server start and build. Users should be aware:
 
-- The js-dos library is a third-party dependency
-- We use SRI hashes to prevent tampering
-- The `/latest/` path may update without notice - consider pinning to a specific version for production
+- The js-dos library is a third-party dependency, under the GPL-2.0: the [licenses page](https://doskit.net/licenses/) gives its license and links the source of the version the site serves
+- The page loads js-dos from its own origin, without Subresource Integrity hashes. `package-lock.json` records the integrity hash of the js-dos package, which `npm ci` checks when it installs it
+- js-dos changes only with `package.json` and `package-lock.json`. The service worker keeps js-dos's files in a cache named after its version, and serves a page the files of the version its worker installed. A worker with another js-dos version takes over only after Update Now or once every tab has closed, and a page still open when it does can get the new version's emulator files for its next player until it reloads
+- js-dos has cloud features, and loads its emulator files from its own CDN by default. DosKit's settings in `src/config/jsdos.config.ts` turn the cloud features off (`noCloud`) and load the emulator files from `/emulators/` (`pathPrefix`), so the page loads nothing from other origins
 
 ### WebAssembly Execution
 
@@ -98,7 +98,7 @@ DosKit uses WebAssembly (via js-dos) to run DOS programs:
 DosKit relies on browser security features:
 
 - Modern browsers provide process isolation for WebAssembly
-- Ensure your Content Security Policy allows WebAssembly execution
+- DosKit sets no Content Security Policy: GitHub Pages cannot send response headers, and `index.html` has no CSP meta tag. A policy added where you host DosKit must allow `'unsafe-eval'` in `script-src`, because js-dos's `emulators.js` runs the script of the DOSBox backend, `wdosbox.js`, with `eval`, and `blob:` in `worker-src`, because it starts the emulator's worker from a blob URL. `'wasm-unsafe-eval'` alone is not enough: without `'unsafe-eval'`, no player starts
 - Keep browsers updated to benefit from the latest security patches
 
 ## Security Updates
@@ -106,10 +106,11 @@ DosKit relies on browser security features:
 Security updates will be released as patch versions (e.g., 1.0.1, 1.0.2) and announced via:
 
 - GitHub Security Advisories
-- Release notes on GitHub
-- npm package updates
+- GitHub releases, whose notes list the fixes (they are the release's entry in [CHANGELOG.md](CHANGELOG.md))
 
-Subscribe to GitHub notifications for this repository to stay informed about security updates.
+[doskit.net](https://doskit.net/) is deployed from `main` once CI passes, so a fix reaches it when the fix is merged. Open pages then offer the new version in their update prompt.
+
+To hear of each release, watch this repository on GitHub for releases (Watch → Custom → Releases).
 
 ## Questions?
 

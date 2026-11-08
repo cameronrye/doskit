@@ -7,15 +7,10 @@
  * Custom React hook for managing js-dos emulator lifecycle and state
  */
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import type {
-  DosOptions,
-  DosProps,
-  CommandInterface,
-  DosEvent,
-} from "../types/js-dos";
-import { getDefaultConfig } from "../config/jsdos.config";
-import { getEmulatorAdapter } from "../adapters/EmulatorAdapter";
+import { useEffect, useRef, useState, useCallback } from 'react';
+import type { DosOptions, DosProps, CommandInterface, DosEvent } from '../types/js-dos';
+import { getDefaultConfig, getStoredSettings } from '../config/jsdos.config';
+import { getEmulatorAdapter } from '../adapters/EmulatorAdapter';
 
 export interface UseDosEmulatorOptions {
   /** Custom DOSBox configuration */
@@ -24,8 +19,13 @@ export interface UseDosEmulatorOptions {
   options?: Partial<DosOptions>;
   /** Callback when the emulator is ready */
   onReady?: (ci: CommandInterface) => void;
-  /** Callback when the emulator exits */
+  /**
+   * Callback when a ready emulator is gone: DOS exited, or unmounting stopped it. Called
+   * once per onReady.
+   */
   onExit?: () => void;
+  /** Callback when the emulator cannot start, with the error that `error` then holds */
+  onError?: (error: string) => void;
 }
 
 export interface UseDosEmulatorReturn {
@@ -35,8 +35,18 @@ export interface UseDosEmulatorReturn {
   isLoading: boolean;
   /** Error message if initialization failed */
   error: string | null;
-  /** Command interface reference (available after ready) */
+  /** Command interface of the running emulator: set once it is ready, cleared once it is gone */
   ciRef: React.RefObject<CommandInterface | null>;
+}
+
+/**
+ * Stop a js-dos player. Its emulator worker logs an "ExitStatus" error (exit code 0) as it
+ * shuts down: that is its normal exit, logged to the worker's own console.
+ */
+function stopPlayer(player: DosProps): void {
+  player.stop().catch((err: unknown) => {
+    console.error('[useDosEmulator] Error stopping player:', err);
+  });
 }
 
 /**
@@ -48,11 +58,10 @@ export const useDosEmulator = ({
   options = {},
   onReady,
   onExit,
+  onError,
 }: UseDosEmulatorOptions): UseDosEmulatorReturn => {
   const dosContainerRef = useRef<HTMLDivElement>(null);
-  const dosPlayerRef = useRef<DosProps | null>(null);
   const ciRef = useRef<CommandInterface | null>(null);
-  const isInitializedRef = useRef(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,85 +69,59 @@ export const useDosEmulator = ({
   // Store callbacks in refs to avoid recreating the event handler
   const onReadyRef = useRef(onReady);
   const onExitRef = useRef(onExit);
+  const onErrorRef = useRef(onError);
 
   useEffect(() => {
     onReadyRef.current = onReady;
     onExitRef.current = onExit;
-  }, [onReady, onExit]);
+    onErrorRef.current = onError;
+  }, [onReady, onExit, onError]);
 
   // Event handler for js-dos events (stable reference)
   const handleDosEvent = useCallback((event: DosEvent, arg?: unknown) => {
     if (import.meta.env.DEV) {
-      console.log("[useDosEmulator] Event:", event);
+      console.log('[useDosEmulator] Event:', event);
     }
 
     switch (event) {
-      case "emu-ready":
+      case 'emu-ready':
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Emulator ready");
+          console.log('[useDosEmulator] Emulator ready');
         }
         setIsLoading(false);
-
-        // Close the sidebar menu on startup for a cleaner initial view
-        setTimeout(() => {
-          if (dosContainerRef.current) {
-            const toggleButton = dosContainerRef.current.querySelector(
-              "[data-dos-sidebar-toggle]",
-            );
-            if (toggleButton instanceof HTMLElement) {
-              toggleButton.click();
-              if (import.meta.env.DEV) {
-                console.log("[useDosEmulator] Sidebar closed on startup");
-              }
-            } else {
-              const buttons =
-                dosContainerRef.current.querySelectorAll("button");
-              const menuButton = Array.from(buttons).find(
-                (btn) =>
-                  btn.textContent?.includes("☰") ||
-                  btn.className?.includes("sidebar") ||
-                  btn.className?.includes("menu"),
-              );
-              if (menuButton instanceof HTMLElement) {
-                menuButton.click();
-                if (import.meta.env.DEV) {
-                  console.log(
-                    "[useDosEmulator] Sidebar closed on startup (fallback)",
-                  );
-                }
-              }
-            }
-          }
-        }, 500);
         break;
 
-      case "ci-ready":
+      case 'ci-ready':
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Command Interface ready");
+          console.log('[useDosEmulator] Command Interface ready');
         }
         ciRef.current = arg as CommandInterface;
 
         if (ciRef.current) {
-          ciRef.current.events().onExit(() => {
+          const ci = ciRef.current;
+          ci.events().onExit(() => {
+            // Once unmounting has stopped the player, cleanup has reported its exit
+            if (ciRef.current !== ci) return;
+            ciRef.current = null;
             if (import.meta.env.DEV) {
-              console.log("[useDosEmulator] DOS exited");
+              console.log('[useDosEmulator] DOS exited');
             }
             onExitRef.current?.();
           });
 
           if (import.meta.env.DEV) {
             ciRef.current.events().onStdout((message: string) => {
-              console.log("[DOS]", message);
+              console.log('[DOS]', message);
             });
           }
 
           try {
             ciRef.current.unmute();
             if (import.meta.env.DEV) {
-              console.log("[useDosEmulator] Audio unmuted");
+              console.log('[useDosEmulator] Audio unmuted');
             }
           } catch (err) {
-            console.warn("[useDosEmulator] Failed to unmute audio:", err);
+            console.warn('[useDosEmulator] Failed to unmute audio:', err);
           }
         }
 
@@ -147,79 +130,54 @@ export const useDosEmulator = ({
         }
         break;
 
-      case "bnd-play":
-      case "fullscreen-change":
+      case 'bnd-play':
+      case 'fullscreen-change':
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Event:", event, arg);
+          console.log('[useDosEmulator] Event:', event, arg);
         }
         break;
 
       default:
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Unknown event:", event, arg);
+          console.log('[useDosEmulator] Unknown event:', event, arg);
         }
     }
   }, []);
 
-  // Handle unhandled promise rejections from js-dos
+  // Start js-dos once per mount, and stop it on unmount
   useEffect(() => {
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      const error = event.reason;
-      const isFullscreenError =
-        error instanceof TypeError &&
-        error.message &&
-        (error.message.includes("exitFullscreen") ||
-          error.message.includes("requestFullscreen"));
-
-      if (isFullscreenError) {
-        event.preventDefault();
-        if (import.meta.env.DEV) {
-          console.warn(
-            "[useDosEmulator] Suppressed fullscreen error:",
-            error.message,
-          );
-        }
-      }
-    };
-
-    window.addEventListener("unhandledrejection", handleUnhandledRejection);
-    return () => {
-      window.removeEventListener(
-        "unhandledrejection",
-        handleUnhandledRejection,
-      );
-    };
-  }, []);
-
-  // Initialize emulator (only once)
-  useEffect(() => {
-    if (isInitializedRef.current) {
-      if (import.meta.env.DEV) {
-        console.log("[useDosEmulator] Already initialized, skipping");
-      }
-      return;
-    }
-
-    if (!dosContainerRef.current) {
-      console.error("[useDosEmulator] Container ref is null");
+    const container = dosContainerRef.current;
+    if (!container) {
+      console.error('[useDosEmulator] Container ref is null');
       return;
     }
 
     const adapter = getEmulatorAdapter();
 
-    if (!adapter.isAvailable()) {
-      console.error("[useDosEmulator] Emulator not available");
-      setError("DOS emulator library not loaded. Please refresh the page.");
+    // Show why the emulator cannot start, and tell the parent
+    const fail = (message: string) => {
+      setError(message);
       setIsLoading(false);
+      onErrorRef.current?.(message);
+    };
+
+    if (!adapter.isAvailable()) {
+      console.error('[useDosEmulator] Emulator not available');
+      fail('DOS emulator library not loaded. Please refresh the page.');
       return;
     }
 
     if (import.meta.env.DEV) {
       console.log(`[useDosEmulator] Initializing ${adapter.getName()}...`);
     }
-    isInitializedRef.current = true;
-    setIsLoading(true);
-    setError(null);
+
+    // Aborted on cleanup. The adapter can hand the player back after this mount is gone:
+    // React StrictMode unmounts every first mount at once, and on a fresh page the player
+    // comes once emulators.js has run, which can take seconds. js-dos also goes on firing
+    // the events of a start it began. So a start still waiting for emulators.js is never
+    // made, a late player is stopped, and nothing it fires reaches the callbacks.
+    const unmounted = new AbortController();
+    let player: DosProps | null = null;
 
     // Initialize emulator asynchronously
     const initializeEmulator = async () => {
@@ -227,32 +185,33 @@ export const useDosEmulator = ({
         const config = getDefaultConfig();
         const mergedOptions: Partial<DosOptions> = {
           ...config,
+          // The user's choices in js-dos's settings panel, over DosKit's defaults
+          ...getStoredSettings(),
           ...options,
           dosboxConf,
-          onEvent: handleDosEvent,
+          onEvent: (event, arg) => {
+            if (!unmounted.signal.aborted) handleDosEvent(event, arg);
+          },
         };
 
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Configuration:", mergedOptions);
+          console.log('[useDosEmulator] Configuration:', mergedOptions);
         }
 
-        dosPlayerRef.current = await adapter.initialize(
-          dosContainerRef.current!,
-          mergedOptions,
-        );
+        const dosPlayer = await adapter.initialize(container, mergedOptions, unmounted.signal);
+        if (unmounted.signal.aborted) {
+          stopPlayer(dosPlayer);
+          return;
+        }
+        player = dosPlayer;
 
         if (import.meta.env.DEV) {
-          console.log("[useDosEmulator] Emulator initialized successfully");
+          console.log('[useDosEmulator] Emulator initialized successfully');
         }
       } catch (err) {
-        console.error("[useDosEmulator] Failed to initialize emulator:", err);
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to initialize DOS emulator",
-        );
-        setIsLoading(false);
-        isInitializedRef.current = false;
+        if (unmounted.signal.aborted) return;
+        console.error('[useDosEmulator] Failed to initialize emulator:', err);
+        fail(err instanceof Error ? err.message : 'Failed to initialize DOS emulator');
       }
     };
 
@@ -260,16 +219,23 @@ export const useDosEmulator = ({
 
     return () => {
       if (import.meta.env.DEV) {
-        console.log("[useDosEmulator] Cleaning up...");
+        console.log('[useDosEmulator] Cleaning up...');
       }
-      if (dosPlayerRef.current) {
-        dosPlayerRef.current.stop().catch((err: unknown) => {
-          console.error("[useDosEmulator] Error stopping player:", err);
-        });
-        dosPlayerRef.current = null;
+      unmounted.abort();
+      if (player) {
+        // js-dos's stop() leaves the WebGL context it draws with alive, and browsers keep
+        // only so many: Chrome drops the oldest once there are 16, warning each time
+        for (const canvas of container.querySelectorAll('canvas')) {
+          canvas.getContext('webgl')?.getExtension('WEBGL_lose_context')?.loseContext();
+        }
+        stopPlayer(player);
       }
-      ciRef.current = null;
-      isInitializedRef.current = false;
+      // A ready player is gone now: report its exit at once, so a parent showing it as
+      // ready does not wait for js-dos, which reports the stop late or not at all
+      if (ciRef.current) {
+        ciRef.current = null;
+        onExitRef.current?.();
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
