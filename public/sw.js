@@ -318,6 +318,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // The worker script always comes from the server. Browsers fetch it for updates
+  // without asking the worker; the page fetches it to check that the worker still
+  // exists (serviceWorkerRegistration.ts), which a cached copy would keep confirming.
+  if (url.pathname === self.location.pathname) {
+    return;
+  }
+
   // Network-first strategy for HTML documents to ensure fresh content
   if (
     request.mode === 'navigate' ||

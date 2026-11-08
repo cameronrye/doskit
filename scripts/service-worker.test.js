@@ -372,6 +372,22 @@ describe('activate', () => {
   });
 });
 
+describe('worker script', () => {
+  it('leaves requests for it to the network and never caches it', async () => {
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    // serviceWorkerRegistration.ts fetches it to check that the worker still exists
+    const check = () =>
+      new Request(new URL('/sw.js', ORIGIN), { headers: { 'Service-Worker': 'script' } });
+
+    const first = await worker.dispatch('fetch', { request: check() });
+    const second = await worker.dispatch('fetch', { request: check() });
+
+    expect([first.responded, second.responded]).toEqual([false, false]);
+    expect(browser.cachedPaths()).not.toContain('/sw.js');
+  });
+});
+
 describe('messages', () => {
   it('activates the waiting worker on SKIP_WAITING', async () => {
     const worker = startWorker(createBrowser());
