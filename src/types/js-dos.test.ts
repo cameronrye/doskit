@@ -4,7 +4,16 @@
  */
 
 import { describe, it, expectTypeOf } from 'vitest';
-import type { DosOptions, DosProps, InitFs } from './js-dos';
+import type {
+  AsyncifyStats,
+  CommandInterface,
+  CommandInterfaceEvents,
+  DosConfig,
+  DosOptions,
+  DosProps,
+  FsNode,
+  InitFs,
+} from './js-dos';
 
 type SoftKeyboardLayout = NonNullable<DosOptions['softKeyboardLayout']>;
 
@@ -89,6 +98,50 @@ type MemberJsDosReturns =
   | 'save'
   | 'stop';
 
+/**
+ * Every member of the command interface of js-dos 8.3.20's emulators package
+ * (CommandInterface in its src/emulators.ts)
+ */
+type MemberOfCommandInterface =
+  | 'config'
+  | 'height'
+  | 'width'
+  | 'soundFrequency'
+  | 'screenshot'
+  | 'pause'
+  | 'resume'
+  | 'mute'
+  | 'unmute'
+  | 'exit'
+  | 'simulateKeyPress'
+  | 'sendKeyEvent'
+  | 'sendMouseMotion'
+  | 'sendMouseRelativeMotion'
+  | 'sendMouseButton'
+  | 'sendMouseSync'
+  | 'sendBackendEvent'
+  | 'persist'
+  | 'events'
+  | 'networkConnect'
+  | 'networkDisconnect'
+  | 'asyncifyStats'
+  | 'fsTree'
+  | 'fsReadFile'
+  | 'fsWriteFile'
+  | 'fsDeleteFile';
+
+/** Every event the command interface reports (CommandInterfaceEvents in src/emulators.ts) */
+type EventOfCommandInterface =
+  | 'onStdout'
+  | 'onFrameSize'
+  | 'onFrame'
+  | 'onSoundPush'
+  | 'onExit'
+  | 'onMessage'
+  | 'onNetworkConnected'
+  | 'onNetworkDisconnected'
+  | 'onUnload';
+
 describe('js-dos types', () => {
   it('should declare only options js-dos reads', () => {
     expectTypeOf<keyof DosOptions>().toExtend<OptionJsDosReads>();
@@ -144,6 +197,77 @@ describe('js-dos types', () => {
 
     it('should be what the initFs option takes', () => {
       expectTypeOf<DosOptions['initFs']>().toEqualTypeOf<InitFs | undefined>();
+    });
+  });
+
+  // The emulators package, which emulators.js and the worker's wdosbox.js ship
+  describe('command interface', () => {
+    it('should declare every member and event of js-dos', () => {
+      expectTypeOf<keyof CommandInterface>().toEqualTypeOf<MemberOfCommandInterface>();
+      expectTypeOf<keyof CommandInterfaceEvents>().toEqualTypeOf<EventOfCommandInterface>();
+    });
+
+    it('should call back when the emulator unloads, and wait for the promise returned', () => {
+      expectTypeOf<CommandInterfaceEvents['onUnload']>()
+        .parameter(0)
+        .toEqualTypeOf<() => Promise<void>>();
+    });
+
+    // NetworkType.NETWORK_DOSBOX_IPX, the only member of a numeric enum; js-dos passes 0
+    it('should take IPX, 0, as the network to connect and disconnect', () => {
+      expectTypeOf<CommandInterface['networkConnect']>().parameter(0).toEqualTypeOf<0>();
+      expectTypeOf<CommandInterface['networkDisconnect']>().parameter(0).toEqualTypeOf<0>();
+      expectTypeOf<CommandInterfaceEvents['onNetworkConnected']>()
+        .parameter(0)
+        .parameter(0)
+        .toEqualTypeOf<0>();
+    });
+
+    it('should resolve fsDeleteFile to whether the file was deleted', () => {
+      expectTypeOf<CommandInterface['fsDeleteFile']>().returns.toEqualTypeOf<Promise<boolean>>();
+    });
+
+    it('should resolve persist to a bundle, the changes of sockdrives, or null', () => {
+      expectTypeOf<CommandInterface['persist']>().returns.resolves.toEqualTypeOf<
+        Uint8Array | { drives: { url: string; persist: Uint8Array }[] } | null
+      >();
+    });
+
+    it("should give the bundle's DOSBox config and its js-dos config", () => {
+      expectTypeOf<CommandInterface['config']>().returns.resolves.toEqualTypeOf<DosConfig>();
+      expectTypeOf<DosConfig>().toEqualTypeOf<{
+        dosboxConf: string;
+        jsdosConf: { version: string };
+      }>();
+    });
+
+    // The worker builds the tree: a folder has nodes and no size, a file a size and no nodes
+    it('should give each node of the file tree a size or nodes, the other null', () => {
+      expectTypeOf<FsNode>().toEqualTypeOf<{
+        name: string;
+        size: number | null;
+        nodes: FsNode[] | null;
+      }>();
+    });
+
+    it("should give the worker's counters and each sockdrive's reads and writes as stats", () => {
+      expectTypeOf<keyof AsyncifyStats>().toEqualTypeOf<
+        | 'messageSent'
+        | 'messageReceived'
+        | 'messageFrame'
+        | 'messageSound'
+        | 'nonSkippableSleepCount'
+        | 'sleepCount'
+        | 'sleepTime'
+        | 'cycles'
+        | 'netSent'
+        | 'netRecv'
+        | 'driveIo'
+      >();
+      expectTypeOf<AsyncifyStats['cycles']>().toEqualTypeOf<number>();
+      expectTypeOf<AsyncifyStats['driveIo']>().toEqualTypeOf<
+        { url: string; preload: number; total: number; read: number; write: number }[]
+      >();
     });
   });
 });

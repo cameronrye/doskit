@@ -4,9 +4,12 @@
  * Licensed under the MIT License
  *
  * TypeScript type definitions for js-dos 8.3.20, checked against its code
- * (node_modules/js-dos/dist/js-dos.js and its source map). DosOptions declares only options
- * Dos() reads and DosProps only members of the player it returns, which js-dos.test.ts
- * checks; what DosKit does not use, such as js-dos's IPX networking, is left out.
+ * (node_modules/js-dos/dist/js-dos.js and its source map) and, from CommandInterface on,
+ * against the declarations of its emulators package (node_modules/js-dos/dist/emulators/
+ * types). DosOptions declares only options Dos() reads, DosProps only members of the player
+ * it returns, and CommandInterface every member of the emulators' command interface, which
+ * js-dos.test.ts checks; of the options and the player, what DosKit does not use, such as
+ * js-dos's IPX networking, is left out.
  */
 
 export interface DosOptions {
@@ -185,10 +188,16 @@ export interface CommandInterface {
   fsTree(): Promise<FsNode>;
   fsReadFile(file: string): Promise<Uint8Array>;
   fsWriteFile(file: string, contents: ReadableStream<Uint8Array> | Uint8Array): Promise<void>;
-  fsDeleteFile(file: string): Promise<void>;
+  /** Resolves to whether the file was deleted */
+  fsDeleteFile(file: string): Promise<boolean>;
 
   // State Management
-  persist(onlyChanges?: boolean): Promise<Uint8Array | null>;
+  /**
+   * Pack the changes made to the DOS file system, or with onlyChanges false all of it, into
+   * a bundle; null when the emulator packs none. With onlyChanges, the default, a bundle
+   * that mounts sockdrives gets the changes of each drive instead.
+   */
+  persist(onlyChanges?: boolean): Promise<Uint8Array | PersistedSockdrives | null>;
 
   // Network
   networkConnect(networkType: NetworkType, address: string): Promise<void>;
@@ -210,23 +219,51 @@ export interface CommandInterfaceEvents {
   onMessage(consumer: (msgType: MessageType, ...args: unknown[]) => void): void;
   onNetworkConnected(consumer: (networkType: NetworkType, address: string) => void): void;
   onNetworkDisconnected(consumer: (networkType: NetworkType) => void): void;
+  /**
+   * Called as DOS unloads, which waits for the promises the consumers return. Only the
+   * DOSBox-X backend reports it; the default backend, which DosKit runs, never does.
+   */
+  onUnload(consumer: () => Promise<void>): void;
 }
 
+/** A bundle's configuration: its dosbox.conf, and its .jsdos/jsdos.json */
 export interface DosConfig {
-  [key: string]: unknown;
+  dosboxConf: string;
+  jsdosConf: { version: string };
 }
 
+/** A file or folder in the tree fsTree() gives: a file has a size, a folder its nodes */
 export interface FsNode {
   name: string;
-  size: number;
-  nodes?: FsNode[];
+  size: number | null;
+  nodes: FsNode[] | null;
 }
 
-export type NetworkType = 'ipx';
+/** What persist() packs, with onlyChanges, for a bundle that mounts sockdrives */
+export interface PersistedSockdrives {
+  drives: { url: string; persist: Uint8Array }[];
+}
+
+/**
+ * The network to connect DOSBox to: NetworkType.NETWORK_DOSBOX_IPX, 0, the only member of
+ * a numeric enum in js-dos's emulators package. js-dos itself passes 0.
+ */
+export type NetworkType = 0;
 export type MessageType = string;
 
+/** The emulator's counters, and the reads and writes of each sockdrive */
 export interface AsyncifyStats {
-  [key: string]: number | string | boolean;
+  messageSent: number;
+  messageReceived: number;
+  messageFrame: number;
+  messageSound: number;
+  nonSkippableSleepCount: number;
+  sleepCount: number;
+  sleepTime: number;
+  cycles: number;
+  netSent: number;
+  netRecv: number;
+  driveIo: { url: string; preload: number; total: number; read: number; write: number }[];
 }
 
 export function Dos(element: HTMLDivElement, options?: Partial<DosOptions>): DosProps;
