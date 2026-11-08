@@ -377,7 +377,7 @@ App does this for DosPlayerWithApps.
 
 The global error handler automatically suppresses:
 
-- Keyboard lock errors (require user interaction)
+- Keyboard lock errors (js-dos asks for a lock at every start, without handling the promise)
 - Keyboard lock requests that a newer one superseded
 - ResizeObserver loop errors (benign)
 - Browser extension errors

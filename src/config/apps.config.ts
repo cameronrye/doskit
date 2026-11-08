@@ -77,7 +77,7 @@ export const availableApps: DosApp[] = [
     year: 1994,
     loadMethod: 'zip',
     dosboxConf: '',
-    warnBeforeLeaving: true, // a song in progress; outside macOS its Ctrl-W (save) closes the tab
+    warnBeforeLeaving: true, // a song in progress; its Ctrl-W (save) can close the tab
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/scream-tracker.config');
       return loadZipArchive(config.screamTrackerZipUrl, onProgress, signal);
