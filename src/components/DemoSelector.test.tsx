@@ -8,35 +8,18 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { DemoSelector } from './DemoSelector';
 import { loadZipArchive } from '../utils/diskLoader';
 import { availableApps } from '../config/apps.config';
+import { secondRealityDosboxConf, secondRealityZipUrl } from '../dos-apps/second-reality.config';
+import { impulseTrackerZipUrl } from '../dos-apps/impulse-tracker.config';
 
-// Mock the disk loader
+// Only downloads are mocked: the app list and the src/dos-apps configs are real.
+//
+// Don't vi.mock() a dos-app config with a factory here. DemoSelector starts an
+// app's loadDosboxConf() and loader() together, so apps.config.ts imports that
+// config twice at once, and Vitest gives the second of two overlapping imports
+// of a factory-mocked module the real module. Loads would mix the mock's DOSBox
+// config with the real ZIP URL, or use the mock's URL after a hover preload.
 vi.mock('../utils/diskLoader', () => ({
   loadZipArchive: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
-}));
-
-// Mock the dos-apps configs
-vi.mock('../dos-apps/second-reality.config', () => ({
-  secondRealityZipUrl: 'http://example.com/second-reality.zip',
-  secondRealityDosboxConf: '[cpu]\ncore=auto',
-  secondRealityMetadata: {
-    name: 'Second Reality',
-    description: 'A legendary demo by Future Crew',
-    author: 'Future Crew',
-    year: 1993,
-  },
-}));
-
-vi.mock('../dos-apps/impulse-tracker.config', async () => ({
-  // The real config re-exports diskLoader's loader; mirror that with the mocked one
-  loadZipArchive: (await import('../utils/diskLoader')).loadZipArchive,
-  impulseTrackerZipUrl: 'http://example.com/impulse-tracker.zip',
-  impulseTrackerDosboxConf: '[cpu]\ncore=auto',
-  impulseTrackerMetadata: {
-    name: 'Impulse Tracker',
-    description: 'A music tracker application',
-    author: 'Jeffrey Lim',
-    year: 1995,
-  },
 }));
 
 /**
@@ -190,7 +173,11 @@ describe('DemoSelector', () => {
       fireEvent.click(loadButton);
 
       await waitFor(() => {
-        expect(loadZipArchive).toHaveBeenCalled();
+        expect(loadZipArchive).toHaveBeenCalledWith(
+          secondRealityZipUrl,
+          expect.any(Function),
+          expect.any(AbortSignal)
+        );
       });
     });
 
@@ -213,7 +200,7 @@ describe('DemoSelector', () => {
               name: 'Second Reality',
             }),
             files: expect.any(Uint8Array),
-            dosboxConf: expect.any(String),
+            dosboxConf: secondRealityDosboxConf,
           })
         );
       });
@@ -340,19 +327,13 @@ describe('DemoSelector', () => {
   });
 
   describe('Load cancellation and overlapping loads', () => {
-    // Keyed by app slug: when loads are driven through the component, the
-    // dos-app config mocks above are bypassed and the real ZIP URLs are used.
-    const SR = 'second-reality';
-    const IT = 'impulse-tracker';
-
-    /** Make each download wait until the test resolves it */
+    /** Make each download wait until the test resolves it, keyed by archive URL */
     const deferDownloads = () => {
       const pending = new Map<string, (data: Uint8Array) => void>();
       vi.mocked(loadZipArchive).mockImplementation(
         (url: string) =>
           new Promise<Uint8Array>((resolve) => {
-            const slug = [SR, IT].find((s) => url.includes(s)) ?? url;
-            pending.set(slug, resolve);
+            pending.set(url, resolve);
           })
       );
       return pending;
@@ -366,7 +347,7 @@ describe('DemoSelector', () => {
     const startLoadingSecondReality = async (pending: Map<string, unknown>) => {
       fireEvent.click(getFloppyDiskByName('Second Reality')!);
       fireEvent.click(screen.getByRole('button', { name: /Load Application/i }));
-      await waitFor(() => expect(pending.has(SR)).toBe(true));
+      await waitFor(() => expect(pending.has(secondRealityZipUrl)).toBe(true));
     };
 
     it('does not deliver the app when loading is cancelled before the download finishes', async () => {
@@ -376,7 +357,7 @@ describe('DemoSelector', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /Cancel Loading/i }));
       await act(async () => {
-        pending.get(SR)!(new Uint8Array([1]));
+        pending.get(secondRealityZipUrl)!(new Uint8Array([1]));
       });
 
       expect(mockOnSelect).not.toHaveBeenCalled();
@@ -401,15 +382,15 @@ describe('DemoSelector', () => {
 
       // User changes their mind while Second Reality is still downloading
       fireEvent.doubleClick(getFloppyDiskByName('Impulse Tracker')!);
-      await waitFor(() => expect(pending.has(IT)).toBe(true));
+      await waitFor(() => expect(pending.has(impulseTrackerZipUrl)).toBe(true));
 
       await act(async () => {
-        pending.get(SR)!(new Uint8Array([1]));
+        pending.get(secondRealityZipUrl)!(new Uint8Array([1]));
       });
       expect(mockOnSelect).not.toHaveBeenCalled();
 
       await act(async () => {
-        pending.get(IT)!(new Uint8Array([2]));
+        pending.get(impulseTrackerZipUrl)!(new Uint8Array([2]));
       });
       expect(mockOnSelect).toHaveBeenCalledTimes(1);
       expect(mockOnSelect.mock.calls[0]?.[0].app.id).toBe('impulse-tracker');
