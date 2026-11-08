@@ -437,6 +437,15 @@ describe('App', () => {
       expect(statusIndicators).toHaveTextContent(/Online/i);
     });
 
+    it("keeps the loading badge clear of js-dos.css's .loading rule, which draws a spinner", () => {
+      render(<App />);
+
+      const badge = screen.getByText('Loading').closest('.status-badge');
+
+      expect(badge).not.toHaveClass('loading');
+      expect(badge).toHaveClass('is-loading');
+    });
+
     it('should show ready status when DOS is ready', async () => {
       render(<App />);
 

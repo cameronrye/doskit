@@ -226,7 +226,7 @@ function App() {
                 <span>Ready</span>
               </span>
             ) : (
-              <span className="status-badge loading" title="Loading DOS emulator">
+              <span className="status-badge is-loading" title="Loading DOS emulator">
                 <span className="status-dot"></span>
                 <span>Loading</span>
               </span>

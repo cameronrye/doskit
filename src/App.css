@@ -215,7 +215,7 @@
 }
 
 .status-badge.ready,
-.status-badge.loading,
+.status-badge.is-loading,
 .status-badge.online,
 .status-badge.offline {
   background-color: rgba(39, 174, 96, 0.2);
@@ -223,7 +223,8 @@
   border: 1px solid #27ae60;
 }
 
-.status-badge.loading {
+/* Not .loading: js-dos.css styles that class page-wide as a spinner */
+.status-badge.is-loading {
   animation: pulse-loading 1.5s ease-in-out infinite;
 }
 
@@ -235,7 +236,7 @@
   animation: pulse-dot 2s infinite;
 }
 
-.status-badge.loading .status-dot {
+.status-badge.is-loading .status-dot {
   animation: pulse-loading 1.5s ease-in-out infinite;
 }
 
