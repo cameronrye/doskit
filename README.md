@@ -78,7 +78,7 @@ The DOS emulator will automatically load and present an interactive DOS prompt!
 
 **Try it now**: [https://doskit.net/](https://doskit.net/)
 
-The live demo is automatically deployed from the `main` branch using GitHub Actions. Every push to `main` triggers a new deployment.
+The live demo is automatically deployed from the `main` branch using GitHub Actions. Every push to `main` runs the CI checks and deploys once they pass.
 
 ## PWA Features
 
@@ -233,9 +233,13 @@ DosKit is configured for automatic deployment to GitHub Pages.
 1. **Enable GitHub Pages** in repository settings (Settings → Pages → Source: GitHub Actions)
 2. **Push to main branch**: `git push origin main`
 3. **Monitor deployment**: Check the Actions tab
-4. **Visit your site**: `https://cameronrye.github.io/doskit/`
+4. **Visit your site**: `https://doskit.net/` for this repository
 
-The site automatically rebuilds and deploys on every push to `main`.
+Every push to `main` starts the Deploy to GitHub Pages workflow (`.github/workflows/deploy.yml`), which can also be run by hand from the Actions tab. It runs the CI jobs from `ci.yml` (ESLint and the format check, the tests with coverage, the build, the type check, and an `npm audit` that only reports) and a production build of its own, and deploys that build only if both succeed. Pull requests to `main` run the same CI jobs.
+
+The build also writes `dist/404.html`, a copy of `index.html`. GitHub Pages serves it for any path it has no file for, so path-style links such as `https://doskit.net/secondreality` start the app, which rewrites them to `/?app=secondreality`.
+
+DosKit has to be served from the root of its domain: `vite.config.ts` sets `base: '/'`, and the bundles, the service worker, js-dos and the app archives are all requested by absolute paths. A fork needs a custom domain or a `<user>.github.io` repository; it does not work under a project path such as `https://<user>.github.io/doskit/`.
 
 ### Creating Releases
 
@@ -244,7 +248,7 @@ DosKit uses **fully automated releases** with [release-please](https://github.co
 1. **Use conventional commits**: `feat:`, `fix:`, etc.
 2. **Merge PR to main**: That's it!
 3. **release-please bot**: Automatically creates a Release PR
-4. **Merge Release PR**: Automatic GitHub release with artifacts
+4. **Merge Release PR**: Automatic GitHub release, with a ZIP of the built site attached
 
 See [CONTRIBUTING.md](CONTRIBUTING.md#commit-messages) for details on conventional commits.
 
