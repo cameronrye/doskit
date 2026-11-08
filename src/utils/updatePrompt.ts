@@ -8,44 +8,94 @@
  */
 
 import { createElement } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { UpdateNotification } from '../components/UpdateNotification';
 
 const CONTAINER_ID = 'update-notification-container';
+
+/** The prompt on screen */
+interface Prompt {
+  root: Root;
+  container: HTMLElement;
+  /**
+   * Whether its Update Now has asked the waiting worker to take over: the controllerchange
+   * that follows is then this tab's own, which UpdateNotification reloads for
+   */
+  updateRequested: boolean;
+}
+
+let prompt: Prompt | null = null;
+
+// The navigator.serviceWorker whose controllerchange the prompt watches
+let watched: ServiceWorkerContainer | null = null;
+
+// A running js-dos takes every key that reaches window and cancels it, so Tab, Enter and
+// Space would do nothing in the prompt and be typed into DOS. Keys pressed in the prompt
+// stop at its root, once React, which listens there, has handled them. (The prompt is
+// outside #root, whose keys App keeps from js-dos itself.)
+const keepKeyFromJsDos = (event: KeyboardEvent) => event.stopPropagation();
+
+/**
+ * Mount the prompt, or render the one on screen again
+ * @param registration - The registration the update is for
+ * @param updatedInAnotherTab - Whether another tab has already let the update take over
+ */
+function render(registration: ServiceWorkerRegistration, updatedInAnotherTab: boolean): void {
+  if (!prompt) {
+    const container = document.createElement('div');
+    container.id = CONTAINER_ID;
+    document.body.appendChild(container);
+    container.addEventListener('keydown', keepKeyFromJsDos);
+    container.addEventListener('keyup', keepKeyFromJsDos);
+    prompt = { root: createRoot(container), container, updateRequested: false };
+  }
+
+  const shown = prompt;
+  shown.root.render(
+    createElement(UpdateNotification, {
+      registration,
+      updatedInAnotherTab,
+      onUpdateRequested: () => {
+        shown.updateRequested = true;
+      },
+      onDismiss: () => {
+        shown.root.unmount();
+        shown.container.remove();
+        prompt = null;
+      },
+    })
+  );
+}
+
+/**
+ * Watch for another tab's Update Now. It lets the new worker take over every tab, and this
+ * one then runs the version it loaded under that worker until it reloads, so the prompt
+ * says so, again if it was put off. Only a page a worker controls is told of an update, so
+ * this never answers the first install, whose worker takes control of pages that had none.
+ * @param registration - The registration the update is for
+ */
+function watchForUpdateInAnotherTab(registration: ServiceWorkerRegistration): void {
+  if (watched === navigator.serviceWorker) {
+    return;
+  }
+  watched = navigator.serviceWorker;
+  watched.addEventListener('controllerchange', () => {
+    if (!prompt?.updateRequested) {
+      render(registration, true);
+    }
+  });
+}
 
 /**
  * Show the update prompt for a service worker registration with a waiting worker
  * @param registration - The registration whose waiting worker should be activated
  */
 export function showUpdateNotification(registration: ServiceWorkerRegistration): void {
+  watchForUpdateInAnotherTab(registration);
+
   // One prompt at a time. A prompt already on screen stays valid: the
   // registration always exposes the newest waiting worker.
-  if (document.getElementById(CONTAINER_ID)) {
-    return;
+  if (!prompt) {
+    render(registration, false);
   }
-
-  // Create a container for the update notification
-  const notificationContainer = document.createElement('div');
-  notificationContainer.id = CONTAINER_ID;
-  document.body.appendChild(notificationContainer);
-
-  // A running js-dos takes every key that reaches window and cancels it, so Tab, Enter and
-  // Space would do nothing in the prompt and be typed into DOS. Keys pressed in the prompt
-  // stop at its root, once React, which listens there, has handled them. (The prompt is
-  // outside #root, whose keys App keeps from js-dos itself.)
-  const keepKeyFromJsDos = (event: KeyboardEvent) => event.stopPropagation();
-  notificationContainer.addEventListener('keydown', keepKeyFromJsDos);
-  notificationContainer.addEventListener('keyup', keepKeyFromJsDos);
-
-  // Render the update notification
-  const notificationRoot = createRoot(notificationContainer);
-  notificationRoot.render(
-    createElement(UpdateNotification, {
-      registration,
-      onDismiss: () => {
-        notificationRoot.unmount();
-        notificationContainer.remove();
-      },
-    })
-  );
 }

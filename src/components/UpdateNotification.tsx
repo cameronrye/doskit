@@ -18,9 +18,21 @@ const LOG_CONTEXT = 'UpdateNotification';
 interface UpdateNotificationProps {
   registration: ServiceWorkerRegistration | null;
   onDismiss?: () => void;
+  /**
+   * Another tab's Update Now has let the new worker take over this tab too, which still
+   * runs the version it loaded: the prompt offers a reload instead
+   */
+  updatedInAnotherTab?: boolean;
+  /** Called when Update Now asks the waiting worker to take over, just before it does */
+  onUpdateRequested?: () => void;
 }
 
-export function UpdateNotification({ registration, onDismiss }: UpdateNotificationProps) {
+export function UpdateNotification({
+  registration,
+  onDismiss,
+  updatedInAnotherTab = false,
+  onUpdateRequested,
+}: UpdateNotificationProps) {
   // Track if user has dismissed the notification
   const [isDismissed, setIsDismissed] = useState(false);
 
@@ -55,7 +67,7 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
   }, [show]);
 
   const handleUpdate = () => {
-    if (registration?.waiting) {
+    if (!updatedInAnotherTab && registration?.waiting) {
       logger.info(LOG_CONTEXT, 'Initiating update');
 
       // Set up a flag to prevent multiple reloads
@@ -114,6 +126,7 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
       );
 
       // Now send the SKIP_WAITING message to the service worker
+      onUpdateRequested?.();
       try {
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
         logger.info(LOG_CONTEXT, 'SKIP_WAITING message sent to the waiting worker');
@@ -193,13 +206,17 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
           </svg>
         </div>
 
-        <div className="update-notification-content">
+        {/* A live region, so that screen readers announce the new wording once another tab
+            updates: the dialog stays, and so does the focus */}
+        <div className="update-notification-content" aria-live="polite">
           <h2 id={titleId} className="update-notification-title">
-            Update Available
+            {updatedInAnotherTab ? 'Update Installed' : 'Update Available'}
           </h2>
           <p id={messageId} className="update-notification-message">
-            A new version of DosKit is ready to install. Update now to get the latest features and
-            improvements.
+            {updatedInAnotherTab
+              ? 'DosKit was updated in another tab. Reload to use the new version.'
+              : 'A new version of DosKit is ready to install. Update now to get the latest ' +
+                'features and improvements.'}
           </p>
         </div>
 
@@ -209,7 +226,7 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
             className="update-notification-button update-notification-button-primary"
             onClick={handleUpdate}
           >
-            Update Now
+            {updatedInAnotherTab ? 'Reload' : 'Update Now'}
           </button>
           <button
             ref={laterButton}

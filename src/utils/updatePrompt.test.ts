@@ -6,13 +6,25 @@
  * Update Prompt Tests
  */
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
-import { act, fireEvent, screen } from '@testing-library/react';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import { showUpdateNotification } from './updatePrompt';
 
 const registration = { waiting: null } as ServiceWorkerRegistration;
 
 describe('showUpdateNotification', () => {
+  // navigator.serviceWorker, which tells each tab when a new worker takes control of it
+  let serviceWorker: EventTarget;
+  const takeControl = () =>
+    act(() => {
+      serviceWorker.dispatchEvent(new Event('controllerchange'));
+    });
+
+  beforeEach(() => {
+    serviceWorker = new EventTarget();
+    Object.defineProperty(navigator, 'serviceWorker', { value: serviceWorker, configurable: true });
+  });
+
   afterEach(() => {
     // Dismiss whatever is still on screen so tests stay independent
     for (const later of screen.queryAllByRole('button', { name: 'Later' })) {
@@ -20,6 +32,97 @@ describe('showUpdateNotification', () => {
         fireEvent.click(later);
       });
     }
+    // jsdom has no navigator.serviceWorker
+    Reflect.deleteProperty(navigator, 'serviceWorker');
+  });
+
+  // Update Now there lets the new worker take over every tab, which keeps running the
+  // version it loaded until it reloads
+  describe('when another tab updates', () => {
+    const originalLocation = window.location;
+
+    afterEach(() => {
+      Object.defineProperty(window, 'location', { value: originalLocation, configurable: true });
+    });
+
+    it('says so in the prompt this tab shows, and leaves the focus where it is', async () => {
+      await act(async () => {
+        showUpdateNotification(registration);
+      });
+      const later = screen.getByRole('button', { name: 'Later' });
+      act(() => later.focus());
+
+      takeControl();
+
+      expect(screen.getAllByRole('alertdialog')).toHaveLength(1);
+      const dialog = screen.getByRole('alertdialog', { name: 'Update Installed' });
+      // Its new wording is announced
+      expect(
+        within(dialog)
+          .getByText(/updated in another tab/)
+          .closest('[aria-live]')
+      ).toHaveAttribute('aria-live', 'polite');
+      expect(screen.getByRole('button', { name: 'Reload' })).toBeInTheDocument();
+      expect(later).toHaveFocus();
+    });
+
+    it('takes the focus to Reload when it shows the prompt again', async () => {
+      await act(async () => {
+        showUpdateNotification(registration);
+      });
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'Later' }));
+      });
+
+      takeControl();
+
+      expect(screen.getByRole('button', { name: 'Reload' })).toHaveFocus();
+    });
+
+    it('shows the prompt again, though this tab put it off', async () => {
+      await act(async () => {
+        showUpdateNotification(registration);
+      });
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'Later' }));
+      });
+
+      takeControl();
+
+      expect(screen.getByRole('alertdialog', { name: 'Update Installed' })).toBeInTheDocument();
+    });
+
+    it("does not take this tab's own Update Now for another tab's", async () => {
+      const reload = vi.fn();
+      Object.defineProperty(window, 'location', {
+        value: { ...originalLocation, reload },
+        configurable: true,
+      });
+      const waiting = { postMessage: vi.fn() } as unknown as ServiceWorker;
+      await act(async () => {
+        showUpdateNotification({ waiting } as ServiceWorkerRegistration);
+      });
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'Update Now' }));
+      });
+
+      takeControl();
+
+      expect(reload).toHaveBeenCalledOnce();
+      expect(screen.queryByRole('alertdialog', { name: 'Update Installed' })).toBeNull();
+    });
+
+    it('shows nothing when the first worker takes control of the page', async () => {
+      // The first install's worker claims the open pages, which no worker controlled when
+      // they loaded, so none of them was told of an update. Loaded afresh, as main.tsx loads
+      // it into a page that has navigator.serviceWorker.
+      vi.resetModules();
+      await import('./updatePrompt');
+
+      takeControl();
+
+      expect(document.getElementById('update-notification-container')).toBeNull();
+    });
   });
 
   it('shows a single prompt when an update is reported more than once', async () => {

@@ -213,6 +213,61 @@ describe('UpdateNotification', () => {
     });
   });
 
+  describe('once another tab has updated', () => {
+    // Update Now there let the new worker take over this tab too, which still runs the
+    // version it loaded
+    const renderUpdatedInAnotherTab = (
+      onUpdateRequested?: () => void,
+      waiting: ServiceWorker | null = null
+    ) =>
+      render(
+        <UpdateNotification
+          registration={{ ...mockRegistration, waiting }}
+          updatedInAnotherTab
+          onUpdateRequested={onUpdateRequested}
+        />
+      );
+
+    it('says so, and offers to reload', () => {
+      renderUpdatedInAnotherTab();
+
+      const dialog = screen.getByRole('alertdialog', { name: 'Update Installed' });
+      expect(dialog).toHaveAccessibleDescription(
+        'DosKit was updated in another tab. Reload to use the new version.'
+      );
+      expect(screen.getByRole('button', { name: 'Reload' })).toHaveFocus();
+      expect(screen.getByRole('button', { name: 'Later' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Update Now' })).not.toBeInTheDocument();
+    });
+
+    it('only reloads on Reload, even with a newer update waiting by then', () => {
+      // That update is offered once the page has reloaded; Reload does not accept it
+      const onUpdateRequested = vi.fn();
+      renderUpdatedInAnotherTab(onUpdateRequested, mockWaiting);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+
+      expect(window.location.reload).toHaveBeenCalledOnce();
+      expect(mockWaiting.postMessage).not.toHaveBeenCalled();
+      expect(onUpdateRequested).not.toHaveBeenCalled();
+    });
+  });
+
+  it('says when its Update Now asks the waiting worker to take over', () => {
+    // Before it asks, so that the controllerchange that follows is known to be this tab's
+    const onUpdateRequested = vi.fn();
+    const calledFirst = vi.fn(() => onUpdateRequested.mock.calls.length === 1);
+    mockWaiting.postMessage = calledFirst;
+    render(
+      <UpdateNotification registration={mockRegistration} onUpdateRequested={onUpdateRequested} />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Update Now' }));
+
+    expect(onUpdateRequested).toHaveBeenCalledOnce();
+    expect(calledFirst).toHaveReturnedWith(true);
+  });
+
   // With fake timers, which the fallback reload waits on. No waitFor: it waits on a
   // timer itself, and Vitest's fake timers would keep it waiting
   describe('Update functionality', () => {
