@@ -369,16 +369,15 @@
   }
 }
 
-/* Dark Mode Variables */
+/*
+ * Dark Mode Variables. The selector does not use them: the player's loading spinner and
+ * error box do (DosPlayerWithApps.css).
+ */
 :root {
   --color-bg-primary: #1a1a1a;
-  --color-bg-secondary: #2a2a2a;
   --color-bg-tertiary: #333;
-  --color-bg-accent: #1e3a5f;
   --color-text-primary: #fff;
   --color-text-secondary: #aaa;
-  --color-text-disabled: #666;
-  --color-border: #333;
   --color-accent: #4a9eff;
   --color-accent-hover: #3a8eef;
   --color-error: #ff4444;
@@ -388,13 +387,9 @@
 @media (prefers-color-scheme: light) {
   :root {
     --color-bg-primary: #ffffff;
-    --color-bg-secondary: #f5f5f5;
     --color-bg-tertiary: #e0e0e0;
-    --color-bg-accent: #e3f2fd;
     --color-text-primary: #000;
     --color-text-secondary: #666;
-    --color-text-disabled: #999;
-    --color-border: #ddd;
     --color-accent: #2196f3;
     --color-accent-hover: #1976d2;
     --color-error: #d32f2f;
