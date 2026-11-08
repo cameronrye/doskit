@@ -28,23 +28,30 @@
     For the fast build tooling
     Website: vite.dev
 
+    The demosceners and tracker authors
+    For the productions DosKit runs: Future Crew, Triton,
+    Jeffrey Lim, cld & The Doctor, and the sceners archive
+    GitHub: github.com/sceners
+
 # TECHNOLOGY COLOPHON
 
     ## Frontend
-    React 19.2.0
-    TypeScript 5.9.3
-    Vite 7.1.14 (Rolldown variant)
-    
+    React
+    TypeScript
+    Vite (Rolldown bundler)
+    retro-floppy (application selector)
+
     ## Emulation
-    js-dos 8.3.20
+    js-dos
     DOSBox (via WebAssembly)
-    
+
     ## Development Tools
-    ESLint 9.39.1
-    Vitest 4.0.10
-    TypeDoc 0.28.14
-    Sharp 0.34.5
-    
+    ESLint
+    Prettier
+    Vitest
+    TypeDoc
+    Sharp
+
     ## Build & Deploy
     GitHub Actions
     GitHub Pages
@@ -74,12 +81,11 @@
 # PROJECT
 
     Project: DosKit
-    Version: 1.0.0
     License: MIT
     Repository: github.com/cameronrye/doskit
     Website: doskit.net
-    Started: 2024
-    Last update: 2025-11-18
+    Started: 2025
+    Last update: 2026-11-07
 
 # SITE
 
@@ -87,14 +93,15 @@
     Doctype: HTML5
     IDE: Visual Studio Code
     Components: React Components
-    Fonts: Courier New, monospace
+    Fonts: Segoe UI and system sans-serif; Courier New, monospace
     Standards: W3C, WHATWG
-    Accessibility: WCAG 2.1 AA
+    Accessibility: Keyboard-navigable application selector, ARIA labels, prefers-reduced-motion support
     SEO: Schema.org JSON-LD, Open Graph, Twitter Cards
     
 # FEATURES
 
     ✓ Interactive DOS Prompt
+    ✓ Demoscene & Music Tracker Library
     ✓ Cross-Platform Support
     ✓ Progressive Web App
     ✓ Deep Linking
@@ -106,9 +113,8 @@
     ✓ Touch Controls
     ✓ Type-Safe Development
     ✓ Service Worker Caching
-    ✓ Auto-Updates
+    ✓ Update Notifications
     ✓ Error Tracking
-    ✓ Performance Monitoring
 
 # BROWSER SUPPORT
 
