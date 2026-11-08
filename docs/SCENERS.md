@@ -4,7 +4,7 @@ This document tracks the integration of historical scene content from the [scene
 
 ## Overview
 
-The sceners organization (curated by Defacto2) contains 157 repositories of historical scene content including:
+The sceners organization (curated by Defacto2) contains more than 150 repositories of historical scene content including:
 
 - Classic DOS demos and intros
 - Source code for demo effects
@@ -78,11 +78,11 @@ The IDs are the app IDs in `src/config/apps.config.ts`. App URLs drop the hyphen
 
 ### Integration Steps
 
-For each demo:
+For each demo (the full steps, with code, are in [`src/dos-apps/README.md`](../src/dos-apps/README.md)):
 
 1. **Prepare Files** - Copy executable and required data files, create ZIP bundle in `public/demos/`
 2. **Create Config** - Add config file in `src/dos-apps/`, define DOSBox configuration
-3. **Register App** - Add to app registry, update app selector UI
+3. **Register App** - Add an entry to `availableApps` in `src/config/apps.config.ts`; the app selector lists every registered app, so its UI needs no change
 4. **Test** - Verify demo runs correctly, check audio/video output
 
 ## Available Repositories
