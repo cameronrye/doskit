@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { DemoSelector, type DosApp } from './DemoSelector';
 import { loadZipArchive, type LoadProgress } from '../utils/diskLoader';
 import { availableApps } from '../config/apps.config';
@@ -479,6 +480,79 @@ describe('DemoSelector', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+  });
+
+  // user-event activates a button on Enter or Space, and opens details, only if the
+  // keydown is not cancelled, as browsers do
+  describe("Keys on the selector's own controls", () => {
+    const focusOn = (element: HTMLElement) => act(() => element.focus());
+
+    it.each(['{Enter}', ' '])('closes the selector with %s on Cancel', async (key) => {
+      const user = userEvent.setup();
+      render(<DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />);
+      fireEvent.click(getFloppyDiskByName('Second Reality')!);
+
+      focusOn(screen.getByRole('button', { name: 'Cancel' }));
+      await user.keyboard(key);
+
+      expect(mockOnCancel).toHaveBeenCalledTimes(1);
+      expect(loadZipArchive).not.toHaveBeenCalled();
+    });
+
+    it.each(['{Enter}', ' '])('closes the selector with %s on Close', async (key) => {
+      const user = userEvent.setup();
+      render(<DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />);
+
+      focusOn(screen.getByRole('button', { name: 'Close' }));
+      await user.keyboard(key);
+
+      expect(mockOnCancel).toHaveBeenCalledTimes(1);
+      expect(screen.queryByText(/Selected:/)).not.toBeInTheDocument();
+    });
+
+    it.each(['{Enter}', ' '])('loads the selected app with %s on Load Application', async (key) => {
+      const user = userEvent.setup();
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      fireEvent.click(getFloppyDiskByName('Second Reality')!);
+
+      focusOn(screen.getByRole('button', { name: 'Load Application' }));
+      await user.keyboard(key);
+
+      await waitFor(() => expect(mockOnSelect).toHaveBeenCalledTimes(1));
+      expect(mockOnSelect.mock.calls[0]?.[0].app.id).toBe('second-reality');
+    });
+
+    it.each(['{Enter}', ' '])('cancels the download with %s on Cancel Loading', async (key) => {
+      const user = userEvent.setup();
+      vi.mocked(loadZipArchive).mockImplementation(() => new Promise(() => {}));
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      fireEvent.click(getFloppyDiskByName('Second Reality')!);
+      fireEvent.click(screen.getByRole('button', { name: 'Load Application' }));
+      await waitFor(() => expect(loadZipArchive).toHaveBeenCalled());
+
+      focusOn(screen.getByRole('button', { name: /Cancel Loading/i }));
+      await user.keyboard(key);
+
+      expect(vi.mocked(loadZipArchive).mock.calls[0]?.[2]?.aborted).toBe(true);
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(loadZipArchive).toHaveBeenCalledTimes(1);
+    });
+
+    // jsdom does not open details from the keyboard, so check that the keys are left to it
+    it.each(['Enter', ' '])("leaves %s on the error's Details to the browser", async (key) => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(loadZipArchive).mockRejectedValueOnce(new Error('Failed to load ZIP: HTTP 404'));
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      fireEvent.click(getFloppyDiskByName('Second Reality')!);
+      fireEvent.click(screen.getByRole('button', { name: 'Load Application' }));
+      const summary = within(await screen.findByRole('alert')).getByText('Details');
+
+      expect(fireEvent.keyDown(summary, { key })).toBe(true);
+      fireEvent.keyUp(summary, { key });
+
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(loadZipArchive).toHaveBeenCalledTimes(1);
     });
   });
 

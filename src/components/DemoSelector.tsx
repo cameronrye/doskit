@@ -204,6 +204,14 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   /** Keyboard navigation handler */
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
+      // Escape works anywhere in the dialog. The other keys belong to the disks: the
+      // buttons and the error's Details keep what Enter and Space do to them.
+      if (
+        event.key !== 'Escape' &&
+        !(event.target instanceof Element && event.target.closest('[data-app-id]'))
+      ) {
+        return;
+      }
       const totalApps = availableApps.length;
 
       switch (event.key) {
