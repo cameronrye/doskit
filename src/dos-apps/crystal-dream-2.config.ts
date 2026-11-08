@@ -22,11 +22,13 @@ export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';
 /**
  * DOSBox configuration optimized for Crystal Dream 2
  *
- * Crystal Dream 2 requirements:
- * - 486 DX-50 recommended (runs on 386-40)
+ * Crystal Dream 2 requirements: the archive has no readme and CD2.EXE is packed, so these are
+ * what the program shows when it runs
  * - VGA graphics
- * - Sound Blaster compatible sound card
- * - Memory: 4MB recommended
+ * - Sound device, chosen in its setup: Ultrasound, SoundBlaster (mixing at 32000 to 44000 Hz),
+ *   or a mono DAC on LPT1 or LPT2
+ * - A fast enough processor: on a slower one it stops with "System overloaded! Too heavy tasks
+ *   for a too weak processor!"
  *
  * This configuration uses:
  * - Auto CPU core and type, at maximum cycles. CD2.EXE unpacks itself in real mode, where

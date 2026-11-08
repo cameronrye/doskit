@@ -22,12 +22,10 @@ export const panicZipUrl = '/demos/panic.zip';
 /**
  * DOSBox configuration optimized for Panic
  *
- * Panic requirements:
- * - 386 CPU minimum (486 recommended)
- * - VGA graphics
- * - Sound Blaster compatible sound card
- * - Memory: 4MB RAM
- * - Requires EMS memory
+ * Panic requirements (PANIC.NFO):
+ * - A fast 386 or 486, and a fast VGA adapter
+ * - About 600 KB of conventional memory
+ * - For the music, a Sound Blaster or Sound Blaster Pro and 1 MB of EMS
  *
  * This configuration uses:
  * - Auto CPU core and type, at a fixed 30000 cycles. 'auto' would give it 3,000 cycles/ms, at
@@ -36,8 +34,6 @@ export const panicZipUrl = '/demos/panic.zip';
  * - Sound Blaster 16 for audio
  * - Standard VGA graphics
  * - DOSBox's default 16 MB of memory, with EMS enabled
- *
- * Based on the original demo requirements
  */
 export const panicDosboxConf = presets
   .demo()

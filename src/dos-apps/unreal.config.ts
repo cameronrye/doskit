@@ -22,11 +22,11 @@ export const unrealZipUrl = '/demos/unreal.zip';
 /**
  * DOSBox configuration optimized for Unreal
  *
- * Unreal requirements:
- * - 386 CPU minimum (486 recommended)
+ * Unreal requirements (README.NOW):
+ * - A 386 or a 486, "preferably the latter"
  * - VGA graphics
- * - Sound Blaster compatible sound card
- * - Memory: 4MB RAM
+ * - 600,000 bytes of memory
+ * - For sound, a Sound Blaster, Sound Blaster Pro or Soundmaster II; it also runs without one
  *
  * This configuration uses:
  * - Auto CPU core and type, at a fixed 30000 cycles. 'auto' would give it 3,000 cycles/ms, at
@@ -34,8 +34,6 @@ export const unrealZipUrl = '/demos/unreal.zip';
  * - Sound Blaster 16 for audio
  * - Standard VGA graphics
  * - DOSBox's default 16 MB of memory
- *
- * Based on the original demo requirements
  */
 export const unrealDosboxConf = presets
   .demo()

@@ -23,11 +23,12 @@ export const impulseTrackerZipUrl = '/demos/impulse-tracker.zip';
 /**
  * DOSBox configuration optimized for Impulse Tracker
  *
- * Impulse Tracker requirements:
- * - 386 CPU minimum, 486+ recommended
- * - VGA graphics (text mode)
- * - Sound card: Sound Blaster, Gravis UltraSound, or compatible
- * - Memory: 4MB RAM recommended
+ * Impulse Tracker requirements (IT.TXT, section 1.1):
+ * - A 386 or later, a 486 recommended, and a VGA card (it runs in text mode)
+ * - For sound, one of the cards it has drivers for, among them the Sound Blasters and the Gravis
+ *   UltraSound
+ * - About 500 KB of conventional memory, 600 KB to load almost any song, and an EMM driver for
+ *   EMS, where it keeps the samples
  *
  * This configuration uses:
  * - Fixed cycles (18000) on the simple CPU core, for stable audio playback

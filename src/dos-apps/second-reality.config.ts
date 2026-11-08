@@ -12,11 +12,11 @@ import { presets } from '../utils/dosboxConfigBuilder';
 /**
  * DOSBox configuration optimized for Second Reality
  *
- * Second Reality requirements:
- * - 386 CPU minimum, 486+ recommended
- * - VGA graphics
- * - Sound card: Gravis UltraSound (recommended), Sound Blaster, or no sound
- * - Memory: 570KB conventional, 1MB EMS for SB (GUS doesn't need EMS)
+ * Second Reality requirements (README.1ST):
+ * - 386 CPU minimum, a 486 and a fast VGA card recommended
+ * - Sound card, chosen in its setup: Gravis UltraSound, Sound Blaster or Sound Blaster Pro, or
+ *   no sound
+ * - Memory: 570,000 bytes conventional, and 1 MB of EMS with a Sound Blaster (none with a GUS)
  *
  * This configuration uses:
  * - Gravis UltraSound (the backend's always has 1 MB of memory, and js-dos plays its sound in

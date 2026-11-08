@@ -22,11 +22,11 @@ export const screamTrackerZipUrl = '/demos/scream-tracker.zip';
 /**
  * DOSBox configuration optimized for Scream Tracker 3
  *
- * Scream Tracker 3 requirements:
- * - 286 CPU minimum, 386+ recommended
- * - VGA graphics (text mode)
- * - Sound card: Sound Blaster, Gravis UltraSound, or AdLib
- * - Memory: 640KB RAM minimum, 2MB+ recommended
+ * Scream Tracker 3 requirements (ST3.DOC, section 1.2):
+ * - At least a 386SX, and a VGA display (it runs in text mode)
+ * - Sound card: Sound Blaster, Sound Blaster Pro or Gravis Ultrasound; its FM options work only
+ *   on the Sound Blasters
+ * - Some EMS, where it keeps the samples, even with a GUS
  *
  * This configuration uses:
  * - Fixed cycles (12000) on the simple CPU core, for stable audio playback
