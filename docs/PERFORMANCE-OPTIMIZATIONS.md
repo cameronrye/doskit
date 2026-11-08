@@ -55,21 +55,19 @@ Research from DOSBox community (VOGONS forums, DOSBox Wiki) shows that `cycles=m
 ```ini
 [mixer]
 rate=44100
-blocksize=2048
 prebuffer=64
 ```
 
 **What it does:**
 
 - Maintains high audio quality (44.1kHz CD-quality sample rate)
-- Uses optimal buffer size (2048) to balance latency and stability
-- Increased prebuffer (64 ms of audio on top of the block) to prevent audio dropouts and crackling (DOSBox accepts up to 100)
+- Increased prebuffer (64 ms of audio on top of the mixer's block) to prevent audio dropouts and crackling (DOSBox accepts up to 100)
+- Sets no `blocksize`, which this backend's mixer ignores: it always works in blocks of 2048 samples
 
 **Benefits:**
 
-- No audible lag, skips, or artifacts
+- No skips or artifacts
 - Smooth audio playback for music, sound effects, and speech
-- Reduced CPU overhead for audio processing
 - Eliminates crackling/popping sounds common with lower prebuffer values
 
 **Research-Based Optimizations:**
@@ -83,11 +81,11 @@ Based on extensive research from:
 
 **Key Findings:**
 
-- `blocksize=2048` is optimal for web-based emulation (balances latency vs stability)
-- `prebuffer=64` prevents audio stuttering in most scenarios (it can go up to 100 for problematic cases; DOSBox lowers anything higher to 100)
-- `rate=44100` is standard for DOS audio and matches most DOS games' expectations
+- `blocksize` changes nothing on this backend: booted with `blocksize` 256, 2048 or 8192, it sends the page the same pushes of sound, 512 samples or more each, at 44,100 samples a second
+- `prebuffer=64` prevents audio stuttering in most scenarios (it can go up to 100 for problematic cases). DOSBox lowers anything higher to 100 and raises a negative value to 0, without a warning; left out, it is 40
+- `rate=44100` is CD quality, and the backend's default. The backend has eight rates (8000, 11025, 16000, 22050, 32000, 44100, 48000 and 49716 Hz) and resets any other to 44100 without a warning, for `oplrate`, `pcrate` and `tandyrate` too
 
-**Trade-offs:** Higher audio latency: the settings buffer a 2048-sample block (about 46 ms at 44.1 kHz) plus 64 ms of prebuffer, about 110 ms in all. For demos and music playback that is far outweighed by the elimination of audio artifacts
+**Trade-offs:** Higher audio latency, from buffers in two places. Inside DOSBox, the mixer keeps the prebuffer, 64 ms or 2,822 samples at 44.1 kHz, on top of its 2048-sample block. On the page, js-dos queues the samples it receives, starts playing once 2048 have arrived, and plays them through a `ScriptProcessorNode` in 2048-sample buffers; it drops pushes that arrive while 6144 samples or more (about 139 ms) are waiting. How much latency that adds up to has not been measured. js-dos plays a single channel, so the sound is mono. For demos and music playback the latency is outweighed by the elimination of audio artifacts
 
 ---
 
@@ -121,7 +119,6 @@ xms=true
 [mixer]
 nosound=false
 rate=44100
-blocksize=2048
 prebuffer=64
 ```
 
@@ -409,8 +406,6 @@ aspect=false
 [mixer]
 # High-quality audio
 rate=44100
-# Larger buffer for stability
-blocksize=2048
 # Prevent audio dropouts (up to 100)
 prebuffer=64
 ```
