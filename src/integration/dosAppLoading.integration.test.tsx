@@ -412,7 +412,7 @@ describe('Status badge as players come and go', () => {
     expect(mockDos).toHaveBeenCalledTimes(1);
 
     // The start page's selector is open over its player
-    fireEvent.doubleClick(screen.getByRole('button', { name: /^Starfield Effect by/ }));
+    fireEvent.doubleClick(screen.getByRole('option', { name: /^Starfield Effect by/ }));
 
     // Once the selector has its files, the app's player replaces the start page's
     await waitFor(() =>

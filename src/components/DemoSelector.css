@@ -97,6 +97,14 @@
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+/* Each disk is an option of the list. A double-click loads it rather than selecting text. */
+.floppy-wrapper {
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* App Details */
 .app-details {
   background: #1a1a1a;

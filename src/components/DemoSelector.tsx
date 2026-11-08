@@ -57,6 +57,18 @@ function describeApp({ name, author, year }: DosApp): string {
 }
 
 /**
+ * retro-floppy renders each disk as a focusable, named button of its own. In the list, the
+ * option around it is the disk: one tab stop and one name, with no control inside it. React
+ * sets these attributes again only if their values change, which they don't here.
+ */
+function quietFloppyDisk(option: HTMLElement | null) {
+  const disk = option?.querySelector('figure');
+  for (const attribute of ['tabindex', 'role', 'aria-label', 'aria-disabled']) {
+    disk?.removeAttribute(attribute);
+  }
+}
+
+/**
  * What the progress bar shows: the share of the archive downloaded when its size is known,
  * or else the megabytes received, with no percentage for the bar
  */
@@ -201,78 +213,82 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
     onCancel?.();
   }, [handleCancelLoading, onCancel]);
 
-  /** Keyboard navigation handler */
-  const handleKeyDown = useCallback(
+  /**
+   * Keys on a disk. The arrow keys, Home and End move to another disk and select it,
+   * Space selects the disk, and Enter loads it. The list's handler sees only keys from
+   * inside it, so the buttons and the error's Details keep what Enter and Space do.
+   */
+  const handleDiskKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      // Escape works anywhere in the dialog. The other keys belong to the disks: the
-      // buttons and the error's Details keep what Enter and Space do to them.
-      if (
-        event.key !== 'Escape' &&
-        !(event.target instanceof Element && event.target.closest('[data-app-id]'))
-      ) {
+      const option =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>('[role="option"]')
+          : null;
+      const index = availableApps.findIndex((app) => app.id === option?.dataset.appId);
+      const app = availableApps[index];
+      // Combinations belong to the browser and the system, such as Alt+Left for Back
+      if (!app || event.altKey || event.ctrlKey || event.metaKey) {
         return;
       }
-      const totalApps = availableApps.length;
 
+      const last = availableApps.length - 1;
+      let next: number;
       switch (event.key) {
         case 'ArrowRight':
-          event.preventDefault();
-          setFocusedIndex((prev) => (prev + 1) % totalApps);
+          next = index === last ? 0 : index + 1;
           break;
         case 'ArrowLeft':
-          event.preventDefault();
-          setFocusedIndex((prev) => (prev - 1 + totalApps) % totalApps);
+          next = index === 0 ? last : index - 1;
           break;
-        case 'ArrowDown': {
-          event.preventDefault();
-          const columns = countGridColumns(gridRef.current);
-          setFocusedIndex((prev) => Math.min(prev + columns, totalApps - 1));
+        case 'ArrowDown':
+          next = Math.min(index + countGridColumns(gridRef.current), last);
           break;
-        }
-        case 'ArrowUp': {
-          event.preventDefault();
-          const columns = countGridColumns(gridRef.current);
-          setFocusedIndex((prev) => Math.max(prev - columns, 0));
+        case 'ArrowUp':
+          next = Math.max(index - countGridColumns(gridRef.current), 0);
           break;
-        }
+        case 'Home':
+          next = 0;
+          break;
+        case 'End':
+          next = last;
+          break;
+        case ' ':
+          event.preventDefault();
+          handleSelectApp(app);
+          return;
         case 'Enter':
           event.preventDefault();
-          if (selectedApp) {
-            handleLoadApp(selectedApp);
-          } else {
-            const app = availableApps[focusedIndex];
-            if (app) {
-              handleSelectApp(app);
-            }
-          }
-          break;
-        case ' ': {
-          event.preventDefault();
-          const app = availableApps[focusedIndex];
-          if (app) {
-            handleSelectApp(app);
-          }
-          break;
-        }
-        case 'Escape':
-          event.preventDefault();
-          if (isLoading) {
-            handleCancelLoading();
-          } else {
-            handleCancel();
-          }
-          break;
+          handleSelectApp(app);
+          handleLoadApp(app);
+          return;
+        default:
+          return;
+      }
+      event.preventDefault();
+      // The selection follows the focus
+      const nextApp = availableApps[next];
+      if (nextApp) {
+        setFocusedIndex(next);
+        handleSelectApp(nextApp);
       }
     },
-    [
-      focusedIndex,
-      selectedApp,
-      isLoading,
-      handleLoadApp,
-      handleSelectApp,
-      handleCancelLoading,
-      handleCancel,
-    ]
+    [handleLoadApp, handleSelectApp]
+  );
+
+  /** Escape, anywhere in the dialog: cancel the download, or else close the selector */
+  const handleDialogKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      event.preventDefault();
+      if (isLoading) {
+        handleCancelLoading();
+      } else {
+        handleCancel();
+      }
+    },
+    [isLoading, handleCancelLoading, handleCancel]
   );
 
   // On unmount, cancel the load in progress and any pending hover preload
@@ -303,7 +319,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   return (
     <div
       className="demo-selector"
-      onKeyDown={handleKeyDown}
+      onKeyDown={handleDialogKeyDown}
       role="dialog"
       aria-label="Select DOS Application"
     >
@@ -317,20 +333,34 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
       </div>
 
       <div className="demo-selector-content">
-        {/* Application List - Floppy Disk Grid */}
+        {/* Application List - Floppy Disk Grid, one tab stop with a roving focus */}
         <div
           className="app-list floppy-grid"
           ref={gridRef}
-          role="grid"
-          aria-label="Available DOS applications"
+          role="listbox"
+          aria-label="DOS applications"
+          onKeyDown={handleDiskKeyDown}
         >
           {availableApps.map((app, index) => (
             <div
               key={app.id}
+              ref={quietFloppyDisk}
               data-app-id={app.id}
+              role="option"
+              aria-selected={selectedApp?.id === app.id}
+              aria-label={`${describeApp(app)}. Press Enter to load.`}
               tabIndex={index === focusedIndex ? 0 : -1}
               className="floppy-wrapper"
               onFocus={() => setFocusedIndex(index)}
+              onClick={() => {
+                setFocusedIndex(index);
+                handleSelectApp(app);
+              }}
+              onDoubleClick={() => {
+                setFocusedIndex(index);
+                handleSelectApp(app);
+                handleLoadApp(app); // Pass app directly to avoid race condition
+              }}
               onMouseEnter={() => handleHoverStart(app)}
               onMouseLeave={handleHoverEnd}
             >
@@ -350,16 +380,6 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
                   description: app.description,
                   type: app.loadMethod.toUpperCase(),
                 }}
-                onClick={() => {
-                  setFocusedIndex(index);
-                  handleSelectApp(app);
-                }}
-                onDoubleClick={() => {
-                  setFocusedIndex(index);
-                  handleSelectApp(app);
-                  handleLoadApp(app); // Pass app directly to avoid race condition
-                }}
-                ariaLabel={`${describeApp(app)}. Press Enter to load, Space to select.`}
               />
             </div>
           ))}

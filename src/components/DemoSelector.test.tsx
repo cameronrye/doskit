@@ -23,18 +23,9 @@ vi.mock('../utils/diskLoader', () => ({
   loadZipArchive: vi.fn(async () => new Uint8Array([1, 2, 3])),
 }));
 
-/**
- * Helper function to find a FloppyDisk component by its label/name
- * FloppyDisk renders as a <figure> with role="button" and aria-label
- */
-const getFloppyDiskByName = (name: string): HTMLElement | null => {
-  const allFloppies = screen.getAllByRole('button');
-  return (
-    (allFloppies.find(
-      (el) => el.getAttribute('aria-label')?.includes(name) || el.textContent?.includes(name)
-    ) as HTMLElement) || null
-  );
-};
+/** The disk of an app: an option of the selector's list, named for the app */
+const getFloppyDiskByName = (name: string): HTMLElement =>
+  screen.getByRole('option', { name: new RegExp(`^${name}\\b`) });
 
 describe('DemoSelector', () => {
   const mockOnSelect = vi.fn();
@@ -129,11 +120,51 @@ describe('DemoSelector', () => {
         registerApp(release);
         render(<DemoSelector onSelect={mockOnSelect} />);
 
-        const disk = document.querySelector('[data-app-id="my-demo"] [role="button"]');
-        expect(disk).toHaveAttribute(
-          'aria-label',
-          `${name}. Press Enter to load, Space to select.`
+        const disk = document.querySelector('[data-app-id="my-demo"]');
+        expect(disk).toHaveAccessibleName(`${name}. Press Enter to load.`);
+      });
+    });
+
+    // One tab stop for the whole list, and one name and role per disk
+    describe('the list of disks', () => {
+      it('lists every app as an option of one list', () => {
+        render(<DemoSelector onSelect={mockOnSelect} />);
+
+        const list = screen.getByRole('listbox', { name: 'DOS applications' });
+        expect(within(list).getAllByRole('option')).toHaveLength(availableApps.length);
+      });
+
+      it('makes the list a single tab stop', () => {
+        render(<DemoSelector onSelect={mockOnSelect} />);
+
+        const list = screen.getByRole('listbox');
+        const tabStops = Array.from(list.querySelectorAll<HTMLElement>('*')).filter(
+          (element) => element.tabIndex >= 0
         );
+        expect(tabStops).toEqual([getFloppyDiskByName(availableApps[0]!.name)]);
+      });
+
+      // retro-floppy makes each disk a focusable button of its own
+      it('leaves nothing focusable or named inside a disk', () => {
+        render(<DemoSelector onSelect={mockOnSelect} />);
+
+        for (const disk of screen.getAllByRole('option')) {
+          for (const inner of disk.querySelectorAll('*')) {
+            expect(inner).not.toHaveAttribute('tabindex');
+            expect(inner).not.toHaveAttribute('role');
+            expect(inner).not.toHaveAttribute('aria-label');
+          }
+        }
+      });
+
+      it('marks the selected disk, and only that one', () => {
+        render(<DemoSelector onSelect={mockOnSelect} />);
+
+        fireEvent.click(getFloppyDiskByName('Impulse Tracker'));
+
+        expect(screen.getAllByRole('option', { selected: true })).toEqual([
+          getFloppyDiskByName('Impulse Tracker'),
+        ]);
       });
     });
   });
@@ -375,25 +406,34 @@ describe('DemoSelector', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent('An unexpected error occurred');
     });
 
-    it('selects the focused app on Enter rather than loading it', () => {
+    it('loads the app with keyboard focus on Enter', async () => {
       render(<DemoSelector onSelect={mockOnSelect} />);
 
       // The selector opens with keyboard focus on the first app
       fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
 
-      expect(screen.getByText(`Selected: ${availableApps[0]!.name}`)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Load Application/i })).toBeInTheDocument();
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      await waitFor(() => expect(mockOnSelect).toHaveBeenCalledTimes(1));
+      expect(mockOnSelect.mock.calls[0]?.[0].app.id).toBe(availableApps[0]!.id);
     });
 
-    it('loads the selected app when Enter is pressed again', async () => {
+    it('loads the focused app on Enter, not the one selected before', async () => {
       render(<DemoSelector onSelect={mockOnSelect} />);
+      fireEvent.click(getFloppyDiskByName('Second Reality'));
 
-      fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
+      act(() => getFloppyDiskByName('Impulse Tracker').focus());
       fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
 
       await waitFor(() => expect(mockOnSelect).toHaveBeenCalledTimes(1));
-      expect(mockOnSelect.mock.calls[0]?.[0].app.id).toBe(availableApps[0]!.id);
+      expect(mockOnSelect.mock.calls[0]?.[0].app.id).toBe('impulse-tracker');
+    });
+
+    it('loads the app on a double-click', async () => {
+      render(<DemoSelector onSelect={mockOnSelect} />);
+
+      fireEvent.doubleClick(getFloppyDiskByName('Impulse Tracker'));
+
+      await waitFor(() => expect(mockOnSelect).toHaveBeenCalledTimes(1));
+      expect(mockOnSelect.mock.calls[0]?.[0].app.id).toBe('impulse-tracker');
     });
   });
 
@@ -628,6 +668,88 @@ describe('DemoSelector', () => {
       press('ArrowDown');
 
       expect(appAt(1)).toHaveFocus();
+    });
+
+    describe('at both ends of the list', () => {
+      const last = availableApps.length - 1;
+
+      it.each([
+        ['ArrowRight', 0, 1],
+        ['ArrowRight', last, 0],
+        ['ArrowLeft', last, last - 1],
+        ['ArrowLeft', 0, last],
+        ['ArrowDown', 0, 4],
+        ['ArrowDown', last, last],
+        ['ArrowUp', 5, 1],
+        ['ArrowUp', 0, 0],
+        ['Home', last, 0],
+        ['End', 0, last],
+      ])('%s from app %i moves to app %i and selects it', (key, from, to) => {
+        layOutGrid(4);
+        render(<DemoSelector onSelect={mockOnSelect} />);
+        act(() => appAt(from).focus());
+
+        expect(press(key)).toBe(false);
+
+        expect(appAt(to)).toHaveFocus();
+        expect(appAt(to)).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getByText(`Selected: ${availableApps[to]!.name}`)).toBeInTheDocument();
+        expect(mockOnSelect).not.toHaveBeenCalled();
+      });
+    });
+
+    it('selects the focused app on Space without loading it', () => {
+      render(<DemoSelector onSelect={mockOnSelect} />);
+
+      expect(press(' ')).toBe(false);
+
+      expect(appAt(0)).toHaveAttribute('aria-selected', 'true');
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(loadZipArchive).not.toHaveBeenCalled();
+    });
+
+    it('cancels a download on Escape, and keeps the selector open', async () => {
+      vi.mocked(loadZipArchive).mockImplementation(() => new Promise(() => {}));
+      render(<DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />);
+      press('Enter');
+      await waitFor(() => expect(loadZipArchive).toHaveBeenCalled());
+
+      expect(press('Escape')).toBe(false);
+
+      expect(vi.mocked(loadZipArchive).mock.calls[0]?.[2]?.aborted).toBe(true);
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(mockOnCancel).not.toHaveBeenCalled();
+    });
+
+    it('closes the selector on Escape when nothing is downloading', () => {
+      render(<DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />);
+
+      expect(press('Escape')).toBe(false);
+
+      expect(mockOnCancel).toHaveBeenCalledTimes(1);
+    });
+
+    it("closes the selector on Escape from the selector's buttons too", () => {
+      render(<DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />);
+      fireEvent.click(appAt(0));
+
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Load Application' }), {
+        key: 'Escape',
+      });
+
+      expect(mockOnCancel).toHaveBeenCalledTimes(1);
+    });
+
+    // Alt+Left is the browser's Back, for one
+    it.each(['altKey', 'ctrlKey', 'metaKey'])('leaves keys with %s to the browser', (modifier) => {
+      render(<DemoSelector onSelect={mockOnSelect} />);
+
+      expect(fireEvent.keyDown(appAt(0), { key: 'ArrowRight', [modifier]: true })).toBe(true);
+      expect(fireEvent.keyDown(appAt(0), { key: 'Enter', [modifier]: true })).toBe(true);
+
+      expect(appAt(0)).toHaveFocus();
+      expect(screen.queryByText(/Selected:/)).not.toBeInTheDocument();
+      expect(loadZipArchive).not.toHaveBeenCalled();
     });
   });
 
