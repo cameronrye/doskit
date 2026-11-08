@@ -74,15 +74,16 @@ const PRECACHED_URLS = new Set(STATIC_ASSETS.map(absoluteUrl));
 // the server answers 304 when the file has not changed
 const fromServer = (input) => new Request(input, { cache: 'no-cache' });
 
+// The JS and CSS Vite emits, named after a hash of their content
+const isBundle = (path) => path.startsWith('/assets/');
+
 async function precacheAppShell() {
   const cache = await caches.open(CACHE_NAME);
   // GitHub Pages lets browsers reuse a file for 10 minutes, so a worker installed that
   // soon after a visit could store the previous deploy's index.html, which loads bundles
   // this deploy no longer has. A bundle's name changes with its content, so whatever the
   // HTTP cache holds under that name is current, and saves downloading it again.
-  await cache.addAll(
-    STATIC_ASSETS.map((path) => (path.startsWith('/assets/') ? path : fromServer(path)))
-  );
+  await cache.addAll(STATIC_ASSETS.map((path) => (isBundle(path) ? path : fromServer(path))));
   console.log(`[Service Worker] ✅ Static assets cached (${STATIC_ASSETS.length} files)`);
 }
 
@@ -428,10 +429,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for other WASM: large, and unchanged within a deploy (each build gets a
-  // new CACHE_VERSION, so activation drops stale copies). Stale-while-revalidate would
-  // re-download it in full on every use.
-  if (url.pathname.endsWith('.wasm') || url.pathname.endsWith('.wasm.gz')) {
+  // Cache-first for bundles, whose names change with their content, so a cached copy
+  // never goes stale, and for other WASM: large, and unchanged within a deploy (each
+  // build gets a new CACHE_VERSION, so activation drops stale copies).
+  // Stale-while-revalidate would download each of them again on every use.
+  if (
+    isBundle(url.pathname) ||
+    url.pathname.endsWith('.wasm') ||
+    url.pathname.endsWith('.wasm.gz')
+  ) {
     event.respondWith(
       caches.match(request, MATCH_OPTIONS).then((cachedResponse) => {
         if (cachedResponse) {

@@ -508,8 +508,39 @@ describe('pages', () => {
   });
 });
 
-describe('offline navigation', () => {
-  it('serves the bundles to the crossorigin requests of index.html, whatever Vary says', async () => {
+describe('bundles', () => {
+  it('serves them from the cache without asking the network again', async () => {
+    // A bundle's name changes with its content, so the cached copy never goes stale
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    browser.server.requests.length = 0;
+
+    for (const path of BUNDLES) {
+      const { response } = await worker.dispatch('fetch', { request: subresource(path) });
+      expect(await response?.text()).toBe(`${path} from deploy A`);
+    }
+
+    expect(requestedPaths(browser)).toEqual([]);
+  });
+
+  it('stores one install did not precache on first use and serves it from the cache', async () => {
+    // Such as a bundle of a later deploy's index.html, which a page online gets
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    browser.server.requests.length = 0;
+
+    await worker.dispatch('fetch', { request: subresource('/assets/index-later1.js') });
+    await worker.dispatch('fetch', { request: subresource('/assets/index-later1.js') });
+    browser.server.online = false;
+    const { response } = await worker.dispatch('fetch', {
+      request: subresource('/assets/index-later1.js'),
+    });
+
+    expect(await response?.text()).toBe('/assets/index-later1.js from deploy A');
+    expect(requestedPaths(browser)).toEqual(['/assets/index-later1.js']);
+  });
+
+  it('serves them to the crossorigin requests of index.html, whatever Vary says', async () => {
     // Its module scripts and stylesheet have crossorigin, so Chrome sends Origin, which
     // install's requests did not. On a host that answers with Vary: Origin (vite preview
     // does), the app could not start offline before a load online had stored them again.
