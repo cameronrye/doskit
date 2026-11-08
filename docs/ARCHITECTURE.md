@@ -170,21 +170,31 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 
 ### 1. Progressive Web App (PWA)
 
-**Service Worker** (`public/sw.js`):
+**Service Worker** (`public/sw.js`, registered in production builds only):
 
 - **Caching Strategy**:
-  - Network-first for HTML
-  - Cache-first for WASM files
-  - Stale-while-revalidate for JS/CSS
-- **LRU Cache**: Timestamp-based eviction (max 100 items, 7-day expiration)
-- **Dynamic Timeouts**: File-type-based network timeouts
-- **Offline Support**: Cached resources available offline
+  - Network-first for HTML (5-second timeout), falling back to the cached page, or to `/index.html` for a URL never visited online, such as a new deep link
+  - Cache-first for emulator files and demo archives, each from a cache of its own
+  - Cache-first for other WASM files
+  - Stale-while-revalidate for JS/CSS and other assets
+  - Cross-origin requests and the worker script itself are left to the browser
+  - Lookups ignore `Vary`, so a host that answers with `Vary: Origin` (such as `vite preview`) cannot make cached files miss
+- **Caches**:
+  - `doskit-<build version>` - Install precaches the app shell (`/`, `/index.html`, `/manifest.json`, `/logo.svg`, `/favicon.svg`, `/js-dos.js`, `/js-dos.css`), revalidated with the server so a stale HTTP-cache copy never gets in, and every JS and CSS bundle in `dist/assets`, the lazily imported chunks included. Pages and assets fetched later are added as runtime entries. Each deploy gets a new one, and activation deletes the previous deploy's.
+  - `doskit-emulators-<js-dos version>` - The default backend's files, precached at install; any other emulator file (the DOSBox-X backend) is stored on first use. Deploys keep this cache until js-dos changes, and an install downloads only the files it lacks.
+  - `doskit-demos-<archive hash>` - Demo archives, stored on first use and never trimmed. Deploys keep this cache until the archives change.
+- **LRU Cache**: The deploy's cache holds at most 100 entries. Trimming removes the least recently used runtime entries, by the timestamps kept in `doskit-<build version>-metadata`, and never a precached file. Nothing expires by age.
+- **Dynamic Timeouts**: File-type-based network timeouts (30 seconds for WASM and archives, 10 for JS/CSS, 5 for everything else)
+- **Offline Support**: Once the worker is installed, the app shell, every bundle and the default emulator are available offline. An app's archive is cached the first time it loads, so an app opens offline once it has been loaded online.
 
 **Update Mechanism**:
 
-- Automatic update checks every 60 seconds
-- Exponential backoff retry (1s, 2s, 4s)
-- User notification with reload prompt
+- Every build stamps a new cache version into `sw.js`, so each deploy installs as a new worker. The first install takes control at once; later ones wait for the user.
+- Update checks every hour while the page is visible (`PWA_CONFIG.UPDATE_CHECK_INTERVAL`), and whenever the page becomes visible again
+- An installed update shows the Update Available prompt, which is offered again after a reload while the update still waits
+- Update Now posts `SKIP_WAITING` and reloads once the new worker takes control, or after waits of 1, 2 and 4 seconds if it never does
+
+**Install Prompt** (`OfflineIndicator`): Offered 5 seconds after the browser's `beforeinstallprompt`, unless the app is installed, the prompt was dismissed in the last 7 days, or it has been dismissed 3 times.
 
 ### 2. Error Handling
 
