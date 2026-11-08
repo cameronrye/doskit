@@ -151,29 +151,6 @@ export const useDosEmulator = ({
     }
   }, []);
 
-  // Handle unhandled promise rejections from js-dos
-  useEffect(() => {
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      const error = event.reason;
-      const isFullscreenError =
-        error instanceof TypeError &&
-        error.message &&
-        (error.message.includes('exitFullscreen') || error.message.includes('requestFullscreen'));
-
-      if (isFullscreenError) {
-        event.preventDefault();
-        if (import.meta.env.DEV) {
-          console.warn('[useDosEmulator] Suppressed fullscreen error:', error.message);
-        }
-      }
-    };
-
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    return () => {
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-    };
-  }, []);
-
   // Initialize emulator (only once)
   useEffect(() => {
     if (isInitializedRef.current) {

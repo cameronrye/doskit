@@ -82,52 +82,6 @@ describe('DosPlayer', () => {
         expect(screen.getByText(/Failed to initialize DOS emulator/i)).toBeInTheDocument();
       });
     });
-
-    it('should suppress fullscreen errors from unhandled promise rejections', () => {
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      render(<DosPlayer />);
-
-      // Simulate a fullscreen error from js-dos
-      const fullscreenError = new TypeError(
-        "Failed to execute 'exitFullscreen' on 'Document': Document not active"
-      );
-      // Create a promise and catch it to prevent unhandled rejection
-      const rejectedPromise = Promise.reject(fullscreenError).catch(() => {});
-      const event = new PromiseRejectionEvent('unhandledrejection', {
-        promise: rejectedPromise,
-        reason: fullscreenError,
-        cancelable: true,
-      });
-
-      // Dispatch the event
-      window.dispatchEvent(event);
-
-      // The error should be prevented from propagating
-      expect(event.defaultPrevented).toBe(true);
-
-      consoleWarn.mockRestore();
-    });
-
-    it('should not suppress non-fullscreen errors', () => {
-      render(<DosPlayer />);
-
-      // Simulate a different error
-      const otherError = new Error('Some other error');
-      // Create a promise and catch it to prevent unhandled rejection
-      const rejectedPromise = Promise.reject(otherError).catch(() => {});
-      const event = new PromiseRejectionEvent('unhandledrejection', {
-        promise: rejectedPromise,
-        reason: otherError,
-        cancelable: true,
-      });
-
-      // Dispatch the event
-      window.dispatchEvent(event);
-
-      // The error should NOT be prevented (should propagate normally)
-      expect(event.defaultPrevented).toBe(false);
-    });
   });
 
   describe('Initialization', () => {

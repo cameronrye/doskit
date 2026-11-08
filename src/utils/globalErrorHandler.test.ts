@@ -2,7 +2,7 @@
  * Tests for globalErrorHandler utility
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
 import {
   initializeGlobalErrorHandler,
   cleanupGlobalErrorHandler,
@@ -78,6 +78,71 @@ describe('globalErrorHandler', () => {
     });
   });
 
+  describe('console.error filter', () => {
+    const EXIT_FULLSCREEN = "Failed to execute 'exitFullscreen' on 'Document': Document not active";
+
+    // Spied before each setup, so the filter forwards to the spy
+    let consoleError: MockInstance<typeof console.error>;
+
+    beforeEach(() => {
+      consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      cleanupGlobalErrorHandler();
+      consoleError.mockRestore();
+    });
+
+    it('drops harmless fullscreen and keyboard lock messages', () => {
+      initializeGlobalErrorHandler();
+
+      console.error(EXIT_FULLSCREEN);
+      console.error(new TypeError(EXIT_FULLSCREEN));
+      console.error(new DOMException('lock() request could not be registered.', 'AbortError'));
+
+      expect(consoleError).not.toHaveBeenCalled();
+    });
+
+    it('passes every other message through with all its arguments', () => {
+      initializeGlobalErrorHandler();
+      const error = new Error('Emulator crashed');
+
+      console.error('[useDosEmulator] Failed to initialize emulator:', error);
+
+      expect(consoleError).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(
+        '[useDosEmulator] Failed to initialize emulator:',
+        error
+      );
+    });
+
+    it('hands console.error back on cleanup', () => {
+      initializeGlobalErrorHandler();
+      cleanupGlobalErrorHandler();
+
+      console.error(EXIT_FULLSCREEN);
+
+      expect(consoleError).toHaveBeenCalledWith(EXIT_FULLSCREEN);
+    });
+
+    it('never throws, even for a value that has no string form', () => {
+      initializeGlobalErrorHandler();
+      const bare = Object.create(null);
+
+      console.error(bare);
+
+      expect(consoleError).toHaveBeenCalledWith(bare);
+    });
+
+    it('leaves console.error alone when harmless errors are not suppressed', () => {
+      initializeGlobalErrorHandler({ suppressHarmlessErrors: false });
+
+      console.error(EXIT_FULLSCREEN);
+
+      expect(consoleError).toHaveBeenCalledWith(EXIT_FULLSCREEN);
+    });
+  });
+
   describe('error handling', () => {
     it('should handle uncaught errors', () => {
       const onError = vi.fn();
@@ -107,11 +172,38 @@ describe('globalErrorHandler', () => {
       const rejectionEvent = new PromiseRejectionEvent('unhandledrejection', {
         promise: rejectedPromise,
         reason: error,
+        cancelable: true,
       });
 
       window.dispatchEvent(rejectionEvent);
 
       expect(onError).toHaveBeenCalledWith(error, expect.any(Object));
+      // The browser still reports it
+      expect(rejectionEvent.defaultPrevented).toBe(false);
+    });
+
+    // Fullscreen calls need a user gesture. js-dos calls document.exitFullscreen()
+    // on every start without awaiting it, so that rejection is never handled.
+    it.each([
+      "Failed to execute 'exitFullscreen' on 'Document': Document not active",
+      "Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture.",
+    ])('suppresses the fullscreen rejection "%s"', (message) => {
+      const onError = vi.fn();
+      initializeGlobalErrorHandler({ onError });
+
+      const reason = new TypeError(message);
+      const rejectedPromise = Promise.reject(reason);
+      rejectedPromise.catch(() => {});
+      const rejectionEvent = new PromiseRejectionEvent('unhandledrejection', {
+        promise: rejectedPromise,
+        reason,
+        cancelable: true,
+      });
+
+      window.dispatchEvent(rejectionEvent);
+
+      expect(rejectionEvent.defaultPrevented).toBe(true);
+      expect(onError).not.toHaveBeenCalled();
     });
 
     it('tracks a promise rejected without a reason', () => {
