@@ -59,27 +59,3 @@ export const rotate3dDosboxConf = presets
     '3DROTATE.EXE'
   )
   .build();
-
-/**
- * Configuration metadata
- */
-export const rotate3dMetadata = {
-  name: '3D Rotation Demo',
-  author: "Grumpy's Collection",
-  year: 1990,
-  description:
-    'Classic 3D rotation demo effect showcasing real-time 3D object rotation in VGA mode.',
-  requirements: {
-    cpu: '286 or better',
-    memory: '640KB RAM',
-    graphics: 'VGA',
-    sound: 'None',
-  },
-  license: 'Scene/Historical',
-  repository: 'https://github.com/sceners/grumpys-source-pack-collection',
-  notes: [
-    "Part of Grumpy's extensive demo effects collection",
-    'Educational example of 3D graphics programming',
-    'Demonstrates real-time 3D rotation algorithms',
-  ],
-};

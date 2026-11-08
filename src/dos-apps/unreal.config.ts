@@ -78,29 +78,3 @@ export const unrealDosboxConf = presets
     'UNREAL.EXE'
   )
   .build();
-
-/**
- * Configuration metadata
- */
-export const unrealMetadata = {
-  name: 'Unreal',
-  author: 'Future Crew',
-  year: 1992,
-  description:
-    'A groundbreaking demo that won Assembly 1992. Features advanced 3D graphics, smooth animations, and excellent music.',
-  requirements: {
-    cpu: '386 or better (486 recommended)',
-    memory: '4MB RAM',
-    graphics: 'VGA',
-    sound: 'Sound Blaster compatible',
-  },
-  license: 'Freeware',
-  party: 'Assembly 1992',
-  ranking: '1st place',
-  notes: [
-    'Won 1st place at Assembly 1992',
-    'One of the most influential PC demos of the early 90s',
-    'Features music by Purple Motion (Jonne Valtonen)',
-    'Two versions exist: 1.0 and 1.1 (with GUS support)',
-  ],
-};

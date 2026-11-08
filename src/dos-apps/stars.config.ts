@@ -59,28 +59,3 @@ export const starsDosboxConf = presets
     'STARS.EXE'
   )
   .build();
-
-/**
- * Configuration metadata
- */
-export const starsMetadata = {
-  name: 'Starfield Effect',
-  author: "Grumpy's Collection",
-  year: 1990,
-  description:
-    'Classic starfield effect demo simulating flying through space. A fundamental demo scene effect.',
-  requirements: {
-    cpu: '286 or better',
-    memory: '640KB RAM',
-    graphics: 'VGA',
-    sound: 'None',
-  },
-  license: 'Scene/Historical',
-  repository: 'https://github.com/sceners/grumpys-source-pack-collection',
-  notes: [
-    "Part of Grumpy's extensive demo effects collection",
-    'Educational example of 3D projection',
-    'Demonstrates perspective calculations',
-    'Classic space simulation effect',
-  ],
-};

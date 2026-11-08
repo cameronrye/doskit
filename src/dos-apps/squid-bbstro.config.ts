@@ -81,31 +81,3 @@ export const squidBbstroDosboxConf = presets
     'SQUID1.COM'
   )
   .build();
-
-/**
- * Configuration metadata
- */
-export const squidBbstroMetadata = {
-  name: 'Squid BBS Intro',
-  author: 'cld & The Doctor',
-  year: 1994,
-  description:
-    'A tiny BBS intro (1899 bytes) featuring character smoothing, AdLib music, and custom charset. A classic example of size-optimized demo coding.',
-  requirements: {
-    cpu: '286 or better',
-    memory: '640KB RAM',
-    graphics: 'VGA',
-    sound: 'AdLib compatible',
-  },
-  license: 'Scene/Historical',
-  repository: 'https://github.com/sceners/squid-bbstro',
-  notes: [
-    'Includes ASM source code (SQUID1.ASM)',
-    'Features a mini AdLib FM player',
-    'Character smoother effect for text',
-    '8x16 custom charset',
-    'Optimized for size - only 1899 bytes',
-    'A BBStro (BBS intro) used to promote a BBS',
-    "Includes 'incomprehensible comments' according to FILE_ID.DIZ",
-  ],
-};

@@ -51,13 +51,6 @@ const ERROR_MAPPINGS: ErrorMapping[] = [
     suggestion: 'The file might have been moved or deleted. Please try a different application.',
   },
 
-  // GitHub API errors
-  {
-    pattern: /github api/i,
-    message: 'Unable to access GitHub',
-    suggestion: 'GitHub might be temporarily unavailable. Please try again later.',
-  },
-
   // Service Worker errors
   {
     pattern: /service worker/i,

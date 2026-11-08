@@ -89,33 +89,3 @@ export const crystalDream2DosboxConf = presets
     'CD2.EXE'
   )
   .build();
-
-/**
- * Configuration metadata
- */
-export const crystalDream2Metadata = {
-  name: 'Crystal Dream 2',
-  author: 'Triton',
-  year: 1993,
-  description:
-    'Legendary 1993 demo featuring stunning 3D graphics, fractal zoomer, and raytraced scenes. Won 1st place at The Computer Crossroads 1993. One of the most influential PC demos of the early 90s.',
-  requirements: {
-    cpu: '486 DX-50 recommended (runs on 386-40)',
-    memory: '4MB RAM',
-    graphics: 'VGA',
-    sound: 'Sound Blaster compatible',
-  },
-  license: 'Scene/Historical',
-  party: 'The Computer Crossroads 1993',
-  ranking: '1st place',
-  notes: [
-    'One of the most quoted demos of the early-mid 90s',
-    'Competed with Second Reality for impact',
-    "Features music by Lizardking ('Trans Atlantic') and Vogue",
-    'Includes fractal zoomer that keeps zooming',
-    '3D chess scene is a technical masterpiece',
-    'Vector slime effect is highly regarded',
-    'Triton later became Starbreeze Studios (game company)',
-    'Also created FastTracker 2 music tracker',
-  ],
-};

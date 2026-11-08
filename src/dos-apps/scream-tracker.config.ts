@@ -88,34 +88,3 @@ export const screamTrackerDosboxConf = presets
     'ST3.EXE'
   )
   .build();
-
-/**
- * Configuration metadata
- */
-export const screamTrackerMetadata = {
-  name: 'Scream Tracker 3',
-  author: 'Future Crew (Psi)',
-  year: 1994,
-  version: '3.21',
-  description:
-    'The legendary music tracker that created the S3M format. Features 32 channels and excellent Gravis UltraSound support.',
-  category: 'tracker',
-  requirements: {
-    cpu: '286 or better (386+ recommended)',
-    memory: '640KB RAM minimum',
-    graphics: 'VGA (text mode)',
-    sound: 'Sound Blaster, Gravis UltraSound, or AdLib',
-  },
-  license: 'Freeware',
-  archive: 'https://archive.org/details/scrmt321_202207',
-  pouet: 'https://www.pouet.net/prod.php?which=13351',
-  notes: [
-    'Created by Future Crew (same group as Second Reality)',
-    'Introduced the S3M (ScreamTracker 3 Module) format',
-    'Supports up to 32 channels of digital audio',
-    'Can play PCM samples and FM instruments simultaneously',
-    'Excellent Gravis UltraSound support with hardware mixing',
-    'Includes sample module: ARMANI.S3M',
-    'Last version released December 25, 1994',
-  ],
-};

@@ -80,30 +80,3 @@ export const panicDosboxConf = presets
     'PANIC.EXE'
   )
   .build();
-
-/**
- * Configuration metadata
- */
-export const panicMetadata = {
-  name: 'Panic',
-  author: 'Future Crew',
-  year: 1992,
-  description:
-    'A classic demo that came 2nd at The Party 1992. Features voxel fractals, shadebobs, and hard techno music with a dark atmosphere.',
-  requirements: {
-    cpu: '386 or better (486 recommended)',
-    memory: '4MB RAM',
-    graphics: 'VGA',
-    sound: 'Sound Blaster compatible',
-  },
-  license: 'Freeware',
-  party: 'The Party 1992',
-  ranking: '2nd place',
-  notes: [
-    'Came 2nd place at The Party 1992',
-    'Features impressive voxel fractal rendering',
-    'Music by Purple Motion (Jonne Valtonen)',
-    'Known for its dark atmosphere and hard techno soundtrack',
-    'Released between Unreal and Second Reality',
-  ],
-};

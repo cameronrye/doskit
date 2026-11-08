@@ -73,28 +73,3 @@ export const starportBbstroDosboxConf = presets
     'SP2.COM'
   )
   .build();
-
-/**
- * Configuration metadata
- */
-export const starportBbstroMetadata = {
-  name: 'Starport BBS Intro II',
-  author: 'Future Crew',
-  year: 1993,
-  description:
-    'A tiny BBS intro (1993 bytes) featuring smooth graphics and music. Code by Psi, music by Skaven.',
-  requirements: {
-    cpu: '286 or better',
-    memory: '640KB RAM',
-    graphics: 'VGA',
-    sound: 'Sound Blaster compatible',
-  },
-  license: 'Public Domain',
-  repository: 'https://github.com/sceners/starport-bbstro-future-crew',
-  notes: [
-    'Released to the public domain by Future Crew',
-    'Source code included in the repository',
-    'Optimized for size - exactly 1993 bytes (the year of release)',
-    "A BBStro (BBS intro) used to promote Future Crew's BBS",
-  ],
-};
