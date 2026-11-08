@@ -1,13 +1,21 @@
+/*
+ * Fills the element it renders in: the page for the boundary in main.tsx, or for App's own
+ * boundary the player's area between the header and the footer, after a URL error banner.
+ * Neither of those scrolls, so a card taller than its space scrolls here.
+ */
 .error-boundary {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
   padding: 2rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .error-boundary-content {
+  /* Centered by its margins, which keep the top of a card taller than its space in reach */
+  margin: auto;
   background: white;
   border-radius: 12px;
   padding: 3rem;
@@ -159,5 +167,39 @@
 
   .error-boundary-button {
     width: 100%;
+  }
+}
+
+/* Short windows, such as a phone held sideways: a smaller card, with both buttons in view */
+@media (max-height: 500px) {
+  .error-boundary {
+    padding: 1rem;
+  }
+
+  .error-boundary-content {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .error-boundary-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-boundary-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-boundary-message {
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+  }
+
+  .error-boundary-actions {
+    flex-direction: row;
+  }
+
+  .error-boundary-button {
+    width: auto;
   }
 }
