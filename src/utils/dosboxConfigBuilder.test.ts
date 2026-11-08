@@ -89,6 +89,8 @@ describe('DOSBoxConfigBuilder', () => {
       builder.setDOS({ ver: '7.1' });
       // @ts-expect-error: [gus] has no gusrate
       builder.setGUS({ gusrate: 44100 });
+      // @ts-expect-error: the mixer never reads blocksize; it always works in 2048-sample blocks
+      builder.setMixer({ blocksize: 2048 });
     });
 
     it('should not accept sound values the backend would change', () => {
@@ -168,7 +170,7 @@ describe('DOSBoxConfigBuilder', () => {
       expect(config).toContain('cputype=auto');
       expect(config).toContain('cycles=18000');
       expect(config).toContain('[mixer]');
-      expect(config).toContain('blocksize=2048');
+      expect(config).toContain('prebuffer=64');
     });
 
     it('should create demo preset', () => {
@@ -186,7 +188,7 @@ describe('DOSBoxConfigBuilder', () => {
         const config = presets[name]().build();
 
         expect(config).not.toMatch(/^\[(video|memory)\]$/m);
-        expect(config).not.toMatch(/^(vmemsize|memsize|ver|gusrate)=/m);
+        expect(config).not.toMatch(/^(vmemsize|memsize|ver|gusrate|blocksize)=/m);
       }
     );
 

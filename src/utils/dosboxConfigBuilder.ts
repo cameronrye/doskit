@@ -52,10 +52,13 @@ export type UpTo<Max extends number, Counted extends number[] = []> = Counted['l
   ? Counted[number] | Max
   : UpTo<Max, [...Counted, Counted['length']]>;
 
+/**
+ * There is no `blocksize`: the backend's mixer never reads it, always works in 2048-sample
+ * blocks, and hands the page 512 to 2048 samples at a time.
+ */
 export interface MixerConfig {
   nosound?: boolean;
   rate?: SampleRate;
-  blocksize?: number;
   /**
    * How many milliseconds of audio the mixer keeps on top of each block, from 0 to 100:
    * DOSBox lowers anything above 100 to 100. Left out, it is 40.
@@ -152,7 +155,7 @@ export class DOSBoxConfigBuilder {
 
   /**
    * Set mixer configuration
-   * @param config - Mixer configuration options (nosound, rate, blocksize, prebuffer)
+   * @param config - Mixer configuration options (nosound, rate, prebuffer)
    * @returns This builder instance for method chaining
    */
   setMixer(config: MixerConfig): this {
@@ -309,8 +312,8 @@ export function createDOSBoxConfig(): DOSBoxConfigBuilder {
  * Audio Optimization Research:
  * - Fixed CPU cycles prevent audio stuttering (cycles=max causes issues)
  * - Larger prebuffer values (50+) reduce audio crackling
- * - Blocksize 2048 balances latency and stability
  * - Sample rate 44100 Hz is standard for DOS audio
+ * - There is no blocksize to choose: the backend's mixer always works in 2048-sample blocks
  *
  * Sources:
  * - DOSBox Wiki Performance Guide
@@ -328,14 +331,13 @@ export const presets = {
    * Optimizations:
    * - Fixed cycles (18000) for stable audio timing
    * - Increased prebuffer (64 ms) for smooth MOD playback (it goes up to 100)
-   * - Blocksize 2048 for optimal buffering
    * - EMS and XMS, so large samples can use DOSBox's default 16 MB of RAM
    */
   musicTracker: (): DOSBoxConfigBuilder =>
     createDOSBoxConfig()
       .setCPU({ core: 'simple', cputype: 'auto', cycles: 18000 })
       .setDOS({ umb: true, ems: true, xms: true })
-      .setMixer({ nosound: false, rate: 44100, blocksize: 2048, prebuffer: 64 })
+      .setMixer({ nosound: false, rate: 44100, prebuffer: 64 })
       .setSoundBlaster({
         sbtype: 'sb16',
         sbbase: 220,
@@ -366,7 +368,7 @@ export const presets = {
     createDOSBoxConfig()
       .setCPU({ core: 'simple', cputype: 'auto', cycles: 30000 })
       .setDOS({ umb: true, ems: true, xms: true })
-      .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 64 })
+      .setMixer({ rate: 44100, prebuffer: 64 })
       .setSoundBlaster({
         sbtype: 'sb16',
         sbbase: 220,

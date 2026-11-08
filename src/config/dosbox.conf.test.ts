@@ -28,7 +28,6 @@ describe('dosbox.conf', () => {
     it('should contain mixer configuration for audio quality', () => {
       expect(defaultDosboxConfig).toContain('[mixer]');
       expect(defaultDosboxConfig).toContain('rate=44100');
-      expect(defaultDosboxConfig).toContain('blocksize=2048');
       expect(defaultDosboxConfig).toContain('prebuffer=64');
     });
 
@@ -44,6 +43,8 @@ describe('dosbox.conf', () => {
       expect(defaultDosboxConfig).not.toContain('[video]');
       expect(defaultDosboxConfig).not.toContain('vmemsize');
       expect(defaultDosboxConfig).not.toMatch(/^ver=/m);
+      // Its mixer never reads blocksize and always works in 2048-sample blocks
+      expect(defaultDosboxConfig).not.toMatch(/^blocksize=/m);
     });
 
     it('should contain Sound Blaster configuration', () => {

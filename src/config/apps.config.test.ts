@@ -20,6 +20,7 @@ const dosboxConfOf = async (app: DosApp): Promise<string> =>
 const IGNORED_BY_DEFAULT_BACKEND = [
   /^\[(video|memory)\]$/m, // sections it does not have (memsize belongs in [dosbox])
   /^(vmemsize|ver|gusrate)=/m, // properties it does not have
+  /^blocksize=/m, // its mixer never reads this; it always works in 2048-sample blocks
   /^core=dynamic$/m, // it has no dynamic core and runs the simple one instead
   /^cputype=(486|pentium|pentium_mmx)$/m, // types it does not have; it uses auto instead
 ];

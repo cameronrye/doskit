@@ -11,8 +11,8 @@
  * - Fixed CPU cycles (25000) instead of "max" to prevent audio stuttering/crackling
  * - Mixer prebuffer increased to 64 ms for smoother audio buffering
  *   (it goes up to 100: DOSBox lowers anything higher to 100)
- * - Blocksize 2048 provides good balance between latency and stability
  * - Sample rate 44100 Hz is standard for DOS audio (CD quality)
+ * - No blocksize: the backend's mixer never reads it and always works in 2048-sample blocks
  *
  * Research Sources:
  * - DOSBox Wiki Performance Guide
@@ -41,7 +41,6 @@ xms=true
 
 [mixer]
 rate=44100
-blocksize=2048
 prebuffer=64
 
 [sblaster]

@@ -38,7 +38,7 @@ export const impulseTrackerZipUrl = '/demos/impulse-tracker.zip';
  *
  * Performance optimizations:
  * - Fixed cycles prevent audio timing issues common with auto/max cycles
- * - Mixer blocksize=2048 and prebuffer=64 provide smooth audio buffering (prebuffer goes up to 100)
+ * - Mixer prebuffer=64 provides smooth audio buffering (it goes up to 100)
  *
  * Based on community recommendations for music tracker applications
  */
