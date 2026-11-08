@@ -71,15 +71,17 @@ describe('DosPlayer', () => {
       expect(screen.getByRole('button', { name: /Reload Page/i })).toBeInTheDocument();
     });
 
-    it('should handle initialization errors gracefully', () => {
+    it('shows why the emulator failed to start', async () => {
       window.Dos = vi.fn().mockImplementation(() => {
         throw new Error('Initialization failed');
       });
 
-      render(<DosPlayer />);
+      const { container } = render(<DosPlayer />);
 
-      waitFor(() => {
-        expect(screen.getByText(/Failed to initialize DOS emulator/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(container.querySelector('.dos-player-error')).toHaveTextContent(
+          'Initialization failed'
+        );
       });
     });
   });
