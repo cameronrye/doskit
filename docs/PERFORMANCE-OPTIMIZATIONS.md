@@ -506,7 +506,7 @@ To validate these optimizations:
 
 This optimization work is based on research from:
 
-- [Emscripten Optimization Documentation](https://emscripten.org/docs/optimizing/)
+- [Emscripten Optimization Documentation](https://emscripten.org/docs/optimizing/Optimizing-Code.html)
 - [DOSBox Performance Wiki](https://www.dosbox.com/wiki/Performance)
 - [WebAssembly Performance Patterns](https://web.dev/articles/webassembly-performance-patterns-for-web-apps)
 - [js-dos Documentation](https://js-dos.com)
