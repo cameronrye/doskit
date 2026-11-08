@@ -108,6 +108,8 @@ What covers what is fixed. From the bottom: the header and footer, with js-dos's
 
 With `softFullscreen` set, js-dos's fullscreen button has the player fill the window, over the header and footer, and js-dos's own layers, its toasts included, then stay inside it. The rule for that is DosKit's, in `src/components/DosPlayer.css`: the button marks the player's element with `jsdos-fullscreen-workaround`, but `js-dos.css` styles that class only on an element inside it.
 
+The selector keeps clear of the offline banner and the install prompt, which stay above it, by its layout. While either is shown, OfflineIndicator keeps its height, measured with a `ResizeObserver`, in `--offline-banner-height` or `--install-prompt-height` on the root element, and `src/components/DemoSelector.css` centers the selector in the space the two leave. The selector's height limit never drops below 40% of the window's, and it stays on screen, so in a very short window a notice can still cover part of it until the notice is closed.
+
 ## Data Flow
 
 ### Application Loading Flow
@@ -148,7 +150,7 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 2. **DosPlayerWithApps** - The running session (an app with its files and DOSBox config, or the default DOS prompt; none while a requested app is still loading), the requested app being loaded, and its load error, with the app Try Again loads again
 3. **DemoSelector** - Its selection, keyboard focus, load progress and error, the AbortController of its load, and the DOSBox configs it preloaded on hover
 4. **useDosEmulator** - Its loading and error state, and the command interface in a ref (`ciRef`) from `ci-ready` until the player is gone. Each mount's js-dos player lives in that mount's effect, which stops it on unmount.
-5. **OfflineIndicator** - The offline and back-online toasts and the install prompt; it records install-prompt dismissals in localStorage through `safeLocalStorage`
+5. **OfflineIndicator** - The offline banner, the back-online toast and the install prompt. It records install-prompt dismissals in localStorage through `safeLocalStorage`, and while the banner or the prompt is shown, keeps its height on the root element for the selector.
 
 #### Why No Global State?
 
@@ -275,7 +277,7 @@ React error boundaries catch and display errors gracefully without crashing the 
 Components subscribe to browser and emulator events, and pass what they learn up through callbacks:
 
 - App listens for `popstate` and runs what the URL names
-- OfflineIndicator listens for `online`, `offline`, `beforeinstallprompt` and `appinstalled`, and reports the network status to App
+- OfflineIndicator listens for `online`, `offline`, `beforeinstallprompt` and `appinstalled`, and reports the network status to App. A `ResizeObserver` on its offline banner and install prompt keeps their heights in `--offline-banner-height` and `--install-prompt-height` for the selector.
 - `useDosEmulator` receives js-dos events (`emu-ready`, `ci-ready`) through its `onEvent` option, and DOS exiting through the command interface's `events().onExit()`
 - The service worker registration reports installs and updates through `onSuccess`, `onUpdate` and `onOfflineReady`
 
