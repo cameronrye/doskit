@@ -92,8 +92,9 @@ own that is only downloaded when the app is loaded, or when the selector preload
 `signal` the loader receives, so the selector can show progress and cancel the download.
 
 `author` and `year` are the release's, from the archive's own files where they say; the header
-shows them as "Some Group (1994)". Both are optional: leave out a year that nothing establishes
-rather than guess one.
+shows them as "Some Group (1994)", or whichever of the two the app has, and the selector names
+its disk "My Demo by Some Group (1994)" for screen readers, leaving out a missing author or year.
+Both are optional: leave out a year that nothing establishes rather than guess one.
 
 The app now appears in the selector and opens at `/?app=my-demo`. The address bar shows the id
 without hyphens (`/?app=mydemo`); both forms work.
