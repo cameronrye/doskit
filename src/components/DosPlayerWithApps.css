@@ -21,6 +21,10 @@
  *   9999   the install prompt (OfflineIndicator.css), and js-dos's toasts
  *   10000  the offline and back-online notices (OfflineIndicator.css), and the update
  *          prompt (UpdateNotification.css), whose root comes later in the page
+ * The offline banner and the install prompt are above the selector, but the selector is
+ * kept clear of them by layout, not by z-index: while one is shown, OfflineIndicator keeps
+ * its height in --offline-banner-height or --install-prompt-height on the root element,
+ * and DemoSelector.css fits the selector in the space the two leave.
  */
 
 .dos-player-with-apps {
@@ -194,74 +198,8 @@
   color: var(--color-text-primary, #fff);
 }
 
-/* Control Bar - REMOVED: Now in App header */
-/* The control bar has been moved to the main app header to save vertical space */
-/*
-.app-control-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: var(--color-bg-secondary, #2a2a2a);
-  border-bottom: 1px solid var(--color-border, #333);
-}
-
-.current-app-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.app-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-text-primary, #fff);
-}
-
-.app-meta {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary, #aaa);
-}
-
-.select-app-button,
-.change-app-button {
-  padding: 0.5rem 1rem;
-  background: var(--color-accent, #4a9eff);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.select-app-button:hover,
-.change-app-button:hover {
-  background: var(--color-accent-hover, #3a8eef);
-  transform: translateY(-1px);
-}
-
-.change-app-button {
-  background: transparent;
-  border: 1px solid var(--color-border, #333);
-  color: var(--color-text-secondary, #aaa);
-}
-
-.change-app-button:hover {
-  background: var(--color-bg-tertiary, #333);
-  color: var(--color-text-primary, #fff);
-  transform: none;
-}
-*/
-
 /* DOS Player Instance */
 .dos-player-instance {
   flex: 1;
   min-height: 0;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  /* Control bar styles removed - now in App header */
 }
