@@ -30,8 +30,11 @@
 
     The demosceners and tracker authors
     For the productions DosKit runs: Future Crew, Triton,
-    Jeffrey Lim, cld & The Doctor and Draeden of VLA,
-    and the sceners archive
+    Jeffrey Lim, cld & The Doctor and Draeden of VLA
+
+    scene.org, the Internet Archive and the sceners archive
+    For keeping the files DosKit's archives come from
+    Websites: scene.org, archive.org
     GitHub: github.com/sceners
 
 # TECHNOLOGY COLOPHON
@@ -86,7 +89,7 @@
     Repository: github.com/cameronrye/doskit
     Website: doskit.net
     Started: 2025
-    Last update: 2026-11-07
+    Last update: 2026-11-08
 
 # SITE
 
