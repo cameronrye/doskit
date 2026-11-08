@@ -39,15 +39,19 @@ function categorizeScripts(scripts) {
   };
 
   for (const [name, command] of Object.entries(scripts)) {
-    if (name === 'dev' || name.includes('serve') || name.includes('start')) {
+    // npm runs pre<name> and post<name> around <name>, so list them together
+    const hookTarget = name.match(/^(?:pre|post)(.+)$/)?.[1];
+    const key = hookTarget && hookTarget in scripts ? hookTarget : name;
+
+    if (key === 'dev' || key.includes('serve') || key.includes('start')) {
       categories.development.push({ name, command });
-    } else if (name.includes('build') || name.includes('compile')) {
+    } else if (key.includes('build') || key.includes('compile')) {
       categories.build.push({ name, command });
-    } else if (name.includes('test') || name.includes('coverage')) {
+    } else if (key.includes('test') || key.includes('coverage')) {
       categories.testing.push({ name, command });
-    } else if (name.includes('lint') || name.includes('format')) {
+    } else if (key.includes('lint') || key.includes('format')) {
       categories.linting.push({ name, command });
-    } else if (name.includes('create') || name.includes('generate') || name.includes('preview')) {
+    } else if (key.includes('create') || key.includes('generate') || key.includes('preview')) {
       categories.utilities.push({ name, command });
     } else {
       categories.other.push({ name, command });

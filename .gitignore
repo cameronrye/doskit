@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# js-dos runtime, copied from node_modules by scripts/copy-js-dos.js
+/public/js-dos.js
+/public/js-dos.css
+/public/emulators/
+
 # Coverage reports
 coverage
 .nyc_output
