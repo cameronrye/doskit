@@ -4,18 +4,18 @@
  * Licensed under the MIT License
  *
  * Panic Configuration
- * Configuration for running the Panic demo by Future Crew (1992)
+ * Configuration for running the Panic demo by Future Crew (1993)
  */
 
 import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * Panic demo (hosted locally)
- * A classic demo by Future Crew (1992)
+ * A classic demo by Future Crew (1993)
  *
  * Source: https://files.scene.org/view/demos/groups/future_crew/demos/panic.zip
  * License: Freeware
- * Released at The Party 1992 (2nd place)
+ * Shown at The Party 1992 (2nd place), released on 4 February 1993
  */
 export const panicZipUrl = '/demos/panic.zip';
 
@@ -54,7 +54,7 @@ export const panicDosboxConf = presets
     'echo.',
     'echo ========================================',
     'echo   Panic by Future Crew',
-    'echo   1992 - The Party 1992 (2nd place)',
+    'echo   1993 - 2nd at The Party 1992',
     'echo ========================================',
     'echo.',
     'echo A classic demo featuring:',

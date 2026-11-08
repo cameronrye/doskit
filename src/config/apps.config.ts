@@ -38,7 +38,7 @@ export const availableApps: DosApp[] = [
     name: 'Impulse Tracker',
     description: 'Classic music tracker software',
     author: 'Jeffrey Lim',
-    year: 1995,
+    year: 1997,
     loadMethod: 'zip',
     dosboxConf: '',
     loader: async (onProgress, signal) => {
@@ -104,9 +104,9 @@ export const availableApps: DosApp[] = [
   {
     id: 'panic',
     name: 'Panic',
-    description: 'Classic 1992 demo by Future Crew',
+    description: 'Classic 1993 demo by Future Crew',
     author: 'Future Crew',
-    year: 1992,
+    year: 1993,
     loadMethod: 'zip',
     dosboxConf: '',
     loader: async (onProgress, signal) => {
@@ -140,7 +140,7 @@ export const availableApps: DosApp[] = [
     name: '3D Rotation Demo',
     description: "Classic 3D rotation effect from Grumpy's collection",
     author: "Grumpy's Collection",
-    year: 1990,
+    year: 1993,
     loadMethod: 'zip',
     dosboxConf: '',
     loader: async (onProgress, signal) => {
@@ -157,7 +157,7 @@ export const availableApps: DosApp[] = [
     name: 'Starfield Effect',
     description: 'Classic starfield effect simulating flying through space',
     author: "Grumpy's Collection",
-    year: 1990,
+    year: 1993,
     loadMethod: 'zip',
     dosboxConf: '',
     loader: async (onProgress, signal) => {
