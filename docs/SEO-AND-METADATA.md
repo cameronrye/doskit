@@ -317,7 +317,7 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 1. **index.html**: Update meta tags as needed; the build fills in the JSON-LD's `softwareVersion`
 2. **sitemap.xml**: Update lastmod dates when content changes
 3. **llm.txt / llm-full.txt**: Update when features or documentation changes
-4. **humans.txt**: Update when team or technology changes
+4. **humans.txt**: Update when team or technology changes; nothing fills in its version numbers or dates, so update them with releases and upgrades
 5. **.well-known/security.txt**: Renew `Expires` before it passes, keeping it less than a year ahead
 
 ## Best Practices
@@ -394,7 +394,7 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 Potential additions:
 
 - Multi-language support (hreflang tags)
-- Additional structured data types (FAQPage, HowTo)
+- Additional structured data types (FAQPage, HowTo), though Google has deprecated HowTo rich results and shows FAQ ones mainly for government and health sites
 - Video structured data (if video content added)
 - Breadcrumb structured data
 - Organization structured data
@@ -403,4 +403,4 @@ Potential additions:
 
 ---
 
-Last updated: 2025-11-18
+Last updated: 2026-11-07
