@@ -30,6 +30,9 @@ interface DemoSelectorProps {
   notice?: string | null;
 }
 
+/** How long a load may report nothing before its download has started, as a stall would */
+const START_TIMEOUT_MS = 20_000;
+
 /**
  * Count the apps on the first row of the rendered grid. Its auto-fill columns
  * follow the viewport width, so measure on each use. A grid without layout
@@ -219,6 +222,23 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
       setError(null);
       setLoadProgress(null);
 
+      // An app's loader imports its config chunk before its download starts, and only the
+      // download times itself out, from its request on: a load that has reported nothing for
+      // as long gives up here, so that a chunk that never arrives fails as a stall does
+      const startTimer = setTimeout(() => {
+        if (loadRef.current?.controller !== controller) return;
+        controller.abort();
+        loadRef.current = null;
+        const timedOut = Object.assign(
+          new Error(`Loading timed out: nothing arrived for ${START_TIMEOUT_MS / 1000} seconds`),
+          { name: 'TimeoutError' }
+        );
+        console.error('[DemoSelector] Error loading application:', timedOut);
+        setError(getUserFriendlyError(timedOut, { online: navigator.onLine }));
+        setIsLoading(false);
+        setLoadProgress(null);
+      }, START_TIMEOUT_MS);
+
       try {
         // Use preloaded config if available, otherwise load it
         const configPromise =
@@ -230,6 +250,7 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
         // meanwhile can report later: only the current load's progress shows.
         const [files, conf] = await Promise.all([
           app.loader((progress) => {
+            clearTimeout(startTimer);
             if (!controller.signal.aborted) setLoadProgress(progress);
           }, controller.signal),
           configPromise,
@@ -259,6 +280,8 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
         setError(getUserFriendlyError(err, { online: navigator.onLine }));
         setIsLoading(false);
         setLoadProgress(null);
+      } finally {
+        clearTimeout(startTimer);
       }
     },
     [onSelect]

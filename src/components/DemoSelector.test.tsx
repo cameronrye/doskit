@@ -563,7 +563,11 @@ describe('DemoSelector', () => {
     it('sets no time limit of its own on a download', async () => {
       vi.useFakeTimers();
       try {
-        vi.mocked(loadZipArchive).mockImplementation(() => new Promise(() => {}));
+        // A download that has its response, as loadZipArchive reports, and goes on and on
+        vi.mocked(loadZipArchive).mockImplementation((_url, onProgress) => {
+          onProgress?.({ loadedBytes: 0, totalBytes: 2_000_000 });
+          return new Promise(() => {});
+        });
         render(<DemoSelector onSelect={mockOnSelect} />);
         fireEvent.click(getFloppyDiskByName('Second Reality')!);
         fireEvent.click(screen.getByRole('button', { name: /Load Application/i }));
@@ -574,6 +578,33 @@ describe('DemoSelector', () => {
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Cancel Loading/i })).toBeInTheDocument();
         expect(vi.mocked(loadZipArchive).mock.calls[0]?.[2]?.aborted).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    // An app's loader imports its config chunk before its download starts, and only the
+    // download times itself out: a chunk that never arrives would leave the load up for good
+    it('gives up a load that has not started downloading within 20 seconds', async () => {
+      vi.useFakeTimers();
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        vi.mocked(loadZipArchive).mockImplementation(() => new Promise(() => {}));
+        render(<DemoSelector onSelect={mockOnSelect} />);
+        fireEvent.click(getFloppyDiskByName('Second Reality')!);
+        fireEvent.click(screen.getByRole('button', { name: /Load Application/i }));
+        await vi.waitFor(() => expect(loadZipArchive).toHaveBeenCalled());
+
+        act(() => vi.advanceTimersByTime(19_000));
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        act(() => vi.advanceTimersByTime(1_000));
+
+        expect(screen.getByRole('alert')).toHaveTextContent(
+          'The request took too long to complete'
+        );
+        expect(vi.mocked(loadZipArchive).mock.calls[0]?.[2]?.aborted).toBe(true);
+        expect(screen.getByRole('button', { name: /Load Application/i })).toBeInTheDocument();
+        expect(mockOnSelect).not.toHaveBeenCalled();
       } finally {
         vi.useRealTimers();
       }
