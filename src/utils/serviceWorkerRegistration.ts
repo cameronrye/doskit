@@ -6,6 +6,8 @@
  * Handles service worker registration and lifecycle management for PWA functionality
  */
 
+import { PWA_CONFIG } from '../constants/app';
+
 // Configuration
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||
@@ -135,14 +137,12 @@ function registerValidSW(swUrl: string, config?: ServiceWorkerConfig): void {
 
 /**
  * Set up periodic update checks for the service worker
- * Checks for updates every hour when the page is visible
+ * Checks for updates every PWA_CONFIG.UPDATE_CHECK_INTERVAL when the page is visible
  * Also checks when the page becomes visible after being hidden
  * @param registration - The service worker registration object
  * @private
  */
 function setupPeriodicUpdateChecks(registration: ServiceWorkerRegistration): void {
-  const UPDATE_CHECK_INTERVAL = 60 * 60 * 1000; // 1 hour
-
   // Check for updates periodically
   const checkForUpdates = () => {
     // Only check if page is visible to save resources
@@ -155,7 +155,7 @@ function setupPeriodicUpdateChecks(registration: ServiceWorkerRegistration): voi
   };
 
   // Set up interval for periodic checks
-  setInterval(checkForUpdates, UPDATE_CHECK_INTERVAL);
+  setInterval(checkForUpdates, PWA_CONFIG.UPDATE_CHECK_INTERVAL);
 
   // Also check when page becomes visible (user returns to tab)
   document.addEventListener('visibilitychange', () => {

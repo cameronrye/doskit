@@ -12,7 +12,7 @@
  */
 export const PWA_CONFIG = {
   /** Service worker update check interval (milliseconds) */
-  UPDATE_CHECK_INTERVAL: 60000, // 1 minute
+  UPDATE_CHECK_INTERVAL: 60 * 60 * 1000, // 1 hour
 
   /** Delay before showing install prompt (milliseconds) */
   INSTALL_PROMPT_DELAY: 5000, // 5 seconds

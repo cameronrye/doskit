@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { PWA_CONFIG } from '../constants/app';
 import { register, type ServiceWorkerConfig } from './serviceWorkerRegistration';
 
 // Mock service worker registration
@@ -291,6 +292,39 @@ describe('serviceWorkerRegistration', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       expect(onUpdate).toHaveBeenCalledWith(mockRegistration);
+    });
+
+    describe('periodic update checks', () => {
+      beforeEach(() => {
+        vi.useFakeTimers();
+        // jsdom serves the page from localhost, where register() first checks that sw.js exists
+        const swScriptResponse = { status: 200, headers: { get: () => 'application/javascript' } };
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(swScriptResponse));
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+      });
+
+      it('should check for an update each time the configured interval passes', async () => {
+        const mockRegistration = createMockRegistration();
+        vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(mockRegistration);
+
+        register();
+        window.dispatchEvent(new Event('load'));
+        await vi.advanceTimersByTimeAsync(0); // let the registration resolve
+
+        await vi.advanceTimersByTimeAsync(PWA_CONFIG.UPDATE_CHECK_INTERVAL - 1);
+        expect(mockRegistration.update).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(1);
+        expect(mockRegistration.update).toHaveBeenCalled();
+      });
+
+      it('should check hourly', () => {
+        expect(PWA_CONFIG.UPDATE_CHECK_INTERVAL).toBe(60 * 60 * 1000);
+      });
     });
   });
 });
