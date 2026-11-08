@@ -24,6 +24,10 @@ const HARMLESS_ERROR_PATTERNS = [
   // Keyboard lock errors (require user interaction)
   /lock\(\) request could not be registered/i,
   /keyboard.*lock/i,
+  // js-dos locks the keyboard each time a player starts. When two start milliseconds
+  // apart (an app left the moment it starts), Chromium rejects the older lock with this
+  // AbortError; the newer lock holds.
+  /superseded by a subsequent lock\(\) method call/i,
 
   // ResizeObserver errors (benign)
   /ResizeObserver loop/i,

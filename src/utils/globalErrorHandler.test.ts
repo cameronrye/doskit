@@ -152,6 +152,47 @@ describe('globalErrorHandler', () => {
       expect(onError).not.toHaveBeenCalled();
     });
 
+    /** Dispatch an unhandled rejection the way the browser does */
+    const rejectUnhandled = (reason: unknown) => {
+      const promise = Promise.reject(reason);
+      promise.catch(() => {});
+      const event = new PromiseRejectionEvent('unhandledrejection', {
+        promise,
+        reason,
+        cancelable: true,
+      });
+      window.dispatchEvent(event);
+      return event;
+    };
+
+    // js-dos locks the keyboard each time a player starts, without handling the promise.
+    // When two players start milliseconds apart (an app left the moment its player
+    // starts), Chromium rejects the older lock; the newer one holds the keyboard.
+    it('suppresses the rejection of a keyboard lock that a newer lock superseded', () => {
+      const onError = vi.fn();
+      initializeGlobalErrorHandler({ onError });
+
+      const event = rejectUnhandled(
+        new DOMException(
+          'This request has been superseded by a subsequent lock() method call.',
+          'AbortError'
+        )
+      );
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('still reports an abort that no keyboard lock caused', () => {
+      const onError = vi.fn();
+      initializeGlobalErrorHandler({ onError });
+
+      const event = rejectUnhandled(new DOMException('The operation was aborted.', 'AbortError'));
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(onError).toHaveBeenCalledTimes(1);
+    });
+
     it('tracks a promise rejected without a reason', () => {
       const onError = vi.fn();
       // Production config (main.tsx)
