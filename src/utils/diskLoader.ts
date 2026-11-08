@@ -137,6 +137,8 @@ export async function loadZipArchive(
           maxRetries: 3,
           initialDelay: 1000,
           onRetry: (attempt, error, delay) => {
+            // A retry follows an answer or a failed attempt, which a stalled request never gets
+            restartStallTimer();
             if (import.meta.env.DEV) {
               console.log(`[DiskLoader] Retry ${attempt} for ZIP after ${delay}ms:`, error.message);
             }

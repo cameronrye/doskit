@@ -368,6 +368,25 @@ describe('diskLoader', () => {
         await expect(download).resolves.toEqual(new Uint8Array([80, 75, 3, 4, 1, 2]));
       });
 
+      // Each answer is data arriving, even an error that fetchWithRetry tries again: a
+      // server that keeps answering slowly fails with what it answered, not as a stall
+      it('counts again from each answer that is retried', async () => {
+        const slowly = (response: Response) => () =>
+          new Promise<Response>((resolve) => setTimeout(() => resolve(response), 15_000));
+        vi.mocked(globalThis.fetch)
+          .mockImplementationOnce(slowly(new Response(null, { status: 503 })))
+          .mockImplementationOnce(slowly(new Response(null, { status: 503 })))
+          .mockImplementationOnce(slowly(chunkedResponse([[80, 75, 3, 4]])));
+        const download = loadZipArchive('http://example.com/archive.zip');
+        download.catch(failed);
+
+        // Three answers 15 s apart, with the waits between the attempts
+        await vi.advanceTimersByTimeAsync(60_000);
+
+        expect(failed).not.toHaveBeenCalled();
+        await expect(download).resolves.toEqual(new Uint8Array([80, 75, 3, 4]));
+      });
+
       // An abort's reason came in Chrome 98, Firefox 97 and Safari 15.4, after Firefox 94,
       // which the README supports
       it('fails with the timeout in a browser whose aborts have no reason', async () => {
