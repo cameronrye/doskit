@@ -5,13 +5,16 @@ on:
     branches:
       - main
 
+# Read-only by default; each job gets only the write access it needs
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # release branch, tags and GitHub releases
+      pull-requests: write # the release PR and its labels
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -29,9 +32,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      contents: write # gh release upload attaches the archive to the release
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          # npm ci runs dependencies' install scripts, so keep the token out of .git/config.
+          # The upload step hands gh the token through GITHUB_TOKEN instead.
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
