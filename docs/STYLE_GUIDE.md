@@ -660,7 +660,7 @@ describe('DosPlayer', () => {
 
 - **ESLint**: Run `npm run lint`, as CI does, to check the TypeScript, the config files, the scripts in `scripts/` and the service worker `public/sw.js`. The scripts are linted as ES modules, with Node's globals but not CommonJS's `require` or `__dirname`, and with Vitest's too in their tests; `public/sw.js` as a classic script with a service worker's globals. The rest of `public/`, the js-dos copy included, is not linted.
 - **Prettier**: Run `npm run format` to format files; CI runs `npm run format:check` and fails on any file Prettier would change
-- **Husky**: The pre-commit hook runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats what `npm run format:check` checks and skips the rest.
+- **Husky**: The pre-commit hook runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats what `npm run format:check` checks and skips the rest. `public/sw.js` gets no tests that way: its tests, `scripts/service-worker.test.js` and `scripts/inject-sw-version.test.js`, read it as a file rather than import it, so `vitest related` finds none. After changing it, run them with `npx vitest run scripts/service-worker.test.js scripts/inject-sw-version.test.js`, or run `npm test`.
 
 ### Before Committing
 
