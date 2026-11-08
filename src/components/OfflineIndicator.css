@@ -173,46 +173,6 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Connection Status Badge */
-.connection-badge {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(10px);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  z-index: 1000;
-  transition: all 0.3s;
-  opacity: 0.6;
-}
-
-.connection-badge:hover {
-  opacity: 1;
-}
-
-.connection-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #27ae60;
-  animation: pulse 2s infinite;
-}
-
-.connection-badge.offline .connection-dot {
-  background: #e74c3c;
-  animation: none;
-}
-
-.connection-text {
-  font-weight: 500;
-}
-
 /* Animations */
 @keyframes slideDown {
   from {
@@ -257,16 +217,6 @@
   }
 }
 
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .offline-content {
@@ -283,13 +233,6 @@
   .install-actions {
     flex-direction: column;
   }
-
-  .connection-badge {
-    bottom: 0.5rem;
-    right: 0.5rem;
-    font-size: 0.75rem;
-    padding: 0.4rem 0.8rem;
-  }
 }
 
 /* Reduce motion for accessibility */
@@ -297,10 +240,6 @@
   .offline-indicator,
   .online-indicator,
   .install-prompt {
-    animation: none;
-  }
-
-  .connection-dot {
     animation: none;
   }
 }
