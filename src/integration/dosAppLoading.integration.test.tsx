@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { render, waitFor, act } from '@testing-library/react';
+import App from '../App';
 import { DosPlayer } from '../components/DosPlayer';
 import type {
   CommandInterface,
@@ -352,5 +353,72 @@ describe('DOS Application Loading Integration Tests', () => {
 
     // Verify event order
     expect(events).toEqual(['ready', 'exit']);
+  });
+});
+
+// The whole app, with only js-dos and the network faked
+describe('Status badge as players come and go', () => {
+  let mockDos: Mock<Window['Dos']>;
+
+  /** The Ready/Loading badge in the footer */
+  const badge = () => document.querySelector('.status-indicators .status-badge');
+
+  /** Report the newest player ready, as js-dos does once its command interface is up */
+  const reportReady = () =>
+    act(() => mockDos.mock.lastCall?.[1]?.onEvent?.('ci-ready', createMockCommandInterface().ci));
+
+  beforeEach(() => {
+    // jsdom keeps one URL and history for the whole file
+    window.history.replaceState({}, '', '/');
+    // Every app archive downloads as a few bytes
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(new Uint8Array([80, 75, 3, 4])))
+    );
+    // jsdom has no matchMedia, which OfflineIndicator asks whether the app is installed
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({ matches: false, media: query }) as MediaQueryList)
+    );
+    // Like js-dos, a new player for each call, returned synchronously
+    mockDos = vi.fn<Window['Dos']>(() => createMockDosInstance());
+    window.Dos = mockDos;
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete (window as Partial<Window>).Dos;
+    window.history.replaceState({}, '', '/');
+  });
+
+  it('says Loading from the moment a new player mounts until that player is ready', async () => {
+    render(<App />);
+    // The start page runs the default DOS prompt
+    expect(mockDos).toHaveBeenCalledTimes(1);
+    reportReady();
+    expect(badge()).toHaveTextContent('Ready');
+
+    // Go to an app, as going forward to its URL does
+    await act(async () => {
+      window.history.pushState({}, '', '/?app=stars');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await waitFor(() => expect(mockDos).toHaveBeenCalledTimes(2), { timeout: 3000 });
+    expect(badge()).toHaveTextContent('Loading');
+    reportReady();
+    expect(badge()).toHaveTextContent('Ready');
+
+    // Back to the start page, which boots the default prompt again
+    await act(async () => {
+      const popped = new Promise((resolve) =>
+        window.addEventListener('popstate', resolve, { once: true })
+      );
+      window.history.back();
+      await popped;
+    });
+    expect(mockDos).toHaveBeenCalledTimes(3);
+    expect(badge()).toHaveTextContent('Loading');
+    reportReady();
+    expect(badge()).toHaveTextContent('Ready');
   });
 });

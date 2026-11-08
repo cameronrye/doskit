@@ -23,7 +23,10 @@ export interface DosPlayerProps {
   options?: Partial<DosOptions>;
   /** Callback when the emulator is ready */
   onReady?: (ci: CommandInterface) => void;
-  /** Callback when the emulator exits */
+  /**
+   * Callback when a ready emulator is gone: DOS exited, or unmounting stopped it. Called
+   * once per onReady.
+   */
   onExit?: () => void;
   /** Custom CSS class name */
   className?: string;

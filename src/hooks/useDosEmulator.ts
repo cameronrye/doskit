@@ -19,7 +19,10 @@ export interface UseDosEmulatorOptions {
   options?: Partial<DosOptions>;
   /** Callback when the emulator is ready */
   onReady?: (ci: CommandInterface) => void;
-  /** Callback when the emulator exits */
+  /**
+   * Callback when a ready emulator is gone: DOS exited, or unmounting stopped it. Called
+   * once per onReady.
+   */
   onExit?: () => void;
 }
 
@@ -30,7 +33,7 @@ export interface UseDosEmulatorReturn {
   isLoading: boolean;
   /** Error message if initialization failed */
   error: string | null;
-  /** Command interface reference (available after ready) */
+  /** Command interface of the running emulator: set once it is ready, cleared once it is gone */
   ciRef: React.RefObject<CommandInterface | null>;
 }
 
@@ -90,7 +93,11 @@ export const useDosEmulator = ({
         ciRef.current = arg as CommandInterface;
 
         if (ciRef.current) {
-          ciRef.current.events().onExit(() => {
+          const ci = ciRef.current;
+          ci.events().onExit(() => {
+            // Once unmounting has stopped the player, cleanup has reported its exit
+            if (ciRef.current !== ci) return;
+            ciRef.current = null;
             if (import.meta.env.DEV) {
               console.log('[useDosEmulator] DOS exited');
             }
@@ -205,7 +212,12 @@ export const useDosEmulator = ({
       if (player) {
         stopPlayer(player);
       }
-      ciRef.current = null;
+      // A ready player is gone now: report its exit at once, so a parent showing it as
+      // ready does not wait for js-dos, which reports the stop late or not at all
+      if (ciRef.current) {
+        ciRef.current = null;
+        onExitRef.current?.();
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

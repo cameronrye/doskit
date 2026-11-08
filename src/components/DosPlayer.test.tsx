@@ -212,6 +212,47 @@ describe('DosPlayer', () => {
 
       expect(onExit).toHaveBeenCalled();
     });
+
+    // onExit closes what onReady opened: whoever showed the player as ready learns it
+    // is gone, whether DOS exited or unmounting stopped it
+    describe('exit of a ready player', () => {
+      it('is reported as soon as unmounting stops the player, and only then', () => {
+        const onExit = vi.fn();
+        const { ci, exit } = createMockCommandInterface();
+        const { unmount } = render(<DosPlayer onExit={onExit} />);
+        emit('ci-ready', ci);
+
+        unmount();
+
+        expect(onExit).toHaveBeenCalledTimes(1);
+
+        // stop() exits the command interface, which js-dos then reports
+        act(() => exit());
+
+        expect(onExit).toHaveBeenCalledTimes(1);
+      });
+
+      it('is reported once when DOS exits before the player unmounts', () => {
+        const onExit = vi.fn();
+        const { ci, exit } = createMockCommandInterface();
+        const { unmount } = render(<DosPlayer onExit={onExit} />);
+        emit('ci-ready', ci);
+
+        act(() => exit());
+        unmount();
+
+        expect(onExit).toHaveBeenCalledTimes(1);
+      });
+
+      it('is not reported for a player that never got ready', () => {
+        const onExit = vi.fn();
+        const { unmount } = render(<DosPlayer onExit={onExit} />);
+
+        unmount();
+
+        expect(onExit).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe('Cleanup', () => {
