@@ -11,7 +11,9 @@
   background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
   /* 6.1:1 or more on the orange; white was 2.2 to 2.9:1 */
   color: #1a1a1a;
-  padding: 1rem;
+  /* Its text clear of an installed iPhone app's status bar, and of the notch sideways */
+  padding: calc(1rem + env(safe-area-inset-top, 0px)) calc(1rem + env(safe-area-inset-right, 0px))
+    1rem calc(1rem + env(safe-area-inset-left, 0px));
   z-index: 10000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   animation: offline-indicator-slide-down 0.3s ease-out;
@@ -79,7 +81,7 @@
  */
 .online-indicator {
   position: fixed;
-  top: 1rem;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
   width: max-content;
@@ -113,9 +115,10 @@
 /* Install Prompt */
 .install-prompt {
   position: fixed;
-  bottom: 1rem;
-  left: 1rem;
-  right: 1rem;
+  /* Clear of the home indicator, and of the notch on a phone held sideways */
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  right: calc(1rem + env(safe-area-inset-right, 0px));
   max-width: 500px;
   margin: 0 auto;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -246,9 +249,9 @@
   }
 
   .install-prompt {
-    left: 0.5rem;
-    right: 0.5rem;
-    bottom: 0.5rem;
+    left: calc(0.5rem + env(safe-area-inset-left, 0px));
+    right: calc(0.5rem + env(safe-area-inset-right, 0px));
+    bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   .install-actions {
@@ -263,7 +266,7 @@
  */
 @media (max-height: 450px) {
   .install-prompt {
-    bottom: 0.5rem;
+    bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
     padding: 0.5rem 0.75rem;
   }
 

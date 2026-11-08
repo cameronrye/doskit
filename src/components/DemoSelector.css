@@ -28,7 +28,8 @@
     0 20px 60px rgba(0, 0, 0, 0.5),
     0 8px 25px rgba(0, 0, 0, 0.4);
   max-width: 1400px;
-  width: 95%;
+  /* Clear of the notch and the rounded corners of a phone held sideways */
+  width: min(95%, calc(100% - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
   max-height: max(40vh, calc(90vh - var(--notice-above) - var(--notice-below)));
   display: flex;
   flex-direction: column;
@@ -332,7 +333,7 @@
 
 @media (max-width: 768px) {
   .demo-selector {
-    width: 98%;
+    width: min(98%, calc(100% - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
     max-height: max(40vh, calc(95vh - var(--notice-above) - var(--notice-below)));
     border-radius: 8px;
   }
