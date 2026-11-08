@@ -219,7 +219,7 @@ The built `index.html` also gets `<link rel="modulepreload">` tags from Vite, fo
 
 Chrome warns in the console that the module "was preloaded using link preload but not used within a few seconds" when no player starts that soon after the page loads, such as a deep link whose archive is still downloading, or a load that failed. A player that starts later still uses the preloaded response; the file is not downloaded twice.
 
-Safari (WebKit) does not answer `emulators.js`'s request from the preload, and logs that the file was preloaded but not used on every page load, even when a player starts at once. Under `vite preview`, which sends `Cache-Control: no-cache`, a first visit in WebKit downloaded the 1.46 MB file twice, once for the preload and once for the player; whether GitHub Pages' caching headers spare the second download has not been checked. Once the service worker is installed, it answers both requests from its emulator cache (section 7). The preload stays for Chromium's sake, where the first player gets the module sooner.
+Safari (WebKit) does not answer `emulators.js`'s request from the preload, and logs that the file was preloaded but not used on every page load, even when a player starts at once. A first visit in WebKit downloads the 1.46 MB file twice, both under `vite preview`, which sends `Cache-Control: no-cache`, and from a server that sends GitHub Pages' caching headers (`max-age=600` and an ETag), where Chromium downloads it once. Once the service worker is installed, it answers both requests from its emulator cache (section 7). The preload stays for Chromium's sake, where the first player gets the module sooner.
 
 **Benefits:**
 

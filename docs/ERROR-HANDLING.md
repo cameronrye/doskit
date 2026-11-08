@@ -138,7 +138,7 @@ Both reporters get the tracker from `getErrorTracker()`, so nothing else changes
 
 The default fallback says "Something went wrong" and offers Refresh Page and Try Again (which renders the children again); development builds add the error message, stack trace and component stack. `main.tsx` wraps App in one boundary and App wraps DosPlayerWithApps in another, so an error in the player area leaves the header and footer in place. Each fallback fills the element it renders in, the page or the player's area between the header and the footer, and scrolls when its card is taller; in windows under 500px tall the card is smaller, so both buttons show.
 
-The boundary leaves logging to the tracker: the tracker's report, with the component stack, is the one line it logs for an error. It also calls its `onError` prop with each error it catches, once its children have been replaced: App's boundary uses it to show Error in the footer, since a player that has gone reports no status, until Try Again remounts the player.
+The boundary leaves logging to the tracker: the tracker's report, with the component stack, is the one line it logs for an error, and React logs the error too (its default `onCaughtError`, which `main.tsx`'s `createRoot` keeps). It also calls its `onError` prop with each error it catches, once its children have been replaced: App's boundary uses it to show Error in the footer, since a player that has gone reports no status, until Try Again remounts the player.
 
 **Usage:**
 
@@ -223,8 +223,8 @@ The selector and the error overlay explain a failed load the same way: they log 
 **DemoSelector** (apps picked in the selector):
 
 - A failed load shows that explanation in an alert below the disks, with the selected app. Load Application tries again.
-- Once its response is in, a download that receives no data for 20 seconds fails as "The request took too long to complete" / "The connection or the server might be slow. Please try again.", with "Download timed out: no data received for 20 seconds" under Details (see diskLoader below). One that keeps receiving data has no time limit.
-- A load that has reported no progress 20 seconds after it began fails the same way, with "Loading timed out: nothing arrived for 20 seconds" under Details. Its progress starts with the archive's response, so this covers the app's config chunk, which its loader imports before the download starts, and the wait for the response, retries included.
+- A download that receives no data for 20 seconds fails as "The request took too long to complete" / "The connection or the server might be slow. Please try again.", with "Download timed out: no data received for 20 seconds" under Details (see diskLoader below). One that keeps receiving data has no time limit.
+- A load whose download has not started 20 seconds after it began fails the same way, with "Loading timed out: nothing arrived for 20 seconds" under Details. The download reports its start as it makes its request, so this covers only the app's config chunk, which its loader imports first: from the request on, retries included, the download's own limit applies.
 - Cancel Loading, Escape, closing the selector, choosing another disk (a click or Space) or loading one (Enter or a double-click) aborts the load quietly. During a download the arrow keys only move the focus, so they abort nothing.
 
 **DosPlayerWithApps** (apps the URL asks for: deep links, back/forward):
@@ -288,7 +288,7 @@ Update state (hasError = true)
   ↓
 Render fallback UI
   ↓
-Track with error tracking service (the console tracker logs it, with the component stack)
+Track with error tracking service (the console tracker logs it, with the component stack; React logs it too)
   ↓
 Add breadcrumb
   ↓
