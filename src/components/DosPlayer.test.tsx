@@ -104,8 +104,8 @@ describe('DosPlayer', () => {
       const customStyle = { backgroundColor: 'red' };
       const { container } = render(<DosPlayer style={customStyle} />);
       const wrapper = container.querySelector('.dos-player-wrapper');
-      // Check that style prop is passed (inline styles may be overridden by CSS)
-      expect(wrapper).toBeInTheDocument();
+      // jsdom gives computed colours as rgb()
+      expect(wrapper).toHaveStyle({ backgroundColor: 'rgb(255, 0, 0)' });
     });
   });
 

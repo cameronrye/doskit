@@ -237,24 +237,19 @@ describe('DOS Application Loading Integration Tests', () => {
     expect(onExit).toHaveBeenCalledOnce();
   });
 
-  it('should handle emulator error event', async () => {
-    render(<DosPlayer />);
-
-    // Wait for emulator to be ready
+  // js-dos sends only the events DosEvent lists; 'emu-error' is a step of its own store
+  it('should keep loading through an event it does not know', async () => {
+    const onReady = vi.fn();
+    const { container } = render(<DosPlayer onReady={onReady} />);
     await waitFor(() => {
       expect(mockDos).toHaveBeenCalled();
     });
 
-    // Simulate error event wrapped in act
-    await act(async () => {
-      if (onEventCallback) {
-        onEventCallback('emu-error');
-      }
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    });
+    act(() => onEventCallback?.('emu-error'));
 
-    // Verify error is handled (component should still be mounted)
-    expect(mockDos).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/Loading DOS emulator/i)).toBeInTheDocument();
+    expect(container.querySelector('.dos-player-error')).not.toBeInTheDocument();
+    expect(onReady).not.toHaveBeenCalled();
   });
 
   it('should cleanup emulator on unmount', async () => {

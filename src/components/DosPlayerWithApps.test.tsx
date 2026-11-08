@@ -274,7 +274,8 @@ describe('DosPlayerWithApps', () => {
   });
 
   describe('Callbacks', () => {
-    it('should call onSelectorVisibilityChange when prop changes', async () => {
+    // The parent knows: it is the one that opened it
+    it('does not report a selector that the showSelector prop opens', async () => {
       const onSelectorVisibilityChange = vi.fn();
       const { rerender } = render(
         <DosPlayerWithApps
@@ -295,6 +296,7 @@ describe('DosPlayerWithApps', () => {
       await waitFor(() => {
         expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
       });
+      expect(onSelectorVisibilityChange).not.toHaveBeenCalled();
     });
 
     it('should call onReady callback when DosPlayer is ready', () => {
