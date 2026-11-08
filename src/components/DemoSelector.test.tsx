@@ -601,6 +601,25 @@ describe('DemoSelector', () => {
       expect(signal?.aborted).toBe(true);
     });
 
+    // An app's loader imports its config chunk before it downloads, so a load given up while
+    // the chunk arrives can still report progress afterwards
+    it('shows no progress from a superseded load', async () => {
+      const reports = new Map<string, (progress: LoadProgress) => void>();
+      vi.mocked(loadZipArchive).mockImplementation((url, onProgress) => {
+        reports.set(url, onProgress!);
+        return new Promise(() => {});
+      });
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      await startLoadingSecondReality(reports);
+      fireEvent.doubleClick(getFloppyDiskByName('Impulse Tracker')!);
+      await waitFor(() => expect(reports.has(impulseTrackerZipUrl)).toBe(true));
+
+      act(() => reports.get(secondRealityZipUrl)!({ loadedBytes: 900_000, totalBytes: 1_000_000 }));
+
+      expect(screen.getByText('Starting download…')).toBeInTheDocument();
+      expect(screen.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow');
+    });
+
     it('ignores a superseded load that finishes before the newer one', async () => {
       const pending = deferDownloads();
       render(<DemoSelector onSelect={mockOnSelect} />);

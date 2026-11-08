@@ -148,9 +148,13 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
           preloadedConfigsRef.current.get(app.id) ||
           (app.loadDosboxConf ? app.loadDosboxConf() : Promise.resolve(app.dosboxConf));
 
-        // Load the application files and dosbox config in parallel with progress tracking
+        // Load the application files and dosbox config in parallel with progress tracking.
+        // A loader imports its config chunk first, unaware of the signal, so a load given up
+        // meanwhile can report later: only the current load's progress shows.
         const [files, conf] = await Promise.all([
-          app.loader(setLoadProgress, controller.signal),
+          app.loader((progress) => {
+            if (!controller.signal.aborted) setLoadProgress(progress);
+          }, controller.signal),
           configPromise,
         ]);
 

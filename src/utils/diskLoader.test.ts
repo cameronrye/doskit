@@ -252,6 +252,47 @@ describe('diskLoader', () => {
         await expect(download).rejects.toMatchObject({ name: 'AbortError' });
         expect(consoleError).not.toHaveBeenCalled();
       });
+
+      it('stops reading the archive', async () => {
+        const controller = new AbortController();
+        const cancel = vi.fn();
+        vi.mocked(globalThis.fetch).mockResolvedValue(
+          new Response(new ReadableStream<Uint8Array>({ cancel }))
+        );
+        const onProgress = vi.fn();
+        const download = loadZipArchive(
+          'http://example.com/archive.zip',
+          onProgress,
+          controller.signal
+        );
+        await vi.waitFor(() => expect(onProgress).toHaveBeenCalled());
+
+        controller.abort();
+
+        await expect(download).rejects.toBe(controller.signal.reason);
+        expect(cancel).toHaveBeenCalled();
+      });
+
+      // A caller that has moved on must not see the progress of what it abandoned
+      it('reports no progress once aborted, even for a chunk that had already arrived', async () => {
+        const controller = new AbortController();
+        const { response, send } = openResponse({ 'Content-Length': '4' });
+        vi.mocked(globalThis.fetch).mockResolvedValue(response);
+        const onProgress = vi.fn();
+        const download = loadZipArchive(
+          'http://example.com/archive.zip',
+          onProgress,
+          controller.signal
+        );
+        await vi.waitFor(() => expect(onProgress).toHaveBeenCalledTimes(1));
+
+        // The chunk is in, but the loader has not handled it yet when the caller aborts
+        send([80, 75, 3, 4]);
+        queueMicrotask(() => controller.abort());
+
+        await expect(download).rejects.toBeDefined();
+        expect(onProgress).toHaveBeenCalledTimes(1);
+      });
     });
 
     // A connection can stay open and deliver nothing, as after a network handover. Slow

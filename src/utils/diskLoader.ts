@@ -89,10 +89,10 @@ function joinChunks(chunks: Uint8Array[], length: number): Uint8Array {
  * js-dos can automatically extract ZIP files
  * @param zipUrl URL to the ZIP file
  * @param onProgress Optional progress callback: once the response arrives, and after each
- *   chunk of the archive
+ *   chunk of the archive, but never once the download is aborted
  * @param signal Optional AbortSignal to cancel the operation
  * @returns Uint8Array of the ZIP file
- * @throws {Error} A "TimeoutError" when no data arrives for 20 seconds (see STALL_TIMEOUT_MS)
+ * @throws {Error} A "TimeoutError" when no data arrives for 20 seconds
  */
 export async function loadZipArchive(
   zipUrl: string,
@@ -113,6 +113,11 @@ export async function loadZipArchive(
   const restartStallTimer = () => {
     clearTimeout(stallTimer);
     stallTimer = setTimeout(() => download.abort(timedOut), STALL_TIMEOUT_MS);
+  };
+  // A chunk can arrive just before an abort and be handled after it: a caller that has
+  // moved on gets no progress of the download it gave up
+  const report = (progress: LoadProgress) => {
+    if (!download.signal.aborted) onProgress?.(progress);
   };
 
   try {
@@ -146,7 +151,7 @@ export async function loadZipArchive(
     let totalBytes = parseContentLength(response.headers.get('Content-Length'));
     let loadedBytes = 0;
     const chunks: Uint8Array[] = [];
-    onProgress?.({ loadedBytes, totalBytes });
+    report({ loadedBytes, totalBytes });
     await readBody(response, download.signal, (chunk) => {
       restartStallTimer();
       chunks.push(chunk);
@@ -154,7 +159,7 @@ export async function loadZipArchive(
       // Content-Length can count fewer bytes than the body gives, as for a compressed
       // response: the size is then unknown
       if (totalBytes !== null && loadedBytes > totalBytes) totalBytes = null;
-      onProgress?.({ loadedBytes, totalBytes });
+      report({ loadedBytes, totalBytes });
     });
     const zipData = joinChunks(chunks, loadedBytes);
 
