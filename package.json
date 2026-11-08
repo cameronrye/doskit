@@ -31,7 +31,7 @@
     "predev": "node scripts/copy-js-dos.js",
     "dev": "vite",
     "prebuild": "node scripts/copy-js-dos.js",
-    "build": "node scripts/generate-social-images.js && tsc -b && vite build && node scripts/inject-sw-version.js",
+    "build": "tsc -b && vite build && node scripts/inject-sw-version.js",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

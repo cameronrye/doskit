@@ -1,6 +1,9 @@
 /**
  * Generate social media preview images from SVG sources
  * Converts SVG files to PNG format for Open Graph and Twitter Cards
+ *
+ * Run it after editing an SVG and commit the PNGs; the build copies them
+ * from public/ like any other static file.
  */
 
 import sharp from 'sharp';
@@ -12,7 +15,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const publicDir = join(__dirname, '..', 'public');
-const distDir = join(__dirname, '..', 'dist');
 
 // Ensure directories exist
 try {
@@ -87,20 +89,6 @@ async function generateSocialImages() {
   }
 
   console.log(`\n📊 Summary: ${successCount} succeeded, ${failCount} failed`);
-
-  // Also copy to dist directory if it exists
-  try {
-    mkdirSync(distDir, { recursive: true });
-
-    for (const image of images) {
-      const distOutput = join(distDir, image.output.split('/').pop());
-      await sharp(image.output).toFile(distOutput);
-      console.log(`✓ Copied to dist: ${distOutput}`);
-    }
-  } catch (error) {
-    // Dist directory might not exist yet, that's okay
-    console.log('ℹ Skipping dist copy (directory not found)');
-  }
 
   if (failCount > 0) {
     process.exit(1);
