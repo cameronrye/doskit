@@ -248,7 +248,11 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
             <span className="offline-icon">📡</span>
             <div className="offline-text">
               <strong>You're offline</strong>
-              <p>Don't worry, the app will continue to work with cached content.</p>
+              {/* The service worker keeps an application's archive once it has been opened online */}
+              <p>
+                Applications you've opened while online still work. Others need a connection to
+                load.
+              </p>
             </div>
             <button
               className="offline-close"

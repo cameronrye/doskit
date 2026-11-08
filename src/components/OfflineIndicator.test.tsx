@@ -116,6 +116,21 @@ describe('OfflineIndicator', () => {
       });
     });
 
+    it('says that only the applications opened while online still work', () => {
+      render(<OfflineIndicator />);
+
+      fireEvent(window, new Event('offline'));
+
+      // The service worker stores an application's archive the first time it is opened
+      // online; any other fails to load ("This application isn't available offline yet")
+      expect(
+        screen.getByText(
+          "Applications you've opened while online still work. Others need a connection to load."
+        )
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/continue to work/)).not.toBeInTheDocument();
+    });
+
     it('should hide offline message when online event fires', async () => {
       render(<OfflineIndicator />);
 
