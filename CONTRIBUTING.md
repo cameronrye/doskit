@@ -6,8 +6,8 @@ Thank you for your interest in contributing to DosKit! This document provides gu
 
 ### Prerequisites
 
-- **Node.js**: Version 24.x or higher
-- **npm**: Version 10.x or higher
+- **Node.js**: The version in `.nvmrc` (`nvm use` picks it up), which CI uses too
+- **npm**: Comes with Node.js
 - **Git**: For version control
 
 ### Development Setup
@@ -27,11 +27,15 @@ Thank you for your interest in contributing to DosKit! This document provides gu
    npm install
    ```
 
+   This also installs the pre-commit hook (see [Making Changes](#making-changes)).
+
 4. **Start the development server**:
 
    ```bash
    npm run dev
    ```
+
+   `npm run dev` and `npm run build` first copy the js-dos runtime from `node_modules` into `public/` (`scripts/copy-js-dos.js`); the copies are gitignored. If you start Vite another way, such as `npx vite`, run `node scripts/copy-js-dos.js` once first, and again after updating js-dos.
 
 5. **Open your browser** to `http://localhost:5173`
 
@@ -67,16 +71,26 @@ Example: `feature/add-gamepad-support`
    npm test
    ```
 
-5. **Run the linter** to check code style:
+5. **Run the linter and the format check**:
 
    ```bash
    npm run lint
+   npm run format:check
    ```
 
+   CI fails on files Prettier would change; `npm run format` formats them.
+
 6. **Build the project** to ensure it compiles:
+
    ```bash
    npm run build
    ```
+
+   The build starts with `tsc -b`, which type-checks the app, the tests (through `tsconfig.test.json`) and the Vite and Vitest configs. Run `npx tsc -b` for the type check alone.
+
+When you commit, the pre-commit hook (Husky) runs lint-staged on the staged files: `eslint --fix` and the tests that import them (`vitest related --run`) for TypeScript files, and `prettier --write` for TypeScript, CSS, Markdown and JSON files.
+
+Pull requests to `main` run CI (`.github/workflows/ci.yml`): ESLint, the format check, the tests with coverage, the build and the type check.
 
 ### Commit Messages
 
@@ -96,11 +110,14 @@ Closes #123
 
 - `feat:` - New feature
 - `fix:` - Bug fix
+- `perf:` - Performance improvement
 - `docs:` - Documentation changes
 - `style:` - Code style changes (formatting, etc.)
 - `refactor:` - Code refactoring
 - `test:` - Test additions or updates
-- `chore:` - Build process or auxiliary tool changes
+- `build:` - Build system or dependency changes
+- `ci:` - GitHub Actions workflow changes
+- `chore:` - Other maintenance, such as tooling configuration
 
 ### Pull Requests
 
@@ -130,7 +147,7 @@ Closes #123
 
 - Use **TypeScript** for all new code
 - Pass **strict mode** type checking (`strict` is on for the app, the tests and the configs)
-- Avoid using `any` type - use `unknown`, specific types, or proper generics
+- Avoid using `any` type - use `unknown`, specific types, or proper generics (ESLint reports explicit `any` as an error)
 - Document complex types with JSDoc comments
 
 ### React
@@ -229,6 +246,8 @@ npm run test:ui
 # Run one test file
 npx vitest run src/utils/urlRouting.test.ts
 ```
+
+Vitest does not type-check the tests; `npx tsc -b` does, through `tsconfig.test.json`, and so does `npm run build`.
 
 ## Documentation
 
