@@ -218,7 +218,8 @@ function App() {
 
       <footer className="app-footer">
         <div className="info">
-          <div className="status-indicators">
+          {/* A polite live region: screen readers announce each change of the badges */}
+          <div className="status-indicators" role="status">
             {/* DOS Status */}
             {isReady ? (
               <span className="status-badge ready" title="DOS emulator is ready">

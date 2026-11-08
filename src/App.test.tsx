@@ -437,6 +437,20 @@ describe('App', () => {
       expect(statusIndicators).toHaveTextContent(/Online/i);
     });
 
+    it('announces the status badges as a status region that stays in the page', () => {
+      render(<App />);
+      const status = screen.getByRole('status');
+      expect(status).toHaveTextContent('Loading');
+
+      fireEvent.click(screen.getByText('Trigger Ready'));
+      fireEvent.click(screen.getByText('Go Offline'));
+
+      // A live region announces changes only to content it already holds
+      expect(screen.getByRole('status')).toBe(status);
+      expect(status).toHaveTextContent('Ready');
+      expect(status).toHaveTextContent('Offline');
+    });
+
     it("keeps the loading badge clear of js-dos.css's .loading rule, which draws a spinner", () => {
       render(<App />);
 
