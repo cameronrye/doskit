@@ -696,6 +696,36 @@ describe('DosPlayerWithApps', () => {
       expect(stops).toEqual(['default']);
     });
 
+    // Such as a demo that has ended at the DOS prompt, or a program the user quit
+    it('starts the running app again when it is picked in the selector again', () => {
+      const { rerender } = render(<DosPlayerWithApps showSelector={true} requestedApp={null} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      // App mirrors the pick into requestedApp, and opens the selector on Change Application
+      rerender(<DosPlayerWithApps showSelector={false} requestedApp={mockApp} />);
+      rerender(<DosPlayerWithApps showSelector={true} requestedApp={mockApp} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(boots).toEqual(['default', '[cpu]\ncore=auto', '[cpu]\ncore=auto']);
+      expect(stops).toEqual(['default', '[cpu]\ncore=auto']);
+    });
+
+    it('keeps the DOS prompt Choose Another Application started when no app is requested next', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const onAppChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps requestedApp={mockAppWithError} onAppChange={onAppChange} />
+      );
+      fireEvent.click(await screen.findByRole('button', { name: 'Choose Another Application' }));
+
+      // App takes the app out of the URL once it is told
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(null);
+      rerender(<DosPlayerWithApps requestedApp={null} onAppChange={onAppChange} />);
+
+      expect(boots).toEqual(['default']);
+      expect(stops).toEqual([]);
+    });
+
     it('leaves the selector open when a requested app finishes loading behind it', async () => {
       const stars = deferredApp('stars');
       const onSelectorVisibilityChange = vi.fn();

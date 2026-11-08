@@ -40,6 +40,8 @@ interface DosPlayerWithAppsProps {
 
 /** What the emulator runs: an app with its files, or the default DOS prompt */
 interface Session {
+  /** Tells the sessions apart: each one starts its own player */
+  id: number;
   app: DosApp | null;
   files?: InitFileEntry[] | Uint8Array;
   dosboxConf?: string;
@@ -50,7 +52,19 @@ interface LoadError extends FriendlyError {
   app: DosApp;
 }
 
-const DEFAULT_PROMPT: Session = { app: null };
+const DEFAULT_PROMPT: Session = { id: 0, app: null };
+
+/** The id of the last session newSession() made */
+let lastSessionId = 0;
+
+/**
+ * A session with an id of its own, so that it starts a new player even for the app already
+ * running: picking that app runs it again, such as a demo that has ended at the DOS prompt
+ */
+function newSession(app: DosApp | null, files?: Session['files'], dosboxConf?: string): Session {
+  lastSessionId += 1;
+  return { id: lastSessionId, app, files, dosboxConf };
+}
 
 export function DosPlayerWithApps({
   onReady,
@@ -79,7 +93,8 @@ export function DosPlayerWithApps({
     setError(null);
     if (!requestedApp) {
       setLoadingApp(null);
-      setSession(DEFAULT_PROMPT);
+      // A DOS prompt already running, such as Choose Another Application's, goes on running
+      if (session?.app !== null) setSession(DEFAULT_PROMPT);
     } else if (requestedApp.id === session?.app?.id) {
       setLoadingApp(null);
     } else {
@@ -94,7 +109,7 @@ export function DosPlayerWithApps({
   }, [showSelector]);
 
   const runLoadedApp = useEffectEvent((app: DosApp, files: Session['files'], conf: string) => {
-    setSession({ app, files, dosboxConf: conf });
+    setSession(newSession(app, files, conf));
     setLoadingApp(null);
     onAppChange?.(app);
   });
@@ -140,10 +155,10 @@ export function DosPlayerWithApps({
   const handleSelectApp = useCallback(
     (loadedApp: LoadedApp) => {
       // Files are already loaded by DemoSelector. The user's pick wins over a requested
-      // app still loading.
+      // app still loading, and starts the app again if it is the one running.
       setLoadingApp(null);
       setError(null);
-      setSession({ app: loadedApp.app, files: loadedApp.files, dosboxConf: loadedApp.dosboxConf });
+      setSession(newSession(loadedApp.app, loadedApp.files, loadedApp.dosboxConf));
       setShowAppSelector(false);
       onAppChange?.(loadedApp.app);
       onSelectorVisibilityChange?.(false);
@@ -164,7 +179,7 @@ export function DosPlayerWithApps({
 
   // Choose Another Application: the default DOS prompt, with the selector open over it
   const handleChooseAnother = useCallback(() => {
-    setSession(DEFAULT_PROMPT);
+    setSession(newSession(null));
     setError(null);
     setShowAppSelector(true);
     onAppChange?.(null);
@@ -222,7 +237,7 @@ export function DosPlayerWithApps({
       {/* DOS Player */}
       {session && (
         <DosPlayer
-          key={session.app?.id ?? 'default'} // Force remount when app changes
+          key={session.id} // A new session starts a new player
           dosboxConf={session.dosboxConf}
           options={session.app ? { initFs: session.files } : {}}
           onReady={onReady}
