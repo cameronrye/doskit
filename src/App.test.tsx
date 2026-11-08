@@ -541,6 +541,19 @@ describe('App', () => {
       expect(screen.getByRole('link', { name: 'js-dos v9.9.9' })).toBeInTheDocument();
     });
 
+    it('links to the licenses of js-dos and DOSBox next to the js-dos credit', () => {
+      render(<App />);
+
+      const licenses = screen.getByRole('link', { name: 'Licenses' });
+
+      expect(licenses).toHaveAttribute('href', '/licenses/');
+      // In a new tab, as the other footer links, so the running program keeps running
+      expect(licenses).toHaveAttribute('target', '_blank');
+      expect(licenses.closest('.credits')).toContainElement(
+        screen.getByRole('link', { name: `js-dos v${installedJsDosVersion}` })
+      );
+    });
+
     it('should render author attribution', () => {
       render(<App />);
       expect(screen.getByText(/Made with/i)).toBeInTheDocument();

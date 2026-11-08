@@ -250,9 +250,16 @@ function App() {
           </a>
         </div>
         <div className="credits">
-          Powered by{' '}
-          <a href="https://js-dos.com" target="_blank" rel="noopener noreferrer">
-            js-dos v{import.meta.env.VITE_JSDOS_VERSION}
+          <span className="credits-js-dos">
+            Powered by{' '}
+            <a href="https://js-dos.com" target="_blank" rel="noopener noreferrer">
+              js-dos v{import.meta.env.VITE_JSDOS_VERSION}
+            </a>
+            <span aria-hidden="true"> · </span>
+          </span>
+          {/* The GPL notices of js-dos and DOSBox, which DosKit ships */}
+          <a href="/licenses/" target="_blank" rel="noopener noreferrer">
+            Licenses
           </a>
         </div>
       </footer>
