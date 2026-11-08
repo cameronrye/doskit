@@ -60,14 +60,13 @@ interface LoadError extends FriendlyError {
   app: DosApp;
 }
 
-const DEFAULT_PROMPT: Session = { id: 0, app: null };
-
 /** The id of the last session newSession() made */
 let lastSessionId = 0;
 
 /**
  * A session with an id of its own, so that it starts a new player even for the app already
- * running: picking that app runs it again, such as a demo that has ended at the DOS prompt
+ * running: picking that app runs it again, such as a demo that has ended at the DOS prompt.
+ * The default DOS prompt gets one each time too, so that its status is its own.
  */
 function newSession(app: DosApp | null, files?: Session['files'], dosboxConf?: string): Session {
   lastSessionId += 1;
@@ -87,7 +86,9 @@ export function DosPlayerWithApps({
 }: DosPlayerWithAppsProps) {
   // Nothing runs while a requested app loads: a deep link never boots the default prompt
   // first, and the app or prompt that was running stops, sound and all, as the load starts
-  const [session, setSession] = useState<Session | null>(requestedApp ? null : DEFAULT_PROMPT);
+  const [session, setSession] = useState<Session | null>(() =>
+    requestedApp ? null : newSession(null)
+  );
   const [loadingApp, setLoadingApp] = useState<DosApp | null>(requestedApp);
   const [requestedId, setRequestedId] = useState(requestedApp?.id ?? null);
   const [showAppSelector, setShowAppSelector] = useState(showSelector);
@@ -121,7 +122,7 @@ export function DosPlayerWithApps({
     if (!requestedApp) {
       setLoadingApp(null);
       // A DOS prompt already running, such as Choose Another Application's, goes on running
-      if (session?.app !== null) setSession(DEFAULT_PROMPT);
+      if (session?.app !== null) setSession(newSession(null));
     } else if (requestedApp.id === session?.app?.id) {
       setLoadingApp(null);
     } else {

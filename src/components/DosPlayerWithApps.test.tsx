@@ -340,6 +340,26 @@ describe('DosPlayerWithApps', () => {
       expect(onStatusChange.mock.calls).toEqual([['loading'], ['ready']]);
     });
 
+    // A DOS prompt whose emulator failed, such as when emulators.js failed to download, which
+    // the next start loads again: the prompt the start page brings back starts afresh
+    it('reports loading for a new DOS prompt after an earlier one failed to start', () => {
+      const onStatusChange = vi.fn();
+      const { rerender } = render(<DosPlayerWithApps onStatusChange={onStatusChange} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Error' }));
+      expect(onStatusChange).toHaveBeenLastCalledWith('error');
+
+      // An app is requested, then the start page again before it has loaded
+      rerender(
+        <DosPlayerWithApps
+          requestedApp={deferredApp('stars').app}
+          onStatusChange={onStatusChange}
+        />
+      );
+      rerender(<DosPlayerWithApps requestedApp={null} onStatusChange={onStatusChange} />);
+
+      expect(onStatusChange).toHaveBeenLastCalledWith('loading');
+    });
+
     it('reports loading while a requested app downloads and its emulator starts', async () => {
       const stars = deferredApp('stars');
       const onStatusChange = vi.fn();
