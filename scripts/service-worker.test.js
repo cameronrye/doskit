@@ -366,6 +366,23 @@ describe('offline navigation', () => {
       expect(await response?.text()).toBe('/index.html from deploy A');
     }
   );
+
+  it('serves the bundles to the crossorigin requests of index.html, whatever Vary says', async () => {
+    // Its module scripts and stylesheet have crossorigin, so Chrome sends Origin, which
+    // install's requests did not. On a host that answers with Vary: Origin (vite preview
+    // does), the app could not start offline before a load online had stored them again.
+    const browser = createBrowser();
+    browser.server.headers = { Vary: 'Origin' };
+    const worker = await installAndActivate(browser);
+    browser.server.online = false;
+
+    for (const path of BUNDLES) {
+      const { response } = await worker.dispatch('fetch', {
+        request: subresource(path, { headers: { Origin: ORIGIN } }),
+      });
+      expect(await response?.text()).toBe(`${path} from deploy A`);
+    }
+  });
 });
 
 describe('emulator files', () => {

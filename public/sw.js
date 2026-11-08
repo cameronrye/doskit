@@ -55,6 +55,13 @@ const EMULATOR_ASSETS = [
 
 const absoluteUrl = (path) => new URL(path, self.location.origin).href;
 
+// Lookups ignore Vary: every file the worker caches is the same for every request, and
+// Vary would make a request miss whose headers differ from the stored request's. Chrome
+// sends Origin with the crossorigin requests of index.html (its module scripts, its
+// stylesheet and the wasm preload), install's requests carry none, and some hosts (vite
+// preview, not GitHub Pages) answer with Vary: Origin.
+const MATCH_OPTIONS = { ignoreVary: true };
+
 // What install puts in CACHE_NAME: trimming leaves these alone, since /index.html is the
 // offline fallback for every navigation and the app cannot start without the rest
 const PRECACHED_URLS = new Set(STATIC_ASSETS.map(absoluteUrl));
@@ -320,11 +327,7 @@ async function cacheResponse(request, response) {
 async function serveCacheFirst(event, cacheName) {
   const { request } = event;
   const cache = await caches.open(cacheName);
-  // These files are the same for every request. Vary would make a request miss that
-  // differs from the stored one in a header it names: the crossorigin preload of
-  // wdosbox.wasm sends Origin, install did not, and some hosts (vite preview) answer
-  // with Vary: Origin.
-  const cachedResponse = await cache.match(request, { ignoreVary: true });
+  const cachedResponse = await cache.match(request, MATCH_OPTIONS);
   if (cachedResponse) {
     console.log('[Service Worker] Serving from cache (cache-first):', request.url);
     return cachedResponse;
@@ -387,13 +390,13 @@ self.addEventListener('fetch', (event) => {
             request.url,
             error.message
           );
-          return caches.match(request).then((cachedResponse) => {
+          return caches.match(request, MATCH_OPTIONS).then((cachedResponse) => {
             if (cachedResponse) {
               // Update timestamp when serving from cache
               updateCacheMetadata(request.url);
             }
             // A URL never visited online (such as a new deep link) gets the app shell
-            return cachedResponse || caches.match('/index.html');
+            return cachedResponse || caches.match('/index.html', MATCH_OPTIONS);
           });
         })
     );
@@ -417,7 +420,7 @@ self.addEventListener('fetch', (event) => {
   // re-download it in full on every use.
   if (url.pathname.endsWith('.wasm') || url.pathname.endsWith('.wasm.gz')) {
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
+      caches.match(request, MATCH_OPTIONS).then((cachedResponse) => {
         if (cachedResponse) {
           console.log('[Service Worker] Serving from cache (cache-first):', request.url);
           // Update timestamp when serving from cache
@@ -440,7 +443,7 @@ self.addEventListener('fetch', (event) => {
 
   // Stale-while-revalidate for JS/CSS and other assets
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
+    caches.match(request, MATCH_OPTIONS).then((cachedResponse) => {
       if (cachedResponse) {
         // Return cached response and update cache in background
         console.log('[Service Worker] Serving from cache:', request.url);
