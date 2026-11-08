@@ -9,7 +9,11 @@
 
 import { useState } from 'react';
 import { PWA_CONFIG } from '../constants/app';
+import { logger } from '../utils/logger';
 import './UpdateNotification.css';
+
+// What Update Now goes through, logged in development only
+const LOG_CONTEXT = 'UpdateNotification';
 
 interface UpdateNotificationProps {
   registration: ServiceWorkerRegistration | null;
@@ -25,7 +29,7 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
 
   const handleUpdate = () => {
     if (registration?.waiting) {
-      console.log('[UpdateNotification] Initiating update...');
+      logger.info(LOG_CONTEXT, 'Initiating update');
 
       // Set up a flag to prevent multiple reloads
       let reloadTriggered = false;
@@ -33,7 +37,7 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
       const performReload = () => {
         if (!reloadTriggered) {
           reloadTriggered = true;
-          console.log('[UpdateNotification] Reloading to activate new version...');
+          logger.info(LOG_CONTEXT, 'Reloading to activate the new version');
           window.location.reload();
         }
       };
@@ -57,13 +61,12 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
             if (!reloadTriggered) {
               retryCount++;
               if (retryCount >= maxRetries) {
-                console.log(
-                  '[UpdateNotification] Final fallback reload triggered after exponential backoff'
-                );
+                logger.info(LOG_CONTEXT, 'The new worker never took control: reloading anyway');
                 performReload();
               } else {
-                console.log(
-                  `[UpdateNotification] Retry ${retryCount}/${maxRetries} - checking for controllerchange...`
+                logger.info(
+                  LOG_CONTEXT,
+                  `Still waiting for the new worker to take control (${retryCount}/${maxRetries})`
                 );
                 scheduleFallbackReload();
               }
@@ -87,7 +90,7 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
       // Now send the SKIP_WAITING message to the service worker
       try {
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        console.log('[UpdateNotification] SKIP_WAITING message sent to service worker');
+        logger.info(LOG_CONTEXT, 'SKIP_WAITING message sent to the waiting worker');
       } catch (error) {
         console.error('[UpdateNotification] Error sending SKIP_WAITING message:', error);
         // If we can't send the message, clear all timeouts and try a simple reload

@@ -279,6 +279,56 @@ describe('UpdateNotification', () => {
     });
   });
 
+  describe('in a production build', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.stubEnv('DEV', false);
+      vi.resetModules();
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      vi.useRealTimers();
+    });
+
+    /** The component as a production build has it: its logger keeps to warnings and errors */
+    const importForProduction = async () =>
+      (await import('./UpdateNotification')).UpdateNotification;
+
+    it('logs nothing below warnings while Update Now waits for the new worker', async () => {
+      const Notification = await importForProduction();
+      const lines: string[] = [];
+      for (const method of ['log', 'info', 'debug'] as const) {
+        vi.spyOn(console, method).mockImplementation((...args: unknown[]) => {
+          lines.push(args.join(' '));
+        });
+      }
+      render(<Notification registration={mockRegistration} />);
+
+      fireEvent.click(screen.getByRole('button', { name: /Update Now/i }));
+      vi.advanceTimersByTime(7000);
+
+      expect(window.location.reload).toHaveBeenCalledOnce();
+      expect(lines).toEqual([]);
+    });
+
+    it('still reports a waiting worker it cannot message', async () => {
+      const Notification = await importForProduction();
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockWaiting.postMessage = vi.fn().mockImplementation(() => {
+        throw new Error('Failed to post message');
+      });
+      render(<Notification registration={mockRegistration} />);
+
+      fireEvent.click(screen.getByRole('button', { name: /Update Now/i }));
+
+      expect(errors).toHaveBeenCalledWith(
+        expect.stringContaining('Error sending SKIP_WAITING message'),
+        expect.any(Error)
+      );
+    });
+  });
+
   describe('Dismiss functionality', () => {
     it('should hide notification when Later button is clicked', () => {
       render(<UpdateNotification registration={mockRegistration} />);
