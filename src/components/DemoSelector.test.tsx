@@ -296,7 +296,8 @@ describe('DemoSelector', () => {
       );
 
       // Verify loading state is cleared
-      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Load Application/i })).toBeInTheDocument();
     });
 
     it('should handle non-Error exceptions', async () => {
