@@ -14,8 +14,8 @@ export default defineConfig({
     host: true, // Listen on all addresses
     port: 5173,
     strictPort: false,
-    // Note: COEP/COOP headers removed to allow CDN resources
-    // js-dos handles WASM loading internally
+    // No COOP/COEP headers: js-dos doesn't need cross-origin isolation, and
+    // GitHub Pages can't send them, so dev matches production.
   },
 
   // Build configuration for production
@@ -36,14 +36,6 @@ export default defineConfig({
         },
       },
     },
-  },
-
-  // Asset handling
-  assetsInclude: ['**/*.wasm', '**/*.jsdos'],
-
-  // Optimize dependencies
-  optimizeDeps: {
-    exclude: ['js-dos'], // Don't pre-bundle js-dos to preserve WASM loading
   },
 
   // Preview server configuration
