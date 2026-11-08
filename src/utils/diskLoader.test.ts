@@ -57,10 +57,55 @@ describe('diskLoader', () => {
       );
     });
 
-    it('should handle ZIP loading errors', async () => {
-      vi.mocked(globalThis.fetch).mockRejectedValue(new Error('Network error'));
+    it('should reject and log when the download fails', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const error = new Error('Network error');
+      vi.mocked(globalThis.fetch).mockRejectedValue(error);
 
-      await expect(loadZipArchive('http://example.com/archive.zip')).rejects.toThrow();
+      await expect(loadZipArchive('http://example.com/archive.zip')).rejects.toBe(error);
+      expect(consoleError).toHaveBeenCalledWith('[DiskLoader] Error loading ZIP:', error);
+    });
+
+    // Callers abort on purpose: the selector's Cancel, or a navigation that supersedes
+    // the load. They still need the rejection, but it is no failure worth logging.
+    describe('when the caller aborts', () => {
+      it('rejects without logging if aborted before the request starts', async () => {
+        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const controller = new AbortController();
+        controller.abort();
+
+        await expect(
+          loadZipArchive('http://example.com/archive.zip', undefined, controller.signal)
+        ).rejects.toThrow('Operation aborted');
+        expect(consoleError).not.toHaveBeenCalled();
+      });
+
+      it('rejects without logging if aborted during the request', async () => {
+        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const controller = new AbortController();
+        // Like fetch, reject once the signal aborts. Browsers reject with a DOMException
+        // that inherits from Error; jsdom's does not, so build the browser-shaped one.
+        vi.mocked(globalThis.fetch).mockImplementation(
+          (_input, init) =>
+            new Promise<Response>((_resolve, reject) => {
+              init?.signal?.addEventListener('abort', () =>
+                reject(
+                  Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' })
+                )
+              );
+            })
+        );
+
+        const download = loadZipArchive(
+          'http://example.com/archive.zip',
+          undefined,
+          controller.signal
+        );
+        controller.abort();
+
+        await expect(download).rejects.toMatchObject({ name: 'AbortError' });
+        expect(consoleError).not.toHaveBeenCalled();
+      });
     });
   });
 });
