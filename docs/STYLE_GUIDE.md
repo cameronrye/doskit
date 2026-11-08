@@ -115,15 +115,15 @@ This document defines the coding standards and naming conventions for the DosKit
 
   ```typescript
   // Good
-  const LOADING_TIMEOUT_MS = 30000;
+  const STALL_TIMEOUT_MS = 20_000;
   const DEFAULT_RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
   // Bad
-  const loadingTimeoutMs = 30000;
+  const stallTimeoutMs = 20_000;
   const default_retryable_status_codes = [408, 429, 500, 502, 503, 504];
   ```
 
-- **Exported Configuration Objects**: Use `camelCase`
+- **Exported Configuration Objects**: Use `camelCase` for the configurations of the apps, js-dos and DOSBox; fixed values grouped in an object, such as `PWA_CONFIG` in `src/constants/app.ts`, are constants
   ```typescript
   // Good
   export const defaultDosboxConfig = '...';
@@ -252,28 +252,22 @@ const config = {
 
 ### Imports
 
-- **Order**: External packages → Internal modules → Types → Styles
-- **Grouping**: Separate groups with blank lines
-- **Sorting**: Alphabetical within groups
+- **One block**: The imports come right after the file's header comment, with no blank lines between them
+- **Order**: Packages first, then the project's own modules, in no fixed order among themselves; a package's stylesheet right after the package, and a component's own stylesheet last
+- **Types**: A type comes from the module that declares it, next to that module's other imports: `import type { ... }` when only types come from it, an inline `type` beside values otherwise. With `verbatimModuleSyntax`, `import { type X }` alone would still load the module at run time, and ESLint (`@typescript-eslint/no-import-type-side-effects`) rejects it.
+- **Stylesheet order**: CSS imports land in the built CSS in the order they run, so `main.tsx` imports `index.css`, the page's base styles, before `App`, whose stylesheets then come after it and win ties
+
+Prettier and ESLint check neither order, so keep to what the files around yours do. From `src/components/DemoSelector.tsx`:
 
 ```typescript
-// Good
-import React, { useState, useEffect } from 'react';
-import { vi, describe, it, expect } from 'vitest';
-
-import { DosPlayer } from './components/DosPlayer';
-import { useDosEmulator } from './hooks/useDosEmulator';
-import { loadZipArchive } from './utils/diskLoader';
-
-import type { DosOptions, CommandInterface } from './types/js-dos';
-
-import './App.css';
-
-// Bad
-import './App.css';
-import { DosPlayer } from './components/DosPlayer';
-import React, { useState, useEffect } from 'react';
-import type { DosOptions } from './types/js-dos';
+import { useState, useCallback, useRef, useEffect, useId } from 'react';
+import { FloppyDisk, LIGHT_FLOPPY_THEME, type FloppyLabel, type FloppyTheme } from 'retro-floppy';
+import 'retro-floppy/dist/retro-floppy.css';
+import type { DosApp } from '../types/dos-app';
+import type { LoadProgress } from '../utils/diskLoader';
+import { getUserFriendlyError, type FriendlyError } from '../utils/errorMessages';
+import { availableApps } from '../config/apps.config';
+import './DemoSelector.css';
 ```
 
 ### Spacing
@@ -407,10 +401,10 @@ export const DosPlayer = (props: any) => {
 
 ### Hooks
 
-- **Order**: useState → useRef → useEffect → Custom hooks
-- **Dependencies**: Always specify complete dependency arrays. The effect in `useDosEmulator` that starts js-dos is the one exception: it runs once per mount, and DosPlayerWithApps remounts DosPlayer, by its key, for each app.
+- **Order**: Call hooks at the top level of a component or custom hook, never in a condition, a loop or a nested function, so that every render calls them in the same order ([the rules of hooks](https://react.dev/reference/rules/rules-of-hooks), which `npm run lint` checks). There is no fixed order beyond that: `useDosEmulator`, for one, keeps the refs that hold its callbacks next to the effect that updates them.
+- **Dependencies**: Always specify complete dependency arrays. The effect in `useDosEmulator` that starts js-dos is the one exception: it runs once per mount, and DosPlayerWithApps remounts DosPlayer, by its key, for each session: each app it starts, the one already running included when it is picked again, and each return to the default DOS prompt.
 - **Cleanup**: Return cleanup functions from useEffect
-- **StrictMode**: `main.tsx` renders the app in `<StrictMode>`, so in development React runs each effect's setup, its cleanup and its setup again when a component mounts. Effects must cope with that, as `useDosEmulator` does: its cleanup stops the player, and a start that finishes after its mount is gone stops the player it got and passes on none of its events. Production builds run each effect once.
+- **StrictMode**: `main.tsx` renders the app in `<StrictMode>`, so in development React runs each effect's setup, its cleanup and its setup again when a component mounts. Effects must cope with that, as `useDosEmulator` does: its cleanup aborts the start and stops the player, so a start still waiting for `emulators.js` is never made, and one that finishes after its mount is gone stops the player it got and passes on none of its events. Production builds run each effect once.
 
 ```typescript
 // Good: DosPlayer leaves starting and stopping js-dos to useDosEmulator
@@ -419,12 +413,14 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
   options = {},
   onReady,
   onExit,
+  onError,
 }) => {
   const { dosContainerRef, isLoading, error } = useDosEmulator({
     dosboxConf,
     options,
     onReady,
     onExit,
+    onError,
   });
 
   return <DosPlayerUI dosContainerRef={dosContainerRef} isLoading={isLoading} error={error} />;
@@ -522,9 +518,8 @@ Static assets, such as icons and the app archives in `demos/`, live in `public/`
 
 ### File Size
 
-- **Components**: Keep under 300 lines
-- **Utilities**: Keep under 200 lines
-- **Refactor**: Split large files into smaller modules
+- **No line limit**: Several files run to a few hundred lines, `DemoSelector.tsx` and `dosboxConfigBuilder.ts` among them
+- **Split by job**: Move a part that has a job of its own into a module of its own, as `DosPlayer` leaves running js-dos to the `useDosEmulator` hook and its markup to `DosPlayerUI`
 
 ## Comments and Documentation
 
@@ -568,9 +563,10 @@ export async function loadZipArchive(
 
 ```typescript
 // Good
-// Suppress fullscreen errors as they're expected when user denies permission
-if (error.message.includes('fullscreen')) {
-  return;
+// Vite's dev and preview servers answer a missing archive with 200 and index.html,
+// which js-dos would start as an empty C: drive
+if (!isZipArchive(zipData)) {
+  throw new Error('Failed to load ZIP: not a ZIP archive');
 }
 
 // TODO: Add retry logic for network failures
@@ -589,7 +585,7 @@ for (const item of items) {
 
 ### File Headers
 
-- **Copyright**: Include in all source files
+- **Copyright**: At the top of each of the app's modules in `src/`; most tests, the scripts in `scripts/`, the config files at the repository's root and `public/sw.js` begin with their description alone
 - **Description**: Brief file purpose
 
 ```typescript
@@ -608,8 +604,8 @@ for (const item of items) {
 ### Development vs Production
 
 - **Use `import.meta.env.DEV`**: For development-only code
-- **Console Logs**: `console.log` only in development; `console.warn` and `console.error` may stay in production code
-- **Logger**: `logger.debug` and `logger.info` from `src/utils/logger.ts` print in development only, so they need no guard; `logger.warn` and `logger.error` print in every build. `main.tsx` logs the service worker's callbacks with `logger.info`.
+- **Console Logs**: `console.log` only in development; `console.warn` and `console.error` may stay in production code. `public/sw.js`, which Vite copies rather than builds, has no `import.meta.env`, so its `console.log` calls run in production too.
+- **Logger**: `logger.debug` and `logger.info` from `src/utils/logger.ts` print in development only, so they need no guard; `logger.warn` and `logger.error` print in every build. Code that only production builds run, such as the service worker's registration and the update prompt it shows, prints nothing through `logger.info`: `main.tsx` passes `register()` no callbacks that log for that reason.
 - **Debug Features**: Guard with environment checks
 
 ```typescript
@@ -619,7 +615,7 @@ if (import.meta.env.DEV) {
 }
 
 // Good: the logger prints info and debug messages in development only
-logger.info('PWA', 'An update is waiting: showing the update prompt');
+logger.info('GlobalErrorHandler', 'Initialized');
 
 // Bad
 console.log('[DosPlayer] Initializing emulator');
@@ -658,9 +654,9 @@ describe('DosPlayer', () => {
 
 ### Automated Tools
 
-- **ESLint**: Run `npm run lint`, as CI does, to check the TypeScript, the config files, the scripts in `scripts/` and the service worker `public/sw.js`. The scripts are linted as ES modules, with Node's globals but not CommonJS's `require` or `__dirname`, and with Vitest's too in their tests; `public/sw.js` as a classic script with a service worker's globals. The rest of `public/`, the js-dos copy included, is not linted.
+- **ESLint**: Run `npm run lint`, as CI does, to check the TypeScript, the config files, the scripts in `scripts/` and the service worker `public/sw.js`. The scripts are linted as ES modules, with Node's globals but not CommonJS's `require` or `__dirname`, and with Vitest's too in their tests; `public/sw.js` as a classic script with a service worker's globals, through ESLint's own parser, which rejects `import` and `export` there as the browser would. The rest of `public/`, the js-dos copy included, is not linted.
 - **Prettier**: Run `npm run format` to format files; CI runs `npm run format:check` and fails on any file Prettier would change
-- **Husky**: The pre-commit hook runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats what `npm run format:check` checks and skips the rest. `public/sw.js` gets no tests that way: its tests, `scripts/service-worker.test.js` and `scripts/inject-sw-version.test.js`, read it as a file rather than import it, so `vitest related` finds none. After changing it, run them with `npx vitest run scripts/service-worker.test.js scripts/inject-sw-version.test.js`, or run `npm test`.
+- **Husky**: The pre-commit hook runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats what `npm run format:check` checks and skips the rest. Files that tests read from disk rather than import therefore get no tests from the hook: the stylesheets, `index.html`, `public/manifest.json`, the icons, `robots.txt`, the licenses page, `eslint.config.js`, and the archives in `public/demos/` with their `README.md`. Run `npm test` after changing one; CI runs every test. `public/sw.js` is the exception: staging it runs the whole suite, since `vitest.config.ts` lists it among Vitest's force-rerun triggers.
 
 ### Before Committing
 
