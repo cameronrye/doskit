@@ -129,6 +129,12 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
-      - name: Run npm audit
+      # Report only: it covers the development tools, whose advisories rarely reach the site
+      - name: Audit all dependencies
         run: npm audit --audit-level=moderate
         continue-on-error: true
+
+      # Fails CI: the dependencies the site is built from, React and js-dos among them,
+      # must have no high or critical advisories
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
