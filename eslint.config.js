@@ -62,25 +62,5 @@ export default defineConfig(
     languageOptions: {
       globals: globals.vitest,
     },
-  },
-  {
-    // ESLint 10 added preserve-caught-error to its recommended rules, after this rethrow
-    // was written: a warning until the error it throws carries the caught one as its cause
-    files: ['src/adapters/EmulatorAdapter.ts'],
-    rules: {
-      'preserve-caught-error': 'warn',
-    },
-  },
-  {
-    // react-hooks 7.1 finds setState calls in effects that 7.0 missed, here: warnings until
-    // these effects change, while the rule stays an error everywhere else
-    files: [
-      'src/components/DosPlayerWithApps.tsx',
-      'src/components/OfflineIndicator.tsx',
-      'src/hooks/useDosEmulator.ts',
-    ],
-    rules: {
-      'react-hooks/set-state-in-effect': 'warn',
-    },
   }
 );
