@@ -414,13 +414,14 @@ describe('jsdos.config', () => {
       expect(getStoredSettings()).toEqual({});
     });
 
-    it('gives the volume, mouse sensitivity, aspect ratio, image rendering and theme', () => {
+    it('gives the volume, mouse sensitivity, aspect ratio, image rendering, theme and control scale', () => {
       // As js-dos 8.3.20 stores them
       localStorage.setItem('jsdos.8.volume', '0.20000002119276258');
       localStorage.setItem('jsdos.8.mouse_sensitivity', '0.35');
       localStorage.setItem('jsdos.8.renderAspect', '16/10');
       localStorage.setItem('jsdos.8.imageRendering', 'smooth');
       localStorage.setItem('jsdos.8.theme', 'light');
+      localStorage.setItem('jsdos.8.scaleControls', '0.45');
 
       expect(getStoredSettings()).toEqual({
         volume: 0.20000002119276258,
@@ -428,6 +429,7 @@ describe('jsdos.config', () => {
         renderAspect: '16/10',
         imageRendering: 'smooth',
         theme: 'light',
+        scaleControls: 0.45,
       });
     });
 
@@ -443,6 +445,7 @@ describe('jsdos.config', () => {
       localStorage.setItem('jsdos.8.renderAspect', '21/9');
       localStorage.setItem('jsdos.8.imageRendering', 'blurry');
       localStorage.setItem('jsdos.8.theme', '');
+      localStorage.setItem('jsdos.8.scaleControls', '2');
 
       expect(getStoredSettings()).toEqual({});
     });

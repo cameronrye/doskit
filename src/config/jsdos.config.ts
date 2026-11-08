@@ -200,8 +200,10 @@ const RENDER_ASPECTS: readonly RenderAspect[] = [
 const IMAGE_RENDERINGS: readonly ImageRendering[] = ['pixelated', 'smooth'];
 
 /**
- * The choices made in js-dos's settings panel for the options DosKit sets too: volume, mouse
- * sensitivity, aspect ratio, image rendering and theme. js-dos 8.3.20 keeps them in
+ * The choices made in js-dos's settings panel for the options Dos() takes: volume, mouse
+ * sensitivity, aspect ratio, image rendering, theme and the on-screen controls' scale (its
+ * Mirror controls has no option, so it goes back to the page's first value at each new
+ * player until a reload). js-dos 8.3.20 keeps them in
  * localStorage (src/store/dos.ts and src/store/ui.ts, under the prefix of
  * src/host/lstorage.ts), but reads them only when js-dos.js loads, and applies the options
  * each Dos() call gets over them. Passed in place of DosKit's, they last through app
@@ -224,6 +226,7 @@ export function getStoredSettings(): Partial<DosOptions> {
     renderAspect: oneOf('renderAspect', RENDER_ASPECTS),
     imageRendering: oneOf('imageRendering', IMAGE_RENDERINGS),
     theme: stored('theme') || undefined,
+    scaleControls: fraction('scaleControls'),
   };
   // What is not stored is left to DosKit's options, which an undefined would replace
   for (const key of Object.keys(settings) as (keyof DosOptions)[]) {
