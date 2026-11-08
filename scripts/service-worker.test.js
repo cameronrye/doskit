@@ -308,13 +308,13 @@ async function dispatch(listener, init = {}) {
 /** Starts public/sw.js as one build would ship it */
 function startWorker(
   browser,
-  { cacheVersion = 'vA', jsDosVersion = '8.3.20', demosHash = 'aaaa' } = {}
+  { cacheVersion = 'vA', jsDosVersion = '8.3.20', demosHash = 'aaaa', bundles = BUNDLES } = {}
 ) {
   const source = injectIntoServiceWorker(SERVICE_WORKER, {
     version: cacheVersion,
     jsDosVersion,
     demosHash,
-    assets: BUNDLES,
+    assets: bundles,
   });
   const listeners = {};
   const self = {
@@ -405,6 +405,34 @@ describe('install', () => {
       ...Object.fromEntries(SHELL_FILES.map((path) => [path, 'no-cache'])),
       ...Object.fromEntries(BUNDLES.map((path) => [path, 'default'])),
     });
+  });
+
+  it("takes the bundles the previous deploy's cache holds under the same name", async () => {
+    // The name changes with the content, so the copy is this deploy's file. GitHub Pages
+    // gives every file a new ETag on each deploy, so once the 10 minutes it lets browsers
+    // reuse a file are up, the HTTP cache would download the bundle again in full.
+    const browser = createBrowser();
+    const vendor = '/assets/react-vendor-def456.js';
+    await installAndActivate(browser, {
+      cacheVersion: 'vA',
+      bundles: ['/assets/index-aaa111.js', vendor],
+    });
+    browser.server.deploy = 'B';
+    browser.server.requests.length = 0;
+
+    const worker = await installAndActivate(browser, {
+      cacheVersion: 'vB',
+      bundles: ['/assets/index-bbb222.js', vendor],
+    });
+
+    expect(requestedPaths(browser).filter((path) => path.startsWith('/assets/'))).toEqual([
+      '/assets/index-bbb222.js',
+    ]);
+    browser.server.online = false;
+    for (const path of ['/assets/index-bbb222.js', vendor]) {
+      const { response } = await worker.dispatch('fetch', { request: subresource(path) });
+      expect(await response?.text()).toBe(`${path} from deploy ${path === vendor ? 'A' : 'B'}`);
+    }
   });
 });
 
@@ -619,7 +647,7 @@ describe('emulator files', () => {
       expect(await response?.text()).toBe(`${path} from deploy A`);
     }
 
-    expect(requestedPaths(browser)).toEqual(expect.arrayContaining(APP_SHELL));
+    expect(requestedPaths(browser)).toEqual(expect.arrayContaining(SHELL_FILES));
     expect(requestedPaths(browser).filter((path) => path.startsWith('/emulators/'))).toEqual([]);
   });
 

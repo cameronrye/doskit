@@ -77,14 +77,41 @@ const fromServer = (input) => new Request(input, { cache: 'no-cache' });
 // The JS and CSS Vite emits, named after a hash of their content
 const isBundle = (path) => path.startsWith('/assets/');
 
+/**
+ * Copy into the cache the bundles that the cache of an earlier deploy holds under the
+ * same name, and return those none holds. The name changes with the content, so the copy
+ * is this deploy's file; GitHub Pages gives every file a new ETag on each deploy, so once
+ * the HTTP cache's copy is 10 minutes old it would be downloaded again in full.
+ */
+async function takeCachedBundles(cache, bundles) {
+  const taken = await Promise.all(
+    bundles.map(async (path) => {
+      const response = await caches.match(path, MATCH_OPTIONS);
+      if (response) {
+        await cache.put(path, response);
+      }
+      return Boolean(response);
+    })
+  );
+  return bundles.filter((_, i) => !taken[i]);
+}
+
 async function precacheAppShell() {
   const cache = await caches.open(CACHE_NAME);
+  const bundles = STATIC_ASSETS.filter(isBundle);
+  const missing = await takeCachedBundles(cache, bundles);
   // GitHub Pages lets browsers reuse a file for 10 minutes, so a worker installed that
   // soon after a visit could store the previous deploy's index.html, which loads bundles
   // this deploy no longer has. A bundle's name changes with its content, so whatever the
   // HTTP cache holds under that name is current, and saves downloading it again.
-  await cache.addAll(STATIC_ASSETS.map((path) => (isBundle(path) ? path : fromServer(path))));
-  console.log(`[Service Worker] ✅ Static assets cached (${STATIC_ASSETS.length} files)`);
+  await cache.addAll([
+    ...STATIC_ASSETS.filter((path) => !isBundle(path)).map(fromServer),
+    ...missing,
+  ]);
+  console.log(
+    `[Service Worker] ✅ Static assets cached (${STATIC_ASSETS.length} files, ` +
+      `${bundles.length - missing.length} bundles taken from an earlier deploy's cache)`
+  );
 }
 
 /**

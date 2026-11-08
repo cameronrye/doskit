@@ -61,8 +61,10 @@ export default defineConfig({
     sourcemap: 'hidden', // Generate source maps but don't reference them in production bundles
     rolldownOptions: {
       output: {
-        // React changes far less often than the app, so its own chunk stays cached across
-        // releases. A group also pulls in what its modules import (scheduler).
+        // React changes far less often than the app, so its own chunk keeps its name across
+        // releases, and the service worker's install takes it from the previous release's
+        // cache instead of downloading it again. A group also pulls in what its modules
+        // import (scheduler).
         codeSplitting: {
           groups: [{ name: 'react-vendor', test: /node_modules[\\/]react(-dom)?[\\/]/ }],
         },
