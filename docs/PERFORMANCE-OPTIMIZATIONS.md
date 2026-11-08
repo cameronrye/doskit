@@ -273,7 +273,7 @@ workerThread: true;
 
 `js-dos.js` is a classic script, loaded with `defer` so that it does not block the HTML parser. Deferred scripts run in document order, so it still runs before the app's module script, which comes later in the document (at the end of `<head>` in the build, of `<body>` on the dev server), and `window.Dos` exists when the first player mounts. Chrome fetches deferred scripts at low priority, and the app has to wait for this one, so `fetchpriority="high"` keeps the priority it had as a blocking script.
 
-The built `index.html` also gets `<link rel="modulepreload">` tags from Vite, for the app's own chunks: the React vendor chunk and the Rolldown runtime.
+The built `index.html` also gets `<link rel="modulepreload">` tags from Vite, for the app's own chunks: the React vendor chunk and the Rolldown runtime (see section 9).
 
 Chrome warns in the console that the module "was preloaded using link preload but not used within a few seconds" when no player starts that soon after the page loads, such as a deep link whose archive is still downloading, or a load that failed. A player that starts later still uses the preloaded response; the file is not downloaded twice.
 
@@ -285,16 +285,95 @@ Chrome warns in the console that the module "was preloaded using link preload bu
 
 ---
 
+### 8. Service Worker Caching (VERY HIGH Impact)
+
+**Status:** ✅ Enabled in production builds
+
+**Performance Gain:** Repeat visits load the bundles, the emulator and every demo already played from Cache Storage, and the app works offline
+
+**Implementation:** `public/sw.js`, which `scripts/inject-sw-version.js` completes at build time
+
+**What it does:** Keeps the app, the emulator and the demo archives in caches of their own, each named so that it lasts as long as its contents:
+
+| Cache                               | Holds                                                                                                                                                       | Filled                                     | Replaced when                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------- |
+| `doskit-<build>`                    | `/`, `index.html`, `manifest.json`, `logo.svg`, `favicon.svg`, `js-dos.js`, `js-dos.css` and every JS and CSS bundle; pages and other files the app fetches | On install, then at runtime                | Every deploy                            |
+| `doskit-emulators-<js-dos version>` | The default backend: `wdosbox.wasm`, `wdosbox.js`, `wlibzip.wasm`, `wlibzip.js` and `emulators.js`                                                          | On install, downloading only what it lacks | js-dos changes                          |
+| `doskit-demos-<hash>`               | Demo archives (`/demos/<id>.zip`), under a hash of every archive in the build                                                                               | The first time each app loads              | An archive is added, removed or changed |
+
+Each request is answered by one strategy:
+
+- **Pages** (navigations): network first, with a 5-second timeout. When the network fails or times out, the cached page answers, or `index.html` for a URL never visited, so the app opens at any URL.
+- **Emulator files** (`/emulators/`) and **demo archives** (`/demos/*.zip`): cache first. A miss fetches the file revalidated with the server, so an HTTP cache copy from an earlier deploy cannot slip in, and stores it once the whole file has arrived, so a cancelled download never leaves part of one behind. Chromium does not pass the page's cancel on to the worker, so there the download finishes and is stored anyway.
+- **Other WebAssembly**: cache first, in the build's cache.
+- **Everything else** from the site, such as bundles and images: stale-while-revalidate, answered from the cache and refreshed in the background.
+- The worker script itself, and requests to other sites, are never intercepted.
+
+Details that keep the caches right:
+
+- Install revalidates the files whose names never change (`cache: 'no-cache'`), so a worker installed within the 10 minutes GitHub Pages lets browsers reuse a file cannot store the previous deploy's `index.html`. Hashed bundles may come from the HTTP cache: a hashed name always means the same content.
+- The build lists every JS and CSS file in `dist/assets` for install, the lazily imported chunks too (section 9), so an app opened offline finds its config; source maps are left out. The build fails when the worker would precache a file that is not in `dist/`, because a single 404 stops `cache.addAll()` and the worker would never install.
+- The build's cache is trimmed to 100 entries by removing the runtime entries used least recently (their last use is recorded in `doskit-<build>-metadata`); what install stored is never removed. The emulator and demo caches are not trimmed.
+- Activating a new worker deletes every other `doskit-*` cache: earlier deploys, other js-dos versions and replaced demo archives. An updated worker waits until the user accepts the update prompt.
+- Lookups ignore `Vary`. Chrome sends `Origin` with `index.html`'s crossorigin requests (its module scripts, its stylesheet and the wasm preload) while install's requests carry none, so on a host that answers `Vary: Origin`, such as `vite preview`, every precached bundle would miss. GitHub Pages only sends `Vary: Accept-Encoding`.
+- DOSBox-X is not precached: js-dos offers its backend picker only before a run, which `autoStart` skips, so users cannot switch to it. If anything requests it, it is cached on first use like any emulator file.
+
+**Benefits:**
+
+- Repeat visits only wait on the network for the page itself
+- A deploy that keeps js-dos, or all the demo archives, does not download them again
+- The app opens offline at any URL, and an app plays offline once its archive is cached
+
+---
+
+### 9. Code Splitting (MEDIUM Impact)
+
+**Status:** ✅ Enabled
+
+**Performance Gain:** A smaller first download, and a React chunk that stays cached across releases
+
+**Configuration** (`vite.config.ts`):
+
+```typescript
+export default defineConfig({
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [{ name: 'react-vendor', test: /node_modules[\\/]react(-dom)?[\\/]/ }],
+        },
+      },
+    },
+  },
+});
+```
+
+**What it does:**
+
+- React and React DOM, with the scheduler they import, get a chunk of their own, `react-vendor-<hash>.js`. Its name only changes when React does, so a release that leaves React alone need not download it again: the service worker's install takes hashed bundles from the browser's HTTP cache when it has them.
+- `src/config/apps.config.ts` loads each app's config module (`src/dos-apps/<id>.config.ts`) with `import()`, so each is a small chunk of its own, downloaded when the app loads or when the selector preloads it after a 150 ms hover. The DOSBox config builder is a chunk they share.
+- The archive loader (`src/utils/diskLoader.ts`) is imported statically by `apps.config.ts`, so it is part of the entry chunk, like the default DOS prompt's config: an app needs no chunk beyond its own config to start downloading its archive.
+- The service worker precaches every chunk (section 8), so an app can still load its config offline.
+
+**Benefits:**
+
+- Less JavaScript to download before the first render
+- React stays cached across releases that do not upgrade it
+- Each app's code is fetched only when it is needed
+
+---
+
 ## Performance Metrics
 
 Based on the optimizations implemented:
 
-| Metric            | Before    | After            | Improvement              |
-| ----------------- | --------- | ---------------- | ------------------------ |
-| Rendering         | Canvas 2D | 2-5x faster      | WebGL rendering backend  |
-| Startup Time      | Baseline  | 200-500ms faster | WASM preloading          |
-| Audio Quality     | Good      | Excellent        | Optimized mixer settings |
-| UI Responsiveness | Good      | Excellent        | Worker thread mode       |
+| Metric            | Before    | After                      | Improvement              |
+| ----------------- | --------- | -------------------------- | ------------------------ |
+| Rendering         | Canvas 2D | 2-5x faster                | WebGL rendering backend  |
+| Startup Time      | Baseline  | 200-500ms faster           | WASM preloading          |
+| Repeat Loads      | Network   | Cache Storage, offline too | Service worker caching   |
+| Audio Quality     | Good      | Excellent                  | Optimized mixer settings |
+| UI Responsiveness | Good      | Excellent                  | Worker thread mode       |
 
 There is no CPU speed gain to list: the default backend has no dynamic core, so DOSBox's interpreting cores emulate the CPU (see section 2).
 
@@ -309,6 +388,7 @@ All optimizations are designed with progressive enhancement:
 | WebGL          | ✅ All | ✅ All  | ✅ All | ✅ All |
 | Worker Threads | ✅ All | ✅ All  | ✅ All | ✅ All |
 | WASM Preload   | ✅ All | ✅ All  | ✅ All | ✅ All |
+| Service Worker | ✅ All | ✅ All  | ✅ All | ✅ All |
 
 **Fallback Strategy:** Features gracefully degrade on older browsers while maintaining functionality.
 
@@ -375,19 +455,13 @@ These optimizations were researched but not yet implemented:
 - **Complexity:** Requires recompilation of js-dos
 - **Risk:** May increase binary size
 
-### 3. Service Worker Caching (VERY HIGH Impact - Partial)
-
-- **Potential Gain:** Near-instant repeat loads
-- **Complexity:** Moderate implementation
-- **Status:** Basic service worker exists, could be enhanced
-
-### 4. SharedArrayBuffer Threading (MEDIUM Impact - Not Recommended)
+### 3. SharedArrayBuffer Threading (MEDIUM Impact - Not Recommended)
 
 - **Potential Gain:** Limited by DOSBox's single-threaded architecture
 - **Complexity:** Very difficult, requires COOP/COEP headers
 - **Risk:** High deployment complexity, iOS incompatibility
 
-### 5. OffscreenCanvas Rendering (Needs js-dos Support)
+### 4. OffscreenCanvas Rendering (Needs js-dos Support)
 
 - **Potential Gain:** Frees the main thread from drawing frames
 - **Complexity:** js-dos would have to hand its canvas to the emulator worker; it has no option for that, so the `offscreenCanvas: true` in `jsdos.config.ts` does nothing (see section 1)
@@ -420,6 +494,11 @@ To validate these optimizations:
    - Test on Chrome, Firefox, Safari, Edge
    - Verify fallbacks work on older browsers
    - Test on mobile devices
+
+6. **Check Caching and Offline Use**
+   - Run a production build (`npm run build`, then `npm run preview`); the service worker is not registered on the dev server
+   - In DevTools > Application > Cache Storage, look for the `doskit-`, `doskit-emulators-` and `doskit-demos-` caches
+   - Go offline, reload, and open an app you have played before
 
 ---
 
