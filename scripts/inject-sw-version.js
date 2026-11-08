@@ -46,8 +46,9 @@ const BUNDLE_FILE = /\.(?:js|css)$/;
  * The worker's CACHE_VERSION: a short hash of every file in dist/ but sw.js, by path and
  * bytes, and of sw.js as vite copied it, with the lists and versions injected into it.
  * Neither the time of the build nor its commit goes in, so a deploy that changes nothing
- * the site serves, such as one of docs, keeps the worker byte for byte, while one that
- * changes a file, or the worker, installs a new worker with an app shell cache of its own.
+ * the site serves, such as one of Markdown files outside public/, keeps the worker byte for
+ * byte, while one that changes a file, or the worker, installs a new worker with an app
+ * shell cache of its own.
  * @param {string} dir - The build output directory
  * @param {string} serviceWorker - dist/sw.js, before anything is injected into it
  * @param {object} injected - The js-dos version, demo archive hash and bundles it gets

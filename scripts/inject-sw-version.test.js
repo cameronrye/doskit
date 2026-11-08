@@ -350,7 +350,8 @@ describe('the build step', () => {
 
   it('writes the same sw.js for a site that has not changed', () => {
     // Browsers install a worker whose script changed, and the app then offers an update:
-    // a deploy that changes nothing the site serves, such as one of docs, must offer none
+    // a deploy that changes nothing the site serves, such as one of Markdown files outside
+    // public/, must offer none
     const first = build(createProject());
     const second = build(createProject());
 

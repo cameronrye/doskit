@@ -47,9 +47,10 @@ const STATIC_ASSETS = [
 
 // What install puts in EMULATOR_CACHE_NAME: the js-dos player, which index.html loads, and
 // the files of its default "dosbox" backend, which every app runs on. They are served from
-// there and never refreshed, so a page always gets the player and the emulator files of
-// the js-dos its worker installed. A deploy that changes js-dos brings its own copies with
-// its worker, which serves them once it takes over.
+// there and never refreshed, so a page gets the player and the emulator files of the js-dos
+// its worker installed until a worker with another js-dos version takes over: the page's
+// next player can then get that version's emulator files. A deploy that changes js-dos
+// brings its own copies with its worker, which serves them once it takes over.
 //
 // DOSBox-X (wdosbox-x.*, 6.6 MB) is left out: js-dos offers its backend picker only before
 // a run, which autoStart with countDownStart 0 skips, so users cannot switch to it. Should
@@ -458,7 +459,8 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Cache-first for the js-dos player and the emulator files it loads, from the cache of
-  // this js-dos version, so that a page gets them all from one version
+  // this js-dos version, so that a page gets them all from one version until a worker with
+  // another one takes over
   if (isJsDosFile(url.pathname)) {
     event.respondWith(serveCacheFirst(event, EMULATOR_CACHE_NAME));
     return;
