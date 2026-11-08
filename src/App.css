@@ -429,6 +429,76 @@
   }
 }
 
+/*
+ * Short windows: phones held sideways, and browser zoom, which narrows the window as much as
+ * it shortens it. The rows the width rules above stack would leave the player a fraction of
+ * the height, or none at 400%, so the header keeps to one row without the author and year,
+ * and the footer to one row with the status badges and the licenses link. After the width
+ * rules, so that it wins over them.
+ */
+@media (max-height: 500px) {
+  .app-header {
+    padding: 0.25rem 1rem;
+  }
+
+  .header-content {
+    flex-direction: row;
+    gap: 0.75rem;
+  }
+
+  .header-left,
+  .header-center,
+  .header-right {
+    width: auto;
+  }
+
+  .header-left {
+    gap: 0.5rem;
+  }
+
+  .header-logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .app-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .header-app-info {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .header-app-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.95rem;
+  }
+
+  .header-app-meta {
+    display: none;
+  }
+
+  .header-change-app-button {
+    width: auto;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .app-footer {
+    flex-direction: row;
+    padding: 0.25rem 1rem;
+  }
+
+  .app-footer .made-with,
+  .app-footer .credits-js-dos {
+    display: none;
+  }
+}
+
 /* Print styles */
 @media print {
   .app-header,
