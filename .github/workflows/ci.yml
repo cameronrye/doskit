@@ -86,6 +86,8 @@ jobs:
         with:
           name: dist
           path: dist/
+          # Keep .nojekyll and .well-known/ so the artifact matches the deployed site
+          include-hidden-files: true
           retention-days: 7
 
   type-check:
