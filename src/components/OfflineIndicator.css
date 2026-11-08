@@ -305,6 +305,34 @@
   }
 }
 
+/*
+ * In a short window, such as a phone held sideways or a window zoomed to 200%, the offline
+ * banner keeps to one line too: the header moves below it, so its height comes out of the
+ * player's. After the narrow-window rules above, which it overrides.
+ */
+@media (max-height: 500px) {
+  .offline-indicator {
+    padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+    padding-bottom: 0.5rem;
+  }
+
+  .offline-content {
+    flex-direction: row;
+    text-align: left;
+    gap: 0.75rem;
+  }
+
+  .offline-icon,
+  .offline-text p {
+    display: none;
+  }
+
+  .offline-text strong {
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+}
+
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   .offline-indicator,
