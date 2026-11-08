@@ -5,12 +5,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { OfflineIndicator } from './OfflineIndicator';
+import { PWA_CONFIG } from '../constants/app';
 
 // Type definition for BeforeInstallPromptEvent
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
   preventDefault: () => void;
+}
+
+/** Fire the browser's beforeinstallprompt, then wait out the delay before the prompt shows */
+function offerInstall(outcome: 'accepted' | 'dismissed' = 'accepted') {
+  const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
+  event.prompt = vi.fn().mockResolvedValue(undefined);
+  event.userChoice = Promise.resolve({ outcome });
+  fireEvent(window, event);
+  act(() => {
+    vi.advanceTimersByTime(PWA_CONFIG.INSTALL_PROMPT_DELAY);
+  });
 }
 
 describe('OfflineIndicator', () => {
@@ -286,19 +298,6 @@ describe('OfflineIndicator', () => {
 
       vi.useRealTimers();
     });
-
-    it('should respect cooldown period in localStorage', () => {
-      const now = new Date();
-      const eightDaysAgo = new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000);
-      localStorage.setItem('pwa-install-last-dismissed', eightDaysAgo.toISOString());
-      localStorage.setItem('pwa-install-dismissed-count', '1');
-
-      render(<OfflineIndicator />);
-
-      // Component should read from localStorage
-      expect(localStorage.getItem('pwa-install-last-dismissed')).toBe(eightDaysAgo.toISOString());
-      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe('1');
-    });
   });
 
   describe('Install prompt interactions', () => {
@@ -309,22 +308,80 @@ describe('OfflineIndicator', () => {
 
       expect(addEventListenerSpy).toHaveBeenCalledWith('beforeinstallprompt', expect.any(Function));
     });
+  });
 
-    it('should use localStorage for dismissal tracking', () => {
-      render(<OfflineIndicator />);
-
-      // Component should be able to read/write to localStorage
-      localStorage.setItem('pwa-install-dismissed-count', '1');
-      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe('1');
+  describe('Dismissal tracking', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ now: new Date('2026-03-01T12:00:00.000Z') });
     });
 
-    it('should respect max dismissals setting', () => {
-      localStorage.setItem('pwa-install-dismissed-count', '3');
+    afterEach(() => {
+      vi.useRealTimers();
+    });
 
+    it('offers the install again once the cooldown has passed', () => {
+      localStorage.setItem('pwa-install-dismissed-count', '1');
+      localStorage.setItem('pwa-install-last-dismissed', '2026-02-21T12:00:00.000Z'); // 8 days ago
       render(<OfflineIndicator />);
 
-      // Component should read the dismissal count
-      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe('3');
+      offerInstall();
+
+      expect(screen.getByText('Install DosKit')).toBeInTheDocument();
+    });
+
+    it('records when the prompt was dismissed and how often', () => {
+      localStorage.setItem('pwa-install-dismissed-count', '1');
+      localStorage.setItem('pwa-install-last-dismissed', '2026-02-01T12:00:00.000Z');
+      render(<OfflineIndicator />);
+      offerInstall();
+
+      vi.setSystemTime(new Date('2026-03-01T12:30:00.000Z'));
+      fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+
+      expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe('2');
+      expect(localStorage.getItem('pwa-install-last-dismissed')).toBe('2026-03-01T12:30:00.000Z');
+    });
+
+    it('counts declining the browser install dialog as a dismissal', async () => {
+      render(<OfflineIndicator />);
+      offerInstall('dismissed');
+
+      vi.setSystemTime(new Date('2026-03-01T12:30:00.000Z'));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+      });
+
+      expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe('1');
+      expect(localStorage.getItem('pwa-install-last-dismissed')).toBe('2026-03-01T12:30:00.000Z');
+    });
+
+    it('forgets past dismissals when the user installs from the prompt', async () => {
+      localStorage.setItem('pwa-install-dismissed-count', '1');
+      localStorage.setItem('pwa-install-last-dismissed', '2026-02-01T12:00:00.000Z');
+      render(<OfflineIndicator />);
+      offerInstall('accepted');
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+      });
+
+      expect(localStorage.getItem('pwa-install-dismissed-count')).toBeNull();
+      expect(localStorage.getItem('pwa-install-last-dismissed')).toBeNull();
+    });
+
+    it('forgets past dismissals once the app is installed', () => {
+      localStorage.setItem('pwa-install-dismissed', 'permanent');
+      localStorage.setItem('pwa-install-dismissed-count', '3');
+      localStorage.setItem('pwa-install-last-dismissed', '2026-02-01T12:00:00.000Z');
+      render(<OfflineIndicator />);
+
+      fireEvent(window, new Event('appinstalled'));
+
+      expect(localStorage.getItem('pwa-install-dismissed')).toBeNull();
+      expect(localStorage.getItem('pwa-install-dismissed-count')).toBeNull();
+      expect(localStorage.getItem('pwa-install-last-dismissed')).toBeNull();
     });
   });
 });
