@@ -4,8 +4,7 @@
  * Licensed under the MIT License
  */
 
-import { Component } from 'react';
-import type { ReactNode, ErrorInfo } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { getErrorTracker } from '../utils/errorTracking';
 import './ErrorBoundary.css';
 
