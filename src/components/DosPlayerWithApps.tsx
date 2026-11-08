@@ -7,7 +7,7 @@
  * Enhanced DosPlayer that supports loading different DOS applications
  */
 
-import { useState, useCallback, useEffect, useEffectEvent } from 'react';
+import { useState, useCallback, useEffect, useEffectEvent, useRef } from 'react';
 import { DosPlayer } from './DosPlayer';
 import { DemoSelector, type LoadedApp } from './DemoSelector';
 import type { DosApp } from '../types/dos-app';
@@ -30,7 +30,10 @@ interface DosPlayerWithAppsProps {
    * the selector run without it.
    */
   requestedApp?: DosApp | null;
-  /** Called when an app starts running (picked or requested), and with null after a reset */
+  /**
+   * Called when an app starts running (picked or requested), and with null when Choose
+   * Another Application returns to the default DOS prompt after a failed load
+   */
   onAppChange?: (app: DosApp | null) => void;
   onSelectorVisibilityChange?: (visible: boolean) => void;
 }
@@ -40,6 +43,11 @@ interface Session {
   app: DosApp | null;
   files?: InitFileEntry[] | Uint8Array;
   dosboxConf?: string;
+}
+
+/** A requested app that failed to load: what the error overlay says, and the app to retry */
+interface LoadError extends FriendlyError {
+  app: DosApp;
 }
 
 const DEFAULT_PROMPT: Session = { app: null };
@@ -59,7 +67,8 @@ export function DosPlayerWithApps({
   const [loadingApp, setLoadingApp] = useState<DosApp | null>(requestedApp);
   const [requestedId, setRequestedId] = useState(requestedApp?.id ?? null);
   const [showAppSelector, setShowAppSelector] = useState(showSelector);
-  const [error, setError] = useState<FriendlyError | null>(null);
+  const [error, setError] = useState<LoadError | null>(null);
+  const tryAgainRef = useRef<HTMLButtonElement>(null);
 
   // A new request supersedes any load still running for an earlier one, and a request for
   // the app already running changes nothing. Adjusting state while rendering instead of in
@@ -90,11 +99,17 @@ export function DosPlayerWithApps({
     onAppChange?.(app);
   });
 
-  const showLoadError = useEffectEvent((err: unknown) => {
+  const showLoadError = useEffectEvent((app: DosApp, err: unknown) => {
     console.error('[DosPlayerWithApps] Error loading application:', err);
-    setError(getUserFriendlyError(err, { online: navigator.onLine }));
+    setError({ ...getUserFriendlyError(err, { online: navigator.onLine }), app });
     setLoadingApp(null);
   });
+
+  // Give Try Again the keyboard focus when the error appears, and when the selector over it
+  // closes, without taking the focus from an open selector
+  useEffect(() => {
+    if (error && !showAppSelector) tryAgainRef.current?.focus();
+  }, [error, showAppSelector]);
 
   // Load the requested app's files and DOSBox config. A newer request, a pick in the
   // selector or unmounting changes loadingApp, which aborts this load and drops its result.
@@ -116,7 +131,7 @@ export function DosPlayerWithApps({
         if (!controller.signal.aborted) runLoadedApp(loadingApp, files, conf);
       },
       (err: unknown) => {
-        if (!controller.signal.aborted) showLoadError(err);
+        if (!controller.signal.aborted) showLoadError(loadingApp, err);
       }
     );
     return () => controller.abort();
@@ -141,7 +156,14 @@ export function DosPlayerWithApps({
     onSelectorVisibilityChange?.(false);
   }, [onSelectorVisibilityChange]);
 
-  const handleReset = useCallback(() => {
+  // Try Again: load the app that failed once more, behind the loading overlay
+  const handleRetry = useCallback((app: DosApp) => {
+    setError(null);
+    setLoadingApp(app);
+  }, []);
+
+  // Choose Another Application: the default DOS prompt, with the selector open over it
+  const handleChooseAnother = useCallback(() => {
     setSession(DEFAULT_PROMPT);
     setError(null);
     setShowAppSelector(true);
@@ -185,7 +207,14 @@ export function DosPlayerWithApps({
                 <code>{error.originalError}</code>
               </details>
             )}
-            <button onClick={handleReset}>Try Again</button>
+            <div className="error-actions">
+              <button ref={tryAgainRef} onClick={() => handleRetry(error.app)}>
+                Try Again
+              </button>
+              <button className="error-secondary-action" onClick={handleChooseAnother}>
+                Choose Another Application
+              </button>
+            </div>
           </div>
         </div>
       )}

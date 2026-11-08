@@ -4,6 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen, waitFor, fireEvent, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { DosPlayerWithApps } from './DosPlayerWithApps';
 import type { DosApp } from '../types/dos-app';
 import type { DosOptions } from '../types/js-dos';
@@ -463,39 +464,124 @@ describe('DosPlayerWithApps', () => {
 
       expect(await screen.findByRole('alert')).toHaveTextContent('An unexpected error occurred');
     });
+  });
 
-    it('should show Try Again button on error', async () => {
+  describe('Error overlay', () => {
+    beforeEach(() => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Try Again/i })).toBeInTheDocument();
-      });
     });
 
-    it('should reset state when Try Again is clicked', async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => {});
-
+    it('offers Try Again and Choose Another Application', async () => {
       render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
-      });
+      const alert = await screen.findByRole('alert');
+      expect(within(alert).getByRole('button', { name: 'Try Again' })).toBeInTheDocument();
+      expect(
+        within(alert).getByRole('button', { name: 'Choose Another Application' })
+      ).toBeInTheDocument();
+    });
 
-      const tryAgainButton = screen.getByRole('button', { name: /Try Again/i });
-      fireEvent.click(tryAgainButton);
+    it('loads the app that failed again on Try Again', async () => {
+      const stars = deferredApp('stars');
+      const onAppChange = vi.fn();
+      const onSelectorVisibilityChange = vi.fn();
+      render(
+        <DosPlayerWithApps
+          requestedApp={stars.app}
+          onAppChange={onAppChange}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+      await stars.fail(new Error('Failed to load ZIP: HTTP 503'));
 
-      await waitFor(() => {
-        expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
-        expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
-      });
+      fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+
+      expect(stars.loader).toHaveBeenCalledTimes(2);
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+      expect(screen.queryByTestId('demo-selector-mock')).not.toBeInTheDocument();
+
+      await stars.finish();
+
+      expect(boots).toEqual(['conf:stars']);
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(stars.app);
+      expect(onSelectorVisibilityChange).not.toHaveBeenCalled();
+    });
+
+    it('shows the error again when Try Again fails too', async () => {
+      const stars = deferredApp('stars');
+      render(<DosPlayerWithApps requestedApp={stars.app} />);
+      await stars.fail(new TypeError('Failed to fetch'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+      await stars.fail(new Error('Failed to load ZIP: HTTP 404'));
+
+      expect(screen.getByRole('alert')).toHaveTextContent('The requested file was not found');
+      expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
+      expect(boots).toEqual([]);
+    });
+
+    it('focuses Try Again when the error appears', async () => {
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+
+      expect(await screen.findByRole('button', { name: 'Try Again' })).toHaveFocus();
+    });
+
+    it('reaches both buttons from the keyboard', async () => {
+      const user = userEvent.setup();
+      const stars = deferredApp('stars');
+      render(<DosPlayerWithApps requestedApp={stars.app} />);
+      await stars.fail(new TypeError('Failed to fetch'));
+
+      await user.tab();
+      expect(screen.getByRole('button', { name: 'Choose Another Application' })).toHaveFocus();
+      await user.tab({ shift: true });
+      expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
+      await user.keyboard('{Enter}');
+
+      expect(stars.loader).toHaveBeenCalledTimes(2);
+    });
+
+    it('leaves the focus in a selector opened during the load', async () => {
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={stars.app} />);
+      rerender(<DosPlayerWithApps requestedApp={stars.app} showSelector={true} />);
+      const pick = screen.getByRole('button', { name: 'Select App' });
+      act(() => pick.focus());
+
+      await stars.fail(new TypeError('Failed to fetch'));
+
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(pick).toHaveFocus();
+
+      // Closing the selector hands the focus to Try Again
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
+    });
+
+    it('runs the default DOS prompt under the selector on Choose Another Application', async () => {
+      const onAppChange = vi.fn();
+      const onSelectorVisibilityChange = vi.fn();
+      render(
+        <DosPlayerWithApps
+          requestedApp={mockAppWithError}
+          onAppChange={onAppChange}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+      await screen.findByRole('alert');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Choose Another Application' }));
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
       expect(boots).toEqual(['default']);
+      expect(mockAppWithError.loader).toHaveBeenCalledOnce();
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(null);
+      expect(onSelectorVisibilityChange).toHaveBeenCalledExactlyOnceWith(true);
     });
 
-    it("should boot the default DOS config after Try Again, not the previous app's", async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => {});
-
+    it("boots the default DOS config on Choose Another Application, not the last app's", async () => {
       const { rerender } = render(<DosPlayerWithApps showSelector={true} />);
 
       // Run an app with its own DOSBox config
@@ -505,56 +591,11 @@ describe('DosPlayerWithApps', () => {
         '[cpu]\ncore=auto'
       );
 
-      // A later load fails and the user resets
+      // A later load fails and the user picks another application
       rerender(<DosPlayerWithApps showSelector={true} requestedApp={mockAppWithError} />);
-      fireEvent.click(await screen.findByRole('button', { name: /Try Again/i }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Choose Another Application' }));
 
       expect(screen.getByTestId('dos-player-mock')).toHaveAttribute('data-dosbox-conf', 'default');
-    });
-
-    it('should call onAppChange with null when reset', async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => {});
-      const onAppChange = vi.fn();
-
-      render(<DosPlayerWithApps requestedApp={mockAppWithError} onAppChange={onAppChange} />);
-
-      await waitFor(() => {
-        expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
-      });
-
-      onAppChange.mockClear();
-
-      const tryAgainButton = screen.getByRole('button', { name: /Try Again/i });
-      fireEvent.click(tryAgainButton);
-
-      await waitFor(() => {
-        expect(onAppChange).toHaveBeenCalledWith(null);
-      });
-    });
-
-    it('should call onSelectorVisibilityChange with true when reset', async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => {});
-      const onSelectorVisibilityChange = vi.fn();
-
-      render(
-        <DosPlayerWithApps
-          requestedApp={mockAppWithError}
-          onSelectorVisibilityChange={onSelectorVisibilityChange}
-        />
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
-      });
-
-      onSelectorVisibilityChange.mockClear();
-
-      const tryAgainButton = screen.getByRole('button', { name: /Try Again/i });
-      fireEvent.click(tryAgainButton);
-
-      await waitFor(() => {
-        expect(onSelectorVisibilityChange).toHaveBeenCalledWith(true);
-      });
     });
   });
 

@@ -132,12 +132,20 @@
   overflow-wrap: anywhere;
 }
 
-.error-box button {
+/* Try Again, and Choose Another Application beside it, or under it on narrow screens */
+.error-box .error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.error-box button {
   padding: 0.75rem 1.5rem;
   background: var(--color-accent, #4a9eff);
   color: white;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 4px;
   font-size: 1rem;
   font-weight: 600;
@@ -148,6 +156,17 @@
 .error-box button:hover {
   background: var(--color-accent-hover, #3a8eef);
   transform: translateY(-1px);
+}
+
+.error-box .error-secondary-action {
+  background: transparent;
+  color: var(--color-text-secondary, #ccc);
+  border-color: currentColor;
+}
+
+.error-box .error-secondary-action:hover {
+  background: var(--color-bg-tertiary, #333);
+  color: var(--color-text-primary, #fff);
 }
 
 /* Control Bar - REMOVED: Now in App header */
