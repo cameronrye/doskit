@@ -32,6 +32,8 @@ export interface LoadedApp {
 interface DemoSelectorProps {
   onSelect: (loadedApp: LoadedApp) => void;
   onCancel?: () => void;
+  /** A warning to show above the disks, such as that a link names an app that does not exist */
+  notice?: string | null;
 }
 
 /**
@@ -97,7 +99,7 @@ function describeProgress(progress: LoadProgress | null): { percent: number | nu
   return { percent: null, text: `Downloading… ${(loadedBytes / 1_000_000).toFixed(1)} MB` };
 }
 
-export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
+export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) {
   const [selectedApp, setSelectedApp] = useState<DosApp | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -413,6 +415,13 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
       </div>
 
       <div className="demo-selector-content">
+        {notice && (
+          <p className="selector-notice" role="alert">
+            <span aria-hidden="true">⚠ </span>
+            {notice}
+          </p>
+        )}
+
         {/* Application List - Floppy Disk Grid, one tab stop with a roving focus */}
         <div
           className="app-list floppy-grid"

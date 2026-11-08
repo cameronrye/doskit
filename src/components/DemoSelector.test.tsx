@@ -126,6 +126,28 @@ describe('DemoSelector', () => {
       });
     });
 
+    // Such as App's "Application not found" for a link to an app that does not exist
+    describe('a notice', () => {
+      const notFound = 'Application "nosuch" not found. Please select from available applications.';
+
+      it('shows it above the disks as an alert', () => {
+        render(<DemoSelector onSelect={mockOnSelect} notice={notFound} />);
+
+        const alert = screen.getByRole('alert');
+        expect(alert).toHaveTextContent(notFound);
+        expect(
+          alert.compareDocumentPosition(screen.getByRole('listbox')) &
+            Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+      });
+
+      it.each([null, undefined])('shows none for %s', (notice) => {
+        render(<DemoSelector onSelect={mockOnSelect} notice={notice} />);
+
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      });
+    });
+
     // One tab stop for the whole list, and one name and role per disk
     describe('the list of disks', () => {
       it('lists every app as an option of one list', () => {
