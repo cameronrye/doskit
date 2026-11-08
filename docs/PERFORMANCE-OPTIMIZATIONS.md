@@ -14,25 +14,7 @@ DosKit has been optimized to provide the best possible performance for DOS emula
 
 ## Key Optimizations Implemented
 
-### 1. OffscreenCanvas Rendering (No Effect)
-
-**Status:** ❌ Not available: js-dos ignores the setting
-
-**Performance Gain:** None
-
-**Configuration:**
-
-```typescript
-offscreenCanvas: true;
-```
-
-**What it does:** Nothing. `src/config/jsdos.config.ts` sets `offscreenCanvas: true`, but js-dos has no such option and never reads it. It draws every frame on the page's own canvas, on the main thread, with WebGL (section 5); what runs in a Web Worker is the emulator itself (section 6).
-
-Drawing in a worker would need js-dos support; see Future Optimization Opportunities.
-
----
-
-### 2. Simple CPU Core with Fixed Cycles (HIGH Impact for Audio)
+### 1. Simple CPU Core with Fixed Cycles (HIGH Impact for Audio)
 
 **Status:** ✅ Enabled by default
 
@@ -62,7 +44,7 @@ Research from DOSBox community (VOGONS forums, DOSBox Wiki) shows that `cycles=m
 
 ---
 
-### 3. Optimized Audio Configuration (HIGH Impact)
+### 2. Optimized Audio Configuration (HIGH Impact)
 
 **Status:** ✅ Enabled by default
 
@@ -109,7 +91,7 @@ Based on extensive research from:
 
 ---
 
-### 3a. MOD Music Playback Optimization (VERY HIGH Impact for Music)
+### 2a. MOD Music Playback Optimization (VERY HIGH Impact for Music)
 
 **Status:** ✅ Available via `musicTracker` preset
 
@@ -184,7 +166,7 @@ MOD files (and related formats like IT, XM, S3M) require precise timing for samp
 
 ---
 
-### 4. Scaler Settings (Backend Default)
+### 3. Scaler Settings (Backend Default)
 
 **Status:** ✅ Always on: these are the default backend's own defaults
 
@@ -198,7 +180,7 @@ scaler=none
 aspect=false
 ```
 
-**What it does:** States what the backend does anyway. `none` is the only scaler it accepts and aspect correction is off by default, so DOSBox hands js-dos each frame at the program's own resolution. Only the default DOS prompt's configuration states these lines; the presets leave `[render]` at the same defaults. js-dos then scales the frame on the GPU with WebGL (section 5), and its `renderAspect: '4/3'` option in `src/config/jsdos.config.ts` gives the picture its 4:3 shape.
+**What it does:** States what the backend does anyway. `none` is the only scaler it accepts and aspect correction is off by default, so DOSBox hands js-dos each frame at the program's own resolution. Only the default DOS prompt's configuration states these lines; the presets leave `[render]` at the same defaults. js-dos then scales the frame on the GPU with WebGL (section 4), and its `renderAspect: '4/3'` option in `src/config/jsdos.config.ts` gives the picture its 4:3 shape.
 
 **Benefits:**
 
@@ -207,7 +189,7 @@ aspect=false
 
 ---
 
-### 5. WebGL Rendering Backend (HIGH Impact)
+### 4. WebGL Rendering Backend (HIGH Impact)
 
 **Status:** ✅ Enabled by default
 
@@ -231,7 +213,7 @@ renderBackend: 'webgl';
 
 ---
 
-### 6. Worker Thread Mode (HIGH Impact)
+### 5. Worker Thread Mode (HIGH Impact)
 
 **Status:** ✅ Enabled by default
 
@@ -253,7 +235,7 @@ workerThread: true;
 
 ---
 
-### 7. WASM Module Preloading (MEDIUM Impact)
+### 6. WASM Module Preloading (MEDIUM Impact)
 
 **Status:** ✅ Enabled
 
@@ -273,7 +255,7 @@ workerThread: true;
 
 `js-dos.js` is a classic script, loaded with `defer` so that it does not block the HTML parser. Deferred scripts run in document order, so it still runs before the app's module script, which comes later in the document (at the end of `<head>` in the build, of `<body>` on the dev server), and `window.Dos` exists when the first player mounts. Chrome fetches deferred scripts at low priority, and the app has to wait for this one, so `fetchpriority="high"` keeps the priority it had as a blocking script.
 
-The built `index.html` also gets `<link rel="modulepreload">` tags from Vite, for the app's own chunks: the React vendor chunk and the Rolldown runtime (see section 9).
+The built `index.html` also gets `<link rel="modulepreload">` tags from Vite, for the app's own chunks: the React vendor chunk and the Rolldown runtime (see section 8).
 
 Chrome warns in the console that the module "was preloaded using link preload but not used within a few seconds" when no player starts that soon after the page loads, such as a deep link whose archive is still downloading, or a load that failed. A player that starts later still uses the preloaded response; the file is not downloaded twice.
 
@@ -285,7 +267,7 @@ Chrome warns in the console that the module "was preloaded using link preload bu
 
 ---
 
-### 8. Service Worker Caching (VERY HIGH Impact)
+### 7. Service Worker Caching (VERY HIGH Impact)
 
 **Status:** ✅ Enabled in production builds
 
@@ -312,7 +294,7 @@ Each request is answered by one strategy:
 Details that keep the caches right:
 
 - Install revalidates the files whose names never change (`cache: 'no-cache'`), so a worker installed within the 10 minutes GitHub Pages lets browsers reuse a file cannot store the previous deploy's `index.html`. Hashed bundles may come from the HTTP cache: a hashed name always means the same content.
-- The build lists every JS and CSS file in `dist/assets` for install, the lazily imported chunks too (section 9), so an app opened offline finds its config; source maps are left out. The build fails when the worker would precache a file that is not in `dist/`, because a single 404 stops `cache.addAll()` and the worker would never install.
+- The build lists every JS and CSS file in `dist/assets` for install, the lazily imported chunks too (section 8), so an app opened offline finds its config; source maps are left out. The build fails when the worker would precache a file that is not in `dist/`, because a single 404 stops `cache.addAll()` and the worker would never install.
 - The build's cache is trimmed to 100 entries by removing the runtime entries used least recently (their last use is recorded in `doskit-<build>-metadata`); what install stored is never removed. The emulator and demo caches are not trimmed.
 - Activating a new worker deletes every other `doskit-*` cache: earlier deploys, other js-dos versions and replaced demo archives. An updated worker waits until the user accepts the update prompt.
 - Lookups ignore `Vary`. Chrome sends `Origin` with `index.html`'s crossorigin requests (its module scripts, its stylesheet and the wasm preload) while install's requests carry none, so on a host that answers `Vary: Origin`, such as `vite preview`, every precached bundle would miss. GitHub Pages only sends `Vary: Accept-Encoding`.
@@ -326,7 +308,7 @@ Details that keep the caches right:
 
 ---
 
-### 9. Code Splitting (MEDIUM Impact)
+### 8. Code Splitting (MEDIUM Impact)
 
 **Status:** ✅ Enabled
 
@@ -353,7 +335,7 @@ export default defineConfig({
 - React and React DOM, with the scheduler they import, get a chunk of their own, `react-vendor-<hash>.js`. Its name only changes when React does, so a release that leaves React alone need not download it again: the service worker's install takes hashed bundles from the browser's HTTP cache when it has them.
 - `src/config/apps.config.ts` loads each app's config module (`src/dos-apps/<id>.config.ts`) with `import()`, so each is a small chunk of its own, downloaded when the app loads or when the selector preloads it after a 150 ms hover. The DOSBox config builder is a chunk they share.
 - The archive loader (`src/utils/diskLoader.ts`) is imported statically by `apps.config.ts`, so it is part of the entry chunk, like the default DOS prompt's config: an app needs no chunk beyond its own config to start downloading its archive.
-- The service worker precaches every chunk (section 8), so an app can still load its config offline.
+- The service worker precaches every chunk (section 7), so an app can still load its config offline.
 
 **Benefits:**
 
@@ -375,7 +357,7 @@ Based on the optimizations implemented:
 | Audio Quality     | Good      | Excellent                  | Optimized mixer settings |
 | UI Responsiveness | Good      | Excellent                  | Worker thread mode       |
 
-There is no CPU speed gain to list: the default backend has no dynamic core, so DOSBox's interpreting cores emulate the CPU (see section 2).
+There is no CPU speed gain to list: the default backend has no dynamic core, so DOSBox's interpreting cores emulate the CPU (see section 1).
 
 ---
 
@@ -406,8 +388,6 @@ All optimizations are designed with progressive enhancement:
   imageRendering: 'pixelated', // 5-15% performance + authentic look
 }
 ```
-
-`src/config/jsdos.config.ts` also sets `offscreenCanvas: true`, which js-dos ignores (see section 1).
 
 ### Optimal DOSBox Configuration
 
@@ -464,7 +444,7 @@ These optimizations were researched but not yet implemented:
 ### 4. OffscreenCanvas Rendering (Needs js-dos Support)
 
 - **Potential Gain:** Frees the main thread from drawing frames
-- **Complexity:** js-dos would have to hand its canvas to the emulator worker; it has no option for that, so the `offscreenCanvas: true` in `jsdos.config.ts` does nothing (see section 1)
+- **Complexity:** js-dos draws every frame with WebGL on the page's own canvas, on the main thread, and runs only the emulator in its Web Worker. It would have to hand that canvas to the worker, and it has no option for that, so DosKit sets none
 - **Risk:** Depends on js-dos adding it
 
 ---
