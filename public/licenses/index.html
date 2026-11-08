@@ -6,7 +6,7 @@
     <title>Licenses - DosKit</title>
     <meta
       name="description"
-      content="The licenses of the software DosKit runs in your browser: js-dos, DOSBox, DOSBox-X and libzip, with links to their source code, and of the packages DosKit's own scripts bundle."
+      content="The licenses of the software DosKit runs in your browser: js-dos, DOSBox, DOSBox-X and libzip, with links to their source code, and of the packages that js-dos's files and DosKit's own scripts bundle."
     />
     <meta name="theme-color" content="#667eea" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -243,6 +243,120 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.</pre
+      >
+
+      <h2 id="packages">The packages in js-dos's files</h2>
+      <p>
+        <code>js-dos.js</code>, <code>js-dos.css</code> and <code>emulators.js</code> include code
+        from these packages, at the versions in the lockfiles js-dos 8.3.20 and emulators 8.3.8 were
+        built with. The minified files leave the packages' notices out, so they are here.
+      </p>
+      <p>In <code>js-dos.js</code>:</p>
+      <ul>
+        <li>Preact 10.19.3: Copyright (c) 2015-present Jason Miller</li>
+        <li>Redux Toolkit 1.9.7: Copyright (c) 2018 Mark Erikson</li>
+        <li>
+          Redux 4.2.1, React Redux 8.1.3 and Redux Thunk 2.4.2: Copyright (c) 2015-present Dan
+          Abramov
+        </li>
+        <li>Immer 9.0.21: Copyright (c) 2017 Michel Weststrate</li>
+        <li>
+          react-is 16.13.1 and 18.2.0, and use-sync-external-store 1.2.0: Copyright (c) Facebook,
+          Inc. and its affiliates.
+        </li>
+        <li>
+          The helpers of @babel/runtime 7.20.6: Copyright (c) 2014-present Sebastian McKenzie and
+          other contributors
+        </li>
+        <li>nipplejs 0.10.2: Copyright (c) 2014 Yoann Moinet &lt;yoann.moinet@gmail.com&gt;</li>
+        <li>
+          react-checkbox-tree 1.8.0: Copyright (c) 2017 Jake Zatecky. Its prebuilt file, which
+          js-dos includes, has parts of four more packages:
+          <ul>
+            <li>classnames: Copyright (c) 2018 Jed Watson</li>
+            <li>
+              lodash: Copyright OpenJS Foundation and other contributors
+              &lt;https://openjsf.org/&gt;. Based on Underscore.js, copyright Jeremy Ashkenas,
+              DocumentCloud and Investigative Reporters &amp; Editors
+              &lt;http://underscorejs.org/&gt;
+            </li>
+            <li>nanoid: Copyright 2017 Andrey Sitnik &lt;andrey@sitnik.ru&gt;</li>
+            <li>prop-types: Copyright (c) 2013-present, Facebook, Inc.</li>
+          </ul>
+        </li>
+        <li>hoist-non-react-statics 3.3.2, under the BSD license below</li>
+      </ul>
+      <p>In <code>js-dos.css</code>:</p>
+      <ul>
+        <li>Tailwind CSS 3.4.1: Copyright (c) Tailwind Labs, Inc.</li>
+        <li>daisyUI 3.9.4: Copyright (c) 2020 Pouya Saadeghi</li>
+      </ul>
+      <p>In <code>emulators.js</code>:</p>
+      <ul>
+        <li>core-js 3.30.0: Copyright (c) 2014-2023 Denis Pushkarev</li>
+        <li>
+          browser-pack 6.1.0, browserify's module loader, by James Halliday, whose license names no
+          copyright holder
+        </li>
+        <li>
+          MiniLZ4, the LZ4 code in emulators' source, based on node-lz4: Copyright (c) 2012 Pierre
+          Curto
+        </li>
+      </ul>
+      <p>
+        Each of them but hoist-non-react-statics is under the MIT License, with this text after its
+        copyright line:
+      </p>
+      <pre>
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre
+      >
+      <p>hoist-non-react-statics' license:</p>
+      <pre>
+Software License Agreement (BSD License)
+========================================
+
+Copyright (c) 2015, Yahoo! Inc. All rights reserved.
+----------------------------------------------------
+
+Redistribution and use of this software in source and binary forms, with or
+without modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright notice, this
+    list of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+  * Neither the name of Yahoo! Inc. nor the names of YUI's contributors may be
+    used to endorse or promote products derived from this software without
+    specific prior written permission of Yahoo! Inc.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</pre
       >
 
       <h2 id="bundled">React and the other packages in DosKit's scripts</h2>
