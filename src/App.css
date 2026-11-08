@@ -213,6 +213,18 @@
   animation: app-pulse-loading 1.5s ease-in-out infinite;
 }
 
+/* While the player shows a load or start error. js-dos.css's .error rules are its own. */
+.status-badge.is-error {
+  background-color: rgba(231, 76, 60, 0.2);
+  /* 5.1:1 on the badge's tint over the footer */
+  color: #ff8a80;
+  border: 1px solid #e74c3c;
+}
+
+.status-badge.is-error .status-dot {
+  animation: none;
+}
+
 .status-dot {
   width: 6px;
   height: 6px;

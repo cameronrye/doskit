@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { DosPlayerWithApps } from './components/DosPlayerWithApps';
+import { DosPlayerWithApps, type PlayerStatus } from './components/DosPlayerWithApps';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { findAppById } from './config/apps.config';
@@ -68,8 +68,19 @@ function keepKeysFromDos(event: React.KeyboardEvent) {
   }
 }
 
+/** What the footer's DOS badge shows for each status of the player */
+const STATUS_BADGES: Record<PlayerStatus, { className: string; label: string; title: string }> = {
+  loading: { className: 'is-loading', label: 'Loading', title: 'Loading DOS emulator' },
+  ready: { className: 'ready', label: 'Ready', title: 'DOS emulator is ready' },
+  error: {
+    className: 'is-error',
+    label: 'Error',
+    title: 'The application could not be loaded or started',
+  },
+};
+
 function App() {
-  const [isReady, setIsReady] = useState(false);
+  const [playerStatus, setPlayerStatus] = useState<PlayerStatus>('loading');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // The route the page was loaded with
@@ -78,20 +89,6 @@ function App() {
   const [currentApp, setCurrentApp] = useState(initialRoute.app);
   const [showAppSelector, setShowAppSelector] = useState(!initialRoute.app);
   const [urlError, setUrlError] = useState(initialRoute.error);
-
-  const handleDosReady = () => {
-    if (import.meta.env.DEV) {
-      console.log('[App] DOS is ready!');
-    }
-    setIsReady(true);
-  };
-
-  const handleDosExit = () => {
-    if (import.meta.env.DEV) {
-      console.log('[App] DOS exited');
-    }
-    setIsReady(false);
-  };
 
   const handleNetworkStatusChange = (online: boolean) => {
     if (import.meta.env.DEV) {
@@ -180,6 +177,7 @@ function App() {
   }, [warnBeforeLeaving]);
 
   const release = currentApp && describeRelease(currentApp);
+  const statusBadge = STATUS_BADGES[playerStatus];
 
   return (
     <div className="app" onKeyDown={keepKeysFromDos} onKeyUp={keepKeysFromDos}>
@@ -211,12 +209,11 @@ function App() {
       <main className="app-main">
         <ErrorBoundary>
           <DosPlayerWithApps
-            onReady={handleDosReady}
-            onExit={handleDosExit}
             requestedApp={currentApp}
             showSelector={showAppSelector}
             onAppChange={handleAppChange}
             onSelectorVisibilityChange={handleSelectorVisibilityChange}
+            onStatusChange={setPlayerStatus}
             // An unknown app in the URL opens the selector, which says so above the disks
             selectorNotice={urlError}
             className="dos-player"
@@ -229,17 +226,10 @@ function App() {
           {/* A polite live region: screen readers announce each change of the badges */}
           <div className="status-indicators" role="status">
             {/* DOS Status */}
-            {isReady ? (
-              <span className="status-badge ready" title="DOS emulator is ready">
-                <span className="status-dot"></span>
-                <span>Ready</span>
-              </span>
-            ) : (
-              <span className="status-badge is-loading" title="Loading DOS emulator">
-                <span className="status-dot"></span>
-                <span>Loading</span>
-              </span>
-            )}
+            <span className={`status-badge ${statusBadge.className}`} title={statusBadge.title}>
+              <span className="status-dot"></span>
+              <span>{statusBadge.label}</span>
+            </span>
 
             {/* Network Status */}
             <span

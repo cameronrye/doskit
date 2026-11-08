@@ -14,6 +14,7 @@ interface DosPlayerWithAppsProps {
   onExit?: () => void;
   onAppChange?: (app: DosApp | null) => void;
   onSelectorVisibilityChange?: (visible: boolean) => void;
+  onStatusChange?: (status: 'loading' | 'ready' | 'error') => void;
   showSelector?: boolean;
   requestedApp?: DosApp | null;
   selectorNotice?: string | null;
@@ -64,6 +65,7 @@ vi.mock('./components/DosPlayerWithApps', async () => {
       onExit,
       onAppChange,
       onSelectorVisibilityChange,
+      onStatusChange,
       showSelector,
       requestedApp,
       selectorNotice,
@@ -90,8 +92,9 @@ vi.mock('./components/DosPlayerWithApps', async () => {
           <div className="dos-player-container">
             <canvas data-testid="dos-screen" />
           </div>
-          <button onClick={onReady}>Trigger Ready</button>
-          <button onClick={onExit}>Trigger Exit</button>
+          <button onClick={() => onStatusChange?.('ready')}>Report Ready</button>
+          <button onClick={() => onStatusChange?.('loading')}>Report Loading</button>
+          <button onClick={() => onStatusChange?.('error')}>Report Error</button>
           <button onClick={() => onAppChange?.(mockApp)}>Load App</button>
           <button onClick={() => onAppChange?.(null)}>Clear App</button>
           <button onClick={() => onSelectorVisibilityChange?.(true)}>Show Selector</button>
@@ -444,9 +447,8 @@ describe('App', () => {
   describe('Status display', () => {
     it('should show loading status initially', () => {
       render(<App />);
-      expect(screen.getByText(/Loading/i)).toBeInTheDocument();
-      const statusIndicators = document.querySelector('.status-indicators');
-      expect(statusIndicators).toBeInTheDocument();
+      const statusIndicators = screen.getByRole('status');
+      expect(statusIndicators).toHaveTextContent(/^Loading/);
       expect(statusIndicators).toHaveTextContent(/Online/i);
     });
 
@@ -455,7 +457,7 @@ describe('App', () => {
       const status = screen.getByRole('status');
       expect(status).toHaveTextContent('Loading');
 
-      fireEvent.click(screen.getByText('Trigger Ready'));
+      fireEvent.click(screen.getByText('Report Ready'));
       fireEvent.click(screen.getByText('Go Offline'));
 
       // A live region announces changes only to content it already holds
@@ -473,35 +475,32 @@ describe('App', () => {
       expect(badge).toHaveClass('is-loading');
     });
 
-    it('should show ready status when DOS is ready', async () => {
+    it('shows Ready once the player is ready', () => {
       render(<App />);
 
-      const readyButton = screen.getByText('Trigger Ready');
-      fireEvent.click(readyButton);
+      fireEvent.click(screen.getByText('Report Ready'));
 
-      await waitFor(() => {
-        expect(screen.getByText('Ready')).toBeInTheDocument();
-      });
+      expect(screen.getByRole('status')).toHaveTextContent(/^Ready/);
     });
 
-    it('should show loading status when DOS exits', async () => {
+    it('shows Loading again once the player loads another app', () => {
+      render(<App />);
+      fireEvent.click(screen.getByText('Report Ready'));
+
+      fireEvent.click(screen.getByText('Report Loading'));
+
+      expect(screen.getByRole('status')).toHaveTextContent(/^Loading/);
+    });
+
+    it('shows Error, not Loading, while the player shows an error', () => {
       render(<App />);
 
-      // First make it ready
-      const readyButton = screen.getByText('Trigger Ready');
-      fireEvent.click(readyButton);
+      fireEvent.click(screen.getByText('Report Error'));
 
-      await waitFor(() => {
-        expect(screen.getByText('Ready')).toBeInTheDocument();
-      });
-
-      // Then exit
-      const exitButton = screen.getByText('Trigger Exit');
-      fireEvent.click(exitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Loading/i)).toBeInTheDocument();
-      });
+      const badge = screen.getByText('Error').closest('.status-badge');
+      expect(badge).toHaveClass('is-error');
+      expect(badge).toHaveAttribute('title', 'The application could not be loaded or started');
+      expect(screen.getByRole('status')).not.toHaveTextContent('Loading');
     });
 
     it('should show offline status when network goes offline', async () => {
