@@ -35,9 +35,9 @@ export const defaultJsDosConfig: Partial<DosOptions> = {
   renderAspect: '4/3', // Classic DOS aspect ratio
   // fullScreen is left unset: set, even to false, it has js-dos call document.exitFullscreen()
   // at every start, which rejects outside fullscreen and leaves the rejection unhandled.
-  // With this, js-dos's fullscreen button makes the player fill the window with CSS instead of
-  // the browser's Fullscreen API, adding the class jsdos-fullscreen-workaround to the player's
-  // element. js-dos 8.3.20 styles that class only inside its root
+  // With softFullscreen, js-dos's fullscreen button makes the player fill the window with CSS
+  // instead of the browser's Fullscreen API, adding the class jsdos-fullscreen-workaround to
+  // the player's element. js-dos 8.3.20 styles that class only inside its root
   // (.jsdos-rso .jsdos-fullscreen-workaround), and the root is the player's element itself,
   // so the rule that does it is DosPlayer.css's.
   softFullscreen: true,
