@@ -157,6 +157,14 @@ describe('availableApps', () => {
     expect(new Set(ids.map(getUrlFriendlyId)).size).toBe(ids.length);
   });
 
+  it('should ask before the page closes only while a tracker runs', () => {
+    // Browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, and Scream Tracker 3 saves on
+    // Ctrl-W: the tab would close with the song unsaved. A demo has nothing to lose.
+    const asking = availableApps.filter((app) => app.warnBeforeLeaving).map((app) => app.id);
+
+    expect(asking).toEqual(['impulse-tracker', 'scream-tracker']);
+  });
+
   it('should load every archive in public/demos', () => {
     // Each archive is part of every deploy, whether an app loads it or not
     const unloaded = archivesInDemos().filter((name) => !findAppById(name.replace(/\.zip$/, '')));

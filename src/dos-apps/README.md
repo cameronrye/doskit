@@ -98,6 +98,10 @@ shows them as "Some Group (1994)", or whichever of the two the app has, and the 
 its disk "My Demo by Some Group (1994)" for screen readers, leaving out a missing author or year.
 Both are optional: leave out a year that nothing establishes rather than guess one.
 
+For a program people make things in, such as a tracker, add `warnBeforeLeaving: true`: the page
+then asks before it is closed or reloaded while the app runs. Browsers keep Ctrl+W, Ctrl+N and
+Ctrl+T for themselves, so a DOS program's Ctrl-W closes the tab at once.
+
 The app now appears in the selector and opens at `/?app=my-demo`. The address bar shows the id
 without hyphens (`/?app=mydemo`); both forms work.
 

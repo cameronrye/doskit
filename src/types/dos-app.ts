@@ -27,6 +27,12 @@ export interface DosApp {
   /** DOSBox configuration string */
   dosboxConf: string;
   /**
+   * Ask before the page is closed or reloaded while this app runs. For apps whose work a
+   * closed page loses, such as a song in a tracker: browsers keep Ctrl+W, Ctrl+N and Ctrl+T
+   * for themselves, so a DOS program's Ctrl-W can close the tab at once.
+   */
+  warnBeforeLeaving?: boolean;
+  /**
    * Function to load the application files
    * @param onProgress - Optional callback for progress updates
    * @param signal - Optional AbortSignal that cancels the download

@@ -41,6 +41,7 @@ export const availableApps: DosApp[] = [
     year: 1997,
     loadMethod: 'zip',
     dosboxConf: '',
+    warnBeforeLeaving: true, // a song in progress
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/impulse-tracker.config');
       return loadZipArchive(config.impulseTrackerZipUrl, onProgress, signal);
@@ -75,6 +76,7 @@ export const availableApps: DosApp[] = [
     year: 1994,
     loadMethod: 'zip',
     dosboxConf: '',
+    warnBeforeLeaving: true, // a song in progress; its Ctrl-W (save) closes the tab
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/scream-tracker.config');
       return loadZipArchive(config.screamTrackerZipUrl, onProgress, signal);
