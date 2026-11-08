@@ -22,9 +22,9 @@
 
 ## Overview
 
-DosKit is a modern web application that enables users to run classic DOS applications and games directly in their browser without any installation. Built with cutting-edge web technologies, it provides a seamless, cross-platform DOS emulation experience that works on desktop and mobile devices.
+DosKit is a modern web application that enables users to run classic DOS applications and demos directly in their browser without any installation. Built with cutting-edge web technologies, it provides a seamless, cross-platform DOS emulation experience that works on desktop and mobile devices.
 
-The project leverages js-dos v8.3.20, a WebAssembly-based DOS emulator that achieves 80-90% of native DOS performance. Combined with React 19's modern component architecture and Vite's lightning-fast build system, DosKit delivers an exceptional user experience for retro computing enthusiasts and developers.
+The project leverages js-dos v8.3.20, a WebAssembly-based DOS emulator built on DOSBox. Combined with React 19's modern component architecture and Vite's lightning-fast build system, DosKit delivers an exceptional user experience for retro computing enthusiasts and developers.
 
 ## Features
 
@@ -56,32 +56,34 @@ The project leverages js-dos v8.3.20, a WebAssembly-based DOS emulator that achi
 
 ### Core Technologies
 
-- **React 19.2.0**: Modern UI framework with latest features including concurrent rendering
-- **TypeScript 5.9.3**: Type-safe JavaScript with strict mode enabled
-- **Vite 7.1.14**: Next-generation frontend tooling (Rolldown variant for improved build performance)
-- **js-dos 8.3.20**: WebAssembly DOS emulator with DOSBox and DOSBox-X backends
+- **React 19**: Modern UI framework with latest features including concurrent rendering
+- **TypeScript 5**: Type-safe JavaScript with strict mode enabled
+- **Vite 8**: Next-generation frontend tooling, bundling with Rolldown
+- **js-dos 8.3.20**: WebAssembly DOS emulator with DOSBox and DOSBox-X backends; DosKit runs every application on DOSBox
+- **retro-floppy**: The floppy disks of the application selector
 
 ### Development Tools
 
 - **ESLint**: Code linting with TypeScript support
-- **Vitest**: Fast unit testing framework
+- **Prettier**: Code formatting, checked in CI
+- **Vitest**: Fast unit testing framework, with jsdom and React Testing Library
 - **TypeDoc**: API documentation generation
-- **Sharp**: High-performance image processing for social media previews
-- **Husky**: Git hooks for pre-commit checks
+- **Sharp**: High-performance image processing for the PWA icons and social media previews (scripts run by hand)
+- **Husky**: Git hooks for pre-commit checks (lint-staged runs ESLint, Prettier and the related tests on staged files)
 
 ### Why These Technologies?
 
-#### React + Vite (Rolldown Variant)
+#### React + Vite
 - Fast Development: Hot Module Replacement (HMR) for instant feedback
 - Modern Build: Optimized production builds with code splitting
 - Developer Experience: Excellent TypeScript integration and tooling
-- Experimental Rolldown: Rust-based bundler for faster builds and better tree-shaking
+- Rolldown: Vite 8's Rust-based bundler, for faster builds and better tree-shaking
 
 #### js-dos v8.3.20
-- Latest Stable: Most recent version with bug fixes and improvements
-- WebAssembly: High-performance emulation (80-90% of native speed)
+- Pinned: package.json pins this exact version, and scripts/copy-js-dos.js copies its runtime from node_modules into public/
+- WebAssembly: DOSBox compiled to WebAssembly
 - Cross-Platform: Works in all modern browsers and Node.js
-- Multiple Backends: Supports both DOSBox and DOSBox-X
+- Multiple Backends: Supports both DOSBox and DOSBox-X; every DOSBox configuration in DosKit is written for DOSBox
 - Active Development: Regular updates and community support
 
 #### TypeScript
@@ -94,18 +96,23 @@ The project leverages js-dos v8.3.20, a WebAssembly-based DOS emulator that achi
 ### Component Hierarchy
 
 ```
-App (Root)
-├── ErrorBoundary
-│   └── DosPlayerWithApps
-│       ├── DemoSelector (modal)
-│       │   └── App selection UI
-│       ├── DosPlayer
-│       │   └── js-dos emulator instance
-│       ├── Loading overlay
-│       └── Error overlay
-├── OfflineIndicator
-└── UpdateNotification
+ErrorBoundary (main.tsx)
+└── App
+    ├── OfflineIndicator (offline and back-online notices, install prompt)
+    ├── Header (current application, Change Application button)
+    ├── URL error banner (unknown ?app= id)
+    ├── ErrorBoundary
+    │   └── DosPlayerWithApps
+    │       ├── DemoSelector (modal)
+    │       │   └── App selection UI
+    │       ├── Loading overlay
+    │       ├── Error overlay
+    │       └── DosPlayer (useDosEmulator hook + DosPlayerUI)
+    │           └── js-dos emulator instance
+    └── Footer (Ready/Loading and Online/Offline badges)
 ```
+
+UpdateNotification is not part of this tree: src/utils/updatePrompt.ts mounts it in a React root of its own when a new service worker is waiting.
 
 ### Data Flow
 
@@ -116,97 +123,118 @@ App (Root)
 
 ### State Management
 
-- React hooks (useState, useEffect, useCallback) for component state
-- Context API for global state (error tracking, service worker updates)
-- Local storage for user preferences and saved states
+- React hooks (useState, useEffect, useCallback) for component state, held in App and DosPlayerWithApps and passed down as props; there is no context or global store
+- Local storage only for install prompt dismissals, through src/utils/storage.ts, which never throws when storage is blocked or full
 - URL parameters for deep linking state
 
 ## Project Structure
 
 ```
 doskit/
+├── .github/workflows/         # CI, deploy and release workflows
 ├── docs/                      # Documentation
-│   ├── API-DOCUMENTATION.md   # API reference
+│   ├── ARCHITECTURE.md        # Architecture overview
 │   ├── ERROR-HANDLING.md      # Error handling guide
-│   ├── STATE-MANAGEMENT.md    # State management patterns
+│   ├── PERFORMANCE-OPTIMIZATIONS.md # Performance optimizations
+│   ├── SCENERS.md             # Productions from the sceners archive
+│   ├── SEO-AND-METADATA.md    # SEO, social and discovery files
+│   ├── STYLE_GUIDE.md         # Code style guide
 │   └── js-dos-llm-reference.md # Comprehensive js-dos API reference
-├── public/                    # Static assets
-│   ├── demos/                 # Demo DOS applications
-│   ├── emulators/             # Emulator files
+├── public/                    # Static assets, copied into the build as they are
+│   ├── demos/                 # ZIP archives of the bundled applications
+│   ├── emulators/             # js-dos emulator files (copied by scripts/copy-js-dos.js, not committed)
 │   ├── icons/                 # PWA icons
-│   ├── .well-known/           # Well-known URIs
+│   ├── .well-known/           # Well-known URIs (security.txt)
+│   ├── .nojekyll              # Serve files as they are on GitHub Pages
 │   ├── CNAME                  # Custom domain configuration
 │   ├── favicon.svg            # Favicon
 │   ├── logo.svg               # Logo
+│   ├── js-dos.js              # js-dos player (copied by scripts/copy-js-dos.js, not committed)
+│   ├── js-dos.css             # js-dos styles (copied the same way)
 │   ├── manifest.json          # PWA manifest
 │   ├── sw.js                  # Service worker
 │   ├── og-image.png           # Open Graph image
+│   ├── social-preview.svg     # Source of og-image.png
 │   ├── github-social.png      # GitHub social preview
+│   ├── github-social-preview.svg # Source of github-social.png
 │   ├── sitemap.xml            # SEO sitemap
 │   ├── robots.txt             # Crawler rules
 │   ├── humans.txt             # Team credits
 │   ├── llm.txt                # LLM discovery (concise)
 │   └── llm-full.txt           # LLM discovery (comprehensive)
-├── scripts/                   # Build and utility scripts
-│   ├── generate-icons.js      # Icon generation
-│   ├── generate-social-images.js # Social media image generation
-│   ├── inject-sw-version.js   # Service worker versioning
+├── scripts/                   # Build and utility scripts, and tests of the build
+│   ├── copy-js-dos.js         # Copies js-dos into public/ before dev and build
+│   ├── inject-sw-version.js   # Stamps the built service worker
+│   ├── generate-icons.js      # Icon generation (run by hand)
+│   ├── generate-social-images.js # Social media image generation (run by hand)
 │   └── help.js                # CLI help
 ├── src/
+│   ├── adapters/              # Emulator adapter (js-dos)
 │   ├── components/            # React components
 │   │   ├── DosPlayer.tsx      # Main DOS emulator component
+│   │   ├── DosPlayerUI.tsx    # Its loading, error and emulator markup
 │   │   ├── DosPlayer.css      # Component styles
-│   │   ├── DosPlayerWithApps.tsx # Wrapper with app selection
+│   │   ├── DosPlayerWithApps.tsx # Wrapper that loads applications
 │   │   ├── DemoSelector.tsx   # Application selector UI
 │   │   ├── ErrorBoundary.tsx  # Error handling boundary
-│   │   ├── OfflineIndicator.tsx # Network status indicator
+│   │   ├── OfflineIndicator.tsx # Network status and install prompt
 │   │   └── UpdateNotification.tsx # PWA update notifications
 │   ├── config/                # Configuration files
-│   │   ├── dosbox.conf.ts     # DOSBox configurations
+│   │   ├── apps.config.ts     # Registry of the bundled applications
+│   │   ├── dosbox.conf.ts     # DOSBox configuration of the DOS prompt
 │   │   └── jsdos.config.ts    # js-dos settings
-│   ├── dos-apps/              # DOS application configurations
-│   │   └── second-reality.config.ts
+│   ├── constants/             # PWA and UI constants
+│   ├── dos-apps/              # One config module per application
+│   │   ├── README.md          # How to add an application
+│   │   └── <id>.config.ts     # An application's archive URL and DOSBox config
 │   ├── hooks/                 # Custom React hooks
-│   │   └── useDosEmulator.ts  # DOS emulator hook
+│   │   └── useDosEmulator.ts  # Starts and stops js-dos
+│   ├── integration/           # Integration tests
+│   ├── test/                  # Test setup
 │   ├── types/                 # TypeScript type definitions
+│   │   ├── dos-app.ts         # DosApp type
 │   │   └── js-dos.d.ts        # js-dos type definitions
 │   ├── utils/                 # Utility functions
-│   │   ├── diskLoader.ts      # Disk image loading
+│   │   ├── diskLoader.ts      # Downloads application archives
+│   │   ├── dosboxConfigBuilder.ts # DOSBox config builder and presets
+│   │   ├── fetchWithRetry.ts  # Retries with exponential backoff
 │   │   ├── urlRouting.ts      # URL parameter handling
 │   │   ├── logger.ts          # Logging utility
 │   │   ├── errorTracking.ts   # Error tracking
 │   │   ├── globalErrorHandler.ts # Global error handler
 │   │   ├── errorMessages.ts   # User-friendly error messages
-│   │   └── serviceWorkerRegistration.ts # SW registration
+│   │   ├── serviceWorkerRegistration.ts # SW registration
+│   │   ├── storage.ts         # localStorage that never throws
+│   │   └── updatePrompt.ts    # Shows UpdateNotification
 │   ├── App.tsx                # Main application component
 │   ├── App.css                # Application styles
 │   ├── main.tsx               # Application entry point
 │   └── index.css              # Global styles
 ├── .gitignore
 ├── eslint.config.js           # ESLint configuration
-├── index.html                 # HTML entry point
+├── index.html                 # HTML entry point (the build also writes it as 404.html)
 ├── package.json               # Dependencies and scripts
 ├── tsconfig.json              # TypeScript configuration
 ├── tsconfig.app.json          # App TypeScript config
-├── tsconfig.node.json         # Node TypeScript config
+├── tsconfig.node.json         # Node TypeScript config (vite and vitest configs)
+├── tsconfig.test.json         # Test TypeScript config
 ├── vite.config.ts             # Vite configuration
 ├── vitest.config.ts           # Vitest configuration
 ├── typedoc.json               # TypeDoc configuration
-├── ARCHITECTURE.md            # Architecture documentation
 ├── CHANGELOG.md               # Version history
 ├── CONTRIBUTING.md            # Contribution guidelines
 ├── LICENSE                    # MIT License
 ├── README.md                  # Main documentation
-├── SECURITY.md                # Security policy
-└── STYLE_GUIDE.md             # Code style guide
+├── ROADMAP.md                 # Roadmap
+└── SECURITY.md                # Security policy
 ```
 
 ## Installation & Setup
 
 ### Prerequisites
 
-- Node.js 18+ (recommended: 24.4.1 or later)
-- npm 9+ or yarn 1.22+
+- Node.js 24 or later (package.json engines; the version is in .nvmrc)
+- npm (the repository's lockfile is package-lock.json)
 - Modern browser with WebAssembly support
 
 ### Installation Steps
@@ -222,7 +250,7 @@ cd doskit
 npm install
 ```
 
-3. Start the development server:
+3. Start the development server (it first copies the js-dos runtime from node_modules into public/):
 ```bash
 npm run dev
 ```
@@ -235,7 +263,9 @@ The DOS emulator will automatically load and present an interactive DOS prompt!
 
 ### DOSBox Configuration
 
-DosKit uses DOSBox configuration files to customize the DOS environment. The default configuration is located in `src/config/dosbox.conf.ts`.
+DosKit uses DOSBox configuration files to customize the DOS environment. The default configuration, which the DOS prompt boots with, is located in `src/config/dosbox.conf.ts`; each application builds its own in its config module in `src/dos-apps/`, starting from a preset in `src/utils/dosboxConfigBuilder.ts`.
+
+js-dos's default DOSBox backend ignores settings it does not have without a warning, such as `core=dynamic`, a 486 or Pentium `cputype`, `[dos] ver` or a `[memory]` section; `src/dos-apps/README.md` lists them.
 
 Example custom configuration:
 ```typescript
@@ -255,22 +285,22 @@ myapp.exe
 
 ### js-dos Options
 
-Customize the emulator behavior with js-dos options in `src/config/jsdos.config.ts`:
+Customize the emulator behavior with js-dos options in `src/config/jsdos.config.ts`. DosKit's defaults: the DOSBox backend in a worker thread with OffscreenCanvas, WebGL rendering at a 4:3 aspect ratio, volume 0.7, autoStart with no countdown, js-dos cloud features off (`noCloud`), and emulator files from `/emulators/`.
 
 Available options:
 - `theme`: 'dark' or 'light'
 - `volume`: 0.0 to 1.0
 - `fullScreen`: Enable fullscreen mode
 - `autoStart`: Auto-start emulator on load
-- `backend`: 'dosbox' or 'dosboxX'
+- `backend`: 'dosbox' or 'dosboxX' (DosKit's DOSBox configurations are written for 'dosbox')
 - `mouseCapture`: Auto-capture mouse input
+- See `src/types/js-dos.d.ts` for the complete options
 
 ### Mobile Configuration
 
-DosKit automatically detects mobile devices and applies optimized settings:
+DosKit detects mobile devices by their user agent and applies optimized settings:
 - Larger touch controls
-- On-screen keyboard with common DOS keys
-- Optimized aspect ratio for mobile screens
+- On-screen keyboard with common DOS keys (Esc, function keys, digits, letters, Ctrl, Alt, Space, Enter and the arrow keys)
 
 ## Usage
 
@@ -294,11 +324,13 @@ Features:
 
 ### Adding DOS Applications
 
-To run DOS applications or games:
+An application in the selector is three pieces, and `src/dos-apps/README.md` walks through each:
 
-1. Create a custom DOSBox configuration
-2. Place your DOS files in the public directory or use the `initFs` option
-3. Update the DosPlayer component with your configuration
+1. A ZIP archive of the program's files at `public/demos/<id>.zip`
+2. A config module, `src/dos-apps/<id>.config.ts`, with the archive's URL and the DOSBox configuration, built from a preset in `src/utils/dosboxConfigBuilder.ts`
+3. An entry in `availableApps` in `src/config/apps.config.ts`, which imports the config module lazily
+
+`npx vitest run src/config/apps.config.test.ts` checks every registered application. Only add programs you may redistribute.
 
 ### Programmatic Control
 
@@ -332,28 +364,30 @@ Available commands:
 
 ### DosPlayer Component
 
-Main component for DOS emulation.
+Main component for DOS emulation. It starts js-dos once per mount and stops it on unmount, so give it a new `key` to run something else.
 
 Props:
-- `dosboxConf?: string` - DOSBox configuration
-- `options?: DosOptions` - js-dos options
+- `dosboxConf?: string` - DOSBox configuration (default: the DOS prompt's, from `src/config/dosbox.conf.ts`)
+- `options?: Partial<DosOptions>` - js-dos options, merged over the defaults in `src/config/jsdos.config.ts`
 - `onReady?: (ci: CommandInterface) => void` - Callback when emulator is ready
-- `onExit?: () => void` - Callback when emulator exits
+- `onExit?: () => void` - Callback when a ready emulator is gone, because DOS exited or unmounting stopped it; called once per onReady
 - `className?: string` - CSS class name
+- `style?: React.CSSProperties` - Inline styles
 
 ### CommandInterface
 
-Interface for controlling the DOS emulator programmatically.
+Interface for controlling the DOS emulator programmatically (the full interface is in `src/types/js-dos.d.ts`).
 
 Methods:
-- `pause(): Promise<void>` - Pause emulation
-- `resume(): Promise<void>` - Resume emulation
-- `mute(): Promise<void>` - Mute audio
-- `unmute(): Promise<void>` - Unmute audio
+- `pause(): void` - Pause emulation
+- `resume(): void` - Resume emulation
+- `mute(): void` - Mute audio
+- `unmute(): void` - Unmute audio
 - `screenshot(): Promise<ImageData>` - Capture screenshot
-- `fsReadFile(path: string): Promise<Uint8Array>` - Read file from DOS filesystem
-- `fsWriteFile(path: string, data: Uint8Array): Promise<void>` - Write file to DOS filesystem
-- `simulateKeyPress(keyCode: number): void` - Simulate key press
+- `fsReadFile(file: string): Promise<Uint8Array>` - Read file from DOS filesystem
+- `fsWriteFile(file: string, contents: ReadableStream<Uint8Array> | Uint8Array): Promise<void>` - Write file to DOS filesystem
+- `persist(onlyChanges?: boolean): Promise<Uint8Array | null>` - Pack the DOS filesystem, or only its changes, into a bundle
+- `simulateKeyPress(...keyCodes: number[]): void` - Simulate key presses
 - `exit(): Promise<void>` - Exit emulator
 
 ## Development
@@ -364,34 +398,41 @@ Methods:
 # Show all available scripts with descriptions
 npm run help
 
-# Start development server
+# Start development server (copies js-dos into public/ first)
 npm run dev
 
-# Build for production
+# Build for production (copies js-dos, type-checks, bundles, stamps the service worker)
 npm run build
 
-# Preview production build
+# Preview production build (http://localhost:4173)
 npm run preview
 
 # Run linter
 npm run lint
 
-# Run tests
+# Format files, or only check their formatting (as CI does)
+npm run format
+npm run format:check
+
+# Run tests once
 npm run test
+
+# Run tests in watch mode
+npm run test:watch
 
 # Run tests with UI
 npm run test:ui
 
-# Run tests once (CI mode)
-npm run test:run
-
 # Run tests with coverage
 npm run test:coverage
 
-# Generate social media images
+# Regenerate the PWA icons (not part of the build)
+npm run generate-icons
+
+# Regenerate social media images after editing their SVGs (not part of the build)
 npm run generate-social-images
 
-# Generate API documentation
+# Generate API documentation (into docs/api)
 npm run docs
 
 # Watch API documentation
@@ -408,17 +449,17 @@ npm run docs:watch
 
 ### Testing
 
-DosKit uses Vitest for unit testing:
+DosKit uses Vitest for unit testing, with jsdom and React Testing Library. Tests sit next to the code they cover, `src/integration/` holds integration tests that render the whole app with js-dos faked, and `scripts/*.test.js` test the build scripts and run the service worker in a sandbox. `tsc -b` type-checks the tests too (tsconfig.test.json).
 
 ```bash
-# Run tests in watch mode
+# Run tests once
 npm run test
+
+# Run tests in watch mode
+npm run test:watch
 
 # Run tests with UI
 npm run test:ui
-
-# Run tests once
-npm run test:run
 
 # Generate coverage report
 npm run test:coverage
@@ -433,7 +474,7 @@ The project follows strict TypeScript and ESLint rules:
 - Prettier for code formatting
 - Husky for pre-commit hooks
 
-See STYLE_GUIDE.md for detailed coding standards.
+See docs/STYLE_GUIDE.md for detailed coding standards.
 
 ## Deployment
 
@@ -446,7 +487,11 @@ DosKit is configured for automatic deployment to GitHub Pages with custom domain
 3. Monitor deployment: Check the Actions tab
 4. Visit your site: `https://doskit.net/`
 
-The site automatically rebuilds and deploys on every push to `main`.
+The site automatically rebuilds and deploys on every push to `main`, once the CI jobs (lint, format check, type check, tests and build) pass.
+
+### Releases
+
+release-please keeps a release pull request open from the conventional commits on `main`. Merging it bumps the version in package.json, adds the release to CHANGELOG.md and publishes a GitHub release, to which the release workflow attaches a ZIP of the build.
 
 ### Custom Domain Setup
 
@@ -456,12 +501,14 @@ The site automatically rebuilds and deploys on every push to `main`.
 
 ### Build Process
 
-The build process includes:
-1. Generate social media images from SVG sources
-2. TypeScript compilation
-3. Vite production build with code splitting
-4. Service worker version injection
-5. Asset optimization and minification
+The build process (`npm run build`) includes:
+1. Copying the js-dos runtime from node_modules into public/ (scripts/copy-js-dos.js, run as prebuild)
+2. TypeScript type checking of the app, the config files and the tests (`tsc -b`)
+3. Vite production build with code splitting (each application's config module is a chunk of its own, and so is React), asset optimization and minification
+4. 404.html, written as a copy of index.html, so that GitHub Pages boots the app for path-style deep links such as /secondreality
+5. Service worker version injection (scripts/inject-sw-version.js): a new cache version for every build, the js-dos version and a hash of the application archives, which name the caches deploys keep, and the list of bundles to precache. The build fails if the worker would precache a file that is not in dist/.
+
+The social media images are not part of the build: after editing their SVG sources, run `npm run generate-social-images` and commit the PNGs.
 
 ## Browser Compatibility
 
@@ -504,11 +551,11 @@ The build process includes:
 ### Common Issues
 
 #### "DOS emulator library not loaded"
+- js-dos.js comes from DosKit's own site (/js-dos.js), not a CDN: check the browser console and network panel for that request
 - Check internet connection
-- Verify CDN is accessible
-- Check browser console for errors
 - Try refreshing the page
 - Clear browser cache
+- In a local checkout, `npm run dev` and `npm run build` copy js-dos into public/ first; if that step reports that js-dos is not installed, run `npm ci`
 
 #### Black Screen / Emulator Not Starting
 - Check browser console for errors
@@ -543,8 +590,10 @@ The build process includes:
 Enable detailed logging in development:
 ```typescript
 import { logger } from './utils/logger';
-logger.debug('Debug message');
+logger.debug('MyComponent', 'Debug message');
 ```
+
+The logger prints every level, with timestamps, in development; production builds keep warnings and errors.
 
 ## Contributing
 
@@ -593,9 +642,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Version History
 
-See CHANGELOG.md for detailed version history.
-
-Current version: 1.0.0
+See CHANGELOG.md for detailed version history, and https://github.com/cameronrye/doskit/releases for the releases.
 
 ## Security
 
@@ -603,9 +650,9 @@ For security issues, please see SECURITY.md or contact cameron@rye.dev
 
 ## Keywords
 
-DOS, emulator, DOSBox, WebAssembly, WASM, js-dos, retro gaming, cross-platform, React, TypeScript, Vite, PWA, Progressive Web App, browser emulation, vintage computing, DOS games, DOS applications
+DOS, emulator, DOSBox, WebAssembly, WASM, js-dos, demoscene, music trackers, cross-platform, React, TypeScript, Vite, PWA, Progressive Web App, browser emulation, vintage computing, DOS demos, DOS applications
 
 ---
 
-Last updated: 2025-11-18
+Last updated: 2026-11-07
 
