@@ -238,4 +238,16 @@ describe('cache trimming', () => {
     const { response } = await worker.dispatch('fetch', { request: navigation('/secondreality') });
     expect(await response?.text()).toBe('/index.html from deploy A');
   });
+
+  it('evicts the least recently used entries, not the ones it just cached', async () => {
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+
+    const visited = await overflowCache(worker);
+
+    const appCache = browser.contents()['doskit-vA'];
+    expect(appCache).toHaveLength(worker.config().MAX_CACHE_SIZE);
+    expect(appCache).toEqual(expect.arrayContaining(visited.slice(-10)));
+    expect(appCache).not.toContain(visited[0]);
+  });
 });

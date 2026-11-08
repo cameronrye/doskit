@@ -227,13 +227,16 @@ async function trimCache(cacheName) {
       // Get metadata with timestamps
       const metadata = await getCacheMetadata();
 
-      // Runtime entries with their timestamps; what install precached is never trimmed
+      // Runtime entries with their timestamps; what install precached is never trimmed.
+      // A runtime entry without one was just cached: its timestamp write is still pending
+      // (or lost to a concurrent one), so it must not count as the oldest.
+      const now = Date.now();
       const entries = keys
         .filter((request) => !PRECACHED_URLS.has(request.url))
         .map((request) => ({
           request,
           url: request.url,
-          timestamp: metadata[request.url] || 0,
+          timestamp: metadata[request.url] ?? now,
         }));
 
       // Sort by timestamp (oldest first)
