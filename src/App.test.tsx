@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { version as installedJsDosVersion } from 'js-dos/package.json';
 import App from './App';
 import type { DosApp } from './components/DosPlayerWithApps';
@@ -15,7 +15,16 @@ interface DosPlayerWithAppsProps {
   onAppChange?: (app: DosApp | null) => void;
   onSelectorVisibilityChange?: (visible: boolean) => void;
   showSelector?: boolean;
+  requestedApp?: DosApp | null;
 }
+
+const { requests, describeRequest } = vi.hoisted(() => ({
+  /** The requestedApp App gave DosPlayerWithApps on each commit, oldest first */
+  requests: [] as string[],
+  /** How a requestedApp prop shows up: the app's id, 'none' or 'not passed' */
+  describeRequest: (app: DosApp | null | undefined) =>
+    app === undefined ? 'not passed' : (app?.id ?? 'none'),
+}));
 
 interface OfflineIndicatorProps {
   onNetworkStatusChange?: (isOnline: boolean) => void;
@@ -44,35 +53,45 @@ const mockApp: DosApp = {
 };
 
 // Mock DosPlayerWithApps component
-vi.mock('./components/DosPlayerWithApps', () => ({
-  DosPlayerWithApps: ({
-    onReady,
-    onExit,
-    onAppChange,
-    onSelectorVisibilityChange,
-    showSelector,
-  }: DosPlayerWithAppsProps) => {
-    // Store callbacks in window for test access
-    (window as WindowWithTestCallbacks).__dosCallbacks = {
+vi.mock('./components/DosPlayerWithApps', async () => {
+  const { useEffect } = await import('react');
+  return {
+    DosPlayerWithApps: ({
       onReady,
       onExit,
       onAppChange,
       onSelectorVisibilityChange,
-    };
+      showSelector,
+      requestedApp,
+    }: DosPlayerWithAppsProps) => {
+      // Store callbacks in window for test access
+      (window as WindowWithTestCallbacks).__dosCallbacks = {
+        onReady,
+        onExit,
+        onAppChange,
+        onSelectorVisibilityChange,
+      };
 
-    return (
-      <div data-testid="dos-player-with-apps-mock">
-        <button onClick={onReady}>Trigger Ready</button>
-        <button onClick={onExit}>Trigger Exit</button>
-        <button onClick={() => onAppChange?.(mockApp)}>Load App</button>
-        <button onClick={() => onAppChange?.(null)}>Clear App</button>
-        <button onClick={() => onSelectorVisibilityChange?.(true)}>Show Selector</button>
-        <button onClick={() => onSelectorVisibilityChange?.(false)}>Hide Selector</button>
-        <div data-testid="selector-state">{showSelector ? 'visible' : 'hidden'}</div>
-      </div>
-    );
-  },
-}));
+      const request = describeRequest(requestedApp);
+      useEffect(() => {
+        requests.push(request);
+      });
+
+      return (
+        <div data-testid="dos-player-with-apps-mock">
+          <button onClick={onReady}>Trigger Ready</button>
+          <button onClick={onExit}>Trigger Exit</button>
+          <button onClick={() => onAppChange?.(mockApp)}>Load App</button>
+          <button onClick={() => onAppChange?.(null)}>Clear App</button>
+          <button onClick={() => onSelectorVisibilityChange?.(true)}>Show Selector</button>
+          <button onClick={() => onSelectorVisibilityChange?.(false)}>Hide Selector</button>
+          <div data-testid="selector-state">{showSelector ? 'visible' : 'hidden'}</div>
+          <div data-testid="requested-app">{request}</div>
+        </div>
+      );
+    },
+  };
+});
 
 // Mock OfflineIndicator component
 vi.mock('./components/OfflineIndicator', () => ({
@@ -89,12 +108,66 @@ vi.mock('./components/OfflineIndicator', () => ({
   },
 }));
 
+/** Go back or forward in jsdom's history and wait until App has handled the popstate */
+async function traverse(direction: 'back' | 'forward') {
+  await act(async () => {
+    const popped = new Promise((resolve) =>
+      window.addEventListener('popstate', resolve, { once: true })
+    );
+    window.history[direction]();
+    await popped;
+  });
+}
+
 describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Clear window callbacks
     delete (window as WindowWithTestCallbacks).__dosCallbacks;
     delete (window as WindowWithTestCallbacks).__networkCallback;
+    // jsdom keeps one URL and history for the whole file
+    window.history.replaceState({}, '', '/');
+    requests.length = 0;
+  });
+
+  describe('URL routing', () => {
+    it('requests the app a deep link names from the first render', () => {
+      window.history.replaceState({}, '', '/?app=stars');
+
+      render(<App />);
+
+      expect(requests[0]).toBe('stars');
+      expect(screen.getByTestId('requested-app')).toHaveTextContent('stars');
+      expect(screen.getByText('Starfield Effect')).toBeInTheDocument();
+      expect(screen.getByTestId('selector-state')).toHaveTextContent('hidden');
+      expect(document.title).toBe('Starfield Effect - DosKit');
+    });
+
+    it('requests no app and opens the selector after going back to the start page', async () => {
+      window.history.pushState({}, '', '/?app=stars');
+      render(<App />);
+
+      await traverse('back');
+
+      expect(screen.getByTestId('requested-app')).toHaveTextContent('none');
+      expect(screen.getByTestId('selector-state')).toHaveTextContent('visible');
+      expect(screen.queryByText('Starfield Effect')).not.toBeInTheDocument();
+      expect(document.title).toBe('DosKit - Cross-Platform DOS Emulator');
+    });
+
+    it('requests the app that going forward lands on', async () => {
+      window.history.pushState({}, '', '/?app=3drotate');
+      window.history.back();
+      await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
+      render(<App />);
+
+      await traverse('forward');
+
+      expect(screen.getByTestId('requested-app')).toHaveTextContent('3drotate');
+      expect(screen.getByTestId('selector-state')).toHaveTextContent('hidden');
+      expect(screen.getByText('3D Rotation Demo')).toBeInTheDocument();
+      expect(document.title).toBe('3D Rotation Demo - DosKit');
+    });
   });
 
   describe('Rendering', () => {

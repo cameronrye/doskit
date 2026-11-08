@@ -2,10 +2,11 @@
  * Tests for DosPlayerWithApps component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act, render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { DosPlayerWithApps } from './DosPlayerWithApps';
 import type { DosApp } from '../types/dos-app';
+import type { DosOptions } from '../types/js-dos';
 import type { LoadedApp } from './DemoSelector';
 
 // Type definitions for test mocks
@@ -43,23 +44,41 @@ const mockAppWithError: DosApp = {
   loader: vi.fn().mockRejectedValue(new Error('Failed to load')),
 };
 
+/**
+ * Every emulator start, in order: the DOSBox config an app ran with, or 'default' for
+ * the DOS prompt (no files)
+ */
+const boots = vi.hoisted(() => [] as string[]);
+
 // Mock DosPlayer component
-vi.mock('./DosPlayer', () => ({
-  DosPlayer: ({
-    onReady,
-    onExit,
-    dosboxConf,
-  }: {
-    onReady?: () => void;
-    onExit?: () => void;
-    dosboxConf?: string;
-  }) => (
-    <div data-testid="dos-player-mock" data-dosbox-conf={dosboxConf ?? 'default'}>
-      <button onClick={onReady}>Trigger Ready</button>
-      <button onClick={onExit}>Trigger Exit</button>
-    </div>
-  ),
-}));
+vi.mock('./DosPlayer', async () => {
+  const { useEffect, useState } = await import('react');
+  return {
+    DosPlayer: ({
+      onReady,
+      onExit,
+      dosboxConf,
+      options,
+    }: {
+      onReady?: () => void;
+      onExit?: () => void;
+      dosboxConf?: string;
+      options?: Partial<DosOptions>;
+    }) => {
+      // Like useDosEmulator, which starts js-dos once per mount
+      const [boot] = useState(options?.initFs ? (dosboxConf ?? 'no config') : 'default');
+      useEffect(() => {
+        boots.push(boot);
+      }, [boot]);
+      return (
+        <div data-testid="dos-player-mock" data-dosbox-conf={dosboxConf ?? 'default'}>
+          <button onClick={onReady}>Trigger Ready</button>
+          <button onClick={onExit}>Trigger Exit</button>
+        </div>
+      );
+    },
+  };
+});
 
 // Mock DemoSelector component
 vi.mock('./DemoSelector', () => ({
@@ -73,12 +92,45 @@ vi.mock('./DemoSelector', () => ({
   ),
 }));
 
+/** An app whose download finishes or fails when the test says so */
+function deferredApp(id: string) {
+  let finish: (files: Uint8Array) => void = () => {};
+  let fail: (error: unknown) => void = () => {};
+  const loader = vi.fn<DosApp['loader']>(
+    () =>
+      new Promise<Uint8Array>((resolve, reject) => {
+        finish = resolve;
+        fail = reject;
+      })
+  );
+  const app: DosApp = { ...mockApp, id, name: id, dosboxConf: `conf:${id}`, loader };
+  // Let the component's promise callbacks and the renders they cause run
+  const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+  return {
+    app,
+    loader,
+    finish: async () => {
+      finish(new Uint8Array([1]));
+      await settle();
+    },
+    fail: async (error: unknown) => {
+      fail(error);
+      await settle();
+    },
+  };
+}
+
 describe('DosPlayerWithApps', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    boots.length = 0;
     // Store mock app and loaded app in window for the mock selector to use
     (window as WindowWithMockApp).__mockApp = mockApp;
     (window as WindowWithMockApp).__mockLoadedApp = mockLoadedApp;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('Rendering', () => {
@@ -315,86 +367,36 @@ describe('DosPlayerWithApps', () => {
       });
     });
 
-    it('should show loading overlay while loading app', async () => {
-      const slowLoader = vi.fn().mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  files: [{ path: '/test.exe', content: new Uint8Array([1, 2, 3]) }],
-                  dosboxConf: '',
-                }),
-              100
-            )
-          )
-      );
-      const slowApp = { ...mockApp, loader: slowLoader };
-
-      render(<DosPlayerWithApps showSelector={false} />);
-
-      // Dispatch load-app-from-url event to trigger the loader
-      const event = new CustomEvent('load-app-from-url', {
-        detail: { app: slowApp },
-      });
-      window.dispatchEvent(event);
-
-      await waitFor(() => {
-        expect(screen.getByText('Loading application...')).toBeInTheDocument();
-      });
-    });
-
     it('should handle app loading errors', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      render(<DosPlayerWithApps showSelector={false} />);
-
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent('load-app-from-url', {
-        detail: { app: mockAppWithError },
-      });
-      window.dispatchEvent(event);
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
 
       await waitFor(() => {
         expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
         expect(screen.getByText('Failed to load')).toBeInTheDocument();
       });
-
-      consoleError.mockRestore();
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
     });
 
     it('should handle non-Error exceptions during loading', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'error').mockImplementation(() => {});
       const appWithStringError: DosApp = {
         ...mockApp,
         loader: vi.fn().mockRejectedValue('String error'),
       };
 
-      render(<DosPlayerWithApps showSelector={false} />);
-
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent('load-app-from-url', {
-        detail: { app: appWithStringError },
-      });
-      window.dispatchEvent(event);
+      render(<DosPlayerWithApps requestedApp={appWithStringError} />);
 
       await waitFor(() => {
         expect(screen.getByText('Failed to load application')).toBeInTheDocument();
       });
-
-      consoleError.mockRestore();
     });
 
     it('should show Try Again button on error', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      render(<DosPlayerWithApps showSelector={false} />);
-
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent('load-app-from-url', {
-        detail: { app: mockAppWithError },
-      });
-      window.dispatchEvent(event);
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Try Again/i })).toBeInTheDocument();
@@ -404,13 +406,7 @@ describe('DosPlayerWithApps', () => {
     it('should reset state when Try Again is clicked', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      render(<DosPlayerWithApps showSelector={false} />);
-
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent('load-app-from-url', {
-        detail: { app: mockAppWithError },
-      });
-      window.dispatchEvent(event);
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
 
       await waitFor(() => {
         expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
@@ -423,12 +419,13 @@ describe('DosPlayerWithApps', () => {
         expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
         expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
       });
+      expect(boots).toEqual(['default']);
     });
 
     it("should boot the default DOS config after Try Again, not the previous app's", async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      render(<DosPlayerWithApps showSelector={true} />);
+      const { rerender } = render(<DosPlayerWithApps showSelector={true} />);
 
       // Run an app with its own DOSBox config
       fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
@@ -438,11 +435,7 @@ describe('DosPlayerWithApps', () => {
       );
 
       // A later load fails and the user resets
-      window.dispatchEvent(
-        new CustomEvent('load-app-from-url', {
-          detail: { app: mockAppWithError },
-        })
-      );
+      rerender(<DosPlayerWithApps showSelector={true} requestedApp={mockAppWithError} />);
       fireEvent.click(await screen.findByRole('button', { name: /Try Again/i }));
 
       expect(screen.getByTestId('dos-player-mock')).toHaveAttribute('data-dosbox-conf', 'default');
@@ -452,13 +445,7 @@ describe('DosPlayerWithApps', () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       const onAppChange = vi.fn();
 
-      render(<DosPlayerWithApps showSelector={false} onAppChange={onAppChange} />);
-
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent('load-app-from-url', {
-        detail: { app: mockAppWithError },
-      });
-      window.dispatchEvent(event);
+      render(<DosPlayerWithApps requestedApp={mockAppWithError} onAppChange={onAppChange} />);
 
       await waitFor(() => {
         expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
@@ -480,16 +467,10 @@ describe('DosPlayerWithApps', () => {
 
       render(
         <DosPlayerWithApps
-          showSelector={false}
+          requestedApp={mockAppWithError}
           onSelectorVisibilityChange={onSelectorVisibilityChange}
         />
       );
-
-      // Dispatch load-app-from-url event to trigger the error path
-      const event = new CustomEvent('load-app-from-url', {
-        detail: { app: mockAppWithError },
-      });
-      window.dispatchEvent(event);
 
       await waitFor(() => {
         expect(screen.getByText('Error Loading Application')).toBeInTheDocument();
@@ -503,6 +484,94 @@ describe('DosPlayerWithApps', () => {
       await waitFor(() => {
         expect(onSelectorVisibilityChange).toHaveBeenCalledWith(true);
       });
+    });
+  });
+
+  describe('Requested apps', () => {
+    it('runs a requested app without booting the default prompt first', async () => {
+      const stars = deferredApp('stars');
+      render(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+      expect(boots).toEqual([]);
+
+      await stars.finish();
+
+      expect(boots).toEqual(['conf:stars']);
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+    });
+
+    it('reports the requested app once it runs', async () => {
+      const stars = deferredApp('stars');
+      const onAppChange = vi.fn();
+      render(<DosPlayerWithApps requestedApp={stars.app} onAppChange={onAppChange} />);
+
+      expect(onAppChange).not.toHaveBeenCalled();
+
+      await stars.finish();
+
+      expect(onAppChange).toHaveBeenCalledExactlyOnceWith(stars.app);
+    });
+
+    it('switches to a newly requested app once it has loaded', async () => {
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={null} />);
+
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+      expect(screen.getByText('Loading application...')).toBeInTheDocument();
+      await stars.finish();
+
+      expect(boots).toEqual(['default', 'conf:stars']);
+    });
+
+    it('does not reload an app picked in the selector when it is requested next', () => {
+      // App mirrors the pick into requestedApp once the selector reports it
+      const { rerender } = render(<DosPlayerWithApps showSelector={true} requestedApp={null} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      rerender(<DosPlayerWithApps showSelector={true} requestedApp={mockApp} />);
+
+      expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
+      expect(mockApp.loader).not.toHaveBeenCalled();
+      expect(boots).toEqual(['default', '[cpu]\ncore=auto']);
+    });
+
+    it('leaves the selector open when a requested app finishes loading behind it', async () => {
+      const stars = deferredApp('stars');
+      const onSelectorVisibilityChange = vi.fn();
+      const { rerender } = render(
+        <DosPlayerWithApps
+          requestedApp={stars.app}
+          showSelector={false}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+
+      // The user opens the selector while the deep link is still loading
+      rerender(
+        <DosPlayerWithApps
+          requestedApp={stars.app}
+          showSelector={true}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+      await stars.finish();
+
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+      expect(onSelectorVisibilityChange).not.toHaveBeenCalledWith(false);
+    });
+
+    it('clears an earlier load error when another app is requested', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const stars = deferredApp('stars');
+      const { rerender } = render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
+      expect(await screen.findByText('Error Loading Application')).toBeInTheDocument();
+
+      rerender(<DosPlayerWithApps requestedApp={stars.app} />);
+
+      expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+      await stars.finish();
+      expect(boots).toEqual(['conf:stars']);
     });
   });
 

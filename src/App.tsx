@@ -107,18 +107,8 @@ function App() {
       const app = findAppById(appIdFromUrl);
 
       if (app) {
-        // Valid app ID in URL - state already initialized, just update title and trigger load
+        // Valid app ID in URL: DosPlayerWithApps already loads it as currentApp
         updateDocumentTitle(app.name);
-
-        // Trigger app loading by simulating selection
-        // The app will be loaded by DosPlayerWithApps when it receives the app change
-        setTimeout(() => {
-          // This ensures the component is mounted before we try to load
-          const event = new CustomEvent('load-app-from-url', {
-            detail: { app },
-          });
-          window.dispatchEvent(event);
-        }, 100);
       } else {
         // Invalid app ID in URL - error already set in state initializer
         if (import.meta.env.DEV) {
@@ -148,15 +138,10 @@ function App() {
         const app = findAppById(appIdFromUrl);
 
         if (app) {
+          // DosPlayerWithApps loads it as the requested app
           setCurrentApp(app);
           setShowAppSelector(false);
           updateDocumentTitle(app.name);
-
-          // Trigger app loading
-          const event = new CustomEvent('load-app-from-url', {
-            detail: { app },
-          });
-          window.dispatchEvent(event);
         } else {
           setUrlError(`Application "${appIdFromUrl}" not found.`);
           setShowAppSelector(true);
@@ -232,6 +217,7 @@ function App() {
           <DosPlayerWithApps
             onReady={handleDosReady}
             onExit={handleDosExit}
+            requestedApp={currentApp}
             showSelector={showAppSelector}
             onAppChange={handleAppChange}
             onSelectorVisibilityChange={handleSelectorVisibilityChange}

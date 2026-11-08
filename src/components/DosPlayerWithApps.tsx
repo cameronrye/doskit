@@ -7,11 +7,11 @@
  * Enhanced DosPlayer that supports loading different DOS applications
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useEffectEvent } from 'react';
 import { DosPlayer } from './DosPlayer';
 import { DemoSelector, type LoadedApp } from './DemoSelector';
 import type { DosApp } from '../types/dos-app';
-import type { DosOptions, CommandInterface } from '../types/js-dos';
+import type { CommandInterface } from '../types/js-dos';
 import type { InitFileEntry } from '../types/js-dos';
 import './DosPlayerWithApps.css';
 
@@ -23,36 +23,92 @@ interface DosPlayerWithAppsProps {
   onExit?: () => void;
   className?: string;
   showSelector?: boolean;
+  /**
+   * App to run, such as the one a URL names. Each new value loads that app unless it is
+   * already running. Apps picked in the selector run without it.
+   */
+  requestedApp?: DosApp | null;
+  /** Called when an app starts running (picked or requested), and with null after a reset */
   onAppChange?: (app: DosApp | null) => void;
   onSelectorVisibilityChange?: (visible: boolean) => void;
 }
+
+/** What the emulator runs: an app with its files, or the default DOS prompt */
+interface Session {
+  app: DosApp | null;
+  files?: InitFileEntry[] | Uint8Array;
+  dosboxConf?: string;
+}
+
+const DEFAULT_PROMPT: Session = { app: null };
 
 export function DosPlayerWithApps({
   onReady,
   onExit,
   className,
   showSelector = false,
+  requestedApp = null,
   onAppChange,
   onSelectorVisibilityChange,
 }: DosPlayerWithAppsProps) {
-  const [selectedApp, setSelectedApp] = useState<DosApp | null>(null);
-  const [appFiles, setAppFiles] = useState<InitFileEntry[] | Uint8Array | null>(null);
-  const [isLoadingApp, setIsLoadingApp] = useState(false);
-  const [dosboxConf, setDosboxConf] = useState<string | undefined>(undefined);
+  // Nothing runs until a requested app has loaded, so a deep link never boots the
+  // default prompt first
+  const [session, setSession] = useState<Session | null>(requestedApp ? null : DEFAULT_PROMPT);
+  const [loadingApp, setLoadingApp] = useState<DosApp | null>(requestedApp);
+  const [requestedId, setRequestedId] = useState(requestedApp?.id ?? null);
   const [showAppSelector, setShowAppSelector] = useState(showSelector);
   const [error, setError] = useState<string | null>(null);
+
+  // A new request. Adjusting state while rendering instead of in an effect:
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  if ((requestedApp?.id ?? null) !== requestedId) {
+    setRequestedId(requestedApp?.id ?? null);
+    setError(null);
+    if (requestedApp && requestedApp.id !== session?.app?.id) {
+      setLoadingApp(requestedApp);
+    }
+  }
 
   // Sync showSelector prop with local state
   useEffect(() => {
     setShowAppSelector(showSelector);
   }, [showSelector]);
 
+  const runLoadedApp = useEffectEvent((app: DosApp, files: Session['files'], conf: string) => {
+    setSession({ app, files, dosboxConf: conf });
+    setLoadingApp(null);
+    onAppChange?.(app);
+  });
+
+  const showLoadError = useEffectEvent((err: unknown) => {
+    console.error('[DosPlayerWithApps] Error loading application:', err);
+    setError(err instanceof Error ? err.message : 'Failed to load application');
+    setLoadingApp(null);
+  });
+
+  // Load the requested app's files and DOSBox config
+  useEffect(() => {
+    if (!loadingApp) return;
+
+    if (import.meta.env.DEV) {
+      console.log('[DosPlayerWithApps] Loading requested app:', loadingApp.name);
+    }
+
+    Promise.all([
+      loadingApp.loader(),
+      loadingApp.loadDosboxConf
+        ? loadingApp.loadDosboxConf()
+        : Promise.resolve(loadingApp.dosboxConf),
+    ]).then(
+      ([files, conf]) => runLoadedApp(loadingApp, files, conf),
+      (err: unknown) => showLoadError(err)
+    );
+  }, [loadingApp]);
+
   const handleSelectApp = useCallback(
     (loadedApp: LoadedApp) => {
       // Files are already loaded by DemoSelector, just set the state
-      setAppFiles(loadedApp.files);
-      setDosboxConf(loadedApp.dosboxConf);
-      setSelectedApp(loadedApp.app);
+      setSession({ app: loadedApp.app, files: loadedApp.files, dosboxConf: loadedApp.dosboxConf });
       setShowAppSelector(false);
       onAppChange?.(loadedApp.app);
       onSelectorVisibilityChange?.(false);
@@ -60,74 +116,18 @@ export function DosPlayerWithApps({
     [onAppChange, onSelectorVisibilityChange]
   );
 
-  // Handle loading app from URL (needs to load files first)
-  const handleLoadAppFromUrl = useCallback(
-    async (app: DosApp) => {
-      setIsLoadingApp(true);
-      setError(null);
-
-      try {
-        if (import.meta.env.DEV) {
-          console.log('[DosPlayerWithApps] Loading app from URL:', app.name);
-        }
-
-        // Load the application files and dosbox config in parallel
-        const [files, conf] = await Promise.all([
-          app.loader(),
-          app.loadDosboxConf ? app.loadDosboxConf() : Promise.resolve(app.dosboxConf),
-        ]);
-
-        // Use the same handler as DemoSelector
-        handleSelectApp({
-          app,
-          files,
-          dosboxConf: conf,
-        });
-      } catch (err) {
-        console.error('[DosPlayerWithApps] Error loading application from URL:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load application');
-      } finally {
-        setIsLoadingApp(false);
-      }
-    },
-    [handleSelectApp]
-  );
-
-  // Listen for URL-based app loading events
-  useEffect(() => {
-    const handleUrlEvent = (event: Event) => {
-      const customEvent = event as CustomEvent<{ app: DosApp }>;
-      handleLoadAppFromUrl(customEvent.detail.app);
-    };
-
-    window.addEventListener('load-app-from-url', handleUrlEvent);
-
-    return () => {
-      window.removeEventListener('load-app-from-url', handleUrlEvent);
-    };
-  }, [handleLoadAppFromUrl]);
-
   const handleCancelSelector = useCallback(() => {
     setShowAppSelector(false);
     onSelectorVisibilityChange?.(false);
   }, [onSelectorVisibilityChange]);
 
   const handleReset = useCallback(() => {
-    setSelectedApp(null);
-    setAppFiles(null);
-    setDosboxConf(undefined);
+    setSession(DEFAULT_PROMPT);
     setError(null);
     setShowAppSelector(true);
     onAppChange?.(null);
     onSelectorVisibilityChange?.(true);
   }, [onAppChange, onSelectorVisibilityChange]);
-
-  // Build DosPlayer options
-  const dosOptions: Partial<DosOptions> = selectedApp
-    ? {
-        initFs: appFiles || undefined,
-      }
-    : {};
 
   return (
     <div className={`dos-player-with-apps ${className || ''}`}>
@@ -140,7 +140,7 @@ export function DosPlayerWithApps({
       )}
 
       {/* Loading State */}
-      {isLoadingApp && (
+      {loadingApp && (
         <div className="loading-overlay">
           <div className="loading-spinner" />
           <p>Loading application...</p>
@@ -159,14 +159,16 @@ export function DosPlayerWithApps({
       )}
 
       {/* DOS Player */}
-      <DosPlayer
-        key={selectedApp?.id || 'default'} // Force remount when app changes
-        dosboxConf={dosboxConf}
-        options={dosOptions}
-        onReady={onReady}
-        onExit={onExit}
-        className="dos-player-instance"
-      />
+      {session && (
+        <DosPlayer
+          key={session.app?.id ?? 'default'} // Force remount when app changes
+          dosboxConf={session.dosboxConf}
+          options={session.app ? { initFs: session.files } : {}}
+          onReady={onReady}
+          onExit={onExit}
+          className="dos-player-instance"
+        />
+      )}
     </div>
   );
 }
