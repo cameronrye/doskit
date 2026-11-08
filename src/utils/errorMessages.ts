@@ -7,8 +7,8 @@
  * Maps technical errors to user-friendly messages
  */
 
-export interface ErrorMapping {
-  pattern: RegExp | string;
+interface ErrorMapping {
+  pattern: RegExp;
   message: string;
   suggestion?: string;
 }
@@ -133,10 +133,7 @@ export function getUserFriendlyError(error: unknown): {
 
   // Try to match against known patterns
   for (const mapping of ERROR_MAPPINGS) {
-    const pattern =
-      mapping.pattern instanceof RegExp ? mapping.pattern : new RegExp(mapping.pattern, 'i');
-
-    if (pattern.test(errorMessage)) {
+    if (mapping.pattern.test(errorMessage)) {
       return {
         message: mapping.message,
         suggestion: mapping.suggestion,

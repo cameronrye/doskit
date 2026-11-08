@@ -88,23 +88,6 @@ describe('errorTracking', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should capture message', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      const tracker = getErrorTracker();
-      const message = 'Test message';
-      const context: ErrorContext = { userAction: 'test' };
-
-      tracker.captureMessage(message, context, ErrorSeverity.INFO);
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[ErrorTracking]',
-        ErrorSeverity.INFO,
-        message,
-        context
-      );
-      consoleSpy.mockRestore();
-    });
-
     it('should capture React error', () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const tracker = getErrorTracker();
@@ -119,17 +102,6 @@ describe('errorTracking', () => {
         errorInfo,
         undefined
       );
-      consoleSpy.mockRestore();
-    });
-
-    it('should set user', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      const tracker = getErrorTracker();
-      const user = { id: '123', email: 'test@example.com' };
-
-      tracker.setUser(user);
-
-      expect(consoleSpy).toHaveBeenCalledWith('[ErrorTracking] User set:', user);
       consoleSpy.mockRestore();
     });
 

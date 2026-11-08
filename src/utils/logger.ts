@@ -7,67 +7,35 @@
  * Provides consistent logging across the application with environment-aware behavior
  */
 
-export const LogLevel = {
+const LogLevel = {
   DEBUG: 0,
   INFO: 1,
   WARN: 2,
   ERROR: 3,
-  NONE: 4,
 } as const;
 
-export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
+type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
 
 /**
- * Configuration options for the Logger
+ * Configuration of the Logger
  */
-export interface LoggerConfig {
+interface LoggerConfig {
   level: LogLevel;
   enableTimestamps: boolean;
-  enableColors: boolean;
-  prefix?: string;
 }
 
 /**
- * Logger class for centralized logging with environment-aware behavior
+ * Logger class for centralized logging with environment-aware behavior: every level,
+ * with timestamps, in development; warnings and errors in production
  */
 export class Logger {
-  private config: LoggerConfig;
-
-  constructor(config: Partial<LoggerConfig> = {}) {
-    this.config = {
-      level: import.meta.env.DEV ? LogLevel.DEBUG : LogLevel.WARN,
-      enableTimestamps: import.meta.env.DEV,
-      enableColors: true,
-      ...config,
-    };
-  }
+  private readonly config: LoggerConfig = {
+    level: import.meta.env.DEV ? LogLevel.DEBUG : LogLevel.WARN,
+    enableTimestamps: import.meta.env.DEV,
+  };
 
   /**
-   * Update logger configuration
-   * @param config - Partial configuration object to merge with current config
-   */
-  configure(config: Partial<LoggerConfig>): void {
-    this.config = { ...this.config, ...config };
-  }
-
-  /**
-   * Get current log level
-   * @returns The current log level
-   */
-  getLevel(): LogLevel {
-    return this.config.level;
-  }
-
-  /**
-   * Set log level
-   * @param level - The log level to set (DEBUG, INFO, WARN, ERROR, NONE)
-   */
-  setLevel(level: LogLevel): void {
-    this.config.level = level;
-  }
-
-  /**
-   * Format log message with optional timestamp and prefix
+   * Format log message with optional timestamp
    * @param level - The log level string (DEBUG, INFO, WARN, ERROR)
    * @param context - The context/module name
    * @param message - The log message
@@ -80,10 +48,6 @@ export class Logger {
     if (this.config.enableTimestamps) {
       const timestamp = new Date().toISOString();
       parts.push(`[${timestamp}]`);
-    }
-
-    if (this.config.prefix) {
-      parts.push(`[${this.config.prefix}]`);
     }
 
     parts.push(`[${level}]`);
@@ -151,6 +115,3 @@ export class Logger {
  * Use this for general logging throughout the application
  */
 export const logger = new Logger();
-
-// Export default logger
-export default logger;

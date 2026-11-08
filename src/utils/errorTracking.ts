@@ -51,12 +51,8 @@ export interface ErrorTrackingService {
   isInitialized(): boolean;
   /** Capture an error */
   captureError(error: Error, context?: ErrorContext, severity?: ErrorSeverity): void;
-  /** Capture a message */
-  captureMessage(message: string, context?: ErrorContext, severity?: ErrorSeverity): void;
   /** Capture a React error boundary error */
   captureReactError(error: Error, errorInfo: ErrorInfo, context?: ErrorContext): void;
-  /** Set user context */
-  setUser(user: { id?: string; email?: string; username?: string }): void;
   /** Add breadcrumb (user action trail) */
   addBreadcrumb(message: string, category?: string, data?: Record<string, unknown>): void;
 }
@@ -80,16 +76,8 @@ class ConsoleErrorTracker implements ErrorTrackingService {
     console.error('[ErrorTracking]', severity, error, context);
   }
 
-  captureMessage(message: string, context?: ErrorContext, severity = ErrorSeverity.INFO): void {
-    console.log('[ErrorTracking]', severity, message, context);
-  }
-
   captureReactError(error: Error, errorInfo: ErrorInfo, context?: ErrorContext): void {
     console.error('[ErrorTracking] React Error:', error, errorInfo, context);
-  }
-
-  setUser(user: { id?: string; email?: string; username?: string }): void {
-    console.log('[ErrorTracking] User set:', user);
   }
 
   addBreadcrumb(message: string, category?: string, data?: Record<string, unknown>): void {
