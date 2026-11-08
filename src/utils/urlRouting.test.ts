@@ -121,6 +121,16 @@ describe('urlRouting', () => {
       expect(window.history.length).toBe(lengthBefore);
     });
 
+    // /stars?app= names no app by its ?app=, but its path would run Starfield on a reload
+    it('drops a path-style app with the parameter when clearing the app', () => {
+      window.history.replaceState({}, '', '/stars?app=');
+
+      updateUrlWithApp(null, true);
+
+      expect(window.location.pathname).toBe('/');
+      expect(window.location.search).toBe('');
+    });
+
     it('does not push a duplicate entry when clearing an already-empty app param', () => {
       const lengthBefore = window.history.length;
 

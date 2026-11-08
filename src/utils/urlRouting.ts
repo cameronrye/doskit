@@ -109,11 +109,12 @@ export function getUrlFriendlyId(appId: string): string {
  */
 export function updateUrlWithApp(appId: string | null, replace: boolean = false): void {
   const url = new URL(window.location.href);
+  // The start page's path either way: a path-style link (/stars) names an app too, and
+  // would run it on a reload
+  url.pathname = '/';
 
   if (appId) {
-    const urlFriendlyId = getUrlFriendlyId(appId);
-    url.pathname = '/';
-    url.searchParams.set('app', urlFriendlyId);
+    url.searchParams.set('app', getUrlFriendlyId(appId));
   } else {
     url.searchParams.delete('app');
   }
