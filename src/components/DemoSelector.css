@@ -100,10 +100,34 @@
 
 /* Each disk is an option of the list. A double-click loads it rather than selecting text. */
 .floppy-wrapper {
-  border-radius: 8px;
+  padding: 6px;
+  border-radius: 10px;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
+}
+
+/*
+ * The selected disk, marked on the option around it: retro-floppy's own ring is clipped by
+ * the disk's cut corner, and forced colors drop it
+ */
+.floppy-wrapper[aria-selected='true'] {
+  background: rgba(77, 171, 247, 0.12);
+  box-shadow: inset 0 0 0 3px #4dabf7;
+}
+
+/* Keyboard focus, outside the selection's ring */
+.floppy-wrapper:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+/* Forced colors drop shadows: the selection gets an outline in the system's Highlight */
+@media (forced-colors: active) {
+  .floppy-wrapper[aria-selected='true'] {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
 }
 
 /*
