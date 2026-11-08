@@ -217,7 +217,7 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 ### 4. Type Safety
 
 - **Strict TypeScript**: All strict compiler options enabled, plus `noUncheckedIndexedAccess` and `noImplicitReturns`; `tsc -b` checks the tests with the same options
-- **Type definitions**: Custom types for js-dos API
+- **Type definitions**: Custom types for js-dos API, which `src/types/js-dos.test.ts` holds to the option and player-member names js-dos has
 - **Input validation**: Sanitization to prevent XSS
 - **Global declarations**: Proper Window interface for js-dos
 
@@ -334,7 +334,7 @@ DosKit serves js-dos from its own origin. The npm package is copied into `public
 - `public/js-dos.js` - Main js-dos library
 - `public/js-dos.css` - js-dos styles
 - `public/emulators/` - The backends' JavaScript and WASM files
-- `src/types/js-dos.d.ts` - TypeScript declarations, written by hand
+- `src/types/js-dos.d.ts` - TypeScript declarations, written by hand and checked by `src/types/js-dos.test.ts`, which `tsc -b` type-checks
 
 The copy leaves source maps, debug symbols and type declarations behind, skips files that are already up to date, and removes emulator files the installed js-dos no longer ships. Only `src/types/js-dos.d.ts` is committed.
 
@@ -343,8 +343,8 @@ The copy leaves source maps, debug symbols and type declarations behind, skips f
 1. Read the new version's notes in [js-dos releases](https://github.com/caiiiycuk/js-dos/releases)
 2. Bump `js-dos` in `package.json` and run `npm install`
 3. Run `npm run build` (or `npm run dev`), which copies the new files into `public/`
-4. Update types in `src/types/js-dos.d.ts` if API changed
-5. Update the version where it is written by hand: `git grep` the old one (the README, `public/humans.txt`, `public/llm.txt`, `public/llm-full.txt`, the header of `src/types/js-dos.d.ts`)
+4. Check the API against the new `node_modules/js-dos/dist/js-dos.js`. Its source map, `js-dos.js.map` next to it, holds js-dos's own sources, among them `src/main.tsx`, which reads most of the options `Dos()` takes and builds the player it returns, and `src/window/soft-keyboard.tsx`, the on-screen keyboard. Two lists in DosKit's tests are kept by hand from those files: the option and player-member names in `src/types/js-dos.test.ts`, with which `tsc -b` fails for any other name `src/types/js-dos.d.ts` declares, and `JS_DOS_KEYS` in `src/config/jsdos.config.test.ts`, the key names the keyboard of `mobileJsDosConfig` may use. Update them, then the declarations and the keyboard layout to match.
+5. Update the version where it is written by hand: `git grep` the old one. It is in `public/llm.txt`, `public/llm-full.txt` and comments in `src/main.tsx`, `src/types/js-dos.d.ts`, `src/types/js-dos.test.ts` and `src/config/jsdos.config.test.ts`. The tests that use it only as sample data and `CHANGELOG.md` keep it. `docs/js-dos-llm-reference.md` is a copy of a third-party reference for that version: check its DosKit notes again.
 6. Test thoroughly before deploying
 
 The app itself follows the installed package: the footer's version (`VITE_JSDOS_VERSION`, set in `vite.config.ts`) and the name of the service worker's emulator cache (`JS_DOS_VERSION`, stamped by `scripts/inject-sw-version.js`) both read it, so installing the deploy's worker downloads the new emulator files once, and activating it deletes the old version's cache. If the new version renames or drops one of the default backend's files, update `EMULATOR_ASSETS` in `public/sw.js` (the build fails until it matches) and the `wdosbox.wasm` preload in `index.html` (which nothing checks).
