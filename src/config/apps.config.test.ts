@@ -29,7 +29,7 @@ const IGNORED_BY_DEFAULT_BACKEND = [
 // where they carry a date. public/demos/README.md records every source.
 const RELEASES: Record<string, { year: number }> = {
   'second-reality': { year: 1993 }, // README.1ST: "Released on the 7th of October 1993"
-  'impulse-tracker': { year: 1997 }, // 2.14 Patch 3, whose files are dated 21 December 1997
+  'impulse-tracker': { year: 1997 }, // 2.14 Patch 3: IT.EXE and its drivers date from 21 Dec 1997
   'starport-bbstro': { year: 1993 }, // README: "Copyright (C) 1993 Future Crew"
   'scream-tracker': { year: 1994 }, // 3.21, whose ST3.EXE is dated 25 December 1994
   unreal: { year: 1992 }, // README.NOW: "Copyright (C) 1992"; UNREAL.EXE is dated 8 August 1992
@@ -105,7 +105,7 @@ describe('availableApps', () => {
   );
 
   it.each(['3drotate', 'stars'])('should credit %s to Draeden of VLA, who wrote it', async (id) => {
-    // Its VLA.NFO says "Written By: Draeden"; Grumpy's source pack only collected it
+    // Its VLA.NFO names Draeden as the writer; Grumpy's source pack only collected it
     const app = findAppById(id);
 
     expect(app?.author).toBe('Draeden of VLA');
