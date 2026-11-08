@@ -34,15 +34,9 @@ const HARMLESS_ERROR_PATTERNS = [
 ];
 
 /**
- * console.error messages that are dropped, matched against the first argument. Narrower
- * than the list above, since console.error also reports failures the app has caught.
- */
-const HARMLESS_CONSOLE_PATTERNS = [/exitFullscreen/, /lock\(\) request could not be registered/];
-
-/**
  * Get the message of an error, or the text of any other value
- * @param value - Error, rejection reason or logged value; can be anything,
- *   including undefined (`reject()`)
+ * @param value - Error or rejection reason; can be anything, including undefined
+ *   (`reject()`)
  * @returns The text, or '' for a value that cannot be converted to a string
  */
 function errorText(value: unknown): string {
@@ -53,25 +47,6 @@ function errorText(value: unknown): string {
   } catch {
     return '';
   }
-}
-
-/**
- * Replace console.error with a version that drops harmless messages. Only the page's
- * console: the js-dos emulator runs in a Web Worker, which has a console of its own.
- * @returns A function that puts the original console.error back
- */
-function filterConsoleErrors(): () => void {
-  const consoleError = console.error;
-  console.error = (...args: unknown[]) => {
-    const message = errorText(args[0]);
-    if (HARMLESS_CONSOLE_PATTERNS.some((pattern) => pattern.test(message))) {
-      return;
-    }
-    consoleError.apply(console, args);
-  };
-  return () => {
-    console.error = consoleError;
-  };
 }
 
 /**
@@ -117,7 +92,6 @@ const DEFAULT_CONFIG: GlobalErrorHandlerConfig = {
 
 let isInitialized = false;
 let config = DEFAULT_CONFIG;
-let restoreConsoleError: (() => void) | null = null;
 
 /**
  * Handle uncaught errors
@@ -256,17 +230,12 @@ export function initializeGlobalErrorHandler(options: GlobalErrorHandlerConfig =
   // Register unhandled promise rejection handler
   window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
-  // Keep harmless messages out of console.error too
-  if (config.suppressHarmlessErrors) {
-    restoreConsoleError = filterConsoleErrors();
-  }
-
   isInitialized = true;
   logger.info('GlobalErrorHandler', 'Initialized');
 }
 
 /**
- * Cleanup global error handler, putting the original console.error back
+ * Cleanup global error handler
  */
 export function cleanupGlobalErrorHandler(): void {
   if (!isInitialized) {
@@ -275,8 +244,6 @@ export function cleanupGlobalErrorHandler(): void {
 
   window.removeEventListener('error', handleUncaughtError);
   window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-  restoreConsoleError?.();
-  restoreConsoleError = null;
 
   isInitialized = false;
   logger.info('GlobalErrorHandler', 'Cleaned up');

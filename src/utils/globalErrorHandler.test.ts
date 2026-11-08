@@ -2,7 +2,7 @@
  * Tests for globalErrorHandler utility
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   initializeGlobalErrorHandler,
   cleanupGlobalErrorHandler,
@@ -78,69 +78,15 @@ describe('globalErrorHandler', () => {
     });
   });
 
-  describe('console.error filter', () => {
-    const EXIT_FULLSCREEN = "Failed to execute 'exitFullscreen' on 'Document': Document not active";
+  // js-dos reports its harmless failures as unhandled rejections, which the listener
+  // suppresses. A console.error wrapper would only make DevTools attribute every logged
+  // error to the wrapper.
+  it('leaves console.error alone', () => {
+    const consoleError = console.error;
 
-    // Spied before each setup, so the filter forwards to the spy
-    let consoleError: MockInstance<typeof console.error>;
+    initializeGlobalErrorHandler({ suppressHarmlessErrors: true });
 
-    beforeEach(() => {
-      consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    });
-
-    afterEach(() => {
-      cleanupGlobalErrorHandler();
-      consoleError.mockRestore();
-    });
-
-    it('drops harmless fullscreen and keyboard lock messages', () => {
-      initializeGlobalErrorHandler();
-
-      console.error(EXIT_FULLSCREEN);
-      console.error(new TypeError(EXIT_FULLSCREEN));
-      console.error(new DOMException('lock() request could not be registered.', 'AbortError'));
-
-      expect(consoleError).not.toHaveBeenCalled();
-    });
-
-    it('passes every other message through with all its arguments', () => {
-      initializeGlobalErrorHandler();
-      const error = new Error('Emulator crashed');
-
-      console.error('[useDosEmulator] Failed to initialize emulator:', error);
-
-      expect(consoleError).toHaveBeenCalledTimes(1);
-      expect(consoleError).toHaveBeenCalledWith(
-        '[useDosEmulator] Failed to initialize emulator:',
-        error
-      );
-    });
-
-    it('hands console.error back on cleanup', () => {
-      initializeGlobalErrorHandler();
-      cleanupGlobalErrorHandler();
-
-      console.error(EXIT_FULLSCREEN);
-
-      expect(consoleError).toHaveBeenCalledWith(EXIT_FULLSCREEN);
-    });
-
-    it('never throws, even for a value that has no string form', () => {
-      initializeGlobalErrorHandler();
-      const bare = Object.create(null);
-
-      console.error(bare);
-
-      expect(consoleError).toHaveBeenCalledWith(bare);
-    });
-
-    it('leaves console.error alone when harmless errors are not suppressed', () => {
-      initializeGlobalErrorHandler({ suppressHarmlessErrors: false });
-
-      console.error(EXIT_FULLSCREEN);
-
-      expect(consoleError).toHaveBeenCalledWith(EXIT_FULLSCREEN);
-    });
+    expect(console.error).toBe(consoleError);
   });
 
   describe('error handling', () => {
