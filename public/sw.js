@@ -27,12 +27,11 @@ const STATIC_ASSETS = [
   '/js-dos.css',
 ];
 
-// WASM and emulator files to cache
+// Emulator files for the default "dosbox" backend. DOSBox-X (wdosbox-x.*, 6.6 MB)
+// only loads when a user switches backend, so it is cached on first use instead.
 const EMULATOR_ASSETS = [
   '/emulators/wdosbox.wasm',
   '/emulators/wdosbox.js',
-  '/emulators/wdosbox-x.wasm',
-  '/emulators/wdosbox-x.js',
   '/emulators/wlibzip.wasm',
   '/emulators/wlibzip.js',
   '/emulators/emulators.js',
@@ -320,10 +319,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for WASM and demo archives: large, and unchanged within a deploy
-  // (each build gets a new CACHE_VERSION, so activation drops stale copies).
-  // Stale-while-revalidate would re-download them in full on every use.
+  // Cache-first for emulator files, WASM and demo archives: large, and unchanged
+  // within a deploy (each build gets a new CACHE_VERSION, so activation drops
+  // stale copies). Stale-while-revalidate would re-download them in full on
+  // every use. Caching on first use is also what keeps DOSBox-X working offline.
   if (
+    url.pathname.startsWith('/emulators/') ||
     url.pathname.endsWith('.wasm') ||
     url.pathname.endsWith('.wasm.gz') ||
     url.pathname.startsWith('/demos/')
