@@ -346,6 +346,32 @@ describe('the build step', () => {
     }
   });
 
+  const cacheVersionOf = (source) => source.match(/const CACHE_VERSION = '([^']*)';/)?.[1];
+
+  it('writes the same sw.js for a site that has not changed', () => {
+    // Browsers install a worker whose script changed, and the app then offers an update:
+    // a deploy that changes nothing the site serves, such as one of docs, must offer none
+    const first = build(createProject());
+    const second = build(createProject());
+
+    expect([first.status, second.status]).toEqual([0, 0]);
+    expect(second.serviceWorker).toBe(first.serviceWorker);
+    expect(cacheVersionOf(first.serviceWorker)).toMatch(/^v[0-9a-f]{12}$/);
+  });
+
+  it.each([
+    ['a bundle', { 'assets/index-abc123.js': 'console.log("app 2")' }],
+    ['a file that only the worker serves', { 'humans.txt': 'Thanks' }],
+    ['a demo archive', { 'demos/stars.zip': 'PK stars 2' }],
+    ['the worker', { 'sw.js': `${serviceWorker}\n// A fix\n` }],
+  ])('gives the caches a new version when %s changes', (_, dist) => {
+    const before = build(createProject());
+    const after = build(createProject(dist));
+
+    expect(after.status).toBe(0);
+    expect(cacheVersionOf(after.serviceWorker)).not.toBe(cacheVersionOf(before.serviceWorker));
+  });
+
   it('stamps the version of the js-dos it copied, from node_modules/js-dos', () => {
     const result = build(createProject());
 

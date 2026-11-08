@@ -1,9 +1,11 @@
 /**
  * Inject build version and bundled assets into service worker
- * This ensures the service worker file changes on every build,
- * triggering browser update detection, and includes all bundled assets
- * for proper offline functionality: every JS and CSS file in dist/assets,
- * so that the chunks the app imports lazily load offline too.
+ * The version is a hash of what the build made, so the service worker file
+ * changes, and browsers install it as an update, only when something the
+ * site serves or the worker itself has changed: a deploy of the same site
+ * writes the same sw.js and offers no update. It also includes all bundled
+ * assets for proper offline functionality: every JS and CSS file in
+ * dist/assets, so that the chunks the app imports lazily load offline too.
  *
  * It also stamps the version of the js-dos copied into dist/, which names the
  * worker's emulator cache: the js-dos player (js-dos.js and js-dos.css) and
@@ -18,9 +20,8 @@
 
 import { existsSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'fs';
 import { createHash } from 'crypto';
-import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import { dirname, join, sep } from 'path';
+import { dirname, join, relative, sep } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -41,29 +42,30 @@ const PRECACHE_LISTS = /const (?:STATIC|EMULATOR)_ASSETS = \[([^\]]*)\]/g;
 // JavaScript and CSS, without their source maps (*.js.map)
 const BUNDLE_FILE = /\.(?:js|css)$/;
 
-// Generate version based on current timestamp and git commit (if available)
-function generateVersion() {
-  const timestamp = Date.now();
-  const buildDate = new Date().toISOString();
-
-  // Try to get git commit hash
-  let gitHash = 'unknown';
-  try {
-    gitHash = execSync('git rev-parse --short HEAD').toString().trim();
-  } catch {
-    console.warn('Could not get git hash, using timestamp only');
+/**
+ * The worker's CACHE_VERSION: a short hash of every file in dist/ but sw.js, by path and
+ * bytes, and of sw.js as vite copied it, with the lists and versions injected into it.
+ * Neither the time of the build nor its commit goes in, so a deploy that changes nothing
+ * the site serves, such as one of docs, keeps the worker byte for byte, while one that
+ * changes a file, or the worker, installs a new worker with an app shell cache of its own.
+ * @param {string} dir - The build output directory
+ * @param {string} serviceWorker - dist/sw.js, before anything is injected into it
+ * @param {object} injected - The js-dos version, demo archive hash and bundles it gets
+ */
+export function hashSite(dir, serviceWorker, injected) {
+  const hash = createHash('sha256');
+  const files = readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => relative(dir, join(entry.parentPath, entry.name)).split(sep).join('/'))
+    .filter((file) => file !== 'sw.js')
+    .sort();
+  for (const file of files) {
+    const bytes = readFileSync(join(dir, file));
+    // Each file's path and length come first, as in hashDemoArchives
+    hash.update(`${file}\0${bytes.length}\0`).update(bytes);
   }
-
-  // Create a unique version string
-  const versionString = `${timestamp}-${gitHash}`;
-  const hash = createHash('md5').update(versionString).digest('hex').substring(0, 8);
-
-  return {
-    version: `v${hash}`,
-    buildDate,
-    gitHash,
-    timestamp,
-  };
+  hash.update(`sw.js\0${serviceWorker}\0${JSON.stringify(injected)}`);
+  return `v${hash.digest('hex').slice(0, 12)}`;
 }
 
 /**
@@ -171,20 +173,18 @@ function injectVersionAndAssets() {
   const swPath = join(distDir, 'sw.js');
 
   try {
-    const versionInfo = generateVersion();
+    const serviceWorker = readFileSync(swPath, 'utf8');
     const jsDosVersion = JSON.parse(readFileSync(jsDosPackage, 'utf8')).version;
     const demosHash = hashDemoArchives(distDir);
     const bundledAssets = collectBundledAssets(distDir);
+    const injected = { jsDosVersion, demosHash, assets: bundledAssets };
+    const version = hashSite(distDir, serviceWorker, injected);
 
     console.log(`📦 Found ${bundledAssets.length} bundled assets:`);
     bundledAssets.forEach((asset) => console.log(`   - ${asset}`));
 
-    let swContent = injectIntoServiceWorker(readFileSync(swPath, 'utf8'), {
-      version: versionInfo.version,
-      jsDosVersion,
-      demosHash,
-      assets: bundledAssets,
-    });
+    // No build date or commit goes into the file, which must stay the same for the same site
+    const swContent = injectIntoServiceWorker(serviceWorker, { version, ...injected });
 
     const missing = findMissingFiles(precachedPaths(swContent), distDir);
     if (missing.length > 0) {
@@ -192,18 +192,12 @@ function injectVersionAndAssets() {
     }
     console.log(`✅ Injected ${bundledAssets.length} bundled assets into service worker`);
 
-    // Add build info as a comment at the top
-    const buildInfo = `// Build: ${versionInfo.buildDate} | Git: ${versionInfo.gitHash} | Version: ${versionInfo.version}\n`;
-    swContent = buildInfo + swContent;
-
     writeFileSync(swPath, swContent, 'utf8');
 
     console.log('✅ Service worker version injected successfully');
-    console.log(`   Version: ${versionInfo.version}`);
+    console.log(`   Version: ${version} (a hash of the site, names the app shell cache)`);
     console.log(`   js-dos: ${jsDosVersion} (names the emulator cache)`);
     console.log(`   Demo archives: ${demosHash} (names the demo cache)`);
-    console.log(`   Build Date: ${versionInfo.buildDate}`);
-    console.log(`   Git Hash: ${versionInfo.gitHash}`);
   } catch (error) {
     console.error('❌ Failed to inject service worker version:', error.message);
     process.exit(1);

@@ -3,8 +3,9 @@
  * Provides offline functionality and caching for the PWA
  */
 
-// Replaced by scripts/inject-sw-version.js: every build gets a new CACHE_VERSION, so each
-// deploy installs a new worker with a fresh copy of the app shell
+// Replaced by scripts/inject-sw-version.js with a hash of the site the build made, so a
+// deploy that changes what the site serves, or this worker, installs a new worker with a
+// fresh copy of the app shell, and one that changes neither installs none
 const CACHE_VERSION = 'v1';
 const CACHE_NAME = `doskit-${CACHE_VERSION}`;
 const METADATA_CACHE_NAME = `${CACHE_NAME}-metadata`;
@@ -470,8 +471,8 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Cache-first for bundles, whose names change with their content, so a cached copy
-  // never goes stale, and for other WASM: large, and unchanged within a deploy (each
-  // build gets a new CACHE_VERSION, so activation drops stale copies).
+  // never goes stale, and for other WASM: large, and unchanged within a deploy (a build
+  // that changes any file gets a new CACHE_VERSION, so activation drops stale copies).
   // Stale-while-revalidate would download each of them again on every use.
   if (
     isBundle(url.pathname) ||
