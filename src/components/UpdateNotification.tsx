@@ -7,7 +7,7 @@
  * Works reliably across all platforms including iOS Safari
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PWA_CONFIG } from '../constants/app';
 import { logger } from '../utils/logger';
 import './UpdateNotification.css';
@@ -26,6 +26,15 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
 
   // Show notification when registration exists and hasn't been dismissed
   const show = !!registration && !isDismissed;
+
+  // The waits of Update Now's fallback reload, called off when the prompt goes away
+  const fallbackTimeouts = useRef<number[]>([]);
+  useEffect(() => {
+    const timeouts = fallbackTimeouts.current;
+    return () => {
+      timeouts.forEach(clearTimeout);
+    };
+  }, []);
 
   const handleUpdate = () => {
     if (registration?.waiting) {
@@ -52,7 +61,6 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
       const maxRetries = PWA_CONFIG.UPDATE_MAX_RETRIES;
       const baseDelay = PWA_CONFIG.UPDATE_BASE_DELAY;
       let retryCount = 0;
-      const fallbackTimeouts: number[] = [];
 
       const scheduleFallbackReload = () => {
         if (retryCount < maxRetries) {
@@ -72,7 +80,7 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
               }
             }
           }, delay);
-          fallbackTimeouts.push(timeoutId);
+          fallbackTimeouts.current.push(timeoutId);
         }
       };
 
@@ -82,7 +90,7 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
       navigator.serviceWorker.addEventListener(
         'controllerchange',
         () => {
-          fallbackTimeouts.forEach(clearTimeout);
+          fallbackTimeouts.current.forEach(clearTimeout);
         },
         { once: true }
       );
@@ -94,7 +102,7 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
       } catch (error) {
         console.error('[UpdateNotification] Error sending SKIP_WAITING message:', error);
         // If we can't send the message, clear all timeouts and try a simple reload
-        fallbackTimeouts.forEach(clearTimeout);
+        fallbackTimeouts.current.forEach(clearTimeout);
         performReload();
       }
     } else {

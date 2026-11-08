@@ -11,6 +11,9 @@ describe('UpdateNotification', () => {
   let mockRegistration: ServiceWorkerRegistration;
   let mockWaiting: ServiceWorker;
   let originalLocation: Location;
+  // navigator.serviceWorker, which tells the page that the new worker has taken control
+  let serviceWorker: EventTarget;
+  const takeControl = () => serviceWorker.dispatchEvent(new Event('controllerchange'));
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -53,17 +56,9 @@ describe('UpdateNotification', () => {
     };
     mockRegistration = registration as ServiceWorkerRegistration;
 
-    // Mock navigator.serviceWorker
+    serviceWorker = new EventTarget();
     Object.defineProperty(navigator, 'serviceWorker', {
-      value: {
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        controller: null,
-        ready: Promise.resolve(mockRegistration),
-        register: vi.fn(),
-        getRegistration: vi.fn(),
-        getRegistrations: vi.fn(),
-      },
+      value: serviceWorker,
       writable: true,
       configurable: true,
     });
@@ -76,6 +71,8 @@ describe('UpdateNotification', () => {
       writable: true,
       configurable: true,
     });
+    // jsdom has no navigator.serviceWorker
+    Reflect.deleteProperty(navigator, 'serviceWorker');
     vi.restoreAllMocks();
   });
 
@@ -128,155 +125,101 @@ describe('UpdateNotification', () => {
     });
   });
 
+  // With fake timers, which the fallback reload waits on. No waitFor: it waits on a
+  // timer itself, and Vitest's fake timers would keep it waiting
   describe('Update functionality', () => {
-    it('should send SKIP_WAITING message when Update Now is clicked', async () => {
-      render(<UpdateNotification registration={mockRegistration} />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
-      });
-
-      const updateButton = screen.getByRole('button', { name: /Update Now/i });
-      fireEvent.click(updateButton);
-
-      await waitFor(() => {
-        expect(mockWaiting.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
-      });
+    beforeEach(() => {
+      vi.useFakeTimers();
     });
 
-    it('should add controllerchange event listener before sending SKIP_WAITING', async () => {
-      const addEventListenerSpy = vi.spyOn(navigator.serviceWorker, 'addEventListener');
-
-      render(<UpdateNotification registration={mockRegistration} />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
-      });
-
-      const updateButton = screen.getByRole('button', { name: /Update Now/i });
-      fireEvent.click(updateButton);
-
-      await waitFor(() => {
-        expect(addEventListenerSpy).toHaveBeenCalledWith('controllerchange', expect.any(Function), {
-          once: true,
-        });
-      });
+    afterEach(() => {
+      vi.useRealTimers();
     });
 
-    it('should add controllerchange event listener when Update Now is clicked', () => {
-      const addEventListenerSpy = vi.spyOn(navigator.serviceWorker, 'addEventListener');
+    const clickUpdateNow = () =>
+      fireEvent.click(screen.getByRole('button', { name: /Update Now/i }));
 
+    it('asks the waiting worker to take over when Update Now is clicked', () => {
       render(<UpdateNotification registration={mockRegistration} />);
 
-      const updateButton = screen.getByRole('button', { name: /Update Now/i });
-      fireEvent.click(updateButton);
+      clickUpdateNow();
 
-      expect(addEventListenerSpy).toHaveBeenCalledWith(
-        'controllerchange',
-        expect.any(Function),
-        expect.objectContaining({ once: true })
-      );
+      expect(mockWaiting.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
     });
 
-    it('should handle missing waiting service worker', async () => {
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const registrationWithoutWaiting = { ...mockRegistration, waiting: null };
-
-      render(<UpdateNotification registration={registrationWithoutWaiting} />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
-      });
-
-      const updateButton = screen.getByRole('button', { name: /Update Now/i });
-      fireEvent.click(updateButton);
-
-      await waitFor(() => {
-        expect(consoleWarn).toHaveBeenCalledWith(
-          expect.stringContaining('No waiting service worker found')
-        );
-      });
-
-      consoleWarn.mockRestore();
-    });
-
-    it('should handle postMessage errors gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const errorMessage = 'Failed to post message';
-      mockWaiting.postMessage = vi.fn().mockImplementation(() => {
-        throw new Error(errorMessage);
-      });
-
+    it('reloads once the new worker has taken control, and only then', () => {
       render(<UpdateNotification registration={mockRegistration} />);
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
-      });
+      clickUpdateNow();
+      expect(window.location.reload).not.toHaveBeenCalled();
+      takeControl();
 
-      const updateButton = screen.getByRole('button', { name: /Update Now/i });
-      fireEvent.click(updateButton);
-
-      await waitFor(() => {
-        expect(consoleError).toHaveBeenCalledWith(
-          expect.stringContaining('Error sending SKIP_WAITING message'),
-          expect.any(Error)
-        );
-      });
-
-      consoleError.mockRestore();
+      expect(window.location.reload).toHaveBeenCalledOnce();
+      // Its fallback reload is called off
+      expect(vi.getTimerCount()).toBe(0);
+      vi.advanceTimersByTime(10_000);
+      expect(window.location.reload).toHaveBeenCalledOnce();
     });
 
-    it('should reload on postMessage error as fallback', async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockWaiting.postMessage = vi.fn().mockImplementation(() => {
-        throw new Error('Failed to post message');
-      });
-
+    it('listens for the new worker before it asks it to take over', () => {
+      // A worker that takes control while the message is still being sent
+      mockWaiting.postMessage = vi.fn(takeControl);
       render(<UpdateNotification registration={mockRegistration} />);
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Update Now/i })).toBeInTheDocument();
-      });
+      clickUpdateNow();
 
-      const updateButton = screen.getByRole('button', { name: /Update Now/i });
-      fireEvent.click(updateButton);
-
-      await waitFor(
-        () => {
-          expect(window.location.reload).toHaveBeenCalled();
-        },
-        { timeout: 3000 }
-      );
+      expect(window.location.reload).toHaveBeenCalledOnce();
     });
 
     it('reloads 7 seconds after Update Now when the new worker never takes control', () => {
       // It waits 1, 2 and 4 seconds for controllerchange
-      vi.useFakeTimers();
-      try {
-        render(<UpdateNotification registration={mockRegistration} />);
-        fireEvent.click(screen.getByRole('button', { name: /Update Now/i }));
+      render(<UpdateNotification registration={mockRegistration} />);
+      clickUpdateNow();
 
-        vi.advanceTimersByTime(6999);
-        expect(window.location.reload).not.toHaveBeenCalled();
-        vi.advanceTimersByTime(1);
-        expect(window.location.reload).toHaveBeenCalledOnce();
-      } finally {
-        vi.useRealTimers();
-      }
+      vi.advanceTimersByTime(6999);
+      expect(window.location.reload).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1);
+      expect(window.location.reload).toHaveBeenCalledOnce();
     });
 
-    it('should set up fallback timeout when Update Now is clicked', () => {
-      vi.useFakeTimers();
+    it('stops waiting for the new worker once the prompt is gone', () => {
+      const { unmount } = render(<UpdateNotification registration={mockRegistration} />);
+      clickUpdateNow();
 
+      unmount();
+
+      expect(vi.getTimerCount()).toBe(0);
+      vi.advanceTimersByTime(10_000);
+      expect(window.location.reload).not.toHaveBeenCalled();
+    });
+
+    it('should handle missing waiting service worker', () => {
+      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const registrationWithoutWaiting = { ...mockRegistration, waiting: null };
+      render(<UpdateNotification registration={registrationWithoutWaiting} />);
+
+      clickUpdateNow();
+
+      expect(consoleWarn).toHaveBeenCalledWith(
+        expect.stringContaining('No waiting service worker found')
+      );
+    });
+
+    it('reloads at once when it cannot message the waiting worker', () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockWaiting.postMessage = vi.fn().mockImplementation(() => {
+        throw new Error('Failed to post message');
+      });
       render(<UpdateNotification registration={mockRegistration} />);
 
-      const updateButton = screen.getByRole('button', { name: /Update Now/i });
-      fireEvent.click(updateButton);
+      clickUpdateNow();
 
-      // Verify setTimeout was called for the fallback
-      expect(vi.getTimerCount()).toBeGreaterThan(0);
-
-      vi.useRealTimers();
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining('Error sending SKIP_WAITING message'),
+        expect.any(Error)
+      );
+      expect(window.location.reload).toHaveBeenCalledOnce();
+      expect(vi.getTimerCount()).toBe(0);
     });
   });
 
@@ -393,16 +336,6 @@ describe('UpdateNotification', () => {
       rerender(<UpdateNotification registration={mockRegistration} />);
 
       expect(screen.getByText('Update Available')).toBeInTheDocument();
-    });
-
-    it('should send SKIP_WAITING message when Update Now is clicked', () => {
-      render(<UpdateNotification registration={mockRegistration} />);
-
-      const updateButton = screen.getByRole('button', { name: /Update Now/i });
-      fireEvent.click(updateButton);
-
-      // Should send SKIP_WAITING message
-      expect(mockRegistration.waiting!.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
     });
   });
 });
