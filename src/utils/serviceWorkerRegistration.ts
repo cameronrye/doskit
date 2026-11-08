@@ -7,6 +7,11 @@
  */
 
 import { PWA_CONFIG } from '../constants/app';
+import { logger } from './logger';
+
+// What the registration reports, through the logger: warnings and errors in every build,
+// the rest in development only
+const LOG_CONTEXT = 'SW';
 
 // Configuration
 const isLocalhost = Boolean(
@@ -52,12 +57,13 @@ export function register(config?: ServiceWorkerConfig): void {
         // This is running on localhost. Check if a service worker still exists or not.
         checkValidServiceWorker(swUrl, config);
 
-        // Add some additional logging to localhost, pointing developers to the
-        // service worker/PWA documentation.
+        // On localhost, say how the worker serves the app (public/sw.js)
         navigator.serviceWorker.ready.then(() => {
-          console.log(
-            '[SW] This web app is being served cache-first by a service worker. ' +
-              'To learn more, visit https://cra.link/PWA'
+          logger.info(
+            LOG_CONTEXT,
+            'Service worker ready: pages come from the network first, falling back to the ' +
+              'cached index.html offline; bundles, emulator files and app archives come from ' +
+              'its caches'
           );
           config?.onOfflineReady?.();
         });
@@ -80,7 +86,7 @@ function registerValidSW(swUrl: string, config?: ServiceWorkerConfig): void {
   navigator.serviceWorker
     .register(swUrl)
     .then((registration) => {
-      console.log('[SW] Service worker registered successfully:', registration);
+      logger.info(LOG_CONTEXT, 'Service worker registered for', registration.scope);
 
       // Set up periodic update checks (every hour when page is visible)
       setupPeriodicUpdateChecks(registration);
@@ -100,12 +106,13 @@ function registerValidSW(swUrl: string, config?: ServiceWorkerConfig): void {
         installingWorker.onstatechange = () => {
           if (installingWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
-              // At this point, the updated precached content has been fetched,
-              // but the previous service worker will still serve the older
-              // content until all client tabs are closed.
-              console.log(
-                '[SW] New content is available and will be used when all tabs for this page are closed. ' +
-                  'See https://cra.link/PWA.'
+              // The update has precached its files, but the current worker keeps serving
+              // the app until the user picks Update Now in the prompt onUpdate shows
+              // (UpdateNotification), or until every tab of the app has closed
+              logger.info(
+                LOG_CONTEXT,
+                'An update is installed and waiting: it takes over after Update Now, ' +
+                  'or once every tab of the app has closed'
               );
 
               // Execute callback
@@ -113,9 +120,9 @@ function registerValidSW(swUrl: string, config?: ServiceWorkerConfig): void {
                 config.onUpdate(registration);
               }
             } else {
-              // At this point, everything has been precached.
-              // It's the perfect time to display a "Content is cached for offline use." message.
-              console.log('[SW] Content is cached for offline use.');
+              // The first worker has precached the app shell, the bundles and the
+              // default emulator
+              logger.info(LOG_CONTEXT, 'Content is cached for offline use');
 
               // Execute callback
               if (config && config.onSuccess) {
@@ -147,7 +154,7 @@ function setupPeriodicUpdateChecks(registration: ServiceWorkerRegistration): voi
   const checkForUpdates = () => {
     // Only check if page is visible to save resources
     if (document.visibilityState === 'visible') {
-      console.log('[SW] Checking for service worker updates...');
+      logger.debug(LOG_CONTEXT, 'Checking for service worker updates');
       registration.update().catch((error) => {
         console.error('[SW] Error checking for updates:', error);
       });
@@ -164,7 +171,11 @@ function setupPeriodicUpdateChecks(registration: ServiceWorkerRegistration): voi
     }
   });
 
-  console.log('[SW] Periodic update checks enabled (every hour)');
+  logger.info(
+    LOG_CONTEXT,
+    `Checking for updates every ${PWA_CONFIG.UPDATE_CHECK_INTERVAL / 60_000} minutes ` +
+      'while the page is visible, and whenever it becomes visible again'
+  );
 }
 
 /**
@@ -199,6 +210,6 @@ function checkValidServiceWorker(swUrl: string, config?: ServiceWorkerConfig): v
       }
     })
     .catch(() => {
-      console.log('[SW] No internet connection found. App is running in offline mode.');
+      logger.info(LOG_CONTEXT, "No internet connection: the app runs from the worker's caches");
     });
 }

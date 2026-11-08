@@ -296,6 +296,83 @@ describe('serviceWorkerRegistration', () => {
       expect(onUpdate).toHaveBeenCalledWith(mockRegistration);
     });
 
+    describe('logging', () => {
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      /**
+       * Registers the worker on localhost, where register() first checks that sw.js exists,
+       * and installs an update while a worker controls the page
+       */
+      async function registerAndInstallUpdate(registerWorker: typeof register) {
+        const installing = {
+          state: 'installing' as ServiceWorkerState,
+          onstatechange: null as ((ev: Event) => unknown) | null,
+        };
+        const registration = createMockRegistration({ installing: createMockWorker(installing) });
+        vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(registration);
+        Object.defineProperty(navigator.serviceWorker, 'controller', {
+          configurable: true,
+          value: { state: 'activated' },
+        });
+        const onUpdate = vi.fn();
+
+        registerWorker({ onUpdate });
+        window.dispatchEvent(new Event('load'));
+        await vi.waitFor(() => expect(registration.onupdatefound).toBeTypeOf('function'));
+        registration.onupdatefound?.call(registration, new Event('updatefound'));
+        installing.state = 'installed';
+        installing.onstatechange?.(new Event('statechange'));
+        return { registration, onUpdate };
+      }
+
+      /** Everything logged below warnings, as one string per call */
+      function captureInformation() {
+        const lines: string[] = [];
+        for (const method of ['log', 'info', 'debug'] as const) {
+          vi.spyOn(console, method).mockImplementation((...args: unknown[]) => {
+            lines.push(args.join(' '));
+          });
+        }
+        return lines;
+      }
+
+      it('says in development how a waiting update takes over', async () => {
+        const lines = captureInformation();
+
+        await registerAndInstallUpdate(register);
+
+        expect(lines.filter((line) => line.includes('Update Now'))).toHaveLength(1);
+      });
+
+      it('says in development that pages come from the network first', async () => {
+        // Create React App's text called the app "served cache-first" and linked cra.link
+        const lines = captureInformation();
+
+        await registerAndInstallUpdate(register);
+
+        await vi.waitFor(() => expect(lines.join('\n')).toMatch(/network first/));
+        expect(lines.filter((line) => /cache-first|cra\.link/.test(line))).toEqual([]);
+      });
+
+      it('logs nothing below warnings in a production build', async () => {
+        vi.useFakeTimers();
+        vi.stubEnv('DEV', false);
+        vi.resetModules();
+        window.location.hostname = 'localhost';
+        const production = await import('./serviceWorkerRegistration');
+        const lines = captureInformation();
+
+        const { registration, onUpdate } = await registerAndInstallUpdate(production.register);
+        await vi.advanceTimersByTimeAsync(PWA_CONFIG.UPDATE_CHECK_INTERVAL);
+
+        expect(onUpdate).toHaveBeenCalledOnce();
+        expect(registration.update).toHaveBeenCalled();
+        expect(lines).toEqual([]);
+      });
+    });
+
     describe('periodic update checks', () => {
       beforeEach(() => {
         vi.useFakeTimers();
