@@ -260,9 +260,9 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
    - Enter URL: https://doskit.net/
    - Check image preview and metadata
 
-2. **Twitter Cards**
-   - Use Twitter Card Validator: https://cards-dev.twitter.com/validator
-   - Enter URL: https://doskit.net/
+2. **X (Twitter) Cards**
+   - X removed the preview from its Card Validator
+   - Paste https://doskit.net/ into a new post on X instead, then discard the post
    - Verify card preview
 
 3. **LinkedIn**
@@ -348,7 +348,7 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 ## Resources
 
 - [Open Graph Protocol](https://ogp.me/)
-- [Twitter Cards Documentation](https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/abouts-cards)
+- [X Cards Markup](https://web.archive.org/web/20231229075931/https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/markup) (an archived copy: X's own Cards pages now redirect to a general overview)
 - [Schema.org](https://schema.org/)
 - [robots.txt Specification](https://www.robotstxt.org/)
 - [humans.txt](https://humanstxt.org/)
