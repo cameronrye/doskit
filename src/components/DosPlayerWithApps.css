@@ -6,6 +6,20 @@
  * DosPlayer with Apps Styles
  */
 
+/*
+ * Stacking order. No element of DosKit's between these layers and the page root forms a
+ * stacking context, so their z-indexes compare directly. From the bottom:
+ *   10     header and footer (App.css), and js-dos's sidebar inside the player
+ *   50     the player's own loading and error panels (DosPlayer.css)
+ *   100    the URL error banner (App.css)
+ *   999    js-dos.css's modals and on-screen controls, should js-dos show them
+ *   1000   the loading and error overlays over the whole player (here)
+ *   1100   the selector's backdrop (here), 1101 the selector (DemoSelector.css)
+ *   9999   the install prompt (OfflineIndicator.css), and js-dos's toasts
+ *   10000  the offline and back-online notices (OfflineIndicator.css), and the update
+ *          prompt (UpdateNotification.css), whose root comes later in the page
+ */
+
 .dos-player-with-apps {
   position: relative;
   width: 100%;
@@ -23,7 +37,7 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
-  z-index: 999;
+  z-index: 1100;
 }
 
 /* Loading Overlay */
@@ -38,7 +52,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .loading-spinner {
@@ -73,7 +87,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .error-box {

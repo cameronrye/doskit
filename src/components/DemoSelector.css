@@ -22,7 +22,8 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  z-index: 1000;
+  /* Over its backdrop and everything over the player: see DosPlayerWithApps.css */
+  z-index: 1101;
 }
 
 .demo-selector-header {
