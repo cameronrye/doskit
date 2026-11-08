@@ -302,7 +302,7 @@ npm run generate-social-images
 4. **Test**: Run `npm test`, and interact with the DOS prompt to verify functionality
 5. **Build**: Run `npm run build` to create production bundle
 
-Commits go through a pre-commit hook that runs ESLint, Prettier and the related tests on the staged files; see [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
+Commits go through a pre-commit hook that runs ESLint, Prettier and the related tests on staged JavaScript and TypeScript files, and Prettier on the other staged files; see [CONTRIBUTING.md](CONTRIBUTING.md#making-changes) for the details.
 
 ## Deployment
 

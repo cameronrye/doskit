@@ -72,7 +72,7 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 - **Vitest**: Fast unit testing framework, with jsdom and React Testing Library
 - **TypeDoc**: API documentation generation
 - **Sharp**: High-performance image processing for the PWA icons and social media previews (scripts run by hand)
-- **Husky**: Git hooks for pre-commit checks (lint-staged runs ESLint, Prettier and the related tests on staged files)
+- **Husky**: Git hooks for pre-commit checks (lint-staged runs ESLint, Prettier and the related tests on staged JavaScript and TypeScript files, and Prettier on the other staged files)
 
 ### Why These Technologies?
 
@@ -521,7 +521,7 @@ npm run test:coverage
 The project follows strict TypeScript and ESLint rules:
 
 - Strict TypeScript mode enabled
-- ESLint with React hooks plugin
+- ESLint with React hooks plugin; it also lints the scripts in scripts/ and the service worker, public/sw.js
 - Prettier for code formatting
 - Husky for pre-commit hooks
 

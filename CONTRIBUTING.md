@@ -88,7 +88,7 @@ Example: `feature/add-gamepad-support`
 
    The build starts with `tsc -b`, which type-checks the app, the tests (through `tsconfig.test.json`) and the Vite and Vitest configs. Run `npx tsc -b` for the type check alone.
 
-When you commit, the pre-commit hook (Husky) runs lint-staged on the staged files: `eslint --fix` and the tests that import them (`vitest related --run`) for TypeScript files, and `prettier --write` for TypeScript, CSS, Markdown and JSON files.
+When you commit, the pre-commit hook (Husky) runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats the CSS, HTML, JSON, Markdown and YAML files that `npm run format:check` checks, and skips files Prettier has no parser for or that `.gitignore` or `.prettierignore` lists.
 
 Pull requests to `main` run CI (`.github/workflows/ci.yml`): ESLint, the format check, the tests with coverage, the build and the type check.
 
@@ -159,7 +159,7 @@ Closes #123
 
 ### Code Formatting
 
-- **ESLint**: All code must pass ESLint checks
+- **ESLint**: All code must pass ESLint checks: the TypeScript, the Node scripts in `scripts/` (as ES modules with Node's globals, plus Vitest's in their tests) and the service worker, `public/sw.js` (as a classic script with a service worker's globals). The rest of `public/`, the js-dos copy included, is not linted
 - **Prettier**: Applies the rules below, with the settings in `.prettierrc`
 - **Indentation**: 2 spaces
 - **Quotes**: Single quotes for strings (double quotes in JSX attributes)
