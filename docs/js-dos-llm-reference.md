@@ -1280,6 +1280,8 @@ Dos(element, {
 | Edge | 90+ | Full support |
 | Opera | 76+ | Full support |
 
+> **DosKit note:** These minimums are too low for js-dos 8.3.20. Its player calls `structuredClone()` once a second while it runs, so in a browser without it each of those calls fails with an error. The first versions with `structuredClone()` are DosKit's minimums, listed in the README's [Browser Compatibility](../README.md#browser-compatibility).
+
 #### Required Features
 
 - **WebAssembly**: Required for emulation

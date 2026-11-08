@@ -300,7 +300,7 @@ export const starsDosboxConf = presets
 
 ## Browser Compatibility
 
-- **Modern browsers**: Current Chrome, Edge, Firefox and Safari. The build targets `esnext`, so nothing is transpiled for older engines, and js-dos itself relies on recent APIs: it calls `structuredClone` (Chrome 98, Firefox 94, Safari 15.4) once a second while a player runs.
+- **Browsers**: The minimum versions in the README's [Browser Compatibility](../README.md#browser-compatibility), the first with `structuredClone()`: js-dos's player calls it once a second while it runs, so in Chrome before 98, Firefox before 94 or Safari before 15.4 each of those calls fails with an error. The build targets `esnext`, so nothing is transpiled for older engines either.
 - **WebAssembly**: Required for js-dos emulator
 - **Web Workers**: js-dos runs DOSBox in one (`workerThread: true`)
 - **Service Workers**: Required for PWA features

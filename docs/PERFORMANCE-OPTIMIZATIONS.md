@@ -360,16 +360,16 @@ There is no CPU speed gain to list: the default backend has no dynamic core, so 
 
 ## Browser Compatibility
 
-All optimizations are designed with progressive enhancement:
+Every browser DosKit supports, from the minimum versions in the README's [Browser Compatibility](../README.md#browser-compatibility) on, has all four:
 
-| Feature        | Chrome | Firefox | Safari | Edge   |
-| -------------- | ------ | ------- | ------ | ------ |
-| WebGL          | ✅ All | ✅ All  | ✅ All | ✅ All |
-| Worker Threads | ✅ All | ✅ All  | ✅ All | ✅ All |
-| WASM Preload   | ✅ All | ✅ All  | ✅ All | ✅ All |
-| Service Worker | ✅ All | ✅ All  | ✅ All | ✅ All |
+| Feature        | Chrome | Firefox | Safari | Edge |
+| -------------- | ------ | ------- | ------ | ---- |
+| WebGL          | ✅     | ✅      | ✅     | ✅   |
+| Worker Threads | ✅     | ✅      | ✅     | ✅   |
+| WASM Preload   | ✅     | ✅      | ✅     | ✅   |
+| Service Worker | ✅     | ✅      | ✅     | ✅   |
 
-**Fallback Strategy:** Features gracefully degrade on older browsers while maintaining functionality.
+**Fallback Strategy:** Where WebGL cannot start, js-dos draws with Canvas 2D (section 4). Older browsers are not supported: they lack `structuredClone()`, which js-dos's player calls once a second while it runs, so each of those calls fails with an error.
 
 ---
 
@@ -467,7 +467,7 @@ To validate these optimizations:
 
 5. **Cross-Browser Testing**
    - Test on Chrome, Firefox, Safari, Edge
-   - Verify fallbacks work on older browsers
+   - Test the oldest versions the README supports, and the Canvas 2D renderer js-dos falls back to (`renderBackend: 'canvas'` selects it)
    - Test on mobile devices
 
 6. **Check Caching and Offline Use**
