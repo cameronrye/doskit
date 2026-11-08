@@ -25,11 +25,45 @@ function offerInstall(outcome: 'accepted' | 'dismissed' = 'accepted') {
   });
 }
 
+/**
+ * jsdom has no ResizeObserver. Like a browser's, this one reports an element once it starts
+ * observing it, and resizeAll() reports a change in the size of every element observed.
+ */
+class FakeResizeObserver {
+  static observing = new Set<FakeResizeObserver>();
+  readonly callback: ResizeObserverCallback;
+
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+  }
+
+  observe() {
+    FakeResizeObserver.observing.add(this);
+    this.report();
+  }
+
+  unobserve() {}
+
+  disconnect() {
+    FakeResizeObserver.observing.delete(this);
+  }
+
+  report() {
+    this.callback([], this as unknown as ResizeObserver);
+  }
+
+  static resizeAll() {
+    FakeResizeObserver.observing.forEach((observer) => observer.report());
+  }
+}
+
 describe('OfflineIndicator', () => {
   let originalNavigator: Navigator;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    FakeResizeObserver.observing.clear();
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
 
     // Save originals
     originalNavigator = window.navigator;
@@ -68,6 +102,7 @@ describe('OfflineIndicator', () => {
     });
     localStorage.clear();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('Online/Offline status', () => {
@@ -397,6 +432,69 @@ describe('OfflineIndicator', () => {
       expect(localStorage.getItem('pwa-install-dismissed')).toBeNull();
       expect(localStorage.getItem('pwa-install-dismissed-count')).toBeNull();
       expect(localStorage.getItem('pwa-install-last-dismissed')).toBeNull();
+    });
+  });
+
+  // The selector keeps clear of the notices, which stay above it (DemoSelector.css)
+  describe('the space the notices take', () => {
+    /** The rendered heights jsdom lacks, by the notice's first class */
+    const heights: Record<string, number> = {};
+    const rootProperty = (name: string) => document.documentElement.style.getPropertyValue(name);
+
+    beforeEach(() => {
+      heights['offline-indicator'] = 84;
+      heights['install-prompt'] = 234;
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (
+        this: HTMLElement
+      ) {
+        return heights[this.classList[0] ?? ''] ?? 0;
+      });
+    });
+
+    it("keeps the offline banner's height on the root element until it is closed", () => {
+      render(<OfflineIndicator />);
+
+      fireEvent(window, new Event('offline'));
+      expect(rootProperty('--offline-banner-height')).toBe('84px');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Close offline message' }));
+      expect(rootProperty('--offline-banner-height')).toBe('');
+      expect(FakeResizeObserver.observing.size).toBe(0);
+    });
+
+    it("drops the offline banner's height when the connection comes back", () => {
+      render(<OfflineIndicator />);
+      fireEvent(window, new Event('offline'));
+
+      fireEvent(window, new Event('online'));
+
+      expect(rootProperty('--offline-banner-height')).toBe('');
+    });
+
+    it("follows the offline banner's height when its text wraps differently", () => {
+      render(<OfflineIndicator />);
+      fireEvent(window, new Event('offline'));
+
+      heights['offline-indicator'] = 165; // in a narrower window
+      act(() => FakeResizeObserver.resizeAll());
+
+      expect(rootProperty('--offline-banner-height')).toBe('165px');
+    });
+
+    it("keeps the install prompt's height on the root element until it is dismissed", () => {
+      vi.useFakeTimers();
+      try {
+        render(<OfflineIndicator />);
+
+        offerInstall();
+        expect(rootProperty('--install-prompt-height')).toBe('234px');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+        expect(rootProperty('--install-prompt-height')).toBe('');
+        expect(FakeResizeObserver.observing.size).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

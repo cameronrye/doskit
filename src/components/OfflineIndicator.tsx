@@ -31,6 +31,30 @@ const STORAGE_KEYS = {
   LAST_DISMISSED: 'pwa-install-last-dismissed',
 } as const;
 
+/**
+ * A ref for a notice fixed at an edge of the window. The notices stay above the selector
+ * (see DosPlayerWithApps.css), so while one is shown its height is kept in a custom
+ * property on the root element, and DemoSelector.css fits the selector in the space left.
+ */
+function keepHeightIn(property: string) {
+  return (notice: HTMLElement | null) => {
+    if (!notice) return;
+    const rootStyle = document.documentElement.style;
+    // Reports once the notice is laid out, and again whenever its text wraps differently
+    const observer = new ResizeObserver(() => {
+      rootStyle.setProperty(property, `${notice.offsetHeight}px`);
+    });
+    observer.observe(notice);
+    return () => {
+      observer.disconnect();
+      rootStyle.removeProperty(property);
+    };
+  };
+}
+
+const offlineBannerRef = keepHeightIn('--offline-banner-height');
+const installPromptRef = keepHeightIn('--install-prompt-height');
+
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkStatusChange }) => {
   const [showOfflineMessage, setShowOfflineMessage] = useState(false);
   const [showOnlineMessage, setShowOnlineMessage] = useState(false);
@@ -243,7 +267,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
     <>
       {/* Offline Indicator */}
       {showOfflineMessage && (
-        <div className="offline-indicator offline">
+        <div className="offline-indicator offline" ref={offlineBannerRef}>
           <div className="offline-content">
             <span className="offline-icon">📡</span>
             <div className="offline-text">
@@ -275,7 +299,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
 
       {/* Install Prompt */}
       {showInstallPrompt && !isInstalled && deferredPrompt && (
-        <div className="install-prompt">
+        <div className="install-prompt" ref={installPromptRef}>
           <div className="install-content">
             <div className="install-icon">📱</div>
             <div className="install-text">

@@ -7,8 +7,18 @@
  */
 
 .demo-selector {
+  /*
+   * The offline banner at the top of the window and the install prompt at the bottom stay
+   * above the selector (see DosPlayerWithApps.css). While one is shown, OfflineIndicator
+   * keeps its height in --offline-banner-height or --install-prompt-height on the root
+   * element, and the selector is centered in the space the two leave. It keeps at least
+   * 40% of the window's height and stays on screen, so in a very short window a notice
+   * can still cover part of it until the notice is closed.
+   */
+  --notice-above: var(--offline-banner-height, 0px);
+  --notice-below: var(--install-prompt-height, 0px);
   position: fixed;
-  top: 50%;
+  top: clamp(20vh, calc(50% + (var(--notice-above) - var(--notice-below)) / 2), 80vh);
   left: 50%;
   transform: translate(-50%, -50%);
   background: linear-gradient(180deg, #1e1e1e 0%, #121212 100%);
@@ -19,7 +29,7 @@
     0 8px 25px rgba(0, 0, 0, 0.4);
   max-width: 1400px;
   width: 95%;
-  max-height: 90vh;
+  max-height: max(40vh, calc(90vh - var(--notice-above) - var(--notice-below)));
   display: flex;
   flex-direction: column;
   /* Over its backdrop and everything over the player: see DosPlayerWithApps.css */
@@ -246,7 +256,7 @@
 @media (max-width: 768px) {
   .demo-selector {
     width: 98%;
-    max-height: 95vh;
+    max-height: max(40vh, calc(95vh - var(--notice-above) - var(--notice-below)));
     border-radius: 8px;
   }
 
