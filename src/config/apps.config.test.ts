@@ -83,6 +83,15 @@ describe('availableApps', () => {
       }
     });
 
+    it('should name the Gravis UltraSound in its banner only when it has one', async () => {
+      const conf = await dosboxConfOf(app);
+      const hasGus = /^gus=true$/m.test(conf);
+
+      for (const [banner] of conf.matchAll(/^echo Audio: .*$/gm)) {
+        expect(banner.includes('Gravis UltraSound')).toBe(hasGus);
+      }
+    });
+
     it('should not claim a GUS memory size or stereo sound in its banner', async () => {
       // The backend's GUS always has 1 MB, which no setting changes, and js-dos mixes the
       // sound down to one channel for the page
@@ -120,6 +129,16 @@ describe('availableApps', () => {
     const conf = await findAppById('crystal-dream-2')?.loadDosboxConf?.();
 
     expect(conf).toMatch(/^cycles=max$/m);
+  });
+
+  it('should give Crystal Dream 2 the Ultrasound its setup offers first, and a Sound Blaster', async () => {
+    // Without a GUS, DOSBox sets no ULTRASND, and taking the setup's first choice stops the
+    // demo at the DOS prompt: "Cannot find ULTRASND enviroment string."
+    const conf = await findAppById('crystal-dream-2')?.loadDosboxConf?.();
+
+    expect(conf).toMatch(/^\[gus\]\ngus=true\n/m);
+    expect(conf).toMatch(/^ultradir=C:\\ULTRASND$/m);
+    expect(conf).toMatch(/^sbtype=sb16$/m);
   });
 
   it.each(['3drotate', 'stars'])('should credit %s to Draeden of VLA, who wrote it', async (id) => {

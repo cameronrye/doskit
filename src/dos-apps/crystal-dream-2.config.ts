@@ -32,7 +32,9 @@ export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';
  * - Auto CPU core and type, at maximum cycles. CD2.EXE unpacks itself in real mode, where
  *   'auto' cycles would hold it at 3,000 cycles/ms for about 46 s before its setup appears;
  *   at a fixed 30000 cycles the demo stops with "System overloaded!"
- * - Sound Blaster 16 for audio
+ * - Gravis UltraSound, the setup's first choice: without one, DOSBox sets no ULTRASND and
+ *   that choice ends at the DOS prompt
+ * - Sound Blaster 16 for the setup's second choice
  * - Standard VGA graphics
  * - DOSBox's default 16 MB of memory
  *
@@ -55,6 +57,13 @@ export const crystalDream2DosboxConf = presets
     hdma: 5,
     oplmode: 'auto',
   })
+  .setGUS({
+    gus: true,
+    gusbase: 240,
+    gusirq: 5,
+    gusdma: 3,
+    ultradir: 'C:\\ULTRASND',
+  })
   .setJoystick({ joysticktype: 'none' })
   .addAutoexec(
     '@echo off',
@@ -66,7 +75,7 @@ export const crystalDream2DosboxConf = presets
     'echo.',
     'echo 1st Place at The Computer Crossroads 1993',
     'echo.',
-    'echo Audio: Sound Blaster 16',
+    'echo Audio: Gravis UltraSound + Sound Blaster 16',
     'echo CPU: Maximum Cycles',
     'echo Graphics: VGA',
     'echo.',
