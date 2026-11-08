@@ -2,6 +2,7 @@
  * Tests for DosPlayer component
  */
 
+import { StrictMode } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { DosPlayer } from './DosPlayer';
@@ -79,6 +80,7 @@ describe('DosPlayer', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     document.getElementById('emulators-js')?.remove();
+    delete window.emulators;
   });
 
   describe('Rendering', () => {
@@ -339,6 +341,75 @@ describe('DosPlayer', () => {
         expect(onReady).not.toHaveBeenCalled();
         expect(unmute).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  // main.tsx renders the app in StrictMode, which in development mounts every component,
+  // unmounts it and mounts it again at once: js-dos starts twice in the same element
+  describe('in StrictMode', () => {
+    /** The player of the first start, which StrictMode unmounts at once */
+    let firstPlayer: ReturnType<typeof createMockPlayer>;
+
+    beforeEach(() => {
+      firstPlayer = createMockPlayer();
+      // Then the player of the second start, the one that stays
+      mockDos.mockReturnValueOnce(firstPlayer);
+    });
+
+    const renderStrict = (onReady: () => void) =>
+      render(
+        <StrictMode>
+          <DosPlayer onReady={onReady} />
+        </StrictMode>
+      );
+
+    it('stops the first start and reports only the second one ready', async () => {
+      const onReady = vi.fn();
+      const first = createMockCommandInterface();
+      const second = createMockCommandInterface();
+
+      renderStrict(onReady);
+      await act(async () => {});
+
+      expect(mockDos).toHaveBeenCalledTimes(2);
+      expect(firstPlayer.stop).toHaveBeenCalledTimes(1);
+      expect(player.stop).not.toHaveBeenCalled();
+
+      // js-dos goes on to fire the first start's events too
+      act(() => mockDos.mock.calls[0]?.[1]?.onEvent?.('ci-ready', first.ci));
+      emit('ci-ready', second.ci);
+
+      expect(onReady).toHaveBeenCalledTimes(1);
+      expect(onReady).toHaveBeenCalledWith(second.ci);
+    });
+
+    it('makes the second start once emulators.js, which the first one loads, has run', async () => {
+      const onReady = vi.fn();
+      const { ci } = createMockCommandInterface();
+      // Like js-dos, the first start adds the script tag that loads emulators.js
+      const script = document.createElement('script');
+      script.id = 'emulators-js';
+      mockDos.mockReset().mockImplementationOnce(() => {
+        document.head.append(script);
+        return firstPlayer;
+      });
+      mockDos.mockReturnValue(player);
+
+      renderStrict(onReady);
+      await act(async () => {});
+
+      expect(mockDos).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        window.emulators = { version: '8.3.8' };
+        script.dispatchEvent(new Event('load'));
+      });
+
+      expect(mockDos).toHaveBeenCalledTimes(2);
+      expect(firstPlayer.stop).toHaveBeenCalledTimes(1);
+      expect(player.stop).not.toHaveBeenCalled();
+      emit('ci-ready', ci);
+      expect(onReady).toHaveBeenCalledWith(ci);
     });
   });
 
