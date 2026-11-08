@@ -73,8 +73,10 @@ Location: `/public/sitemap.xml`
 Includes:
 
 - Main page, https://doskit.net/ (priority 1.0)
-- Proper lastmod dates
-- Change frequency hints
+- Its `lastmod`, the date of the page's last significant change, set by hand (see [Updating Metadata](#updating-metadata))
+- Change frequency hint (weekly)
+
+Google ignores `priority` and `changefreq`, and uses `lastmod` only while it stays consistently accurate, so the date has to move with the page.
 
 It lists only pages on doskit.net that exist: the documentation is not deployed with the site, and a sitemap may only list URLs on its own host. To list app pages, use their canonical form (see Deep Links).
 
@@ -224,7 +226,7 @@ public/
 
 ### Build Output
 
-Vite copies every file in `public/` into `dist/` as it is. The build also writes `dist/404.html`, a copy of the built `index.html` that serves path-style deep links on GitHub Pages (see Deep Links).
+Vite copies every file in `public/` into `dist/` as it is. The build also writes `dist/404.html`, a copy of the built `index.html` that serves path-style deep links on GitHub Pages (see Deep Links), and `dist/licenses/third-party-licenses.txt`, the licenses of the packages bundled into the app, which the licenses page links.
 
 ## Build Process
 
@@ -252,8 +254,8 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 
 1. `copy-js-dos.js` copies the js-dos player and emulator files from `node_modules/js-dos` into `public/` (the copies are gitignored)
 2. `tsc -b` type-checks the project
-3. Vite builds the app and copies `public/` into `dist/`, replacing `%VITE_APP_VERSION%` in `index.html` with the version in `package.json` and writing `dist/404.html`
-4. `inject-sw-version.js` gives the service worker a new cache version, the list of bundles to precache, and the js-dos version and demo archive hash that name its other caches
+3. Vite builds the app and copies `public/` into `dist/`, replacing `%VITE_APP_VERSION%` in `index.html` with the version in `package.json` and writing `dist/404.html` and `dist/licenses/third-party-licenses.txt`
+4. `inject-sw-version.js` gives the service worker its cache version, a hash of the site the build made, so only a deploy that changes the site or the worker installs a new worker; the list of bundles to precache; and the js-dos version and demo archive hash that name its other caches
 
 ## Validation
 
@@ -317,7 +319,7 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 ### Updating Metadata
 
 1. **index.html**: Update meta tags as needed; the build fills in the JSON-LD's `softwareVersion`
-2. **sitemap.xml**: Update lastmod dates when content changes
+2. **sitemap.xml**: Set the page's `lastmod` to the deploy's date whenever what crawlers read on it changes: its text, its links, or the metadata in `index.html`, such as the description, the keywords or the JSON-LD. Google counts changes to the main content, the structured data and the links, not a new copyright year. Nothing sets the date for you: the build copies `sitemap.xml` as it is.
 3. **llms.txt / llms-full.txt**: Update when features or documentation changes; `llm.txt` and `llm-full.txt` only point to them
 4. **humans.txt**: Update when the team, the tools or the bundled productions change, and set its "Last update" date by hand when you do. It names no versions of DosKit or of its tools, so releases and upgrades need no edit there. Its browser list is written by hand too: keep it to the minimums in the README's [Browser Compatibility](../README.md#browser-compatibility).
 5. **.well-known/security.txt**: Renew `Expires` before it passes, keeping it less than a year ahead
