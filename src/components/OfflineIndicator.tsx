@@ -8,8 +8,12 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { PWA_CONFIG, UI_CONFIG } from '../constants/app';
+import { logger } from '../utils/logger';
 import { safeLocalStorage } from '../utils/storage';
 import './OfflineIndicator.css';
+
+// What the install prompt goes through, logged in development only
+const LOG_CONTEXT = 'PWA';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -130,7 +134,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
     // PWA install prompt handler
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      console.log('[PWA] beforeinstallprompt event fired');
+      logger.info(LOG_CONTEXT, 'beforeinstallprompt event fired');
 
       const promptEvent = e as BeforeInstallPromptEvent;
       setDeferredPrompt(promptEvent);
@@ -143,18 +147,18 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
         setTimeout(() => {
           // Double-check conditions before showing
           if (shouldShowPrompt() && promptEvent) {
-            console.log('[PWA] Showing install prompt');
+            logger.info(LOG_CONTEXT, 'Showing install prompt');
             setShowInstallPrompt(true);
           }
         }, PWA_CONFIG.INSTALL_PROMPT_DELAY);
       } else {
-        console.log('[PWA] Install prompt not shown - conditions not met');
+        logger.info(LOG_CONTEXT, 'Install prompt not shown - conditions not met');
       }
     };
 
     // App installed handler
     const handleAppInstalled = () => {
-      console.log('[PWA] App installed');
+      logger.info(LOG_CONTEXT, 'App installed');
       setIsInstalled(true);
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
@@ -190,13 +194,13 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
       const { outcome } = await deferredPrompt.userChoice;
 
       if (outcome === 'accepted') {
-        console.log('[PWA] User accepted the install prompt');
+        logger.info(LOG_CONTEXT, 'User accepted the install prompt');
         // Clear dismissal tracking
         safeLocalStorage.removeItem(STORAGE_KEYS.DISMISSED);
         safeLocalStorage.removeItem(STORAGE_KEYS.DISMISSED_COUNT);
         safeLocalStorage.removeItem(STORAGE_KEYS.LAST_DISMISSED);
       } else {
-        console.log('[PWA] User dismissed the install prompt');
+        logger.info(LOG_CONTEXT, 'User dismissed the install prompt');
         // Track dismissal
         const currentCount = parseInt(
           safeLocalStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || '0',
@@ -215,7 +219,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
   };
 
   const handleDismissInstall = () => {
-    console.log('[PWA] User dismissed install prompt');
+    logger.info(LOG_CONTEXT, 'User dismissed install prompt');
     setShowInstallPrompt(false);
 
     // Track dismissal
@@ -231,7 +235,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
     // If user has dismissed multiple times, consider it permanent
     if (newCount >= PWA_CONFIG.MAX_INSTALL_DISMISSALS) {
       safeLocalStorage.setItem(STORAGE_KEYS.DISMISSED, 'permanent');
-      console.log('[PWA] Install prompt permanently dismissed after', newCount, 'dismissals');
+      logger.info(LOG_CONTEXT, `Install prompt permanently dismissed after ${newCount} dismissals`);
     }
   };
 

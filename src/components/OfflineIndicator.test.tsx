@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWA_CONFIG } from '../constants/app';
 
@@ -382,6 +382,96 @@ describe('OfflineIndicator', () => {
       expect(localStorage.getItem('pwa-install-dismissed')).toBeNull();
       expect(localStorage.getItem('pwa-install-dismissed-count')).toBeNull();
       expect(localStorage.getItem('pwa-install-last-dismissed')).toBeNull();
+    });
+  });
+
+  describe('in a production build', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.stubEnv('DEV', false);
+      vi.resetModules();
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      vi.useRealTimers();
+    });
+
+    /** The component as a production build has it: its logger keeps to warnings and errors */
+    const importForProduction = async () => (await import('./OfflineIndicator')).OfflineIndicator;
+
+    /** Everything logged below warnings, as one string per call */
+    function captureInformation() {
+      const lines: string[] = [];
+      for (const method of ['log', 'info', 'debug'] as const) {
+        vi.spyOn(console, method).mockImplementation((...args: unknown[]) => {
+          lines.push(args.join(' '));
+        });
+      }
+      return lines;
+    }
+
+    it('logs nothing below warnings when the app is installed from the prompt', async () => {
+      const Indicator = await importForProduction();
+      const lines = captureInformation();
+      render(<Indicator />);
+
+      offerInstall('accepted');
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+      });
+      offerInstall('accepted');
+      fireEvent(window, new Event('appinstalled'));
+
+      expect(lines).toEqual([]);
+    });
+
+    it('logs nothing below warnings when the prompt is turned down for good', async () => {
+      localStorage.setItem(
+        'pwa-install-dismissed-count',
+        String(PWA_CONFIG.MAX_INSTALL_DISMISSALS - 2)
+      );
+      const Indicator = await importForProduction();
+      const lines = captureInformation();
+      render(<Indicator />);
+
+      offerInstall('dismissed');
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+      });
+      expect(localStorage.getItem('pwa-install-dismissed-count')).toBe(
+        String(PWA_CONFIG.MAX_INSTALL_DISMISSALS - 1)
+      );
+      localStorage.removeItem('pwa-install-last-dismissed');
+      cleanup();
+      render(<Indicator />);
+      offerInstall();
+      fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+
+      expect(localStorage.getItem('pwa-install-dismissed')).toBe('permanent');
+      expect(lines).toEqual([]);
+    });
+
+    it('still reports an install dialog that fails to open', async () => {
+      const Indicator = await importForProduction();
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+      render(<Indicator />);
+      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
+      event.prompt = vi.fn().mockRejectedValue(new Error('prompt() failed'));
+      event.userChoice = Promise.resolve({ outcome: 'accepted' });
+      fireEvent(window, event);
+      act(() => {
+        vi.advanceTimersByTime(PWA_CONFIG.INSTALL_PROMPT_DELAY);
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Install' }));
+      });
+
+      expect(errors).toHaveBeenCalledWith(
+        expect.stringContaining('Error showing install prompt'),
+        expect.any(Error)
+      );
     });
   });
 
