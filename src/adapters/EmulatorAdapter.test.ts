@@ -183,36 +183,70 @@ describe('EmulatorAdapter', () => {
       });
 
       it('fails a start that waits for emulators.js, with a clear error, if it cannot load', async () => {
-        void start();
+        const startPage = start();
         const pick = start();
 
         emulatorsScript().dispatchEvent(new Event('error'));
 
-        await expect(pick).rejects.toThrow(
-          'The DOS emulator could not be loaded: /emulators/emulators.js failed to download'
-        );
+        const error =
+          'The DOS emulator could not be loaded: /emulators/emulators.js failed to download';
+        await expect(pick).rejects.toThrow(error);
+        await expect(startPage).rejects.toThrow(error);
         expect(mockDos).toHaveBeenCalledTimes(1);
       });
 
       it('fails a start that waits for emulators.js if the script defines no emulator', async () => {
-        void start();
+        const startPage = start();
         const pick = start();
 
         // Served something else, such as a page, the script runs without defining the global
         emulatorsScript().dispatchEvent(new Event('load'));
 
-        await expect(pick).rejects.toThrow(
-          'The DOS emulator could not be loaded: /emulators/emulators.js ran but did not set up the emulator'
-        );
+        const error =
+          'The DOS emulator could not be loaded: /emulators/emulators.js ran but did not set up the emulator';
+        await expect(pick).rejects.toThrow(error);
+        await expect(startPage).rejects.toThrow(error);
         expect(mockDos).toHaveBeenCalledTimes(1);
+      });
+
+      // js-dos shows its own error for that player, under the page's "Loading DOS
+      // emulator...", and sends no event for it
+      describe('for the start that adds the tag', () => {
+        it('hands back the player only once emulators.js has run', async () => {
+          let handedBack = false;
+          const startPage = start().then((player) => {
+            handedBack = true;
+            return player;
+          });
+          await settle();
+
+          expect(mockDos).toHaveBeenCalledTimes(1);
+          expect(handedBack).toBe(false);
+
+          runEmulatorsJs();
+
+          await expect(startPage).resolves.toBe(mockDosProps);
+          expect(mockDosProps.stop).not.toHaveBeenCalled();
+        });
+
+        it('fails with a clear error, and stops the player, if emulators.js cannot load', async () => {
+          const startPage = start();
+
+          emulatorsScript().dispatchEvent(new Event('error'));
+
+          await expect(startPage).rejects.toThrow(
+            'The DOS emulator could not be loaded: /emulators/emulators.js failed to download'
+          );
+          expect(mockDosProps.stop).toHaveBeenCalledTimes(1);
+        });
       });
 
       // js-dos would take the failed tag for a loaded package, as above
       it('loads emulators.js again for a start made after it failed to load', async () => {
-        void start();
+        const startPage = start();
         const failed = emulatorsScript();
         failed.dispatchEvent(new Event('error'));
-        await settle();
+        await expect(startPage).rejects.toThrow('The DOS emulator could not be loaded');
 
         const retry = start();
 

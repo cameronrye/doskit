@@ -96,8 +96,10 @@ export class JsDosAdapter implements EmulatorAdapter {
   }
 
   /**
-   * Start js-dos in the container. A start made while emulators.js loads waits for the
-   * script to run, and fails if it cannot load; any other start calls Dos() at once.
+   * Start js-dos in the container, and hand back its player once emulators.js has run. A
+   * start made while emulators.js loads waits for it before calling Dos(); any other start
+   * calls Dos() at once. If emulators.js cannot load, every start that needs it fails, and
+   * one that has called Dos() stops its player.
    */
   async initialize(container: HTMLDivElement, options: Partial<DosOptions>): Promise<DosProps> {
     if (!this.isAvailable()) {
@@ -117,9 +119,21 @@ export class JsDosAdapter implements EmulatorAdapter {
       );
     }
 
-    // Follow the load from the start that added the tag, so that a later start learns how
-    // it ended even when that was before it asked
-    void emulatorsLoad();
+    // The start that added the tag follows the load from here, so that a later start learns
+    // how it ended even when that was before it asked, and waits for it too: js-dos shows a
+    // failed load only in its own window, under the player's loading panel, and sends no
+    // event for it
+    const added = emulatorsLoad();
+    if (added) {
+      try {
+        await added;
+      } catch (error) {
+        dosProps.stop().catch((err: unknown) => {
+          console.error('[EmulatorAdapter] Error stopping player:', err);
+        });
+        throw error;
+      }
+    }
     return dosProps;
   }
 

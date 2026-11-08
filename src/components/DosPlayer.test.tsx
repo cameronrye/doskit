@@ -78,6 +78,7 @@ describe('DosPlayer', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    document.getElementById('emulators-js')?.remove();
   });
 
   describe('Rendering', () => {
@@ -141,6 +142,32 @@ describe('DosPlayer', () => {
           'Initialization failed'
         );
       });
+    });
+
+    // js-dos shows its own error for it, under the loading panel, and sends no event
+    it('shows that the emulator could not load when emulators.js fails, instead of loading', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      // Like js-dos, the first start adds the script tag that loads emulators.js
+      mockDos.mockImplementation(() => {
+        const script = document.createElement('script');
+        script.id = 'emulators-js';
+        script.src = '/emulators/emulators.js';
+        document.head.append(script);
+        return player;
+      });
+      const { container } = render(<DosPlayer />);
+
+      act(() => {
+        document.getElementById('emulators-js')?.dispatchEvent(new Event('error'));
+      });
+
+      await waitFor(() => {
+        expect(container.querySelector('.dos-player-error')).toHaveTextContent(
+          'The DOS emulator could not be loaded: /emulators/emulators.js failed to download'
+        );
+      });
+      expect(screen.queryByText(/Loading DOS emulator/i)).not.toBeInTheDocument();
+      expect(player.stop).toHaveBeenCalledTimes(1);
     });
   });
 
