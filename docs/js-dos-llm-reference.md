@@ -1726,7 +1726,7 @@ document.getElementById("joinBtn").onclick = () => {
 
 ### A. DOSBox Configuration Reference
 
-> **DosKit note:** DosKit runs every app on js-dos's default `dosbox` backend (`wdosbox.wasm`), which drops or resets some of the settings below without a warning. It has no dynamic core (`core=dynamic` runs the simple core), no `486`, `pentium` or `pentium_mmx` CPU type (reset to `auto`), no `[video]` section or `vmemsize`, no `[dos] ver` (DOS reports 5.00) and no `sb16vibra` Sound Blaster type (reset to `sb16`). It has no `[memory]` section or `[gus] gusrate` either: memory is `[dosbox] memsize`, 16 MB by default. See [`src/dos-apps/README.md`](../src/dos-apps/README.md) for the settings DosKit's app configs use.
+> **DosKit note:** DosKit runs every app on js-dos's default `dosbox` backend (`wdosbox.wasm`), which drops or resets some of the settings below without a warning. It has no dynamic core (`core=dynamic` runs the simple core), no `486`, `pentium` or `pentium_mmx` CPU type (reset to `auto`), no `[video]` section or `vmemsize`, no `[dos] ver` (DOS reports 5.00) and no `sb16vibra` Sound Blaster type (reset to `sb16`). It has no `[memory]` section or `[gus] gusrate` either: memory is `[dosbox] memsize`, 16 MB by default. Pasted as printed, the block's inline comments break it too: DOSBox only skips lines that start with `#`, so a comment after a value becomes part of it, and even `core=auto` resets to `simple`. See [`src/dos-apps/README.md`](../src/dos-apps/README.md) for the settings DosKit's app configs use.
 
 Common DOSBox configuration options:
 
