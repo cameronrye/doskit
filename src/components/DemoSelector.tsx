@@ -494,11 +494,7 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
               </button>
             ) : (
               <>
-                <button
-                  className="load-button"
-                  onClick={() => handleLoadApp(selectedApp)}
-                  disabled={isLoading}
-                >
+                <button className="load-button" onClick={() => handleLoadApp(selectedApp)}>
                   Load Application
                 </button>
                 <button

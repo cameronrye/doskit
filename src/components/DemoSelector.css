@@ -286,29 +286,25 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* White text needs 4.5:1 contrast (WCAG AA): 5.1:1 on this blue, 6.1:1 on hover */
 .load-button {
-  background: #228be6;
+  background: #1971c2;
   color: #ffffff;
   flex: 1;
   border: none;
 }
 
-.load-button:hover:not(:disabled) {
-  background: #1c7ed6;
+.load-button:hover {
+  background: #1864ab;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(34, 139, 230, 0.35);
+  box-shadow: 0 4px 12px rgba(25, 113, 194, 0.35);
 }
 
-.load-button:disabled {
-  background: #adb5bd;
-  color: #ffffff;
-  cursor: not-allowed;
-}
-
+/* The border marks the button out: 3:1 against the footer and the button (WCAG AA) */
 .cancel-button {
   background: #2a2a2a;
   color: #aaa;
-  border: 1px solid #444;
+  border: 1px solid #808080;
 }
 
 .cancel-button:hover:not(:disabled) {
