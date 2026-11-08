@@ -358,12 +358,14 @@ Releases are **fully automated** using [release-please](https://github.com/googl
    - When you merge the Release PR, it creates a GitHub release
    - Builds and uploads artifacts automatically
 
+`.release-please-manifest.json` holds the version of the last release, which each Release PR bumps, and `release-please-config.json` keeps the tags in the `vX.Y.Z` form of the earlier releases. release-please finds the last release's tag within the latest 1,000 commits on `main` (`commit-search-depth`).
+
 ### Creating a Release
 
 After merging PRs to main, release-please automatically creates a **Release PR**:
 
 1. **Check for Release PR** - Look for a PR titled "chore(main): release X.Y.Z"
-2. **Review the Release PR** - Check version number and auto-generated changelog. CI does not run on it: release-please opens it with the workflow's `GITHUB_TOKEN`, and GitHub starts no workflows for what that token does
+2. **Review the Release PR** - Check version number and auto-generated changelog. CI does not run on it by itself: release-please opens and updates it with the workflow's `GITHUB_TOKEN`, and GitHub starts no workflows for what that token does. Close and reopen the PR to run CI, whose checks `main` requires before a merge
 3. **Merge the Release PR** - This triggers the GitHub release creation, and, as any push to `main` does, CI and the deploy
 
 ### Versioning
