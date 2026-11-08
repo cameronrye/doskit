@@ -12,12 +12,8 @@ import { DosPlayer } from './DosPlayer';
 import { DemoSelector, type LoadedApp } from './DemoSelector';
 import type { DosApp } from '../types/dos-app';
 import type { CommandInterface } from '../types/js-dos';
-import type { InitFileEntry } from '../types/js-dos';
 import { getUserFriendlyError, type FriendlyError } from '../utils/errorMessages';
 import './DosPlayerWithApps.css';
-
-// Re-export the app type for use in parent components
-export type { DosApp };
 
 interface DosPlayerWithAppsProps {
   onReady?: (ci: CommandInterface) => void;
@@ -55,7 +51,7 @@ interface Session {
   /** Tells the sessions apart: each one starts its own player */
   id: number;
   app: DosApp | null;
-  files?: InitFileEntry[] | Uint8Array;
+  files?: Uint8Array;
   dosboxConf?: string;
 }
 

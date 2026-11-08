@@ -12,20 +12,14 @@ import { useState, useCallback, useRef, useEffect, useId } from 'react';
 import { FloppyDisk, LIGHT_FLOPPY_THEME, type FloppyLabel, type FloppyTheme } from 'retro-floppy';
 import 'retro-floppy/dist/retro-floppy.css';
 import type { DosApp } from '../types/dos-app';
-import type { InitFileEntry } from '../types/js-dos';
 import type { LoadProgress } from '../utils/diskLoader';
 import { getUserFriendlyError, type FriendlyError } from '../utils/errorMessages';
-import { availableApps, findAppById } from '../config/apps.config';
+import { availableApps } from '../config/apps.config';
 import './DemoSelector.css';
-
-// Re-export for backward compatibility
-export type { DosApp };
-// eslint-disable-next-line react-refresh/only-export-components
-export { availableApps, findAppById };
 
 export interface LoadedApp {
   app: DosApp;
-  files: InitFileEntry[] | Uint8Array;
+  files: Uint8Array;
   dosboxConf: string;
 }
 

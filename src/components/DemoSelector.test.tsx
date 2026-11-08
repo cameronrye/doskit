@@ -7,7 +7,8 @@ import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 
 import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
-import { DemoSelector, type DosApp } from './DemoSelector';
+import { DemoSelector } from './DemoSelector';
+import type { DosApp } from '../types/dos-app';
 import { loadZipArchive, type LoadProgress } from '../utils/diskLoader';
 import { availableApps } from '../config/apps.config';
 import { secondRealityDosboxConf, secondRealityZipUrl } from '../dos-apps/second-reality.config';
