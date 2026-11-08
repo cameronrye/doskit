@@ -669,12 +669,14 @@ describe('DosPlayer', () => {
 npm run lint
 npm run format:check
 
-# Run tests
-npm test
+# Run tests, measuring coverage as CI does
+npm run test:coverage
 
 # Check types, tests included (npm run build runs this first)
 npx tsc -b
 ```
+
+Coverage counts every `.ts` and `.tsx` file in `src/` but the tests, `src/test/` and the type declarations (`*.d.ts`), so a source file that no test loads counts as uncovered. The run fails when coverage drops below the thresholds in `vitest.config.ts`.
 
 ## Additional Resources
 
