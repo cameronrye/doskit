@@ -275,7 +275,7 @@ function App() {
         <div className="credits">
           Powered by{' '}
           <a href="https://js-dos.com" target="_blank" rel="noopener noreferrer">
-            js-dos v8.3.20
+            js-dos v{import.meta.env.VITE_JSDOS_VERSION}
           </a>
         </div>
       </footer>

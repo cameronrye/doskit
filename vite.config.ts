@@ -1,9 +1,24 @@
+import { createRequire } from 'node:module';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+
+const require = createRequire(import.meta.url);
+const versionOf = (manifest: string) => (require(manifest) as { version: string }).version;
+
+/**
+ * Versions read from package.json when Vite starts, so release-please bumps and js-dos
+ * upgrades reach the footer and index.html without hand edits. Code reads them from
+ * import.meta.env and index.html uses %VITE_APP_VERSION%. vitest.config.ts applies them too.
+ */
+export const versionDefines = {
+  'import.meta.env.VITE_APP_VERSION': JSON.stringify(versionOf('./package.json')),
+  'import.meta.env.VITE_JSDOS_VERSION': JSON.stringify(versionOf('js-dos/package.json')),
+};
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  define: versionDefines,
 
   // Custom domain deployment configuration
   // Using custom domain doskit.net, so base path is '/'

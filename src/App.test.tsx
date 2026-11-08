@@ -2,8 +2,9 @@
  * Tests for App component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { version as installedJsDosVersion } from 'js-dos/package.json';
 import App from './App';
 import type { DosApp } from './components/DosPlayerWithApps';
 
@@ -199,10 +200,20 @@ describe('App', () => {
   });
 
   describe('Footer', () => {
-    it('should render credits', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('should render credits with the installed js-dos version', () => {
       render(<App />);
       expect(screen.getByText(/Powered by/i)).toBeInTheDocument();
-      expect(screen.getByText(/js-dos v8.3.20/i)).toBeInTheDocument();
+      expect(screen.getByText(`js-dos v${installedJsDosVersion}`)).toBeInTheDocument();
+    });
+
+    it('should show the js-dos version the build provides', () => {
+      vi.stubEnv('VITE_JSDOS_VERSION', '9.9.9');
+      render(<App />);
+      expect(screen.getByRole('link', { name: 'js-dos v9.9.9' })).toBeInTheDocument();
     });
 
     it('should render author attribution', () => {
@@ -219,7 +230,7 @@ describe('App', () => {
       expect(authorLink).toHaveAttribute('target', '_blank');
       expect(authorLink).toHaveAttribute('rel', 'noopener noreferrer');
 
-      const jsDosLink = screen.getByRole('link', { name: /js-dos v8.3.20/i });
+      const jsDosLink = screen.getByRole('link', { name: `js-dos v${installedJsDosVersion}` });
       expect(jsDosLink).toHaveAttribute('href', 'https://js-dos.com');
       expect(jsDosLink).toHaveAttribute('target', '_blank');
       expect(jsDosLink).toHaveAttribute('rel', 'noopener noreferrer');
