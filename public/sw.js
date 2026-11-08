@@ -32,8 +32,10 @@ const STATIC_ASSETS = [
   '/js-dos.css',
 ];
 
-// Emulator files for the default "dosbox" backend. DOSBox-X (wdosbox-x.*, 6.6 MB)
-// only loads when a user switches backend, so it is cached on first use instead.
+// Emulator files for the default "dosbox" backend, which every app runs on. DOSBox-X
+// (wdosbox-x.*, 6.6 MB) is left out: js-dos offers its backend picker only before a run,
+// which autoStart with countDownStart 0 skips, so users cannot switch to it. Should
+// anything request it, cache-first stores it on first use like any emulator file.
 const EMULATOR_ASSETS = [
   '/emulators/wdosbox.wasm',
   '/emulators/wdosbox.js',
@@ -274,8 +276,7 @@ async function trimCache(cacheName) {
 
 /**
  * Serve an emulator file cache-first. The files of one js-dos version never change, and
- * deploys keep their cache. DOSBox-X is not precached: storing it on first use is what
- * keeps it working offline.
+ * deploys keep their cache. A file install did not precache is stored on first use.
  */
 async function serveEmulatorFile(event) {
   const { request } = event;
