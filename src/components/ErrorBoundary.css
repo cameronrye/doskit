@@ -74,13 +74,14 @@
   font-family: inherit;
 }
 
+/* White on #5568d3 is 4.9:1; on the lighter #667eea it was 3.66:1 */
 .error-boundary-button.primary {
-  background: #667eea;
+  background: #5568d3;
   color: white;
 }
 
 .error-boundary-button.primary:hover {
-  background: #5568d3;
+  background: #4c5fd5;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
