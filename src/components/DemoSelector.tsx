@@ -13,7 +13,7 @@ import { FloppyDisk, LIGHT_FLOPPY_THEME } from 'retro-floppy';
 import 'retro-floppy/dist/retro-floppy.css';
 import type { DosApp } from '../types/dos-app';
 import type { InitFileEntry } from '../types/js-dos';
-import { type LoadProgress } from '../utils/diskLoader';
+import type { LoadProgress } from '../utils/diskLoader';
 import { availableApps, findAppById } from '../config/apps.config';
 import './DemoSelector.css';
 

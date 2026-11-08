@@ -30,6 +30,8 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // With verbatimModuleSyntax, import { type X } still emits import 'module'
+      '@typescript-eslint/no-import-type-side-effects': 'error',
     },
   }
 );
