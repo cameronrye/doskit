@@ -146,10 +146,10 @@ UpdateNotification is not part of this tree: src/utils/updatePrompt.ts mounts it
 ### Error Handling
 
 - **Error boundaries** around the whole app (main.tsx) and around the player (App.tsx), which report to the error tracker
-- **Global handler** (src/utils/globalErrorHandler.ts): logs uncaught errors and unhandled promise rejections, and keeps known harmless ones out of the console: js-dos's fullscreen and keyboard lock calls that fail without a user gesture, ResizeObserver loop notices and browser extension errors
+- **Global handler** (src/utils/globalErrorHandler.ts): logs uncaught errors and unhandled promise rejections, and keeps known harmless ones out of the console: js-dos's fullscreen and keyboard lock calls that fail without a user gesture, keyboard lock requests that a newer one superseded (two players starting milliseconds apart), ResizeObserver loop notices and browser extension errors
 - **Error tracking** (src/utils/errorTracking.ts): a console tracker; no remote service is set up
-- **Downloads**: application archives retry network failures and 408, 429, 500, 502, 503 and 504 responses up to three times with exponential backoff; a download the user cancels, or a newer navigation supersedes, is not reported as an error
-- **Messages**: the selector explains a failed or timed-out load, an unknown `?app=` id shows a banner, a deep link that fails to load offers Try Again (back to the selector), and the player offers a reload when js-dos cannot start
+- **Downloads**: application archives retry network failures and 408, 429, 500, 502, 503 and 504 responses up to three times with exponential backoff, but a network failure while the browser reports being offline fails at once; a download the user cancels, or a newer navigation supersedes, is not reported as an error
+- **Messages**: the selector and the error box of a deep link explain a failed load with the same messages (cannot connect, not available offline yet, file not found, server unavailable, took too long), with the technical message under a collapsed Details line; an unknown `?app=` id shows a banner; the deep link's Try Again returns to the selector; and the player offers a reload when js-dos cannot start
 
 ## Project Structure
 
@@ -635,8 +635,8 @@ The social media images are not part of the build: after editing their SVG sourc
 - Check DOSBox sound card configuration
 
 #### Application Fails to Load
-- Check internet connection: downloads retry network failures up to three times, and the selector gives up after 30 seconds
-- Offline, only applications that have been opened online before can load
+- Check internet connection: while the browser reports being online, downloads retry network failures up to three times, and the selector gives up after 30 seconds; while it reports being offline, they fail at once
+- Offline, only applications that have been opened online before can load; any other shows "This application isn't available offline yet", and opening it once online stores it
 - After a failed deep link, Try Again returns to the selector, where the application can be picked again
 
 ### Debug Mode

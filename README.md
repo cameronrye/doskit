@@ -121,7 +121,7 @@ In Chrome, Edge and other Chromium browsers, DosKit also shows its own **Install
 The service worker (`public/sw.js`) is registered by production builds only, so `npm run dev` runs without it. To try it locally, run `npm run build` and then `npm run preview`.
 
 - **On install**, the worker stores the app shell (`index.html`, the manifest, the logo and favicon, `js-dos.js`, `js-dos.css`, and every JS and CSS bundle, including the chunks loaded on demand) and the emulator files of js-dos's default DOSBox backend.
-- **App archives** (`/demos/<id>.zip`) are stored the first time each app is opened while the service worker runs. On a first visit, an app opened before the worker has started, such as a deep link's, is stored the next time it is opened. An app not stored yet fails to load offline with a network error.
+- **App archives** (`/demos/<id>.zip`) are stored the first time each app is opened while the service worker runs. On a first visit, an app opened before the worker has started, such as a deep link's, is stored the next time it is opened. An app not stored yet cannot start offline: while the browser reports being offline, it fails at once with "This application isn't available offline yet", and opening it once online stores it.
 - **Pages** come from the network. When the network fails or takes more than 5 seconds, every URL gets the `index.html` stored on install, so a URL never visited online, such as a new deep link, opens too. Pages are not stored as they are visited.
 - **Deploys**: each build has an app shell cache of its own, which replaces the previous one when the new version takes over. Bundles are named after their content, and install copies those the previous version's cache holds under the same name, so of the bundles a new version downloads only those it changed. Emulator files stay cached until the js-dos version changes, and app archives until an archive is added, changed or removed.
 
@@ -686,12 +686,20 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 
 **Problem**: DOS application files fail to download.
 
+The selector, or the **Error Loading Application** box of a link to the app, says what went wrong. **Details**, under the explanation, shows the technical error for bug reports, such as `Failed to fetch` or `Failed to load ZIP: HTTP 404`.
+
+- **Unable to connect to the server**: a network error while the browser reported being online, after the retries
+- **This application isn't available offline yet**: a network error while the browser reports being offline, for an app whose archive the service worker has not stored (see [How Offline Works](#how-offline-works))
+- **The requested file was not found**: the server answered 404; an update of DosKit may have moved the file, so reload the page
+- **The server is temporarily unavailable**: the server answered with an error status (5xx); try again in a few minutes
+- **The request took too long to complete**: a timeout, such as the selector's 30-second limit
+
 **Solutions:**
 
 1. Check internet connection
 2. Offline, only apps whose archives the service worker has stored can start: see [How Offline Works](#how-offline-works)
 3. Check the browser console and Network tab: each app downloads `/demos/<id>.zip` from the site itself
-4. Try again later. Failed downloads are retried three times, with growing delays, after network errors and 408, 429, 500, 502, 503 and 504 responses
+4. Try again later. Failed downloads are retried three times, with growing delays, after network errors and 408, 429, 500, 502, 503 and 504 responses, except a network error while the browser reports being offline, which fails at once
 5. Check if using VPN or proxy that might block requests
 
 #### High Memory Usage
