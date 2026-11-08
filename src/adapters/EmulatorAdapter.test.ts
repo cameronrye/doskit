@@ -198,6 +198,56 @@ describe('EmulatorAdapter', () => {
         expect(mockDos).toHaveBeenCalledTimes(1);
       });
 
+      // AbortSignal.throwIfAborted() and an abort's reason came in Chrome 100, Firefox 97 and
+      // Safari 15.4, after some of the browsers the README supports (Chrome 98, Firefox 94)
+      describe('in a browser whose AbortSignal has no throwIfAborted() or reason', () => {
+        const { throwIfAborted } = AbortSignal.prototype;
+        const reason = Object.getOwnPropertyDescriptor(AbortSignal.prototype, 'reason')!;
+
+        beforeEach(() => {
+          // @ts-expect-error -- as those browsers have it
+          delete AbortSignal.prototype.throwIfAborted;
+          Object.defineProperty(AbortSignal.prototype, 'reason', {
+            configurable: true,
+            get: () => undefined,
+          });
+        });
+
+        afterEach(() => {
+          AbortSignal.prototype.throwIfAborted = throwIfAborted;
+          Object.defineProperty(AbortSignal.prototype, 'reason', reason);
+        });
+
+        it('starts js-dos once emulators.js has run', async () => {
+          const startPage = start();
+          const pick = adapter.initialize(
+            document.createElement('div'),
+            {},
+            new AbortController().signal
+          );
+          await settle();
+
+          runEmulatorsJs();
+
+          await expect(pick).resolves.toBe(mockDosProps);
+          await expect(startPage).resolves.toBe(mockDosProps);
+        });
+
+        it('never starts js-dos for a start aborted while it waits for emulators.js', async () => {
+          const startPage = start();
+          const controller = new AbortController();
+          const pick = adapter.initialize(document.createElement('div'), {}, controller.signal);
+          await settle();
+
+          controller.abort();
+          runEmulatorsJs();
+
+          await expect(pick).rejects.toThrow(expect.objectContaining({ name: 'AbortError' }));
+          await expect(startPage).resolves.toBe(mockDosProps);
+          expect(mockDos).toHaveBeenCalledTimes(1);
+        });
+      });
+
       it('starts js-dos at once when emulators.js has already run', async () => {
         const startPage = start();
         runEmulatorsJs();

@@ -126,8 +126,12 @@ export class JsDosAdapter implements EmulatorAdapter {
     const loading = emulatorsLoad();
     if (loading) await loading;
     // Each Dos() call adds document listeners that js-dos never removes, and takes the
-    // keyboard lock from the player before it, so none is made for a player no one wants
-    signal?.throwIfAborted();
+    // keyboard lock from the player before it, so none is made for a player no one wants.
+    // Not signal.throwIfAborted(): Chrome before 100 and Firefox before 97 have no such
+    // method, and Firefox before 97 gives an abort no reason.
+    if (signal?.aborted) {
+      throw signal.reason ?? new DOMException('The start was aborted', 'AbortError');
+    }
 
     let dosProps: DosProps;
     try {
