@@ -23,18 +23,6 @@ describe('errorTracking', () => {
       expect(tracker.isInitialized()).toBe(true);
     });
 
-    it('should initialize console tracker explicitly', () => {
-      initializeErrorTracking('console');
-      const tracker = getErrorTracker();
-      expect(tracker.isInitialized()).toBe(true);
-    });
-
-    it('should initialize sentry tracker', () => {
-      initializeErrorTracking('sentry', { dsn: 'test-dsn' });
-      const tracker = getErrorTracker();
-      expect(tracker.isInitialized()).toBe(true);
-    });
-
     it('should warn if already initialized', () => {
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -61,7 +49,7 @@ describe('errorTracking', () => {
 
   describe('ConsoleErrorTracker', () => {
     beforeEach(() => {
-      initializeErrorTracking('console');
+      initializeErrorTracking();
     });
 
     it('should capture error', () => {

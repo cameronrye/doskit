@@ -14,7 +14,7 @@ import { initializeErrorTracking } from './utils/errorTracking';
 import { initializeGlobalErrorHandler } from './utils/globalErrorHandler';
 
 // Initialize error tracking (swap in a remote service here when one is set up)
-initializeErrorTracking('console');
+initializeErrorTracking();
 
 // Initialize global error handler (it logs and tracks errors itself)
 initializeGlobalErrorHandler({
