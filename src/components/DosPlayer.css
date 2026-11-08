@@ -20,6 +20,21 @@
   height: 100%;
 }
 
+/* js-dos's soft fullscreen (softFullscreen in jsdos.config.ts). Its fullscreen button marks
+   the element it runs in, this container, which already has .jsdos-rso, with
+   .jsdos-fullscreen-workaround, but js-dos.css styles that class only on an element inside
+   .jsdos-rso. Fill the viewport as that rule would, at its z-index 999, over the header and
+   footer: see the order in DosPlayerWithApps.css. */
+.dos-player-container.jsdos-fullscreen-workaround {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 999;
+  background: #000;
+}
+
 /* Loading indicator. Like the error below, above js-dos's own sidebar (z-index 10) and
    below everything the app puts over the player: see DosPlayerWithApps.css. */
 .dos-player-loading {
