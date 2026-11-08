@@ -109,6 +109,11 @@ vi.mock('./components/OfflineIndicator', () => ({
   },
 }));
 
+/** Report an app as running, as DosPlayerWithApps does once it has loaded */
+function reportApp(app: DosApp) {
+  act(() => (window as WindowWithTestCallbacks).__dosCallbacks?.onAppChange?.(app));
+}
+
 /** Go back or forward in jsdom's history and wait until App has handled the popstate */
 async function traverse(direction: 'back' | 'forward') {
   await act(async () => {
@@ -599,6 +604,33 @@ describe('App', () => {
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Select Application/i })).toBeInTheDocument();
       });
+    });
+  });
+
+  describe("The running app's author and year", () => {
+    it('shows the author alone for an app without a year', () => {
+      render(<App />);
+
+      reportApp({ ...mockApp, year: undefined });
+
+      expect(screen.getByText('Test Author')).toBeInTheDocument();
+    });
+
+    it('shows the year alone for an app without an author', () => {
+      render(<App />);
+
+      reportApp({ ...mockApp, author: undefined });
+
+      expect(screen.getByText('1995')).toBeInTheDocument();
+    });
+
+    it('shows just the name for an app with neither', () => {
+      render(<App />);
+
+      reportApp({ ...mockApp, author: undefined, year: undefined });
+
+      const appInfo = screen.getByText('Test Application').parentElement;
+      expect(appInfo).toHaveTextContent(/^Test Application$/);
     });
   });
 

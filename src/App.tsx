@@ -44,6 +44,14 @@ function applyUrlRoute(route: UrlRoute): void {
   updateDocumentTitle(route.app?.name);
 }
 
+/** "Author (year)" for the header, or whichever of the two an app gives, or null for neither */
+function describeRelease({ author, year }: DosApp): string | null {
+  if (author && year) {
+    return `${author} (${year})`;
+  }
+  return author || year?.toString() || null;
+}
+
 function App() {
   const [isReady, setIsReady] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -134,6 +142,8 @@ function App() {
     };
   }, []);
 
+  const release = currentApp && describeRelease(currentApp);
+
   return (
     <div className="app">
       {/* PWA Offline Indicator and Install Prompt */}
@@ -149,11 +159,7 @@ function App() {
             <div className="header-center">
               <div className="header-app-info">
                 <span className="header-app-name">{currentApp.name}</span>
-                {currentApp.author && currentApp.year && (
-                  <span className="header-app-meta">
-                    {currentApp.author} ({currentApp.year})
-                  </span>
-                )}
+                {release && <span className="header-app-meta">{release}</span>}
               </div>
             </div>
           )}
