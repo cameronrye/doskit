@@ -18,12 +18,14 @@ interface DosPlayerWithAppsProps {
   requestedApp?: DosApp | null;
 }
 
-const { requests, describeRequest } = vi.hoisted(() => ({
+const { requests, describeRequest, keysHandledInPlayer } = vi.hoisted(() => ({
   /** The requestedApp App gave DosPlayerWithApps on each commit, oldest first */
   requests: [] as string[],
   /** How a requestedApp prop shows up: the app's id, 'none' or 'not passed' */
   describeRequest: (app: DosApp | null | undefined) =>
     app === undefined ? 'not passed' : (app?.id ?? 'none'),
+  /** Keys the mock's own key handler got, as the selector's handler gets them */
+  keysHandledInPlayer: [] as string[],
 }));
 
 interface OfflineIndicatorProps {
@@ -78,7 +80,14 @@ vi.mock('./components/DosPlayerWithApps', async () => {
       });
 
       return (
-        <div data-testid="dos-player-with-apps-mock">
+        <div
+          data-testid="dos-player-with-apps-mock"
+          onKeyDown={(event) => keysHandledInPlayer.push(event.key)}
+        >
+          {/* js-dos's element, which DosPlayerUI renders and js-dos draws the DOS screen in */}
+          <div className="dos-player-container">
+            <canvas data-testid="dos-screen" />
+          </div>
           <button onClick={onReady}>Trigger Ready</button>
           <button onClick={onExit}>Trigger Exit</button>
           <button onClick={() => onAppChange?.(mockApp)}>Load App</button>
@@ -134,6 +143,63 @@ describe('App', () => {
     // jsdom keeps one URL and history for the whole file
     window.history.replaceState({}, '', '/');
     requests.length = 0;
+    keysHandledInPlayer.length = 0;
+  });
+
+  describe('Keys and the running player', () => {
+    // Stands in for js-dos, which sends every key that reaches window to DOS and cancels the
+    // browser's own handling of it
+    const keysAtWindow: string[] = [];
+    const recordKey = (event: KeyboardEvent) => keysAtWindow.push(`${event.type} ${event.key}`);
+
+    beforeEach(() => {
+      keysAtWindow.length = 0;
+      window.addEventListener('keydown', recordKey);
+      window.addEventListener('keyup', recordKey);
+    });
+
+    afterEach(() => {
+      window.removeEventListener('keydown', recordKey);
+      window.removeEventListener('keyup', recordKey);
+    });
+
+    it("keeps keys pressed on DosKit's own controls from js-dos", () => {
+      render(<App />);
+      const button = screen.getByRole('button', { name: 'Select Application' });
+
+      fireEvent.keyDown(button, { key: 'Enter' });
+      fireEvent.keyUp(button, { key: 'Enter' });
+      fireEvent.keyDown(button, { key: 'Tab' });
+
+      expect(keysAtWindow).toEqual([]);
+    });
+
+    it('still gives those keys to the key handlers inside the app', () => {
+      render(<App />);
+
+      fireEvent.keyDown(screen.getByText('Show Selector'), { key: 'ArrowRight' });
+
+      expect(keysHandledInPlayer).toEqual(['ArrowRight']);
+      expect(keysAtWindow).toEqual([]);
+    });
+
+    it('lets keys pressed in the player reach js-dos', () => {
+      render(<App />);
+      const dosScreen = screen.getByTestId('dos-screen');
+
+      fireEvent.keyDown(dosScreen, { key: 'a' });
+      fireEvent.keyUp(dosScreen, { key: 'a' });
+
+      expect(keysAtWindow).toEqual(['keydown a', 'keyup a']);
+    });
+
+    it('lets keys reach js-dos while nothing has the focus', () => {
+      render(<App />);
+
+      fireEvent.keyDown(document.body, { key: 'Escape' });
+
+      expect(keysAtWindow).toEqual(['keydown Escape']);
+    });
   });
 
   describe('URL routing', () => {

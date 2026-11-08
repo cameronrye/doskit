@@ -52,6 +52,19 @@ function describeRelease({ author, year }: DosApp): string | null {
   return author || year?.toString() || null;
 }
 
+/**
+ * js-dos listens for keys on window, sends each one to DOS and cancels the browser's own
+ * handling of it. Keys pressed on DosKit's own controls stop here, once React has handled
+ * them, so Tab, Enter and Space work on those controls and keys meant for the selector never
+ * reach the running program. Keys pressed in the player, or with nothing focused, still
+ * reach DOS.
+ */
+function keepKeysFromDos(event: React.KeyboardEvent) {
+  if (!(event.target instanceof Element && event.target.closest('.dos-player-container'))) {
+    event.stopPropagation();
+  }
+}
+
 function App() {
   const [isReady, setIsReady] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -145,7 +158,7 @@ function App() {
   const release = currentApp && describeRelease(currentApp);
 
   return (
-    <div className="app">
+    <div className="app" onKeyDown={keepKeysFromDos} onKeyUp={keepKeysFromDos}>
       {/* PWA Offline Indicator and Install Prompt */}
       <OfflineIndicator onNetworkStatusChange={handleNetworkStatusChange} />
 
