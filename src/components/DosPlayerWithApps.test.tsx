@@ -747,6 +747,26 @@ describe('DosPlayerWithApps', () => {
       expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
     });
 
+    // Every app in apps.config.ts has an empty dosboxConf and loads its config, autoexec and
+    // all, on demand
+    it('boots a requested app with the DOSBox config it loads', async () => {
+      const stars = deferredApp('stars');
+      const app: DosApp = {
+        ...stars.app,
+        dosboxConf: '',
+        loadDosboxConf: vi.fn(async () => '[autoexec]\nSTARS.EXE'),
+      };
+      render(<DosPlayerWithApps requestedApp={app} />);
+
+      await stars.finish();
+
+      expect(boots).toEqual(['[autoexec]\nSTARS.EXE']);
+      expect(screen.getByTestId('dos-player-mock')).toHaveAttribute(
+        'data-dosbox-conf',
+        '[autoexec]\nSTARS.EXE'
+      );
+    });
+
     it('reports the requested app once it runs', async () => {
       const stars = deferredApp('stars');
       const onAppChange = vi.fn();

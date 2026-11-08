@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vite
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import App from '../App';
 import { DosPlayer } from '../components/DosPlayer';
+import { starsDosboxConf } from '../dos-apps/stars.config';
 import type {
   CommandInterface,
   CommandInterfaceEvents,
@@ -435,6 +436,8 @@ describe('Status badge as players come and go', () => {
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
     await waitFor(() => expect(mockDos).toHaveBeenCalledTimes(2), { timeout: 3000 });
+    // With the DOSBox config the app loads, which runs it
+    expect(mockDos.mock.lastCall?.[1]?.dosboxConf).toBe(starsDosboxConf);
     expect(badge()).toHaveTextContent('Loading');
     reportReady();
     expect(badge()).toHaveTextContent('Ready');
