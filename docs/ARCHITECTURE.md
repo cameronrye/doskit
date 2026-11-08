@@ -198,24 +198,25 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 
 ### 2. Error Handling
 
-**Multi-layer approach**:
+**Multi-layer approach** (see [ERROR-HANDLING.md](ERROR-HANDLING.md)):
 
-1. **ErrorBoundary** components catch React errors
-2. **Try-catch blocks** in async operations
-3. **User-friendly error messages** via `errorMessages.ts`
+1. **Global error handler** catches uncaught errors and unhandled promise rejections, suppresses known harmless ones such as js-dos's fullscreen and keyboard lock calls, and logs and tracks the rest
+2. **ErrorBoundary** components catch React errors: one around App, one around DosPlayerWithApps
+3. **Component error states** show load and start failures where they happen: the selector, the loading overlay and the player
 4. **Retry logic** with exponential backoff for network requests
 
 ### 3. Performance Optimizations
 
-- **Lazy loading**: DOS app configs loaded on-demand
-- **Resource hints**: DNS prefetch and preconnect for external resources
+- **Lazy loading**: DOS app configs (and the DOSBox config builder they use) are loaded on demand, and the selector preloads an app's DOSBox config when the pointer rests on it for 150 ms
+- **Code splitting**: React has a chunk of its own (`react-vendor`), which stays cached across releases
+- **Preloading**: `index.html` preloads the default backend's `wdosbox.wasm`, and loads `js-dos.js` deferred at high fetch priority
 - **AbortController**: Cancellable fetch requests
 - **Retry logic**: Automatic retry with exponential backoff
-- **Efficient caching**: LRU cache with timestamps
+- **Efficient caching**: Emulator files and demo archives stay cached across deploys, and runtime entries are trimmed least recently used first
 
 ### 4. Type Safety
 
-- **Strict TypeScript**: All strict compiler options enabled
+- **Strict TypeScript**: All strict compiler options enabled, plus `noUncheckedIndexedAccess` and `noImplicitReturns`; `tsc -b` checks the tests with the same options
 - **Type definitions**: Custom types for js-dos API
 - **Input validation**: Sanitization to prevent XSS
 - **Global declarations**: Proper Window interface for js-dos
@@ -224,13 +225,24 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 
 ### 1. Lazy Loading Pattern
 
-DOS application configs use dynamic imports to reduce initial bundle size:
+DOS application configs use dynamic imports to reduce initial bundle size. Each entry in `src/config/apps.config.ts` imports its config module lazily, for the archive URL and the DOSBox config, and downloads the archive with `loadZipArchive`, which `apps.config.ts` imports statically from `src/utils/diskLoader.ts`:
 
 ```typescript
-loader: async () => {
-  const config = await import('../dos-apps/second-reality.config');
-  return config.loadZipArchive(config.secondRealityZipUrl);
-};
+export const availableApps: DosApp[] = [
+  {
+    id: 'second-reality',
+    // ...
+    loader: async (onProgress, signal) => {
+      const config = await import('../dos-apps/second-reality.config');
+      return loadZipArchive(config.secondRealityZipUrl, onProgress, signal);
+    },
+    loadDosboxConf: async () => {
+      const config = await import('../dos-apps/second-reality.config');
+      return config.secondRealityDosboxConf;
+    },
+  },
+  // ...
+];
 ```
 
 ### 2. Retry Pattern
@@ -245,13 +257,39 @@ fetchWithRetry(url, options, {
 });
 ```
 
+It retries network failures and HTTP 408, 429, 500, 502, 503 and 504, adds up to 30% jitter to each wait (at most `maxDelay`, 10 seconds by default), and stops as soon as its `signal` aborts.
+
 ### 3. Error Boundary Pattern
 
 React error boundaries catch and display errors gracefully without crashing the app.
 
 ### 4. Observer Pattern
 
-Custom events for URL-based app loading and cross-component communication.
+Components subscribe to browser and emulator events, and pass what they learn up through callbacks:
+
+- App listens for `popstate` and runs what the URL names
+- OfflineIndicator listens for `online`, `offline`, `beforeinstallprompt` and `appinstalled`, and reports the network status to App
+- `useDosEmulator` receives js-dos events (`emu-ready`, `ci-ready`) through its `onEvent` option, and DOS exiting through the command interface's `events().onExit()`
+- The service worker registration reports installs and updates through `onSuccess`, `onUpdate` and `onOfflineReady`
+
+### 5. Builder Pattern
+
+DOSBox configurations are built with the fluent builder in `src/utils/dosboxConfigBuilder.ts`. Each app starts from a preset (`demo()` or `musicTracker()`) and overrides what it needs; the builder only offers settings that the default `dosbox` backend applies. From `stars.config.ts`, with the autoexec shortened:
+
+```typescript
+export const starsDosboxConf = presets
+  .demo()
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
+  .setJoystick({ joysticktype: 'none' })
+  .addAutoexec('@echo off', 'mount c .', 'c:', 'STARS.EXE')
+  .build();
+```
+
+[src/dos-apps/README.md](../src/dos-apps/README.md) describes how to add an app.
+
+### 6. Adapter Pattern
+
+`useDosEmulator` starts the emulator through `getEmulatorAdapter()` (`src/adapters/EmulatorAdapter.ts`), whose `JsDosAdapter` checks for `window.Dos` and calls it.
 
 ## Security Considerations
 
@@ -301,6 +339,4 @@ DosKit uses a **local copy strategy** for the js-dos library:
 ## Future Improvements
 
 1. **Testing**: Add visual regression tests
-2. **Component Refactoring**: Split DosPlayer into smaller components
-3. **DOSBox Builder**: Create builder pattern for DOSBox configs
-4. **Emulator Abstraction**: Decouple from js-dos with adapter interface
+2. **Emulator Abstraction**: The adapter interface still takes js-dos's options and returns its player, and `useDosEmulator` handles js-dos's events itself, so another emulator would first need types of its own
