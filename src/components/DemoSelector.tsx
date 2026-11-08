@@ -9,7 +9,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect, useId } from 'react';
-import { FloppyDisk, LIGHT_FLOPPY_THEME } from 'retro-floppy';
+import { FloppyDisk, LIGHT_FLOPPY_THEME, type FloppyLabel, type FloppyTheme } from 'retro-floppy';
 import 'retro-floppy/dist/retro-floppy.css';
 import type { DosApp } from '../types/dos-app';
 import type { InitFileEntry } from '../types/js-dos';
@@ -56,6 +56,32 @@ function countGridColumns(grid: HTMLElement | null): number {
 /** "Name by Author (year)", leaving out the author or year an app does not give */
 function describeApp({ name, author, year }: DosApp): string {
   return `${name}${author ? ` by ${author}` : ''}${year ? ` (${year})` : ''}`;
+}
+
+/*
+ * A disk's theme and label, made once. FloppyDisk draws again, and measures its label, for
+ * any new object, and the selector renders again for each chunk of a download's progress.
+ */
+const FLOPPY_THEME: FloppyTheme = {
+  ...LIGHT_FLOPPY_THEME,
+  enableGradient: true,
+  gradientType: 'auto',
+};
+const floppyLabels = new WeakMap<DosApp, FloppyLabel>();
+
+function floppyLabel(app: DosApp): FloppyLabel {
+  let label = floppyLabels.get(app);
+  if (!label) {
+    label = {
+      name: app.name,
+      author: app.author,
+      year: app.year?.toString(),
+      description: app.description,
+      type: app.loadMethod.toUpperCase(),
+    };
+    floppyLabels.set(app, label);
+  }
+  return label;
 }
 
 /**
@@ -454,20 +480,10 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
             >
               <FloppyDisk
                 size="medium"
-                theme={{
-                  ...LIGHT_FLOPPY_THEME,
-                  enableGradient: true,
-                  gradientType: 'auto',
-                }}
+                theme={FLOPPY_THEME}
                 selected={selectedApp?.id === app.id}
                 enableSlideHover={false}
-                label={{
-                  name: app.name,
-                  author: app.author,
-                  year: app.year?.toString(),
-                  description: app.description,
-                  type: app.loadMethod.toUpperCase(),
-                }}
+                label={floppyLabel(app)}
               />
             </div>
           ))}
