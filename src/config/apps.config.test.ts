@@ -15,6 +15,21 @@ vi.mock('../utils/diskLoader', () => ({
 const dosboxConfOf = async (app: DosApp): Promise<string> =>
   (await app.loadDosboxConf?.()) ?? app.dosboxConf;
 
+// node:fs comes through importActual, as the tests have the browser's types only
+const { readFileSync, readdirSync } = await vi.importActual<{
+  readFileSync(file: URL): Uint8Array;
+  readdirSync(dir: URL): string[];
+}>('node:fs');
+
+/**
+ * public/demos, read from disk: the files the build copies to /demos. (Vite would turn
+ * new URL('../../public/demos/', import.meta.url) into the address it serves them at.)
+ */
+const DEMOS = new URL(import.meta.url.replace(/[^/]+$/, '../../public/demos/'));
+
+/** The ZIP archives in public/demos */
+const archivesInDemos = (): string[] => readdirSync(DEMOS).filter((name) => name.endsWith('.zip'));
+
 // Lines the default js-dos backend (see jsdos.config.ts) drops or resets without a
 // warning. A config that has one states something that never runs.
 const IGNORED_BY_DEFAULT_BACKEND = [
@@ -56,6 +71,14 @@ describe('availableApps', () => {
         onProgress,
         signal
       );
+    });
+
+    it('should have that archive in public/demos, as a ZIP', () => {
+      // Vite's dev and preview servers answer a missing file with the page itself, which
+      // js-dos would take for the archive and mount as an empty C: drive
+      const archive = readFileSync(new URL(`${app.id}.zip`, DEMOS));
+
+      expect(String.fromCharCode(...archive.subarray(0, 4))).toBe('PK\x03\x04');
     });
 
     it('should only state DOSBox settings the default backend applies', async () => {
@@ -114,6 +137,13 @@ describe('availableApps', () => {
         expect(year).toBe(app.year);
       }
     });
+  });
+
+  it('should load every archive in public/demos', () => {
+    // Each archive is part of every deploy, whether an app loads it or not
+    const unloaded = archivesInDemos().filter((name) => !findAppById(name.replace(/\.zip$/, '')));
+
+    expect(unloaded).toEqual([]);
   });
 
   it.each(Object.entries(RELEASES))(

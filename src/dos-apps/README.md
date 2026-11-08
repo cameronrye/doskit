@@ -121,9 +121,10 @@ table in [`docs/SCENERS.md`](../../docs/SCENERS.md) as well.
 ### 6. Check it
 
 - `npx vitest run src/config/apps.config.test.ts` checks every registered app: its loader must
-  download `/demos/<id>.zip`, its DOSBox configuration must leave out the settings the default
-  backend ignores, and its description and autoexec banner must not give another year for the
-  release than its `year`.
+  download `/demos/<id>.zip`, which must be a ZIP archive in `public/demos`, its DOSBox
+  configuration must leave out the settings the default backend ignores, and its description and
+  autoexec banner must not give another year for the release than its `year`. It also checks that
+  every archive in `public/demos` belongs to an app.
 - Run `npm run dev` and open `http://localhost:5173/?app=my-demo` (Vite takes the next free port
   if 5173 is in use, and prints the address). The program should start on its own, not stop at a
   DOS prompt or an error.
