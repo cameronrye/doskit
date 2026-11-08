@@ -32,7 +32,10 @@
 }
 
 .update-notification {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* A 15% dark veil keeps white text at 4.85:1 or more anywhere on the purple, as in the header */
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)),
+    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 16px;
   padding: 2rem;
   max-width: 400px;
@@ -92,7 +95,7 @@
   font-size: 0.95rem;
   line-height: 1.5;
   margin: 0;
-  color: rgba(255, 255, 255, 0.9);
+  color: white;
 }
 
 .update-notification-actions {
@@ -133,18 +136,19 @@
   transform: translateY(0);
 }
 
+/* A dark tint, not a light one, which brought its white label under 4.5:1 */
 .update-notification-button-secondary {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.2);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .update-notification-button-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 .update-notification-button-secondary:active {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(0, 0, 0, 0.35);
 }
 
 /* Mobile optimizations */
