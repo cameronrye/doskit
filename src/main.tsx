@@ -18,8 +18,8 @@ import { initializeGlobalErrorHandler } from './utils/globalErrorHandler';
 initializeErrorTracking();
 
 // Initialize global error handler. It logs and tracks errors itself, and keeps
-// known harmless ones, such as js-dos's fullscreen and keyboard lock calls that
-// fail without a user gesture, out of the console.
+// known harmless ones, such as js-dos's keyboard lock calls that fail without a
+// user gesture, out of the console.
 initializeGlobalErrorHandler({
   showUserFriendlyErrors: true,
   suppressHarmlessErrors: true,

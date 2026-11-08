@@ -15,12 +15,6 @@ import { logger } from './logger';
  * Known harmless errors: uncaught errors and unhandled rejections that match are suppressed
  */
 const HARMLESS_ERROR_PATTERNS = [
-  // Fullscreen API errors (require user interaction). js-dos calls
-  // document.exitFullscreen() on every start and leaves the rejection unhandled.
-  /exitFullscreen/i,
-  /requestFullscreen/i,
-  /fullscreen.*not supported/i,
-
   // Keyboard lock errors (require user interaction)
   /lock\(\) request could not be registered/i,
   /keyboard.*lock/i,

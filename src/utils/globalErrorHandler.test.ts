@@ -67,7 +67,7 @@ describe('globalErrorHandler', () => {
         onError,
       });
       const consoleError = captureConsoleError();
-      const error = new Error('exitFullscreen is not available');
+      const error = new Error('ResizeObserver loop completed with undelivered notifications.');
       window.dispatchEvent(new ErrorEvent('error', { error, message: error.message }));
 
       expect(isGlobalErrorHandlerInitialized()).toBe(true);
@@ -90,8 +90,8 @@ describe('globalErrorHandler', () => {
       initializeGlobalErrorHandler({ onError });
       window.dispatchEvent(
         new ErrorEvent('error', {
-          error: new Error('exitFullscreen is not available'),
-          message: 'exitFullscreen is not available',
+          error: new Error('ResizeObserver loop completed with undelivered notifications.'),
+          message: 'ResizeObserver loop completed with undelivered notifications.',
         })
       );
 
@@ -194,14 +194,16 @@ describe('globalErrorHandler', () => {
       expect(rejectionEvent.defaultPrevented).toBe(false);
     });
 
-    // Fullscreen calls need a user gesture. js-dos calls document.exitFullscreen()
-    // on every start without awaiting it, so that rejection is never handled.
+    // js-dos runs with softFullscreen and no fullScreen option, so neither it nor DosKit
+    // calls the Fullscreen API: a rejection from it would be a real failure
     it.each([
       "Failed to execute 'exitFullscreen' on 'Document': Document not active",
       "Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture.",
-    ])('suppresses the fullscreen rejection "%s"', (message) => {
+      'Not in fullscreen',
+    ])('reports the fullscreen rejection "%s"', (message) => {
       const onError = vi.fn();
       initializeGlobalErrorHandler({ onError });
+      captureConsoleError();
 
       const reason = new TypeError(message);
       const rejectedPromise = Promise.reject(reason);
@@ -214,8 +216,8 @@ describe('globalErrorHandler', () => {
 
       window.dispatchEvent(rejectionEvent);
 
-      expect(rejectionEvent.defaultPrevented).toBe(true);
-      expect(onError).not.toHaveBeenCalled();
+      expect(rejectionEvent.defaultPrevented).toBe(false);
+      expect(onError).toHaveBeenCalledOnce();
     });
 
     // js-dos locks the keyboard each time a player starts, without handling the promise.
@@ -429,8 +431,8 @@ describe('globalErrorHandler', () => {
       initializeGlobalErrorHandler({ suppressHarmlessErrors: true });
 
       const errorEvent = new ErrorEvent('error', {
-        error: new Error('exitFullscreen is not available'),
-        message: 'exitFullscreen is not available',
+        error: new Error('ResizeObserver loop completed with undelivered notifications.'),
+        message: 'ResizeObserver loop completed with undelivered notifications.',
         cancelable: true,
       });
       window.dispatchEvent(errorEvent);
@@ -503,7 +505,7 @@ describe('globalErrorHandler', () => {
       });
       const consoleError = captureConsoleError();
 
-      const error = new Error('exitFullscreen is not available');
+      const error = new Error('ResizeObserver loop completed with undelivered notifications.');
       const errorEvent = new ErrorEvent('error', {
         error,
         message: error.message,
@@ -524,7 +526,7 @@ describe('globalErrorHandler', () => {
       });
       const consoleError = captureConsoleError();
 
-      const error = new Error('exitFullscreen is not available');
+      const error = new Error('ResizeObserver loop completed with undelivered notifications.');
       const errorEvent = new ErrorEvent('error', {
         error,
         message: error.message,
