@@ -31,12 +31,9 @@ export interface ServiceWorkerConfig {
  * Only registers in production mode and if service workers are supported
  * @param config - Optional configuration with callbacks for success, update, and offline ready events
  * @example
+ * As main.tsx does: an update that has installed and waits shows the update prompt
  * ```typescript
- * register({
- *   onSuccess: (registration) => console.log('SW registered'),
- *   onUpdate: (registration) => console.log('SW updated'),
- *   onOfflineReady: () => console.log('App ready for offline use')
- * });
+ * register({ onUpdate: showUpdateNotification });
  * ```
  */
 export function register(config?: ServiceWorkerConfig): void {

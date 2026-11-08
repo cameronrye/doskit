@@ -13,7 +13,6 @@ import { showUpdateNotification } from './utils/updatePrompt';
 import * as serviceWorkerRegistration from './utils/serviceWorkerRegistration';
 import { initializeErrorTracking } from './utils/errorTracking';
 import { initializeGlobalErrorHandler } from './utils/globalErrorHandler';
-import { logger } from './utils/logger';
 
 // Initialize error tracking (swap in a remote service here when one is set up)
 initializeErrorTracking();
@@ -40,16 +39,7 @@ root.render(
   </StrictMode>
 );
 
-// Register service worker for PWA functionality
-serviceWorkerRegistration.register({
-  onSuccess: () => {
-    logger.info('PWA', 'The app and the default emulator are cached for offline use');
-  },
-  onUpdate: (registration) => {
-    logger.info('PWA', 'An update is waiting: showing the update prompt');
-    showUpdateNotification(registration);
-  },
-  onOfflineReady: () => {
-    logger.info('PWA', 'Ready for offline use, with each app once it has been opened online');
-  },
-});
+// Register the service worker, which only production builds do: an update it installs shows
+// the update prompt. Callbacks that logged would print nothing there, as the logger keeps
+// to warnings and errors in production.
+serviceWorkerRegistration.register({ onUpdate: showUpdateNotification });

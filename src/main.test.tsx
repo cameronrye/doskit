@@ -21,8 +21,8 @@ vi.mock('react-dom/client', () => ({ createRoot: () => ({ render: () => {} }) })
 const registration = {} as ServiceWorkerRegistration;
 
 /**
- * Run main.tsx in a fresh module graph, so that the logger it uses reads the environment
- * as it is now
+ * Run main.tsx in a fresh module graph, as a page that loads does: a module runs only the
+ * first time it is imported
  * @returns The callbacks main.tsx gives register()
  */
 async function runMain(): Promise<ServiceWorkerConfig> {
@@ -35,27 +35,8 @@ async function runMain(): Promise<ServiceWorkerConfig> {
   return config;
 }
 
-/** Everything logged below warnings, as one string per call */
-function captureInformation() {
-  const lines: string[] = [];
-  for (const method of ['log', 'info', 'debug'] as const) {
-    vi.spyOn(console, method).mockImplementation((...args: unknown[]) => {
-      lines.push(args.join(' '));
-    });
-  }
-  return lines;
-}
-
-/** Fire every callback main.tsx gives register(), as an install and then an update do */
-function fireEvery(config: ServiceWorkerConfig) {
-  config.onSuccess?.(registration);
-  config.onOfflineReady?.();
-  config.onUpdate?.(registration);
-}
-
-describe('main.tsx service worker callbacks', () => {
+describe('main.tsx', () => {
   afterEach(() => {
-    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -67,24 +48,11 @@ describe('main.tsx service worker callbacks', () => {
     expect(showUpdateNotification).toHaveBeenCalledWith(registration);
   });
 
-  // register() only runs in production builds
-  it('logs nothing below warnings in a production build', async () => {
-    vi.stubEnv('DEV', false);
+  it('gives register() the update prompt as its one callback', async () => {
+    // register() runs in production builds only, where the logger prints nothing below a
+    // warning, so callbacks that only log would never be seen
     const config = await runMain();
-    const lines = captureInformation();
 
-    fireEvery(config);
-
-    expect(lines).toEqual([]);
-  });
-
-  it('does not ask for a refresh in development, as the update prompt does that', async () => {
-    const config = await runMain();
-    const lines = captureInformation();
-
-    fireEvery(config);
-
-    expect(lines.length).toBeGreaterThan(0);
-    expect(lines.filter((line) => /refresh/i.test(line))).toEqual([]);
+    expect(config).toEqual({ onUpdate: showUpdateNotification });
   });
 });
