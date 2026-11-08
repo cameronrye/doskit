@@ -310,7 +310,7 @@ myapp.exe
 
 ### js-dos Options
 
-Customize the emulator behavior with js-dos options in `src/config/jsdos.config.ts`. DosKit's defaults: the DOSBox backend in a worker thread with OffscreenCanvas, WebGL rendering at a 4:3 aspect ratio, volume 0.7, autoStart with no countdown, js-dos cloud features off (`noCloud`), and emulator files from `/emulators/`.
+Customize the emulator behavior with js-dos options in `src/config/jsdos.config.ts`. DosKit's defaults: the DOSBox backend in a worker thread, WebGL rendering at a 4:3 aspect ratio, volume 0.7, autoStart with no countdown, js-dos cloud features off (`noCloud`), and emulator files from `/emulators/`.
 
 Available options:
 - `theme`: 'dark' or 'light'
@@ -319,7 +319,8 @@ Available options:
 - `autoStart`: Auto-start emulator on load
 - `backend`: 'dosbox' or 'dosboxX' (DosKit's DOSBox configurations are written for 'dosbox')
 - `mouseCapture`: Auto-capture mouse input
-- See `src/types/js-dos.d.ts` for the complete options
+- `initFs`: The files to start with: a ZIP archive as a `Uint8Array`, one `{ path, contents }` file, or a list of archives and files. js-dos writes the files first, then unpacks the archives in list order, so an archive's files replace those of the archives before it and any listed file at the same path
+- See `src/types/js-dos.d.ts` for the options DosKit declares; it leaves out js-dos's IPX networking options (`ipx`, `ipxBackend`, `room` and `noNetworking`)
 
 ### Mobile Configuration
 

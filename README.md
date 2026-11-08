@@ -395,8 +395,8 @@ import { DosPlayer } from './components/DosPlayer';
 - `autoStart`: Auto-start emulator on load
 - `backend`: 'dosbox' or 'dosboxX'. DosKit's DOSBox configurations are written for 'dosbox', and only that backend is precached for offline use
 - `mouseCapture`: Auto-capture mouse input
-- `initFs`: The files to start with: a ZIP archive as a `Uint8Array`, which js-dos unpacks, or a list of `{ path, contents }` files
-- See `src/types/js-dos.d.ts` for complete options
+- `initFs`: The files to start with: a ZIP archive as a `Uint8Array`, one `{ path, contents }` file, or a list of archives and files. js-dos writes the files first, then unpacks the archives in list order, so an archive's files replace those of the archives before it and any listed file at the same path
+- See `src/types/js-dos.d.ts` for the options DosKit declares; it leaves out js-dos's IPX networking options (`ipx`, `ipxBackend`, `room` and `noNetworking`)
 
 DosPlayer sets `dosboxConf` (from its prop of that name) and `onEvent` itself, so those two have no effect in `options`.
 

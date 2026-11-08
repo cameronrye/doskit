@@ -16,7 +16,7 @@ The plan no longer carries target dates: the quarters it first set, Q2 2025 to Q
 
 - Solid technical foundation (React 19, TypeScript, js-dos WebAssembly)
 - Cross-platform PWA with offline support: after the first visit the app and its DOS prompt work offline, and each application does once it has been opened online
-- Performance optimizations (WebGL, OffscreenCanvas, worker threads)
+- Performance optimizations (WebGL rendering, DOSBox in a worker thread)
 - Comprehensive documentation and test coverage (about 89% of lines)
 - Deep linking support (`/?app=<id>`)
 - Mobile-responsive design
@@ -168,7 +168,7 @@ const changes = await ci.persist(true);
 if (changes) await saveToIndexedDB(appId, slotId, changes);
 
 // Load state: there is no ci.load(); restart the app with the saved bundle after its archive
-// (js-dos takes several bundles in initFs, where DosKit's InitFs type allows one so far)
+// (js-dos unpacks initFs's bundles in order, so the saved changes land on top of the archive)
 const saved = await loadFromIndexedDB(appId, slotId);
 Dos(container, { ...options, initFs: [archive, saved] });
 ```
