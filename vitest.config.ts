@@ -30,14 +30,14 @@ export default defineConfig({
       // an include, Vitest reports only the files the tests load.
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/**/*.d.ts'],
-      // About 3 points under the coverage measured in November 2026 (statements 89.19%,
-      // branches 78.21%, functions 91.19%, lines 89.44%): room for small shifts as tests
+      // About 3 points under the coverage measured in November 2026 (statements 97.47%,
+      // branches 91.01%, functions 96.14%, lines 97.51%): room for small shifts as tests
       // change, while a real drop fails CI. Raise them as coverage grows.
       thresholds: {
-        statements: 86,
-        branches: 75,
-        functions: 88,
-        lines: 86,
+        statements: 94,
+        branches: 88,
+        functions: 93,
+        lines: 94,
       },
     },
   },
