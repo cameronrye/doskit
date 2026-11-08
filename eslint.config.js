@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import { defineConfig } from 'eslint/config';
+import * as espree from 'espree';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
@@ -38,9 +39,12 @@ export default defineConfig(
     },
   },
   {
-    // Registered as a classic script, not a module, so its top-level names are worker globals
+    // Registered as a classic script, not a module, so its top-level names are worker globals.
+    // ESLint's own parser, which rejects import and export in a script as the browser does;
+    // the TypeScript parser accepts them whatever the sourceType.
     files: ['public/sw.js'],
     languageOptions: {
+      parser: espree,
       sourceType: 'script',
       globals: globals.serviceworker,
     },
