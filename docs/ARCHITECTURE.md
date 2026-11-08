@@ -82,24 +82,27 @@ Tests sit next to the code they cover (`*.test.ts`, `*.test.tsx`, and `scripts/*
 ## Component Hierarchy
 
 ```text
-ErrorBoundary (main.tsx)
-└── App (Root)
-    ├── OfflineIndicator
-    ├── Header and URL error banner
-    ├── ErrorBoundary
-    │   └── DosPlayerWithApps
-    │       ├── DemoSelector (modal)
-    │       │   └── App selection UI
-    │       ├── Loading overlay
-    │       ├── Error overlay
-    │       └── DosPlayer (remounted for each app)
-    │           ├── useDosEmulator
-    │           └── DosPlayerUI
-    │               └── js-dos emulator instance
-    └── Footer (Ready/Loading and Online/Offline badges)
+StrictMode (main.tsx)
+└── ErrorBoundary
+    └── App (Root)
+        ├── OfflineIndicator
+        ├── Header and URL error banner
+        ├── ErrorBoundary
+        │   └── DosPlayerWithApps
+        │       ├── DemoSelector (modal)
+        │       │   └── App selection UI
+        │       ├── Loading overlay
+        │       ├── Error overlay
+        │       └── DosPlayer (remounted for each app)
+        │           ├── useDosEmulator
+        │           └── DosPlayerUI
+        │               └── js-dos emulator instance
+        └── Footer (Ready/Loading and Online/Offline badges)
 
 UpdateNotification (a React root of its own, mounted by utils/updatePrompt.ts)
 ```
+
+In development, `StrictMode` runs each effect twice when a component mounts, with its cleanup in between, so each DosPlayer starts js-dos twice in its element. `useDosEmulator` stops the first start's player and passes on none of its events, and on a fresh page the adapter holds the second start back until `emulators.js` has run (see [Adapter Pattern](#6-adapter-pattern)). Production builds run each effect once.
 
 What covers what is fixed. From the bottom: the header and footer, with js-dos's sidebar; the player's own loading and error panels; the URL error banner; js-dos's modals and on-screen controls; the loading and error overlays over the whole player; the selector's backdrop and the selector; the install prompt and js-dos's toasts; and the offline notices and the update prompt. The comment at the top of `src/components/DosPlayerWithApps.css` gives each one's `z-index` and the file that sets it; a new overlay belongs in that list.
 

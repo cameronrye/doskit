@@ -408,23 +408,26 @@ export const DosPlayer = (props: any) => {
 ### Hooks
 
 - **Order**: useState → useRef → useEffect → Custom hooks
-- **Dependencies**: Always specify complete dependency arrays
+- **Dependencies**: Always specify complete dependency arrays. The effect in `useDosEmulator` that starts js-dos is the one exception: it runs once per mount, and DosPlayerWithApps remounts DosPlayer, by its key, for each app.
 - **Cleanup**: Return cleanup functions from useEffect
+- **StrictMode**: `main.tsx` renders the app in `<StrictMode>`, so in development React runs each effect's setup, its cleanup and its setup again when a component mounts. Effects must cope with that, as `useDosEmulator` does: its cleanup stops the player, and a start that finishes after its mount is gone stops the player it got and passes on none of its events. Production builds run each effect once.
 
 ```typescript
-// Good
-export const DosPlayer: React.FC<DosPlayerProps> = ({ dosboxConf = defaultDosboxConfig }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
+// Good: DosPlayer leaves starting and stopping js-dos to useDosEmulator
+export const DosPlayer: React.FC<DosPlayerProps> = ({
+  dosboxConf = defaultDosboxConfig,
+  options = {},
+  onReady,
+  onExit,
+}) => {
+  const { dosContainerRef, isLoading, error } = useDosEmulator({
+    dosboxConf,
+    options,
+    onReady,
+    onExit,
+  });
 
-  useEffect(() => {
-    const cleanup = initializeEmulator();
-    return cleanup;
-  }, [dosboxConf]);
-
-  const { error } = useDosEmulator({ dosboxConf });
-
-  return <div ref={containerRef}>...</div>;
+  return <DosPlayerUI dosContainerRef={dosContainerRef} isLoading={isLoading} error={error} />;
 };
 ```
 

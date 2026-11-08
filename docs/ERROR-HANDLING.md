@@ -65,7 +65,7 @@ initializeGlobalErrorHandler({
 
 - `/exitFullscreen/i`, `/requestFullscreen/i`, `/fullscreen.*not supported/i` - Fullscreen calls without a user gesture. js-dos calls `document.exitFullscreen()` on every start and leaves the rejection unhandled.
 - `/lock\(\) request could not be registered/i`, `/keyboard.*lock/i` - Keyboard lock, which js-dos requests when a player starts, without handling the promise
-- `/superseded by a subsequent lock\(\) method call/i` - When two players start milliseconds apart, such as when an app is left the moment its player starts, Chromium rejects the older keyboard lock with an `AbortError`, "This request has been superseded by a subsequent lock() method call."; the newer lock holds. Only that message matches: other `AbortError`s are still reported.
+- `/superseded by a subsequent lock\(\) method call/i` - When two players start milliseconds apart, such as when an app is left the moment its player starts, Chromium rejects the older keyboard lock with an `AbortError`, "This request has been superseded by a subsequent lock() method call."; the newer lock holds. In development, where `StrictMode` starts each player twice, the first start's lock is superseded the same way. Only that message matches: other `AbortError`s are still reported.
 - `/ResizeObserver loop/i` - ResizeObserver loop errors (benign)
 - `/extension context invalidated/i`, `/chrome-extension:/i` - Browser extensions
 
