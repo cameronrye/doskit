@@ -156,17 +156,17 @@ Features:
 
 - Allow all crawlers by default
 - Disallow source maps (`/*.map$`) for every crawler; the JS and CSS in `/assets/` stay crawlable, since crawlers need them to render the app
-- Explicit allow rules for AI/LLM crawlers:
-  - GPTBot (OpenAI)
-  - ChatGPT-User
-  - CCBot (Common Crawl)
-  - anthropic-ai (Anthropic)
-  - Claude-Web
-  - Google-Extended
-  - PerplexityBot
+- Explicit allow rules for AI/LLM crawlers, a group for each token its vendor documents:
+  - OpenAI: GPTBot, OAI-SearchBot and ChatGPT-User
+  - Common Crawl: CCBot
+  - Anthropic: ClaudeBot, Claude-SearchBot and Claude-User
+  - Google: Google-Extended
+  - Perplexity: PerplexityBot and Perplexity-User
 - Sitemap location
 
-A crawler obeys only the group that names it, or the `*` group when none does, so every group repeats `Disallow: /*.map$`, the AI/LLM crawlers' included. `scripts/robots-txt.test.js` groups the file's lines as RFC 9309 does and fails for a group without the rule.
+A comment above each vendor's groups gives the address of the vendor's page on its crawlers. Anthropic's older tokens, `anthropic-ai` and `Claude-Web`, have no group: Anthropic told 404 Media in July 2024 that they are no longer in use, and its page names neither. Every AI/LLM group allows what the `*` group does, so naming them changes no crawler's access.
+
+A crawler obeys only the group that names it, or the `*` group when none does, so every group repeats `Disallow: /*.map$`, the AI/LLM crawlers' included. `scripts/robots-txt.test.js` groups the file's lines as RFC 9309 does. It fails for a group without that rule or one that does not allow `/`, for a token on its list without a group or a group for a token not on it, and for `anthropic-ai` or `Claude-Web` in any letter case.
 
 #### humans.txt
 
