@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
 const require = createRequire(import.meta.url);
@@ -15,9 +15,29 @@ export const versionDefines = {
   'import.meta.env.VITE_JSDOS_VERSION': JSON.stringify(versionOf('js-dos/package.json')),
 };
 
+/**
+ * GitHub Pages answers a path it has no file for with 404.html. As a copy of index.html it
+ * boots the app for path-style deep links (/secondreality), which App then rewrites to
+ * /?app=secondreality.
+ */
+export function githubPagesSpaFallback(): Plugin {
+  return {
+    name: 'doskit:github-pages-spa-fallback',
+    apply: 'build',
+    enforce: 'post',
+    generateBundle(_options, bundle) {
+      const index = bundle['index.html'];
+      if (index?.type !== 'asset') {
+        this.error('index.html is missing from the build, so there is no page for 404.html');
+      }
+      this.emitFile({ type: 'asset', fileName: '404.html', source: index.source });
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), githubPagesSpaFallback()],
   define: versionDefines,
 
   // Custom domain deployment configuration
