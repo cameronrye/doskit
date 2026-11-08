@@ -15,14 +15,15 @@ The sceners organization (curated by Defacto2) contains more than 150 repositori
 
 ### Successfully Added
 
-| Demo             | ID                | Author           | Year | Status     |
-| ---------------- | ----------------- | ---------------- | ---- | ---------- |
-| Squid BBS Intro  | `squid-bbstro`    | cld & The Doctor | 1994 | ✅ Working |
-| 3D Rotation Demo | `3drotate`        | Draeden of VLA   | 1993 | ✅ Working |
-| Starfield Effect | `stars`           | Draeden of VLA   | 1993 | ✅ Working |
-| Crystal Dream 2  | `crystal-dream-2` | Triton           | 1993 | ✅ Working |
+| Demo             | ID             | Author           | Year | Status     |
+| ---------------- | -------------- | ---------------- | ---- | ---------- |
+| Squid BBS Intro  | `squid-bbstro` | cld & The Doctor | 1994 | ✅ Working |
+| 3D Rotation Demo | `3drotate`     | Draeden of VLA   | 1993 | ✅ Working |
+| Starfield Effect | `stars`        | Draeden of VLA   | 1993 | ✅ Working |
 
 The IDs are the app IDs in `src/config/apps.config.ts`, and the authors and years are those of its registry. [`public/demos/README.md`](../public/demos/README.md) records where each archive comes from and what gives its year. App URLs drop the hyphens (`/?app=squidbbstro`), which is the form DosKit shows in the address bar; links with the hyphenated ID still open the app and are rewritten to that form.
+
+Crystal Dream 2 was added at the same time, but it does not come from sceners, which has no repository for it: its archive is `cd2-trn.zip` from Triton's folder on scene.org, and `public/demos/README.md` records it like every other archive.
 
 ### Demo Details
 
@@ -47,14 +48,6 @@ The IDs are the app IDs in `src/config/apps.config.ts`, and the authors and year
 - **URL**: `https://doskit.net/?app=stars`
 - **Source**: https://github.com/sceners/grumpys-source-pack-collection, the same source pack
 
-#### Crystal Dream 2 (1993)
-
-- **Ranking**: 1st place at The Computer Crossroads 1993
-- **Features**: 3D vector graphics, fractal zoomer, vector slime, raytraced scenes
-- **Music**: Lizardking ("Trans Atlantic"), Vogue
-- **URL**: `https://doskit.net/?app=crystaldream2`
-- **Source**: https://files.scene.org/get/demos/groups/triton/cd2-trn.zip
-
 ### Not Compatible
 
 - **Plasma Effect** - Blank screen, not compatible with js-dos
@@ -69,14 +62,12 @@ The IDs are the app IDs in `src/config/apps.config.ts`, and the authors and year
 - `squid-bbstro.config.ts`
 - `3drotate.config.ts`
 - `stars.config.ts`
-- `crystal-dream-2.config.ts`
 
 **Demo Bundles** (in `public/demos/`):
 
 - `squid-bbstro.zip` (21 KB)
 - `3drotate.zip` (3.0 KB)
 - `stars.zip` (1.5 KB)
-- `crystal-dream-2.zip` (2.0 MB)
 
 ### Integration Steps
 
@@ -86,21 +77,21 @@ For each demo (the full steps, with code, are in [`src/dos-apps/README.md`](../s
 2. **Create Config** - Add config file in `src/dos-apps/`, define DOSBox configuration
 3. **Register App** - Add an entry to `availableApps` in `src/config/apps.config.ts`; the app selector lists every registered app, so its UI needs no change
 4. **Record Its Source** - Give the archive an entry in `public/demos/README.md`: where it comes from, its authors and year, and its terms
-5. **List It** - Add it to the Bundled Applications in `public/llms-full.txt` and to the table above
+5. **List It** - Add it to the table above, and to the other lists of the apps that the guide's step 5 names
 6. **Test** - Verify demo runs correctly, check audio/video output
 
 ## Available Repositories
 
-### Cloned Repositories (in `~/sceners/`)
+### Repositories Looked At
 
-1. **squid-bbstro** - 1899-byte BBS intro with AdLib music
-2. **grumpys-source-pack-collection** - 35+ MS-DOS demo/intro effects with source
-3. **AMN-SRCE** - Amnesia VR by Renaissance (source only)
-4. **x-mas_92-razor_1911** - Classic Christmas demo from Razor 1911
-5. **x23_quantum** - Cracktro source code
-6. **masm32-graphical-effects** - Huge collection of graphical effects
-7. **writing-graphic-vga-intros-loaders-fred-nietzche** - VGA Intro Tutorial
-8. **Code-Breaker** - Tools, trainers, and utilities (1992-1995)
+1. [**squid-bbstro**](https://github.com/sceners/squid-bbstro) - 1899-byte BBS intro with AdLib music
+2. [**grumpys-source-pack-collection**](https://github.com/sceners/grumpys-source-pack-collection) - 35+ MS-DOS demo/intro effects with source
+3. [**AMN-SRCE**](https://github.com/sceners/AMN-SRCE) - Amnesia VR by Renaissance (source only)
+4. [**x-mas_92-razor_1911**](https://github.com/sceners/x-mas_92-razor_1911) - Classic Christmas demo from Razor 1911
+5. [**x23_quantum**](https://github.com/sceners/x23_quantum) - Cracktro source code
+6. [**masm32-graphical-effects**](https://github.com/sceners/masm32-graphical-effects) - Huge collection of graphical effects
+7. [**writing-graphic-vga-intros-loaders-fred-nietzche**](https://github.com/sceners/writing-graphic-vga-intros-loaders-fred-nietzche) - VGA Intro Tutorial
+8. [**Code-Breaker**](https://github.com/sceners/Code-Breaker) - Tools, trainers, and utilities (1992-1995)
 
 ### Ready to Integrate
 
@@ -136,7 +127,7 @@ These demos are excellent for:
 ## License Notes
 
 - **Code-Breaker**: Public Domain (Unlicense)
-- **Integrated demos**: [`public/demos/README.md`](../public/demos/README.md) quotes the terms each archive states, or says that none were found. Squid's source calls it freeware, and its archive also holds `ADLIBFM2.DOC`, Jeffrey S. Lee's guide to programming the AdLib's FM chips, which may be copied freely as long as its copyright notices stay and its text is not changed, may not be sold for more than the cost of copying it, and may not go into published material or commercial packages without its author's written consent. The two VLA tutorials and Crystal Dream 2 state no terms.
+- **Integrated demos**: [`public/demos/README.md`](../public/demos/README.md) quotes the terms each archive states, or says that none were found. Squid's source calls it freeware, and its archive also holds `ADLIBFM2.DOC`, Jeffrey S. Lee's guide to programming the AdLib's FM chips, which may be copied freely as long as its copyright notices stay and its text is not changed, may not be sold for more than the cost of copying it, and may not go into published material or commercial packages without its author's written consent. The two VLA tutorials state no terms.
 - **Other repos**: Various scene/historical licenses
 - **Usage**: Educational and historical preservation
 
@@ -145,5 +136,5 @@ These demos are excellent for:
 - **Sceners Organization**: https://github.com/sceners
 - **Scene.org**: Official demoscene file archive
 - **Defacto2**: Curation and preservation of scene content
-- **Original Authors**: cld, The Doctor, Draeden of VLA, Triton, and the demo scene community
+- **Original Authors**: cld, The Doctor, Draeden of VLA, and the demo scene community
 - **Grumpy**: Collected the source pack the two VLA tutorials come from
