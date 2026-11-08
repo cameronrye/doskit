@@ -14,6 +14,7 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 ## Features
 
 - **Interactive DOS Prompt**: Boots directly to a fully functional DOS command prompt
+- **App Library**: Classic demos such as Second Reality, Unreal and Crystal Dream 2, and the Impulse Tracker and Scream Tracker 3 music trackers, picked from a floppy-disk selector
 - **Cross-Platform**: Works on Windows, macOS, Linux, iOS, and Android
 - **Progressive Web App (PWA)**: Install as a native app with offline support
 - **Deep Linking**: Load specific applications directly via URL (e.g., `?app=secondreality`)
@@ -72,7 +73,7 @@ npm run dev
 
 4. Open your browser and navigate to `http://localhost:5173`
 
-The DOS emulator will automatically load and present an interactive DOS prompt!
+The DOS emulator will automatically load and present an interactive DOS prompt, with the app selector open over it!
 
 ## Live Demo
 
@@ -335,14 +336,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md#commit-messages) for details on convention
 
 ### DOSBox Configuration
 
-DosKit uses DOSBox configuration files to customize the DOS environment. The default configuration is located in `src/config/dosbox.conf.ts`.
+DosKit uses DOSBox configuration files to customize the DOS environment. The default configuration, which the DOS prompt runs with, is located in `src/config/dosbox.conf.ts`; each app has its own in `src/dos-apps/`.
 
 **Key Configuration Options:**
 
 ```typescript
 import { defaultDosboxConfig } from './config/dosbox.conf';
 
-// Use the default configuration
+// Use the default configuration (also what DosPlayer uses without a dosboxConf)
 <DosPlayer dosboxConf={defaultDosboxConfig} />
 ```
 
@@ -365,9 +366,13 @@ myapp.exe
 <DosPlayer dosboxConf={customConfig} />
 ```
 
+`mount c .` mounts the files js-dos starts with, which you pass in its `initFs` option, as drive C: see [Adding DOS Applications](#adding-dos-applications).
+
+Every app runs on js-dos's default `dosbox` backend, which drops settings it does not have, and resets values it does not accept, without a warning. It has no dynamic core, no `486`, `pentium` or `pentium_mmx` CPU type, no `[dos] ver` setting (DOS reports version 5.00) and no `[memory]` section: every app runs with DOSBox's default 16 MB of memory. [src/dos-apps/README.md](src/dos-apps/README.md) covers what it accepts, and `src/utils/dosboxConfigBuilder.ts` builds configurations from those settings only.
+
 ### js-dos Options
 
-Customize the emulator behavior with js-dos options in `src/config/jsdos.config.ts`:
+DosKit's js-dos settings are in `src/config/jsdos.config.ts`. A DosPlayer's `options` are merged over them:
 
 ```typescript
 import { DosPlayer } from './components/DosPlayer';
@@ -384,13 +389,16 @@ import { DosPlayer } from './components/DosPlayer';
 
 **Available Options:**
 
-- `theme`: 'dark' or 'light'
+- `theme`: A js-dos theme, such as 'dark' (DosKit's default) or 'light'
 - `volume`: 0.0 to 1.0
 - `fullScreen`: Enable fullscreen mode
 - `autoStart`: Auto-start emulator on load
-- `backend`: 'dosbox' or 'dosboxX'
+- `backend`: 'dosbox' or 'dosboxX'. DosKit's DOSBox configurations are written for 'dosbox', and only that backend is precached for offline use
 - `mouseCapture`: Auto-capture mouse input
+- `initFs`: The files to start with: a ZIP archive as a `Uint8Array`, which js-dos unpacks, or a list of `{ path, contents }` files
 - See `src/types/js-dos.d.ts` for complete options
+
+DosPlayer sets `dosboxConf` (from its prop of that name) and `onEvent` itself, so those two have no effect in `options`.
 
 ### Mobile Configuration
 
@@ -412,9 +420,11 @@ npm run dev
 
 This will start a DOS prompt that you can interact with directly in your browser.
 
+On the start page, the app selector opens over the prompt. Click an app to see its details and **Load Application**, or double-click it to load it at once. With the keyboard, the arrow keys move between apps, Space or Enter selects one, a second Enter loads it, and Escape cancels a download or closes the selector. The header's **Change Application** (or **Select Application**) button opens it again.
+
 ### Deep Linking
 
-DosKit supports loading specific applications directly via URL parameters, making it easy to share links to specific DOS applications:
+DosKit supports loading specific applications directly via URL parameters, making it easy to share links to specific DOS applications. An app's link is `/?app=` and its id from `src/config/apps.config.ts` without hyphens:
 
 **Load Second Reality:**
 
@@ -432,13 +442,16 @@ https://doskit.net/?app=impulsetracker
 
 - **Shareable Links**: URLs automatically update when you select an app
 - **Bookmarkable**: Save direct links to your favorite DOS applications
-- **Browser Navigation**: Back/forward buttons work correctly
+- **Other Forms**: Path-style links such as `https://doskit.net/secondreality`, the id with its hyphens (`?app=second-reality`) and any capitalization work too, and the address bar shows them as `/?app=secondreality`
+- **Browser Navigation**: Back and Forward load the app in the URL. Going back to the start URL stops the running app and returns to the DOS prompt, with the selector open
 - **Refresh-Safe**: Page refreshes maintain the loaded application
-- **Error Handling**: Invalid app IDs show helpful error messages
+- **Error Handling**: An unknown `?app=` id shows an "Application not found" banner over the start page and is removed from the address bar; a path that names no app opens the start page
 
 ### Adding DOS Applications
 
-To run DOS applications or games:
+To add an app to DosKit's selector, with a link of its own, follow [src/dos-apps/README.md](src/dos-apps/README.md): a ZIP archive in `public/demos/`, a config module in `src/dos-apps/`, and an entry in `src/config/apps.config.ts`.
+
+To run DOS applications or games with the `DosPlayer` component directly:
 
 1. **Create a custom DOSBox configuration:**
 
@@ -453,13 +466,33 @@ game.exe
 `;
 ```
 
-2. **Place your DOS files in the public directory** or use the `initFs` option to load files programmatically.
+2. **Package your DOS files in a ZIP archive** in the public directory, for example as `public/demos/mygame.zip`, where the service worker caches it for offline use like the apps' archives. js-dos only sees the files passed in its `initFs` option.
 
-3. **Update the DosPlayer component:**
+3. **Download the archive and hand it to DosPlayer:**
 
 ```typescript
-<DosPlayer dosboxConf={gameConfig} />
+import { useEffect, useState } from 'react';
+import { DosPlayer } from './components/DosPlayer';
+import { loadZipArchive } from './utils/diskLoader';
+
+function MyGame() {
+  const [zip, setZip] = useState<Uint8Array | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadZipArchive('/demos/mygame.zip', undefined, controller.signal).then(setZip, () => {
+      // Aborted on unmount, or failed: loadZipArchive logs failures
+    });
+    return () => controller.abort();
+  }, []);
+
+  // DosPlayer starts js-dos when it mounts, so mount it once the files are here
+  if (!zip) return <p>Loading...</p>;
+  return <DosPlayer dosboxConf={gameConfig} options={{ initFs: zip }} />;
+}
 ```
+
+DosPlayer's props are `dosboxConf` (the DOS prompt's configuration if left out), `options`, `onReady(ci)`, `onExit()`, `className` and `style`. It reads `dosboxConf` and `options` only when it mounts: to run something else, remount it with a new `key`, as `DosPlayerWithApps` does for each app.
 
 ### Programmatic Control
 
@@ -477,12 +510,21 @@ function MyApp() {
     setCi(commandInterface);
 
     // Now you can control DOS programmatically
-    commandInterface.simulateKeyPress(13); // Press Enter
+    commandInterface.simulateKeyPress(257); // Press Enter (257 in js-dos key codes)
   };
 
-  return <DosPlayer onReady={handleReady} />;
+  return (
+    <>
+      <DosPlayer onReady={handleReady} onExit={() => setCi(null)} />
+      <button onClick={() => ci?.pause()} disabled={!ci}>
+        Pause
+      </button>
+    </>
+  );
 }
 ```
+
+`onExit` is called once for each `onReady`: when DOS exits, or when the player is unmounted.
 
 **Available Commands:**
 
@@ -490,6 +532,7 @@ function MyApp() {
 - `ci.mute()` / `ci.unmute()` - Audio control
 - `ci.screenshot()` - Capture screen
 - `ci.fsReadFile()` / `ci.fsWriteFile()` - File system access
+- `ci.simulateKeyPress()` / `ci.sendKeyEvent()` - Keyboard input, in js-dos key codes rather than the browser's: Enter is 257 and Esc 256, while letters (uppercase) and digits keep their ASCII codes
 - See `src/types/js-dos.d.ts` for complete API
 
 ## Browser Compatibility
@@ -587,7 +630,7 @@ _Load times include network fetch and initialization. FPS varies by DOS applicat
 
 **Solutions:**
 
-1. Reduce CPU cycles in DOSBox config: `cycles=10000`
+1. Reduce CPU cycles in DOSBox config: `cycles=10000` in the `[cpu]` section
 2. Enable hardware acceleration in browser settings
 3. Close other browser tabs
 4. Try a different rendering backend: `renderBackend: 'canvas'`
@@ -611,7 +654,7 @@ _Load times include network fetch and initialization. FPS varies by DOS applicat
 
 **Solutions:**
 
-1. **Audio is automatically unmuted** when the emulator is ready (as of latest version)
+1. **Audio is automatically unmuted** when the emulator is ready
 2. Check browser audio is not muted (system volume and browser tab)
 3. Verify volume setting: `volume: 0.7` in options
 4. Click inside emulator to ensure user interaction (required by browsers)
@@ -619,7 +662,7 @@ _Load times include network fetch and initialization. FPS varies by DOS applicat
 6. Verify DOSBox sound card configuration (Sound Blaster, GUS, etc.)
 7. Check browser console for audio-related errors
 
-**Note**: Modern browsers require user interaction before audio can play. The emulator automatically unmutes audio when you interact with it (click play or click inside the emulator window).
+**Note**: Modern browsers require user interaction before audio can play. js-dos resumes the audio on the first click, tap or key press on the page, so a program that starts silent gets its sound once you click inside the emulator or press a key.
 
 #### Mobile Touch Controls Not Appearing
 
@@ -664,10 +707,9 @@ _Load times include network fetch and initialization. FPS varies by DOS applicat
 **Solutions:**
 
 1. Close other browser tabs
-2. Reduce DOSBox memory: `memsize=16` in config
-3. Clear browser cache
-4. Restart browser
-5. Use a 64-bit browser if available
+2. Clear browser cache
+3. Restart browser
+4. Use a 64-bit browser if available
 
 ### Debug Mode
 
@@ -675,11 +717,15 @@ Enable detailed logging in development:
 
 ```typescript
 // Logs are automatically enabled in development mode
-// Check browser console for detailed information
-// Use logger utility for custom logging:
+// Check browser console for detailed information, including js-dos events and
+// DOSBox's own output ([DOS] lines)
+// Use logger utility for custom logging: debug and info only print in development,
+// warn and error in production builds too
 import { logger } from './utils/logger';
-logger.debug('Debug message');
+logger.debug('MyComponent', 'Debug message', { details: 'any extra values' });
 ```
+
+Stopping a player, as every app switch does, also logs an error that just says `ExitStatus`. That is js-dos's emulator worker reporting its normal exit (code 0) in its own console, and nothing to fix.
 
 ### Performance Tips
 
