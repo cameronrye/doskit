@@ -77,12 +77,12 @@ This document defines the coding standards and naming conventions for the DosKit
 
   ```typescript
   // Good
-  function loadDiskImage(url: string): Promise<Uint8Array> { ... }
-  function validateFileSize(size: number): void { ... }
+  function normalizeAppId(urlId: string): string | null { ... }
+  function updateDocumentTitle(appName?: string): void { ... }
 
   // Bad
-  function LoadDiskImage(url: string) { ... }
-  function validate_file_size(size: number) { ... }
+  function NormalizeAppId(urlId: string) { ... }
+  function update_document_title(appName?: string) { ... }
   ```
 
 - **Variables**: Use `camelCase` with descriptive nouns
@@ -90,11 +90,11 @@ This document defines the coding standards and naming conventions for the DosKit
   ```typescript
   // Good
   const dosContainerRef = useRef<HTMLDivElement>(null);
-  const isLoading = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Bad
   const DosContainerRef = useRef<HTMLDivElement>(null);
-  const is_loading = useState(false);
+  const [is_loading, set_is_loading] = useState(false);
   ```
 
 - **Boolean Variables**: Prefix with `is`, `has`, `should`, or `can`
@@ -112,12 +112,12 @@ This document defines the coding standards and naming conventions for the DosKit
 
   ```typescript
   // Good
-  export const MAX_FILE_SIZE = 50 * 1024 * 1024;
-  export const DEFAULT_TIMEOUT = 5000;
+  const LOADING_TIMEOUT_MS = 30000;
+  const DEFAULT_RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
   // Bad
-  export const maxFileSize = 50 * 1024 * 1024;
-  export const default_timeout = 5000;
+  const loadingTimeoutMs = 30000;
+  const default_retryable_status_codes = [408, 429, 500, 502, 503, 504];
   ```
 
 - **Exported Configuration Objects**: Use `camelCase`
@@ -134,11 +134,11 @@ This document defines the coding standards and naming conventions for the DosKit
   ```typescript
   // Good
   export class DOSBoxConfigBuilder { ... }
-  export class ErrorHandler { ... }
+  export class JsDosAdapter implements EmulatorAdapter { ... }
 
   // Bad
   export class dosboxConfigBuilder { ... }
-  export class error_handler { ... }
+  export class js_dos_adapter implements EmulatorAdapter { ... }
   ```
 
 - **Interfaces**: Use `PascalCase`
@@ -156,8 +156,8 @@ This document defines the coding standards and naming conventions for the DosKit
 - **Type Aliases**: Use `PascalCase`
   ```typescript
   // Good
-  export type DosEvent = 'emu-ready' | 'ci-ready' | 'exit';
-  export type LoadMethod = 'files' | 'zip' | 'diskImage';
+  export type DosEvent = 'emu-ready' | 'ci-ready' | 'bnd-play' | 'open-key' | 'fullscreen-change';
+  export type InitFs = Array<InitFileEntry> | Uint8Array;
   ```
 
 ### Acronyms in Names
@@ -257,7 +257,7 @@ import { vi, describe, it, expect } from 'vitest';
 
 import { DosPlayer } from './components/DosPlayer';
 import { useDosEmulator } from './hooks/useDosEmulator';
-import { loadDiskImage } from './utils/diskLoader';
+import { loadZipArchive } from './utils/diskLoader';
 
 import type { DosOptions, CommandInterface } from './types/js-dos';
 
@@ -327,8 +327,8 @@ interface DosPlayerProps {
   options?: Partial<DosOptions>;
 }
 
-type DosEvent = 'emu-ready' | 'ci-ready' | 'exit';
-type LoadMethod = 'files' | 'zip' | 'diskImage';
+type DosEvent = 'emu-ready' | 'ci-ready' | 'bnd-play' | 'open-key' | 'fullscreen-change';
+type InitFs = Array<InitFileEntry> | Uint8Array;
 
 // Acceptable but less preferred
 type DosPlayerProps = {
@@ -406,7 +406,7 @@ export const DosPlayer = (props: any) => {
 
 ```typescript
 // Good
-export const DosPlayer: React.FC<DosPlayerProps> = ({ dosboxConf }) => {
+export const DosPlayer: React.FC<DosPlayerProps> = ({ dosboxConf = defaultDosboxConfig }) => {
   const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -415,7 +415,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({ dosboxConf }) => {
     return cleanup;
   }, [dosboxConf]);
 
-  const { data } = useDosEmulator(dosboxConf);
+  const { error } = useDosEmulator({ dosboxConf });
 
   return <div ref={containerRef}>...</div>;
 };
@@ -491,15 +491,24 @@ src/
 ├── types/            # TypeScript type definitions
 │   └── js-dos.d.ts
 ├── config/           # Configuration files
+│   ├── apps.config.ts
 │   ├── dosbox.conf.ts
 │   └── jsdos.config.ts
 ├── dos-apps/         # DOS application configs
 │   └── second-reality.config.ts
-├── assets/           # Static assets
-│   └── images/
+├── adapters/         # Emulator adapter around js-dos
+│   └── EmulatorAdapter.ts
+├── constants/        # Shared constants
+│   └── app.ts
+├── integration/      # Integration tests
+│   └── dosAppLoading.integration.test.tsx
+├── test/             # Test setup
+│   └── setup.ts
 ├── App.tsx           # Root component
 └── main.tsx          # Entry point
 ```
+
+Static assets, such as icons and the app archives in `demos/`, live in `public/`, outside `src/`.
 
 ### File Size
 
@@ -519,19 +528,24 @@ src/
 
 ````typescript
 /**
- * Load a disk image from a URL
+ * Load a ZIP archive for js-dos
  *
- * @param url - The URL of the disk image to load
- * @param maxSizeMB - Maximum file size in megabytes (default: 50)
- * @returns A promise that resolves to the disk image data
- * @throws {Error} If the file size exceeds the maximum
+ * @param zipUrl - The URL of the ZIP archive to load
+ * @param onProgress - Optional callback for progress updates
+ * @param signal - Optional AbortSignal that cancels the download
+ * @returns A promise that resolves to the archive's bytes
+ * @throws {Error} If the download fails or is aborted
  *
  * @example
  * ```typescript
- * const image = await loadDiskImage('https://example.com/disk.img');
+ * const archive = await loadZipArchive('/demos/stars.zip');
  * ```
  */
-export async function loadDiskImage(url: string, maxSizeMB = 50): Promise<Uint8Array> {
+export async function loadZipArchive(
+  zipUrl: string,
+  onProgress?: (progress: LoadProgress) => void,
+  signal?: AbortSignal
+): Promise<Uint8Array> {
   // Implementation
 }
 ````
