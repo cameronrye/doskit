@@ -65,8 +65,11 @@ initializeGlobalErrorHandler({
 
 - `/exitFullscreen/i`, `/requestFullscreen/i`, `/fullscreen.*not supported/i` - Fullscreen calls without a user gesture. js-dos calls `document.exitFullscreen()` on every start and leaves the rejection unhandled.
 - `/lock\(\) request could not be registered/i`, `/keyboard.*lock/i` - Keyboard lock, which js-dos requests when a player starts, without handling the promise
+- `/superseded by a subsequent lock\(\) method call/i` - When two players start milliseconds apart, such as when an app is left the moment its player starts, Chromium rejects the older keyboard lock with an `AbortError`, "This request has been superseded by a subsequent lock() method call."; the newer lock holds. Only that message matches: other `AbortError`s are still reported.
 - `/ResizeObserver loop/i` - ResizeObserver loop errors (benign)
 - `/extension context invalidated/i`, `/chrome-extension:/i` - Browser extensions
+
+Whatever was thrown or rejected, the handler reports an `Error`: the value itself when it is one, or else an `Error` with its text, which is its `message` property if it has one. A value with no text, such as `Object.create(null)`, for which `String()` throws, gets the browser's message for the uncaught error (Chromium's is "Uncaught exception"), or "Promise rejected with a value that has no text" for a rejection.
 
 ---
 
@@ -162,12 +165,14 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 **Features:**
 
-- Pattern matching for common errors (the first match wins)
+- Matches the error's name, its message and the HTTP status the message names, in a fixed order (the first match wins)
 - Provides suggestions for resolution
-- Includes original error in dev mode
+- Returns the technical message as `originalError`, in every build; a value without text has none
 - Extensible error mappings: add a pattern to `ERROR_MAPPINGS`
 
-The global error handler is its only caller: in production builds it logs the message and suggestion for each error it reports. The messages on the page come from the components themselves (see [Component-Level Error States](#5-component-level-error-states)).
+DemoSelector and DosPlayerWithApps show its explanation of a failed load on the page (see [Component-Level Error States](#5-component-level-error-states)), and pass `{ online: navigator.onLine }`. The global error handler passes no options: in production builds it logs the message and suggestion for each error it reports.
+
+`getUserFriendlyError(error, { online })` takes any value, `undefined` and values without a string form included, and returns `{ message, suggestion, originalError }`. Only `online: false` changes the result, since `navigator.onLine` being true only means that a network interface is up.
 
 **Usage:**
 
@@ -177,7 +182,7 @@ import { getUserFriendlyError } from './utils/errorMessages';
 try {
   await fetchData();
 } catch (error) {
-  const friendly = getUserFriendlyError(error);
+  const friendly = getUserFriendlyError(error, { online: navigator.onLine });
   console.error(friendly.message);
   if (friendly.suggestion) {
     console.info(friendly.suggestion);
@@ -185,16 +190,14 @@ try {
 }
 ```
 
-**Error Categories:**
+**Error Categories**, checked in this order:
 
-- Network errors (failed fetch, timeout, rate limit)
-- File errors (ZIP archive failed to load, file not found or 404)
-- Service worker errors
-- Emulator and browser feature errors (WebAssembly, fullscreen, keyboard lock)
-- Permission errors (denied, not allowed)
-- Cancelled operations
-- Memory errors
-- Server errors (500, 502, 503)
+1. An error named `AbortError`: "Operation was cancelled" / "The operation was stopped before it could complete. Please try again."
+2. A network failure: "Unable to connect to the server" / "Please check your internet connection and try again." With `online: false`, it is "This application isn't available offline yet" / "Each application works offline once it has been opened while online. Connect to the internet and try again." instead. A network failure is recognized by each browser's wording: Chrome and Edge's "Failed to fetch" (also "Failed to fetch dynamically imported module"), Firefox's "NetworkError when attempting to fetch resource." and "error loading dynamically imported module", Safari's "Load failed" (the whole message) and "Importing a module script failed.", and `fetchWithRetry`'s own "Fetch failed after retries".
+3. "timeout", "time out" or "timed out" in the message: "The request took too long to complete" / "The connection or the server might be slow. Please try again."
+4. "abort", "cancelled" or "canceled" in the message: cancelled, as in 1.
+5. An HTTP status, read from `HTTP <code>` in the message: 404 and 410 give "The requested file was not found" / "It might have moved in an update of DosKit. Reload the page and try again."; any 5xx gives "The server is temporarily unavailable" / "Please try again in a few minutes."; 408 is a timeout, as in 3; 429 gives "Too many requests". Other statuses go on to the patterns below. A number anywhere else in the message is not a status.
+6. Patterns in the message: rate limit (too many requests); a ZIP that failed to load with any other status, such as 403 ("Unable to load the application archive"); file not found; service worker; WebAssembly; fullscreen; keyboard lock; permission denied or not allowed; out of memory.
 
 Anything else is "An unexpected error occurred".
 
@@ -208,15 +211,17 @@ Anything else is "An unexpected error occurred".
 
 Each part that loads or starts something handles its own failures: it logs them with `console.error` and shows them in place, without passing them to the error tracker. A load the user cancelled, or that a newer navigation superseded, is aborted on purpose, and shows and logs nothing.
 
+The selector and the error overlay explain a failed load the same way: they log the raw error, then show `getUserFriendlyError(error, { online: navigator.onLine })`'s message, its suggestion, and a collapsed "Details" disclosure with the technical message, such as "Failed to fetch" or "Failed to load ZIP: HTTP 404". Offline, a network failure reads "This application isn't available offline yet".
+
 **DemoSelector** (apps picked in the selector):
 
-- A failed load shows an alert under the selected app: "Network error. Please check your internet connection and try again." when the message mentions `network` or `fetch`, "Loading timed out. The server may be slow. Please try again." when it mentions `timeout`, and otherwise the error's own message
-- A load still running after 30 seconds is aborted with "Loading timed out. Please check your internet connection and try again."
+- A failed load shows that explanation in an alert under the selected app. Load Application tries again.
+- A load still running after 30 seconds is aborted and explained the same way: "The request took too long to complete" / "The connection or the server might be slow. Please try again.", with "Loading timed out after 30 seconds" under Details
 - Cancel Loading, Escape, closing the selector or loading another app aborts the load quietly
 
 **DosPlayerWithApps** (apps the URL asks for: deep links, back/forward):
 
-- A failed load shows the "Error Loading Application" overlay with the error's message. Its Try Again boots the default DOS prompt and opens the selector.
+- A failed load shows the "Error Loading Application" overlay (`role="alert"`) with that explanation, then Try Again, which boots the default DOS prompt and opens the selector
 - A newer request, a pick in the selector or unmounting aborts the load and drops its result or error
 
 **useDosEmulator and DosPlayerUI** (starting js-dos):
@@ -228,7 +233,8 @@ Each part that loads or starts something handles its own failures: it logs them 
 **diskLoader and fetchWithRetry** (archive downloads):
 
 - `fetchWithRetry` retries network failures (a `TypeError`, whatever the browser's wording) and HTTP 408, 429, 500, 502, 503 and 504 up to 3 times, waiting about 1, 2 and 4 seconds. A status that persists comes back as the response; the last network failure, or any other error, is thrown.
-- `loadZipArchive` turns an error response into `Failed to load ZIP: <status text>`, logs a failure unless the caller aborted, and rethrows
+- A network failure while `navigator.onLine` is false is thrown at once, since every retry would fail the same way. This is checked at each failure, so a connection lost between retries ends them too. `navigator.onLine` being true only means that a network interface is up, so a network failure then is still retried.
+- `loadZipArchive` turns an error response into `Failed to load ZIP: HTTP <status> <status text>`, without the text when there is none: "Failed to load ZIP: HTTP 404" over HTTP/2, which GitHub Pages serves and which has no status text, or "Failed to load ZIP: HTTP 404 Not Found" over HTTP/1.1. It logs a failure unless the caller aborted, and rethrows.
 - An abort rejects with `Operation aborted` before a request or during a wait, or with the browser's `AbortError` during a request
 
 ## Error Flow
@@ -282,7 +288,7 @@ Aborted on purpose? → Drop it
   ↓
 Log to console
   ↓
-Set local error state (DemoSelector maps network and timeout errors)
+Explain it with getUserFriendlyError (passing navigator.onLine) and set local error state
   ↓
 Display error UI
 ```
@@ -304,8 +310,8 @@ const handleLoadApp = async (signal: AbortSignal) => {
   } catch (error) {
     // Cancelled or superseded on purpose: not a failure
     if (signal.aborted) return;
-    const friendly = getUserFriendlyError(error);
-    setError(friendly.message);
+    // Message, suggestion and technical details, as the selector shows them
+    setError(getUserFriendlyError(error, { online: navigator.onLine }));
     getErrorTracker().captureError(error instanceof Error ? error : new Error(String(error)), {
       userAction: 'Loading app',
     });
@@ -351,6 +357,7 @@ The global error handler automatically suppresses:
 
 - Fullscreen API errors (require user interaction)
 - Keyboard lock errors (require user interaction)
+- Keyboard lock requests that a newer one superseded
 - ResizeObserver loop errors (benign)
 - Browser extension errors
 
@@ -394,13 +401,12 @@ initializeGlobalErrorHandler({
 });
 ```
 
-What differs between builds follows `import.meta.env.DEV`:
+What differs between builds follows `import.meta.env.DEV`. `getUserFriendlyError()` returns the technical message as `originalError` in both, so the Details line of a failed load is there in production too.
 
 ### Development
 
 - The logger prints every level, with timestamps, and the global handler logs each suppressed error at debug level
 - ErrorBoundary's fallback shows the error message, stack trace and component stack
-- `getUserFriendlyError()` returns the technical message as `originalError`
 - The global handler logs no user-friendly messages
 
 ### Production
@@ -408,12 +414,11 @@ What differs between builds follows `import.meta.env.DEV`:
 - The logger prints warnings and errors only
 - The global handler logs the user-friendly message and suggestion for each error it reports
 - ErrorBoundary's fallback shows only its message and buttons
-- `getUserFriendlyError()` leaves `originalError` out
 
 ## Future Enhancements
 
 1. **Remote Error Tracking** - Implement `ErrorTrackingService` for a hosted service, and report the load and start errors that components only log today
-2. **User-Facing Messages** - Show the global handler's user-friendly messages on the page, such as in a toast; today it only logs them
+2. **User-Facing Messages** - Show the user-friendly messages of the errors that reach the global handler on the page, such as in a toast. Failed loads already show theirs; the global handler only logs its own.
 3. **Error Recovery Strategies** - Automatic retry logic for transient errors beyond archive downloads, which `fetchWithRetry` already retries
 4. **Error Analytics** - Track error frequency and patterns
 5. **User Feedback** - Allow users to report errors with context

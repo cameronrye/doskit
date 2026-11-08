@@ -202,7 +202,7 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 
 1. **Global error handler** catches uncaught errors and unhandled promise rejections, suppresses known harmless ones such as js-dos's fullscreen and keyboard lock calls, and logs and tracks the rest
 2. **ErrorBoundary** components catch React errors: one around App, one around DosPlayerWithApps
-3. **Component error states** show load and start failures where they happen: the selector, the loading overlay and the player
+3. **Component error states** show load and start failures where they happen: the selector, the error overlay and the player. A failed load is explained the same way in the selector and the overlay, with the technical message under a collapsed Details line.
 4. **Retry logic** with exponential backoff for network requests
 
 ### 3. Performance Optimizations
@@ -257,7 +257,7 @@ fetchWithRetry(url, options, {
 });
 ```
 
-It retries network failures and HTTP 408, 429, 500, 502, 503 and 504, adds up to 30% jitter to each wait (at most `maxDelay`, 10 seconds by default), and stops as soon as its `signal` aborts.
+It retries network failures and HTTP 408, 429, 500, 502, 503 and 504, adds up to 30% jitter to each wait (at most `maxDelay`, 10 seconds by default), and stops as soon as its `signal` aborts. A network failure while `navigator.onLine` is false is thrown at once, since every retry would fail the same way; online it is retried.
 
 ### 3. Error Boundary Pattern
 
