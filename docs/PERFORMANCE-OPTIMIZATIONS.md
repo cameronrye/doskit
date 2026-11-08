@@ -259,15 +259,23 @@ workerThread: true;
 
 **Performance Gain:** 200-500ms faster startup
 
-**Implementation:**
+**Implementation** (`index.html`):
 
 ```html
-<link rel="preload" href="/emulators/dosbox.wasm" as="fetch" crossorigin />
-<link rel="preload" href="/emulators/dosbox-x.wasm" as="fetch" crossorigin />
-<link rel="modulepreload" href="/js-dos.js" />
+<!-- Preload the WASM module for the default "dosbox" backend -->
+<link rel="preload" href="/emulators/wdosbox.wasm" as="fetch" crossorigin />
+
+<!-- js-dos JavaScript (local copy, loaded before React app) -->
+<script src="/js-dos.js" defer fetchpriority="high"></script>
 ```
 
-**What it does:** Starts downloading WASM modules early in the page load process.
+**What it does:** Starts downloading the default backend's WebAssembly module while the page is still loading. When a player starts, js-dos's `emulators.js` requests the same file from the page with an `XMLHttpRequest`, which matches the preload's `as="fetch"` and `crossorigin`, so it gets the preloaded response; it compiles the module and hands it to the emulator's Web Worker. DOSBox-X (`wdosbox-x.wasm`, several times larger) is not preloaded: every app runs on the default backend.
+
+`js-dos.js` is a classic script, loaded with `defer` so that it does not block the HTML parser. Deferred scripts run in document order, so it still runs before the app's module script, which comes later in the document (at the end of `<head>` in the build, of `<body>` on the dev server), and `window.Dos` exists when the first player mounts. Chrome fetches deferred scripts at low priority, and the app has to wait for this one, so `fetchpriority="high"` keeps the priority it had as a blocking script.
+
+The built `index.html` also gets `<link rel="modulepreload">` tags from Vite, for the app's own chunks: the React vendor chunk and the Rolldown runtime.
+
+Chrome warns in the console that the module "was preloaded using link preload but not used within a few seconds" when no player starts that soon after the page loads, such as a deep link whose archive is still downloading, or a load that failed. A player that starts later still uses the preloaded response; the file is not downloaded twice.
 
 **Benefits:**
 
