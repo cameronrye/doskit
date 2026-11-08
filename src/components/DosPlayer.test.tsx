@@ -376,6 +376,34 @@ describe('DosPlayer', () => {
       expect(player.stop).toHaveBeenCalled();
     });
 
+    // js-dos's stop() keeps the context, and Chrome keeps 16 at most: from the 17th app
+    // switch on, it dropped the oldest each time with a warning
+    it('releases the WebGL context js-dos draws with, then stops the player', async () => {
+      const steps: string[] = [];
+      const gl = {
+        getExtension: (name: string) =>
+          name === 'WEBGL_lose_context' ? { loseContext: () => steps.push('loseContext') } : null,
+      } as unknown as WebGLRenderingContext;
+      mockDos.mockImplementation((container) => {
+        // Like js-dos, which draws in a canvas of the element it runs in. jsdom has no WebGL.
+        const canvas = document.createElement('canvas');
+        vi.spyOn(canvas, 'getContext').mockImplementation((type: string) =>
+          type === 'webgl' ? gl : null
+        );
+        container.append(canvas);
+        return player;
+      });
+      player.stop.mockImplementation(async () => {
+        steps.push('stop');
+      });
+      const { unmount } = render(<DosPlayer />);
+      await act(async () => {});
+
+      unmount();
+
+      expect(steps).toEqual(['loseContext', 'stop']);
+    });
+
     it('should handle stop errors gracefully', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       player.stop.mockRejectedValueOnce(new Error('Stop failed'));

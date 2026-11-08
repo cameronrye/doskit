@@ -221,6 +221,11 @@ export const useDosEmulator = ({
       }
       unmounted.abort();
       if (player) {
+        // js-dos's stop() leaves the WebGL context it draws with alive, and browsers keep
+        // only so many: Chrome drops the oldest once there are 16, warning each time
+        for (const canvas of container.querySelectorAll('canvas')) {
+          canvas.getContext('webgl')?.getExtension('WEBGL_lose_context')?.loseContext();
+        }
         stopPlayer(player);
       }
       // A ready player is gone now: report its exit at once, so a parent showing it as
