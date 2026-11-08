@@ -35,11 +35,47 @@ function groupsOf(text) {
   return groups;
 }
 
+// The tokens of the AI crawlers each vendor documents, on the pages robots.txt names
+// above their groups. OpenAI's OAI-AdsBot is left out: it only visits pages submitted as
+// ads on ChatGPT.
+const AI_CRAWLERS = [
+  'GPTBot',
+  'OAI-SearchBot',
+  'ChatGPT-User',
+  'CCBot',
+  'ClaudeBot',
+  'Claude-SearchBot',
+  'Claude-User',
+  'Google-Extended',
+  'PerplexityBot',
+  'Perplexity-User',
+];
+// Anthropic told 404 Media in July 2024 that these "are no longer in use", and its
+// crawler documentation names neither
+const RETIRED_TOKENS = ['anthropic-ai', 'claude-web'];
+
 describe('robots.txt', () => {
-  it('has a group for every crawler and one each for the AI crawlers it names', () => {
+  it('has a group for every crawler and one for each AI crawler', () => {
     const agents = groupsOf(ROBOTS_TXT).flatMap((group) => group.agents);
 
-    expect(agents).toEqual(expect.arrayContaining(['*', 'GPTBot', 'CCBot', 'PerplexityBot']));
+    expect([...agents].sort()).toEqual(['*', ...AI_CRAWLERS].sort());
+  });
+
+  it('names no crawler by a token its vendor no longer uses', () => {
+    // Crawlers match their token without regard to case
+    const agents = groupsOf(ROBOTS_TXT).flatMap((group) => group.agents);
+
+    expect(agents.filter((agent) => RETIRED_TOKENS.includes(agent.toLowerCase()))).toEqual([]);
+  });
+
+  it('lets every crawler fetch the site', () => {
+    const groups = groupsOf(ROBOTS_TXT);
+
+    const closed = groups.filter(
+      (group) => !group.rules.includes('allow: /') || group.rules.includes('disallow: /')
+    );
+
+    expect(closed.map((group) => group.agents.join(', '))).toEqual([]);
   });
 
   it('keeps every crawler away from the source maps', () => {

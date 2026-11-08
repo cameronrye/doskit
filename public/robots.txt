@@ -9,8 +9,16 @@ Allow: /
 Disallow: /*.map$
 
 # Allow specific AI/LLM crawlers. A crawler follows only the group that names it, so each
-# group repeats the rule for source maps.
+# group repeats the rule for source maps. The tokens are the ones each vendor documents.
+
+# OpenAI: https://developers.openai.com/api/docs/bots
 User-agent: GPTBot
+Allow: /
+Allow: /llm.txt
+Allow: /llm-full.txt
+Disallow: /*.map$
+
+User-agent: OAI-SearchBot
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
@@ -22,31 +30,47 @@ Allow: /llm.txt
 Allow: /llm-full.txt
 Disallow: /*.map$
 
+# Common Crawl: https://commoncrawl.org/ccbot
 User-agent: CCBot
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
 Disallow: /*.map$
 
-User-agent: anthropic-ai
+# Anthropic: https://support.claude.com/en/articles/8896518
+User-agent: ClaudeBot
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
 Disallow: /*.map$
 
-User-agent: Claude-Web
+User-agent: Claude-SearchBot
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
 Disallow: /*.map$
 
+User-agent: Claude-User
+Allow: /
+Allow: /llm.txt
+Allow: /llm-full.txt
+Disallow: /*.map$
+
+# Google: https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers
 User-agent: Google-Extended
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
 Disallow: /*.map$
 
+# Perplexity: https://docs.perplexity.ai/docs/resources/perplexity-crawlers
 User-agent: PerplexityBot
+Allow: /
+Allow: /llm.txt
+Allow: /llm-full.txt
+Disallow: /*.map$
+
+User-agent: Perplexity-User
 Allow: /
 Allow: /llm.txt
 Allow: /llm-full.txt
