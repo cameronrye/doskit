@@ -6,65 +6,99 @@ DosKit is a cross-platform DOS emulator built with React, TypeScript, and js-dos
 
 ## Technology Stack
 
-- **Frontend Framework**: React 19.2.0 with TypeScript
-- **Build Tool**: Vite (experimental Rolldown variant for improved performance)
-- **Emulator Core**: js-dos v8.3.20 (WebAssembly-based DOSBox)
+- **Frontend Framework**: React 19 with TypeScript
+- **Build Tool**: Vite 8, which bundles with Rolldown
+- **Emulator Core**: js-dos 8 (WebAssembly-based DOSBox), installed from npm
 - **PWA**: Service Worker with offline support and caching
-- **Testing**: Vitest with React Testing Library
+- **App Selector**: retro-floppy's floppy disk components
+- **Testing**: Vitest with React Testing Library (jsdom)
+
+The exact versions are in `package.json` and `package-lock.json`.
 
 ## Project Structure
 
-```
+```text
 doskit/
+├── index.html                   # Preloads wdosbox.wasm, loads js-dos and the app
 ├── public/
 │   ├── sw.js                    # Service Worker for PWA functionality
-│   ├── js-dos.js                # js-dos library (local copy)
-│   └── js-dos.css               # js-dos styles
+│   ├── manifest.json            # PWA manifest
+│   ├── demos/                   # App archives (<id>.zip) and where they come from
+│   ├── js-dos.js                # js-dos library (copied from node_modules)
+│   ├── js-dos.css               # js-dos styles (copied from node_modules)
+│   └── emulators/               # js-dos backends (copied from node_modules)
+├── scripts/                     # Build and utility scripts
+│   ├── copy-js-dos.js           # Copies js-dos into public/ before dev and build
+│   └── inject-sw-version.js     # Stamps versions and bundles into dist/sw.js
 ├── src/
+│   ├── adapters/
+│   │   └── EmulatorAdapter.ts   # Emulator interface and its js-dos adapter
 │   ├── components/              # React components
 │   │   ├── DosPlayer.tsx        # Core emulator component
-│   │   ├── DosPlayerWithApps.tsx # Wrapper with app selection
+│   │   ├── DosPlayerUI.tsx      # Player loading, error and container markup
+│   │   ├── DosPlayerWithApps.tsx # Runs the picked or requested app
 │   │   ├── DemoSelector.tsx     # Application selector UI
 │   │   ├── ErrorBoundary.tsx    # Error handling boundary
-│   │   ├── OfflineIndicator.tsx # Network status indicator
+│   │   ├── OfflineIndicator.tsx # Network status and install prompt
 │   │   └── UpdateNotification.tsx # PWA update notifications
-│   ├── dos-apps/                # DOS application configurations
-│   │   ├── second-reality.config.ts
-│   │   └── impulse-tracker.config.ts
 │   ├── config/                  # Configuration files
+│   │   ├── apps.config.ts       # App registry (availableApps)
 │   │   ├── jsdos.config.ts      # js-dos options
-│   │   └── dosbox.conf.ts       # DOSBox configuration
+│   │   └── dosbox.conf.ts       # DOSBox configuration of the default DOS prompt
 │   ├── constants/               # Application constants
-│   │   └── app.ts               # Centralized constants
+│   │   └── app.ts               # PWA and UI constants
+│   ├── dos-apps/                # DOS application configurations
+│   │   ├── README.md            # How to add an app
+│   │   ├── second-reality.config.ts
+│   │   └── impulse-tracker.config.ts ...
+│   ├── hooks/
+│   │   └── useDosEmulator.ts    # js-dos player lifecycle
+│   ├── integration/             # Integration tests
+│   ├── test/
+│   │   └── setup.ts             # Vitest setup
 │   ├── types/                   # TypeScript type definitions
+│   │   ├── dos-app.ts           # DosApp
 │   │   └── js-dos.d.ts          # js-dos type declarations
 │   ├── utils/                   # Utility functions
-│   │   ├── diskLoader.ts        # File loading utilities
-│   │   ├── urlRouting.ts        # URL routing and deep linking
-│   │   ├── logger.ts            # Centralized logging
-│   │   ├── fetchWithRetry.ts    # Network retry logic
+│   │   ├── diskLoader.ts        # ZIP archive download
+│   │   ├── dosboxConfigBuilder.ts # DOSBox config builder and presets
 │   │   ├── errorMessages.ts     # User-friendly error mapping
-│   │   └── serviceWorkerRegistration.ts
+│   │   ├── errorTracking.ts     # Error tracking service
+│   │   ├── fetchWithRetry.ts    # Network retry logic
+│   │   ├── globalErrorHandler.ts # Uncaught errors and unhandled rejections
+│   │   ├── logger.ts            # Centralized logging
+│   │   ├── serviceWorkerRegistration.ts
+│   │   ├── storage.ts           # localStorage that never throws
+│   │   ├── updatePrompt.ts      # Mounts UpdateNotification
+│   │   └── urlRouting.ts        # URL routing and deep linking
 │   ├── App.tsx                  # Root application component
 │   └── main.tsx                 # Application entry point
-├── scripts/                     # Build and utility scripts
-└── tests/                       # Test files
+├── vite.config.ts               # Build configuration, 404.html for GitHub Pages
+└── vitest.config.ts             # Test configuration
 ```
+
+Tests sit next to the code they cover (`*.test.ts`, `*.test.tsx`, and `scripts/*.test.js` for the build scripts and the service worker). `public/js-dos.js`, `public/js-dos.css` and `public/emulators/` are gitignored: see [js-dos Dependency Strategy](#js-dos-dependency-strategy).
 
 ## Component Hierarchy
 
-```
-App (Root)
-├── ErrorBoundary
-│   └── DosPlayerWithApps
-│       ├── DemoSelector (modal)
-│       │   └── App selection UI
-│       ├── DosPlayer
-│       │   └── js-dos emulator instance
-│       ├── Loading overlay
-│       └── Error overlay
-├── OfflineIndicator
-└── UpdateNotification
+```text
+ErrorBoundary (main.tsx)
+└── App (Root)
+    ├── OfflineIndicator
+    ├── Header and URL error banner
+    ├── ErrorBoundary
+    │   └── DosPlayerWithApps
+    │       ├── DemoSelector (modal)
+    │       │   └── App selection UI
+    │       ├── Loading overlay
+    │       ├── Error overlay
+    │       └── DosPlayer (remounted for each app)
+    │           ├── useDosEmulator
+    │           └── DosPlayerUI
+    │               └── js-dos emulator instance
+    └── Footer (Ready/Loading and Online/Offline badges)
+
+UpdateNotification (a React root of its own, mounted by utils/updatePrompt.ts)
 ```
 
 ## Data Flow
