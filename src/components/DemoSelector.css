@@ -186,8 +186,8 @@
 }
 
 /*
- * Error Message. Scoped: App's URL error banner has an .error-message of its own. Dark in
- * either color scheme, like the rest of the selector. Its text needs 4.5:1 contrast (WCAG
+ * Error Message. Scoped to the selector, as js-dos.css and other components style their own
+ * error classes. Dark in either color scheme, like the rest of the selector. Its text needs 4.5:1 contrast (WCAG
  * AA) on this background: it has 6.7:1, and the details 5.3:1 at their opacity.
  */
 .demo-selector .error-message {

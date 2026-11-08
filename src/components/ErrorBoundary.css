@@ -1,6 +1,6 @@
 /*
  * Fills the element it renders in: the page for the boundary in main.tsx, or for App's own
- * boundary the player's area between the header and the footer, after a URL error banner.
+ * boundary the player's area between the header and the footer.
  * Neither of those scrolls, so a card taller than its space scrolls here.
  */
 .error-boundary {

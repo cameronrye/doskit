@@ -12,7 +12,6 @@
  * fullscreen. From the bottom:
  *   10     header and footer (App.css), and js-dos's sidebar inside the player
  *   50     the player's own loading and error panels (DosPlayer.css)
- *   100    the URL error banner (App.css)
  *   999    js-dos.css's modals and on-screen controls, should js-dos show them, and the
  *          player in js-dos's soft fullscreen, fixed over the whole page (DosPlayer.css):
  *          it then holds js-dos's own layers, its toasts included
