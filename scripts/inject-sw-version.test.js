@@ -52,9 +52,10 @@ describe('extractBundledAssets', () => {
 
 describe('injectIntoServiceWorker', () => {
   const assets = ['/assets/index-abc123.js', '/assets/index-789xyz.css'];
+  const build = { version: 'v1a2b3c4d', jsDosVersion: '8.3.20', assets };
 
   it('stamps the version and precaches the bundles', () => {
-    const result = injectIntoServiceWorker(serviceWorker, { version: 'v1a2b3c4d', assets });
+    const result = injectIntoServiceWorker(serviceWorker, build);
 
     expect(result).toContain("const CACHE_VERSION = 'v1a2b3c4d';");
     expect(precachedPaths(result)).toEqual(
@@ -62,8 +63,14 @@ describe('injectIntoServiceWorker', () => {
     );
   });
 
+  it('stamps the js-dos version, which names the emulator cache', () => {
+    const result = injectIntoServiceWorker(serviceWorker, build);
+
+    expect(result).toContain("const JS_DOS_VERSION = '8.3.20';");
+  });
+
   it('produces a worker that still loads', () => {
-    const result = injectIntoServiceWorker(serviceWorker, { version: 'v1a2b3c4d', assets });
+    const result = injectIntoServiceWorker(serviceWorker, build);
 
     expect(evaluate(result)).toEqual(['install', 'activate', 'fetch', 'message']);
   });
@@ -74,21 +81,35 @@ describe('injectIntoServiceWorker', () => {
       "const CACHE_VERSION = 'v2';"
     );
 
-    expect(() => injectIntoServiceWorker(source, { version: 'v1a2b3c4d', assets })).toThrow(
-      /CACHE_VERSION/
-    );
+    expect(() => injectIntoServiceWorker(source, build)).toThrow(/CACHE_VERSION/);
   });
+
+  it('fails when the js-dos version placeholder is missing', () => {
+    const source = serviceWorker.replace(
+      "const JS_DOS_VERSION = 'dev';",
+      "const JS_DOS_VERSION = '8.3.20';"
+    );
+
+    expect(() => injectIntoServiceWorker(source, build)).toThrow(/JS_DOS_VERSION/);
+  });
+
+  it.each([undefined, '', "8.3.20'; importScripts('https://example.com/x.js'); '"])(
+    'fails on the js-dos version %j',
+    (jsDosVersion) => {
+      expect(() => injectIntoServiceWorker(serviceWorker, { ...build, jsDosVersion })).toThrow(
+        /js-dos version/
+      );
+    }
+  );
 
   it('fails when there is no STATIC_ASSETS list to extend', () => {
     const source = serviceWorker.replace('const STATIC_ASSETS', 'const APP_SHELL');
 
-    expect(() => injectIntoServiceWorker(source, { version: 'v1a2b3c4d', assets })).toThrow(
-      /STATIC_ASSETS/
-    );
+    expect(() => injectIntoServiceWorker(source, build)).toThrow(/STATIC_ASSETS/);
   });
 
   it('fails when the build produced no bundles', () => {
-    expect(() => injectIntoServiceWorker(serviceWorker, { version: 'v1', assets: [] })).toThrow(
+    expect(() => injectIntoServiceWorker(serviceWorker, { ...build, assets: [] })).toThrow(
       /no bundles/
     );
   });

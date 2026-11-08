@@ -164,9 +164,10 @@ async function dispatch(listener, init = {}) {
 }
 
 /** Starts public/sw.js as one build would ship it */
-function startWorker(browser, { cacheVersion = 'vA' } = {}) {
+function startWorker(browser, { cacheVersion = 'vA', jsDosVersion = '8.3.20' } = {}) {
   const source = injectIntoServiceWorker(SERVICE_WORKER, {
     version: cacheVersion,
+    jsDosVersion,
     assets: BUNDLES,
   });
   const listeners = {};
@@ -291,6 +292,64 @@ describe('emulator files', () => {
       expect(await response?.text()).toBe(`${path} from deploy A`);
     }
     expect(requestedPaths(browser)).toEqual(DOSBOX_X);
+  });
+
+  it('keeps them across deploys that keep the js-dos version', async () => {
+    const browser = createBrowser();
+    const previous = await installAndActivate(browser, { cacheVersion: 'vA' });
+    await previous.dispatch('fetch', { request: subresource(DOSBOX_X[1]) });
+    browser.server.deploy = 'B';
+    browser.server.requests.length = 0;
+
+    const worker = await installAndActivate(browser, { cacheVersion: 'vB' });
+    for (const path of [...DEFAULT_BACKEND, DOSBOX_X[1]]) {
+      const { response } = await worker.dispatch('fetch', { request: subresource(path) });
+      expect(await response?.text()).toBe(`${path} from deploy A`);
+    }
+
+    expect(requestedPaths(browser)).toEqual(expect.arrayContaining(APP_SHELL));
+    expect(requestedPaths(browser).filter((path) => path.startsWith('/emulators/'))).toEqual([]);
+  });
+
+  it('replaces them when js-dos changes, once the new worker activates', async () => {
+    const browser = createBrowser();
+    const previous = await installAndActivate(browser, { cacheVersion: 'vA' });
+    await previous.dispatch('fetch', { request: subresource(DOSBOX_X[1]) });
+    browser.server.deploy = 'B';
+    browser.server.requests.length = 0;
+
+    const worker = startWorker(browser, { cacheVersion: 'vB', jsDosVersion: '8.4.0' });
+    await worker.dispatch('install');
+    expect(requestedPaths(browser)).toEqual(expect.arrayContaining(DEFAULT_BACKEND));
+    // The waiting update must not change the files under the open page's js-dos
+    const { response: current } = await previous.dispatch('fetch', {
+      request: subresource('/emulators/wdosbox.wasm'),
+    });
+    expect(await current?.text()).toBe('/emulators/wdosbox.wasm from deploy A');
+
+    await worker.dispatch('activate');
+
+    expect(Object.keys(browser.contents()).sort()).toEqual(['doskit-emulators-8.4.0', 'doskit-vB']);
+    const { response } = await worker.dispatch('fetch', {
+      request: subresource('/emulators/wdosbox.wasm'),
+    });
+    expect(await response?.text()).toBe('/emulators/wdosbox.wasm from deploy B');
+  });
+
+  it('asks the server for them rather than the HTTP cache', async () => {
+    // A cache entry is kept for as long as js-dos stays the same, so it must not come
+    // from an HTTP cache entry that is still fresh but from the previous js-dos
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    await worker.dispatch('fetch', { request: subresource(DOSBOX_X[1]) });
+
+    const emulatorRequests = browser.server.requests.filter(({ path }) =>
+      path.startsWith('/emulators/')
+    );
+    expect(emulatorRequests.map(({ path }) => path).sort()).toEqual(
+      [...DEFAULT_BACKEND, DOSBOX_X[1]].sort()
+    );
+    expect(new Set(emulatorRequests.map(({ cache }) => cache))).toEqual(new Set(['no-cache']));
   });
 });
 

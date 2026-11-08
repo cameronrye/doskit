@@ -4,6 +4,10 @@
  * triggering browser update detection, and includes all bundled assets
  * for proper offline functionality
  *
+ * It also stamps the js-dos version copied into dist/emulators/, which names
+ * the worker's emulator cache: emulator files stay cached across deploys
+ * until js-dos changes.
+ *
  * The build fails if dist/sw.js lacks what this replaces, or if it would
  * precache a file that is not in dist/: cache.addAll() rejects on a single
  * 404, and the service worker would then never install.
@@ -18,8 +22,13 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const distDir = join(__dirname, '../dist');
+// Where copy-js-dos.js takes the files in dist/emulators/ from
+const jsDosPackage = join(__dirname, '../node_modules/js-dos/package.json');
 
 const CACHE_VERSION_PLACEHOLDER = /const CACHE_VERSION = ['"]v1['"];/;
+const JS_DOS_VERSION_PLACEHOLDER = /const JS_DOS_VERSION = ['"]dev['"];/;
+// npm versions are semver: letters, digits, dots, hyphens and plus signs
+const PLAIN_VERSION = /^[0-9A-Za-z.+-]+$/;
 const STATIC_ASSETS_LIST = /(const STATIC_ASSETS = \[[^\]]+)(];)/;
 const PRECACHE_LISTS = /const (?:STATIC|EMULATOR)_ASSETS = \[([^\]]*)\]/g;
 
@@ -59,15 +68,21 @@ export function extractBundledAssets(indexHtml) {
 }
 
 /**
- * Replace the CACHE_VERSION placeholder and append the bundled assets to
- * STATIC_ASSETS
+ * Replace the CACHE_VERSION and JS_DOS_VERSION placeholders and append the
+ * bundled assets to STATIC_ASSETS
  */
-export function injectIntoServiceWorker(swContent, { version, assets }) {
+export function injectIntoServiceWorker(swContent, { version, jsDosVersion, assets }) {
   if (!CACHE_VERSION_PLACEHOLDER.test(swContent)) {
     throw new Error("sw.js has no `const CACHE_VERSION = 'v1';` placeholder");
   }
+  if (!JS_DOS_VERSION_PLACEHOLDER.test(swContent)) {
+    throw new Error("sw.js has no `const JS_DOS_VERSION = 'dev';` placeholder");
+  }
   if (!STATIC_ASSETS_LIST.test(swContent)) {
     throw new Error('sw.js has no STATIC_ASSETS list for the bundled assets');
+  }
+  if (typeof jsDosVersion !== 'string' || !PLAIN_VERSION.test(jsDosVersion)) {
+    throw new Error(`js-dos version ${JSON.stringify(jsDosVersion)} is not a version number`);
   }
   if (assets.length === 0) {
     throw new Error('index.html references no bundles under /assets/');
@@ -76,6 +91,7 @@ export function injectIntoServiceWorker(swContent, { version, assets }) {
   const assetsToInject = assets.map((asset) => `  '${asset}',`).join('\n');
   return swContent
     .replace(CACHE_VERSION_PLACEHOLDER, `const CACHE_VERSION = '${version}';`)
+    .replace(JS_DOS_VERSION_PLACEHOLDER, `const JS_DOS_VERSION = '${jsDosVersion}';`)
     .replace(
       STATIC_ASSETS_LIST,
       `$1  // Bundled assets (auto-injected during build)\n${assetsToInject}\n$2`
@@ -104,6 +120,7 @@ function injectVersionAndAssets() {
 
   try {
     const versionInfo = generateVersion();
+    const jsDosVersion = JSON.parse(readFileSync(jsDosPackage, 'utf8')).version;
     const bundledAssets = extractBundledAssets(readFileSync(join(distDir, 'index.html'), 'utf8'));
 
     console.log(`📦 Found ${bundledAssets.length} bundled assets:`);
@@ -111,6 +128,7 @@ function injectVersionAndAssets() {
 
     let swContent = injectIntoServiceWorker(readFileSync(swPath, 'utf8'), {
       version: versionInfo.version,
+      jsDosVersion,
       assets: bundledAssets,
     });
 
@@ -128,6 +146,7 @@ function injectVersionAndAssets() {
 
     console.log('✅ Service worker version injected successfully');
     console.log(`   Version: ${versionInfo.version}`);
+    console.log(`   js-dos: ${jsDosVersion} (names the emulator cache)`);
     console.log(`   Build Date: ${versionInfo.buildDate}`);
     console.log(`   Git Hash: ${versionInfo.gitHash}`);
   } catch (error) {

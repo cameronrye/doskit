@@ -3,9 +3,16 @@
  * Provides offline functionality and caching for the PWA
  */
 
-// Cache version - increment this to force cache update
+// Replaced by scripts/inject-sw-version.js: every build gets a new CACHE_VERSION, so each
+// deploy installs a new worker with a fresh copy of the app shell
 const CACHE_VERSION = 'v1';
 const CACHE_NAME = `doskit-${CACHE_VERSION}`;
+const METADATA_CACHE_NAME = `${CACHE_NAME}-metadata`;
+
+// Emulator files only change with js-dos, so they have a cache of their own that deploys
+// keep. The build replaces this with the js-dos version it copied into /emulators/.
+const JS_DOS_VERSION = 'dev';
+const EMULATOR_CACHE_NAME = `doskit-emulators-${JS_DOS_VERSION}`;
 
 // Configuration
 const CONFIG = {
@@ -37,47 +44,44 @@ const EMULATOR_ASSETS = [
   '/emulators/emulators.js',
 ];
 
-// What install caches: trimming leaves these alone, since /index.html is the offline
-// fallback for every navigation and the app cannot start without the rest
-const PRECACHED_URLS = new Set(
-  [...STATIC_ASSETS, ...EMULATOR_ASSETS].map((path) => new URL(path, self.location.origin).href)
-);
+const absoluteUrl = (path) => new URL(path, self.location.origin).href;
 
-// Install event - cache static assets
+// What install puts in CACHE_NAME: trimming leaves these alone, since /index.html is the
+// offline fallback for every navigation and the app cannot start without the rest
+const PRECACHED_URLS = new Set(STATIC_ASSETS.map(absoluteUrl));
+
+// A cached emulator file is kept until js-dos changes, so it must come from the server:
+// an HTTP cache entry that is still fresh may hold the previous js-dos version's file
+const emulatorRequest = (url) => new Request(url, { cache: 'no-cache' });
+
+async function precacheAppShell() {
+  const cache = await caches.open(CACHE_NAME);
+  await cache.addAll(STATIC_ASSETS);
+  console.log(`[Service Worker] ✅ Static assets cached (${STATIC_ASSETS.length} files)`);
+}
+
+/**
+ * Precache the default backend into the cache of this js-dos version. Only files that
+ * are not there yet are downloaded, so a deploy that keeps js-dos fetches none.
+ */
+async function precacheEmulator() {
+  const cache = await caches.open(EMULATOR_CACHE_NAME);
+  const cachedUrls = new Set((await cache.keys()).map((request) => request.url));
+  const missing = EMULATOR_ASSETS.filter((path) => !cachedUrls.has(absoluteUrl(path)));
+  await cache.addAll(missing.map(emulatorRequest));
+  console.log(
+    `[Service Worker] ✅ Emulator assets cached in ${EMULATOR_CACHE_NAME} ` +
+      `(${missing.length} downloaded, ${EMULATOR_ASSETS.length - missing.length} kept)`
+  );
+}
+
+// Install event - cache the app shell and the default emulator
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing service worker...', CACHE_NAME);
 
   event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[Service Worker] Caching static assets');
-        console.log(
-          `[Service Worker] Total assets to cache: ${STATIC_ASSETS.length + EMULATOR_ASSETS.length}`
-        );
-
-        // Cache static assets first (critical for app to work)
-        return cache
-          .addAll(STATIC_ASSETS)
-          .then(() => {
-            console.log(`[Service Worker] ✅ Static assets cached (${STATIC_ASSETS.length} files)`);
-            // Then cache emulator assets (these are larger)
-            return cache.addAll(EMULATOR_ASSETS);
-          })
-          .then(() => {
-            console.log(
-              `[Service Worker] ✅ Emulator assets cached (${EMULATOR_ASSETS.length} files)`
-            );
-          })
-          .catch((error) => {
-            console.error('[Service Worker] ❌ Failed to cache assets:', error);
-            // Log which asset failed
-            if (error.message) {
-              console.error('[Service Worker] Error details:', error.message);
-            }
-            throw error; // Re-throw to fail the installation
-          });
-      })
+    precacheAppShell()
+      .then(precacheEmulator)
       .then(() => {
         console.log('[Service Worker] ✅ Installation complete - all assets cached');
         console.log('[Service Worker] Waiting for user to activate update...');
@@ -91,9 +95,10 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - delete the caches of earlier deploys and of other js-dos versions
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating service worker...', CACHE_NAME);
+  const currentCaches = [CACHE_NAME, METADATA_CACHE_NAME, EMULATOR_CACHE_NAME];
 
   event.waitUntil(
     caches
@@ -101,7 +106,7 @@ self.addEventListener('activate', (event) => {
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName.startsWith('doskit-') && cacheName !== CACHE_NAME) {
+            if (cacheName.startsWith('doskit-') && !currentCaches.includes(cacheName)) {
               console.log('[Service Worker] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
@@ -180,7 +185,7 @@ function fetchWithTimeout(request, timeout = null) {
  */
 async function getCacheMetadata() {
   try {
-    const cache = await caches.open(`${CACHE_NAME}-metadata`);
+    const cache = await caches.open(METADATA_CACHE_NAME);
     const response = await cache.match('metadata');
     if (response) {
       return await response.json();
@@ -199,7 +204,7 @@ async function updateCacheMetadata(url, timestamp = Date.now()) {
     const metadata = await getCacheMetadata();
     metadata[url] = timestamp;
 
-    const cache = await caches.open(`${CACHE_NAME}-metadata`);
+    const cache = await caches.open(METADATA_CACHE_NAME);
     await cache.put(
       'metadata',
       new Response(JSON.stringify(metadata), {
@@ -255,7 +260,7 @@ async function trimCache(cacheName) {
         delete updatedMetadata[entry.url];
       });
 
-      const metadataCache = await caches.open(`${CACHE_NAME}-metadata`);
+      const metadataCache = await caches.open(METADATA_CACHE_NAME);
       await metadataCache.put(
         'metadata',
         new Response(JSON.stringify(updatedMetadata), {
@@ -270,6 +275,32 @@ async function trimCache(cacheName) {
   } catch (error) {
     console.error('[Service Worker] Error trimming cache:', error);
   }
+}
+
+/**
+ * Serve an emulator file cache-first. The files of one js-dos version never change, and
+ * deploys keep their cache. DOSBox-X is not precached: storing it on first use is what
+ * keeps it working offline.
+ */
+async function serveEmulatorFile(event) {
+  const { request } = event;
+  const cache = await caches.open(EMULATOR_CACHE_NAME);
+  const cachedResponse = await cache.match(request);
+  if (cachedResponse) {
+    console.log('[Service Worker] Serving from cache (cache-first):', request.url);
+    return cachedResponse;
+  }
+
+  console.log('[Service Worker] Fetching from network (cache-first):', request.url);
+  const networkResponse = await fetchWithTimeout(emulatorRequest(request.url));
+  if (networkResponse.status === 200) {
+    event.waitUntil(
+      cache
+        .put(request, networkResponse.clone())
+        .catch((error) => console.error('[Service Worker] Error caching emulator file:', error))
+    );
+  }
+  return networkResponse;
 }
 
 // Fetch event - serve from cache, fallback to network
@@ -330,12 +361,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for emulator files, WASM and demo archives: large, and unchanged
-  // within a deploy (each build gets a new CACHE_VERSION, so activation drops
-  // stale copies). Stale-while-revalidate would re-download them in full on
-  // every use. Caching on first use is also what keeps DOSBox-X working offline.
+  // Cache-first for emulator files, from the cache of this js-dos version
+  if (url.pathname.startsWith('/emulators/')) {
+    event.respondWith(serveEmulatorFile(event));
+    return;
+  }
+
+  // Cache-first for other WASM and demo archives: large, and unchanged within a
+  // deploy (each build gets a new CACHE_VERSION, so activation drops stale
+  // copies). Stale-while-revalidate would re-download them in full on every use.
   if (
-    url.pathname.startsWith('/emulators/') ||
     url.pathname.endsWith('.wasm') ||
     url.pathname.endsWith('.wasm.gz') ||
     url.pathname.startsWith('/demos/')
