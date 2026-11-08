@@ -118,9 +118,7 @@ describe('injectIntoServiceWorker', () => {
     const result = injectIntoServiceWorker(serviceWorker, build);
 
     expect(result).toContain("const CACHE_VERSION = 'v1a2b3c4d';");
-    expect(precachedPaths(result)).toEqual(
-      expect.arrayContaining(['/', '/index.html', '/js-dos.js', ...assets])
-    );
+    expect(precachedPaths(result)).toEqual(expect.arrayContaining(['/', '/js-dos.js', ...assets]));
   });
 
   it('stamps the js-dos version, which names the emulator cache', () => {
@@ -206,7 +204,6 @@ describe('precachedPaths', () => {
     expect(paths).toEqual(
       expect.arrayContaining([
         '/',
-        '/index.html',
         '/manifest.json',
         '/js-dos.js',
         '/js-dos.css',

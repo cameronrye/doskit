@@ -29,11 +29,15 @@ const CONFIG = {
   MAX_CACHE_SIZE: 100, // Entry limit of CACHE_NAME; trimming removes runtime entries only
 };
 
+// The page of every route: GitHub Pages answers / (whatever the query) with index.html,
+// and a path it has no file for, such as /secondreality, with 404.html, a copy of it.
+// Install stores it once, under this URL, and it answers every navigation offline.
+const APP_PAGE = '/';
+
 // Assets to cache on install. The build appends every JS and CSS file in dist/assets,
 // the chunks imported lazily too: offline, an app needs its config chunk to start.
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
+  '/', // APP_PAGE, written out for the build, which checks every path listed here
   '/manifest.json',
   '/logo.svg',
   '/favicon.svg',
@@ -62,8 +66,8 @@ const absoluteUrl = (path) => new URL(path, self.location.origin).href;
 // preview, not GitHub Pages) answer with Vary: Origin.
 const MATCH_OPTIONS = { ignoreVary: true };
 
-// What install puts in CACHE_NAME: trimming leaves these alone, since /index.html is the
-// offline fallback for every navigation and the app cannot start without the rest
+// What install puts in CACHE_NAME: trimming leaves these alone, since APP_PAGE answers
+// every navigation offline and the app cannot start without the rest
 const PRECACHED_URLS = new Set(STATIC_ASSETS.map(absoluteUrl));
 
 // A request the browser sends to the server even when its HTTP cache holds a fresh copy;
@@ -349,6 +353,36 @@ async function serveCacheFirst(event, cacheName) {
   return networkResponse;
 }
 
+/**
+ * Serve a page from the network first, revalidated with the server: GitHub Pages lets
+ * browsers reuse a page for 10 minutes, so the HTTP cache may still hold the previous
+ * deploy's index.html, which loads bundles this deploy's cache lacks. The response is
+ * passed on as it came, including the 404 status GitHub Pages gives a path-style link
+ * such as /secondreality, whose 404.html is a copy of index.html.
+ *
+ * Nothing is stored: when the network fails or times out, the page is APP_PAGE, the
+ * index.html install stored along with the bundles it loads, whatever the URL. A page
+ * fetched later may come from a newer deploy, whose bundles this cache does not have.
+ *
+ * Changing a navigation's cache mode takes a copy, which Request() makes a same-origin
+ * request, since it takes no mode 'navigate'. The copy keeps the redirect mode 'manual':
+ * the browser must follow a redirect itself, and refuses a response that followed one as
+ * the answer to a navigation.
+ */
+async function servePage(request) {
+  try {
+    return await fetchWithTimeout(fromServer(request));
+  } catch (error) {
+    const cache = await caches.open(CACHE_NAME);
+    const page = await cache.match(APP_PAGE, MATCH_OPTIONS);
+    if (!page) {
+      throw error;
+    }
+    console.log('[Service Worker] Serving the cached page:', request.url, error.message);
+    return page;
+  }
+}
+
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
   const { request } = event;
@@ -371,39 +405,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first strategy for HTML documents to ensure fresh content
+  // Network-first for pages, falling back to the one copy of index.html install stored
   if (
     request.mode === 'navigate' ||
     request.destination === 'document' ||
     url.pathname.endsWith('.html') ||
     url.pathname === '/'
   ) {
-    event.respondWith(
-      fetchWithTimeout(request)
-        .then((networkResponse) => {
-          // Cache the fresh HTML
-          if (networkResponse && networkResponse.status === 200) {
-            event.waitUntil(cacheResponse(request, networkResponse.clone()));
-          }
-          return networkResponse;
-        })
-        .catch((error) => {
-          // Network failed or timed out, fallback to cache
-          console.log(
-            '[Service Worker] Network failed/timeout, serving cached HTML:',
-            request.url,
-            error.message
-          );
-          return caches.match(request, MATCH_OPTIONS).then((cachedResponse) => {
-            if (cachedResponse) {
-              // Update timestamp when serving from cache
-              updateCacheMetadata(request.url);
-            }
-            // A URL never visited online (such as a new deep link) gets the app shell
-            return cachedResponse || caches.match('/index.html', MATCH_OPTIONS);
-          });
-        })
-    );
+    event.respondWith(servePage(request));
     return;
   }
 

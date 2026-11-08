@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { injectIntoServiceWorker } from './inject-sw-version.js';
 
 const ORIGIN = 'https://doskit.net';
@@ -24,14 +24,43 @@ const pathOf = (input) => {
   return pathname + search;
 };
 
-// In a worker, Request() resolves relative URLs against the worker's location
+/**
+ * A navigation, which Request() cannot make: it refuses mode 'navigate'. Like a browser's,
+ * it follows no redirects itself: the browser does, as a new navigation.
+ */
+class Navigation {
+  constructor(path) {
+    this.url = new URL(path, ORIGIN).href;
+    this.method = 'GET';
+    this.mode = 'navigate';
+    this.destination = 'document';
+    this.cache = 'default';
+    this.redirect = 'manual';
+    this.headers = new Headers({ Accept: 'text/html' });
+  }
+}
+
+// In a worker, Request() resolves relative URLs against the worker's location. As in
+// browsers, a copy of a navigation made with an init is a same-origin request that keeps
+// the navigation's headers and redirect mode.
 class WorkerRequest extends Request {
   constructor(input, init) {
+    if (input instanceof Navigation) {
+      if (init?.mode === 'navigate') {
+        throw new TypeError("Request() cannot make a request of mode 'navigate'");
+      }
+      if (!init || Object.keys(init).length === 0) {
+        return Object.assign(new Navigation(input.url), input);
+      }
+      const { headers, redirect, cache } = input;
+      super(input.url, { headers, redirect, cache, ...init, mode: 'same-origin' });
+      return;
+    }
     super(typeof input === 'string' ? new URL(input, ORIGIN) : input, init);
   }
 }
 
-// Navigations are plain objects without headers, and cache.addAll() takes paths
+// cache.addAll() takes paths, which have no headers
 const headersOf = (request) =>
   new Headers(typeof request === 'object' ? request.headers : undefined);
 
@@ -132,37 +161,68 @@ function bodyOf(bytes, signal, arrived) {
 }
 
 /**
- * What outlives a service worker: the server, whose files change with each deploy, and
- * the origin's Cache Storage
+ * What outlives a service worker: the server, whose files change with each deploy, the
+ * browser's HTTP cache and the origin's Cache Storage
  */
 function createBrowser() {
   const server = {
     deploy: 'A',
     online: true,
+    // Each fetch the worker makes, the ones the HTTP cache answers included
     requests: [],
+    // The requests themselves, as the worker passed them to fetch()
+    received: [],
     // Sent with every response, such as the Vary: Origin of vite preview
     headers: {},
     held: new Map(), // path -> promise the second half of its body waits for
+    stalled: new Map(), // path -> promise its response waits for
     /** Holds back the second half of the file's body until the returned release() */
     hold(path) {
       let release;
       this.held.set(path, new Promise((resolve) => (release = resolve)));
       return release;
     },
+    /** Holds back the response to the path until the returned release() */
+    stall(path) {
+      let release;
+      this.stalled.set(path, new Promise((resolve) => (release = resolve)));
+      return release;
+    },
   };
 
+  // GitHub Pages sends Cache-Control: max-age=600, so for 10 minutes the browser answers a
+  // request of cache mode 'default' with the copy it last got, from whichever deploy that
+  // was, without asking the server. `fresh` stands for those 10 minutes. 'no-cache'
+  // revalidates: GitHub Pages changes every ETag on a deploy, so it gets the current file.
+  const httpCache = { fresh: false, copies: new Map() }; // path -> deploy of the copy
+
   async function fetch(input) {
-    server.requests.push({ path: pathOf(input), cache: input.cache ?? 'default' });
+    const path = pathOf(input);
+    const cache = input.cache ?? 'default';
+    server.requests.push({ path, cache });
+    server.received.push(input);
     if (!server.online) {
       throw new TypeError('Failed to fetch');
     }
     input.signal?.throwIfAborted();
-    // Like GitHub Pages, the server answers / (with any query) with index.html
-    const file = urlOf(input).pathname === '/' ? '/index.html' : pathOf(input);
-    const bytes = new TextEncoder().encode(`${file} from deploy ${server.deploy}`);
-    const arrived = server.held.get(pathOf(input)) ?? Promise.resolve();
+    const stalled = server.stalled.get(path);
+    if (stalled) {
+      await stalled;
+    }
+    const reusable = httpCache.fresh && (cache === 'default' || cache === 'force-cache');
+    const deploy = (reusable && httpCache.copies.get(path)) || server.deploy;
+    if (cache !== 'no-store') {
+      httpCache.copies.set(path, deploy);
+    }
+    // Like GitHub Pages, the server answers / (with any query) with index.html, and a path
+    // it has no file for, such as /secondreality, with 404.html, a copy of index.html, and
+    // status 404
+    const { pathname } = urlOf(input);
+    const file = pathname === '/' ? '/index.html' : extname(pathname) ? path : '/404.html';
+    const bytes = new TextEncoder().encode(`${file} from deploy ${deploy}`);
+    const arrived = server.held.get(path) ?? Promise.resolve();
     return new Response(bodyOf(bytes, input.signal, arrived), {
-      status: 200,
+      status: file === '/404.html' ? 404 : 200,
       headers: {
         'Content-Length': String(bytes.length),
         'Content-Type': CONTENT_TYPES[extname(urlOf(file).pathname)] ?? 'text/plain',
@@ -201,6 +261,7 @@ function createBrowser() {
 
   return {
     server,
+    httpCache,
     fetch,
     caches,
     /** Cached paths by cache name, without the LRU metadata */
@@ -291,21 +352,15 @@ async function installAndActivate(browser, build) {
   return worker;
 }
 
-// Request() refuses mode 'navigate', so navigations are plain objects
-const navigation = (path) => ({
-  url: new URL(path, ORIGIN).href,
-  method: 'GET',
-  mode: 'navigate',
-  destination: 'document',
-});
+const navigation = (path) => new Navigation(path);
 const subresource = (path, init) => new Request(new URL(path, ORIGIN), init);
 const requestedPaths = (browser) => browser.server.requests.map(({ path }) => path);
 const isDemo = (path) => path.startsWith('/demos/');
 
-// The shell files whose names carry no content hash, unlike the bundles
+// The shell files whose names carry no content hash, unlike the bundles. index.html is
+// stored once, as /.
 const SHELL_FILES = [
   '/',
-  '/index.html',
   '/manifest.json',
   '/logo.svg',
   '/favicon.svg',
@@ -330,10 +385,10 @@ describe('install', () => {
 
     await startWorker(browser).dispatch('install');
 
-    expect(browser.cachedPaths()).toEqual(
-      expect.arrayContaining([...APP_SHELL, ...DEFAULT_BACKEND])
+    expect(browser.contents()['doskit-vA'].sort()).toEqual([...APP_SHELL].sort());
+    expect(browser.contents()['doskit-emulators-8.3.20'].sort()).toEqual(
+      [...DEFAULT_BACKEND].sort()
     );
-    expect(browser.cachedPaths().filter((path) => DOSBOX_X.includes(path))).toEqual([]);
   });
 
   it('asks the server for the shell files whose names carry no content hash', async () => {
@@ -353,9 +408,9 @@ describe('install', () => {
   });
 });
 
-describe('offline navigation', () => {
+describe('pages', () => {
   it.each(['/', '/?app=panic', '/secondreality'])(
-    'serves the cached index.html for %s',
+    'serves the cached index.html for %s offline',
     async (path) => {
       const browser = createBrowser();
       const worker = await installAndActivate(browser);
@@ -367,6 +422,93 @@ describe('offline navigation', () => {
     }
   );
 
+  it("serves the deploy's index.html, not the previous deploy's one the HTTP cache holds", async () => {
+    // Within the 10 minutes GitHub Pages lets browsers reuse a page, the HTTP cache still
+    // holds the previous deploy's index.html for a URL visited before the deploy. It loads
+    // bundles the new deploy's cache does not have, so offline the app would not start.
+    const browser = createBrowser();
+    browser.httpCache.fresh = true;
+    const previous = await installAndActivate(browser, { cacheVersion: 'vA' });
+    await previous.dispatch('fetch', { request: navigation('/?app=stars') });
+    browser.server.deploy = 'B';
+    const worker = await installAndActivate(browser, { cacheVersion: 'vB' });
+
+    const { response: online } = await worker.dispatch('fetch', {
+      request: navigation('/?app=stars'),
+    });
+    browser.server.online = false;
+    const { response: offline } = await worker.dispatch('fetch', {
+      request: navigation('/?app=stars'),
+    });
+
+    expect(await online?.text()).toBe('/index.html from deploy B');
+    expect(await offline?.text()).toBe('/index.html from deploy B');
+  });
+
+  it('keeps the one copy of index.html install stored, whatever URLs are opened', async () => {
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    const installed = browser.contents();
+
+    for (const path of ['/', '/?app=stars', '/?app=panic', '/index.html', '/secondreality']) {
+      await worker.dispatch('fetch', { request: navigation(path) });
+    }
+
+    expect(browser.contents()).toEqual(installed);
+  });
+
+  it('revalidates a page with the server and leaves its redirects to the browser', async () => {
+    // A browser refuses a response that followed a redirect as the answer to a navigation,
+    // so the request the worker sends must keep the navigation's redirect mode
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    browser.server.received.length = 0;
+
+    await worker.dispatch('fetch', { request: navigation('/?app=stars') });
+
+    expect(
+      browser.server.received.map(({ url, cache, redirect }) => ({ url, cache, redirect }))
+    ).toEqual([{ url: `${ORIGIN}/?app=stars`, cache: 'no-cache', redirect: 'manual' }]);
+  });
+
+  it('passes on the 404 page GitHub Pages answers a path-style link with', async () => {
+    // 404.html is a copy of index.html: the app starts and rewrites the URL to /?app=
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+
+    const { response } = await worker.dispatch('fetch', {
+      request: navigation('/secondreality'),
+    });
+
+    expect(response?.status).toBe(404);
+    expect(await response?.text()).toBe('/404.html from deploy A');
+  });
+
+  describe('on a slow network', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('serves the cached index.html once 5 seconds have passed', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      const browser = createBrowser();
+      const worker = await installAndActivate(browser);
+      browser.server.stall('/?app=stars');
+      let answered = false;
+
+      const visit = worker.dispatch('fetch', { request: navigation('/?app=stars') });
+      visit.then(() => (answered = true));
+      await vi.advanceTimersByTimeAsync(4999);
+      expect(answered).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      const { response } = await visit;
+
+      expect(await response?.text()).toBe('/index.html from deploy A');
+    });
+  });
+});
+
+describe('offline navigation', () => {
   it('serves the bundles to the crossorigin requests of index.html, whatever Vary says', async () => {
     // Its module scripts and stylesheet have crossorigin, so Chrome sends Origin, which
     // install's requests did not. On a host that answers with Vary: Origin (vite preview
@@ -687,14 +829,14 @@ describe('messages', () => {
 });
 
 describe('cache trimming', () => {
-  /** Navigates to more distinct URLs than the cache may hold */
+  /** Fetches more distinct files than the cache may hold, each stored at runtime */
   async function overflowCache(worker) {
     const visited = Array.from(
       { length: worker.config().MAX_CACHE_SIZE + 10 },
-      (_, i) => `/?app=demo-${i}`
+      (_, i) => `/notes/note-${i}.txt`
     );
     for (const path of visited) {
-      await worker.dispatch('fetch', { request: navigation(path) });
+      await worker.dispatch('fetch', { request: subresource(path) });
     }
     return visited;
   }
@@ -748,15 +890,15 @@ describe('cache trimming', () => {
     const browser = createBrowser();
     const worker = await installAndActivate(browser);
     await overflowCache(worker);
-    const release = browser.server.hold('/?app=slow');
+    const release = browser.server.hold('/notes/slow.txt');
 
-    const visit = worker.dispatch('fetch', { request: navigation('/?app=slow') });
+    const visit = worker.dispatch('fetch', { request: subresource('/notes/slow.txt') });
     await new Promise((resolve) => setTimeout(resolve, 20));
     release();
     await visit;
 
     const appCache = browser.contents()['doskit-vA'];
     expect(appCache).toHaveLength(worker.config().MAX_CACHE_SIZE);
-    expect(appCache).toContain('/?app=slow');
+    expect(appCache).toContain('/notes/slow.txt');
   });
 });
