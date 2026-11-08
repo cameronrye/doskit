@@ -162,6 +162,33 @@ describe('showUpdateNotification', () => {
     }
   });
 
+  it('keeps from js-dos the release of a key that closed it', async () => {
+    // Escape, or Enter on a button, closes the prompt as the key goes down, so the key comes
+    // up on the page: js-dos would send DOS the release of a key it never had pressed
+    const reachedWindow = vi.fn();
+    window.addEventListener('keyup', reachedWindow);
+    try {
+      await act(async () => {
+        showUpdateNotification(registration);
+      });
+
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Later' }), {
+        key: 'Escape',
+        code: 'Escape',
+      });
+      expect(screen.queryByText('Update Available')).not.toBeInTheDocument();
+      fireEvent.keyUp(document.body, { key: 'Escape', code: 'Escape' });
+      expect(reachedWindow).not.toHaveBeenCalled();
+
+      // Keys pressed on the page then still reach it, that one too
+      fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+      fireEvent.keyUp(document.body, { key: 'Escape', code: 'Escape' });
+      expect(reachedWindow).toHaveBeenCalledOnce();
+    } finally {
+      window.removeEventListener('keyup', reachedWindow);
+    }
+  });
+
   it('shows the prompt again after the previous one was dismissed', async () => {
     await act(async () => {
       showUpdateNotification(registration);

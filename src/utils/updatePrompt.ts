@@ -29,11 +29,28 @@ let prompt: Prompt | null = null;
 // The navigator.serviceWorker whose controllerchange the prompt watches
 let watched: ServiceWorkerContainer | null = null;
 
+// The keys pressed in the prompt that have not come up yet
+const keysDownInPrompt = new Set<string>();
+
 // A running js-dos takes every key that reaches window and cancels it, so Tab, Enter and
 // Space would do nothing in the prompt and be typed into DOS. Keys pressed in the prompt
 // stop at its root, once React, which listens there, has handled them. (The prompt is
 // outside #root, whose keys App keeps from js-dos itself.)
-const keepKeyFromJsDos = (event: KeyboardEvent) => event.stopPropagation();
+const keepKeyFromJsDos = (event: KeyboardEvent) => {
+  event.stopPropagation();
+  if (event.type === 'keydown') {
+    keysDownInPrompt.add(event.code);
+  }
+};
+
+// Escape, and Enter on a button, close the prompt as the key goes down, so the key comes
+// up on the page, where js-dos would send DOS the release of a key it never had pressed.
+// Window sees a key's release before anything on the page does, and keeps it from js-dos.
+const keepReleaseFromJsDos = (event: KeyboardEvent) => {
+  if (keysDownInPrompt.delete(event.code)) {
+    event.stopPropagation();
+  }
+};
 
 /**
  * Mount the prompt, or render the one on screen again
@@ -47,6 +64,8 @@ function render(registration: ServiceWorkerRegistration, updatedInAnotherTab: bo
     document.body.appendChild(container);
     container.addEventListener('keydown', keepKeyFromJsDos);
     container.addEventListener('keyup', keepKeyFromJsDos);
+    // Added once: the same listener again changes nothing
+    window.addEventListener('keyup', keepReleaseFromJsDos, { capture: true });
     prompt = { root: createRoot(container), container, updateRequested: false };
   }
 
