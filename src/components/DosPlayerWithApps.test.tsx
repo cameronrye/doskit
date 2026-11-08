@@ -667,7 +667,8 @@ describe('DosPlayerWithApps', () => {
     it('focuses Try Again when the error appears', async () => {
       render(<DosPlayerWithApps requestedApp={mockAppWithError} />);
 
-      expect(await screen.findByRole('button', { name: 'Try Again' })).toHaveFocus();
+      // The button can be in the page a moment before the effect that focuses it has run
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus());
     });
 
     it('reaches both buttons from the keyboard', async () => {
