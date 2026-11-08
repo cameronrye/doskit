@@ -75,9 +75,12 @@ export type DosEvent = 'emu-ready' | 'ci-ready' | 'bnd-play' | 'open-key' | 'ful
  * A row is a string of key names separated by spaces, and an empty row leaves a gap. A key
  * is a letter or digit, one of , . ' : ; - = + ( ) [ ] { }, or a name in braces: {esc},
  * {tab}, {lock}, {shift}, {ctrl}, {alt}, {space}, {enter}, {bksp}, {del}, {up}, {down},
- * {left}, {right}, {home}, {end}, {pgup}, {pgdown}, {f1} to {f12} or {kp0} to {kp9}. Any
- * other key, / and \ among them, presses nothing. {layout} switches to the next layout and
- * {symbols} to the next set of labels.
+ * {left}, {right}, {home}, {end}, {pgup}, {pgdown}, {f1} to {f12} or {kp0} to {kp9}.
+ * {layout} switches to the next layout and {symbols} to the next set of labels. js-dos
+ * presses any other one-character name as the key whose browser key code is the name's
+ * character code in upper case, which is not always the key the name shows: \ and / press
+ * nothing, ` presses keypad 0 and ! PgUp, and Ü, ¿ and À press \ / and `. A longer name it
+ * does not know presses nothing.
  */
 export type SoftKeyboardLayout = string[] | string[][][];
 
