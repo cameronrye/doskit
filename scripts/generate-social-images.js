@@ -19,7 +19,7 @@ const publicDir = join(__dirname, '..', 'public');
 // Ensure directories exist
 try {
   mkdirSync(publicDir, { recursive: true });
-} catch (err) {
+} catch {
   // Directory already exists
 }
 
@@ -82,7 +82,7 @@ async function generateSocialImages() {
     try {
       await convertSvgToPng(image.input, image.output, image.width, image.height);
       successCount++;
-    } catch (error) {
+    } catch {
       console.error(`Failed to generate ${image.name}`);
       failCount++;
     }

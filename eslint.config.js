@@ -9,8 +9,10 @@ export default tseslint.config(
     ignores: [
       'dist/**',
       'coverage/**',
-      'public/**',
-      'scripts/**',
+      // Static files and the js-dos copy from copy-js-dos.js; the service worker is ours.
+      // public/** would ignore the directory itself, and nothing inside it could be unignored.
+      'public/**/*',
+      '!public/sw.js',
       'node_modules/**',
       'docs/api/**',
     ],
@@ -32,6 +34,28 @@ export default tseslint.config(
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       // With verbatimModuleSyntax, import { type X } still emits import 'module'
       '@typescript-eslint/no-import-type-side-effects': 'error',
+    },
+  },
+  {
+    // Registered as a classic script, not a module, so its top-level names are worker globals
+    files: ['public/sw.js'],
+    languageOptions: {
+      sourceType: 'script',
+      globals: globals.serviceworker,
+    },
+  },
+  {
+    // ES modules, which have no require, module, exports, __dirname or __filename
+    files: ['scripts/**/*.js'],
+    languageOptions: {
+      globals: globals.nodeBuiltin,
+    },
+  },
+  {
+    // vitest.config.ts sets globals: true
+    files: ['scripts/**/*.test.js'],
+    languageOptions: {
+      globals: globals.vitest,
     },
   }
 );

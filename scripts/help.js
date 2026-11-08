@@ -59,9 +59,7 @@ function categorizeScripts(scripts) {
   }
 
   // Remove empty categories
-  return Object.fromEntries(
-    Object.entries(categories).filter(([_, scripts]) => scripts.length > 0)
-  );
+  return Object.fromEntries(Object.entries(categories).filter(([, scripts]) => scripts.length > 0));
 }
 
 /**

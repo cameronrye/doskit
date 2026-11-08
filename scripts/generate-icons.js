@@ -17,7 +17,7 @@
  *   npm run generate-icons
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -52,7 +52,7 @@ async function generateIcons() {
     let sharp;
     try {
       sharp = (await import('sharp')).default;
-    } catch (error) {
+    } catch {
       console.error('❌ Error: sharp package is not installed.');
       console.log('\nTo generate icons, install sharp:');
       console.log('  npm install --save-dev sharp');
