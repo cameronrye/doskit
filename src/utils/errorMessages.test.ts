@@ -17,9 +17,11 @@ describe('getUserFriendlyError', () => {
 
   // fetch() and lazily loaded modules reject with a TypeError, worded by each browser
   it.each([
-    'Failed to fetch', // Chrome and Edge
+    'Failed to fetch', // Chrome and Edge, with the service worker in control or not
     'NetworkError when attempting to fetch resource.', // Firefox
     'Load failed', // Safari, and every browser on iOS
+    // Safari, when the service worker could not download the file either
+    'FetchEvent.respondWith received an error: TypeError: Load failed',
     'Failed to fetch dynamically imported module: https://doskit.net/assets/stars.config.js',
     'error loading dynamically imported module: https://doskit.net/assets/stars.config.js',
     'Importing a module script failed.',
@@ -156,14 +158,16 @@ describe('getUserFriendlyError', () => {
         'Each application works offline once it has been opened while online. Connect to the internet and try again.',
     };
 
-    it.each(['Failed to fetch', 'NetworkError when attempting to fetch resource.', 'Load failed'])(
-      'explains the network failure "%s" as not stored for offline use yet',
-      (technical) => {
-        expect(getUserFriendlyError(new TypeError(technical), { online: false })).toMatchObject(
-          OFFLINE
-        );
-      }
-    );
+    it.each([
+      'Failed to fetch',
+      'NetworkError when attempting to fetch resource.',
+      'Load failed',
+      'FetchEvent.respondWith received an error: TypeError: Load failed',
+    ])('explains the network failure "%s" as not stored for offline use yet', (technical) => {
+      expect(getUserFriendlyError(new TypeError(technical), { online: false })).toMatchObject(
+        OFFLINE
+      );
+    });
 
     it('explains other failures as it would online', () => {
       const error = new Error('Failed to load ZIP: HTTP 404');

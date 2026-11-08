@@ -83,8 +83,10 @@ const NETWORK_FAILURES = [
   /failed to fetch/i,
   // Firefox: "NetworkError when attempting to fetch resource."
   /network ?error/i,
-  // Safari, and every browser on iOS
-  /^load failed$/i,
+  // Safari, and every browser on iOS. When the service worker cannot download a file
+  // either, Safari passes its failure on: "FetchEvent.respondWith received an error:
+  // TypeError: Load failed".
+  /\bload failed\b/i,
   // Firefox and Safari, for a lazily loaded module
   /error loading dynamically imported module/i,
   /importing a module script failed/i,
