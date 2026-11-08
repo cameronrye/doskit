@@ -9,6 +9,12 @@ import {
   isGlobalErrorHandlerInitialized,
 } from './globalErrorHandler';
 
+/**
+ * Capture console.error, where the handler reports an error: the console error tracker
+ * logs each report there
+ */
+const captureConsoleError = () => vi.spyOn(console, 'error').mockImplementation(() => {});
+
 describe('globalErrorHandler', () => {
   beforeEach(() => {
     cleanupGlobalErrorHandler();
@@ -95,6 +101,7 @@ describe('globalErrorHandler', () => {
     it('should handle uncaught errors', () => {
       const onError = vi.fn();
       initializeGlobalErrorHandler({ onError });
+      const consoleError = captureConsoleError();
 
       const error = new Error('Test error');
       const errorEvent = new ErrorEvent('error', {
@@ -105,11 +112,19 @@ describe('globalErrorHandler', () => {
       window.dispatchEvent(errorEvent);
 
       expect(onError).toHaveBeenCalledWith(error, expect.any(Object));
+      // Logged once, by the console tracker
+      expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+        '[ErrorTracking]',
+        'error',
+        error,
+        expect.objectContaining({ userAction: 'Unknown' })
+      );
     });
 
     it('should handle unhandled promise rejections', () => {
       const onError = vi.fn();
       initializeGlobalErrorHandler({ onError });
+      const consoleError = captureConsoleError();
 
       const error = new Error('Promise rejection');
       // Create a promise that we can control to avoid unhandled rejection
@@ -126,6 +141,12 @@ describe('globalErrorHandler', () => {
       window.dispatchEvent(rejectionEvent);
 
       expect(onError).toHaveBeenCalledWith(error, expect.any(Object));
+      expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+        '[ErrorTracking]',
+        'error',
+        error,
+        expect.objectContaining({ userAction: 'Promise rejection' })
+      );
       // The browser still reports it
       expect(rejectionEvent.defaultPrevented).toBe(false);
     });
@@ -223,16 +244,25 @@ describe('globalErrorHandler', () => {
         );
       });
 
-      it('logs the friendly message for that rejection in production', () => {
+      it('explains that rejection in its report in production', () => {
         vi.stubEnv('DEV', false);
         const exceptions = collectListenerExceptions();
-        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleError = captureConsoleError();
         initializeGlobalErrorHandler();
 
         rejectUnhandled(Object.create(null));
 
         expect(exceptions).toEqual([]);
-        expect(consoleError).toHaveBeenCalledWith('Error:', 'An unexpected error occurred');
+        expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+          '[ErrorTracking]',
+          'error',
+          expect.any(Error),
+          expect.objectContaining({
+            metadata: expect.objectContaining({
+              friendlyError: expect.objectContaining({ message: 'An unexpected error occurred' }),
+            }),
+          })
+        );
       });
 
       it('tracks it thrown, under the message the browser gives it', () => {
@@ -248,6 +278,56 @@ describe('globalErrorHandler', () => {
           expect.objectContaining({ message: 'Uncaught exception' }),
           expect.objectContaining({ userAction: 'Unknown' })
         );
+      });
+    });
+
+    // Nothing shows the user-friendly message on the page yet: production builds put it in
+    // the error's report, which stays the one line the handler logs
+    describe('in a production build', () => {
+      const CONNECTION = {
+        message: 'Unable to connect to the server',
+        suggestion: 'Please check your internet connection and try again.',
+      };
+      const explained = expect.objectContaining({
+        metadata: expect.objectContaining({ friendlyError: CONNECTION }),
+      });
+
+      beforeEach(() => {
+        vi.stubEnv('DEV', false);
+      });
+
+      it('logs an uncaught error once, with what a user would be told', () => {
+        initializeGlobalErrorHandler();
+        const consoleError = captureConsoleError();
+        const consoleInfo = vi.spyOn(console, 'info').mockImplementation(() => {});
+
+        const error = new TypeError('Failed to fetch');
+        window.dispatchEvent(new ErrorEvent('error', { error, message: `Uncaught ${error}` }));
+
+        expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+          '[ErrorTracking]',
+          'error',
+          error,
+          explained
+        );
+        expect(consoleInfo).not.toHaveBeenCalled();
+      });
+
+      it('logs an unhandled rejection once, with what a user would be told', () => {
+        initializeGlobalErrorHandler();
+        const consoleError = captureConsoleError();
+        const consoleInfo = vi.spyOn(console, 'info').mockImplementation(() => {});
+
+        const reason = new TypeError('Failed to fetch');
+        rejectUnhandled(reason);
+
+        expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+          '[ErrorTracking]',
+          'error',
+          reason,
+          explained
+        );
+        expect(consoleInfo).not.toHaveBeenCalled();
       });
     });
 

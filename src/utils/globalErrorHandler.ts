@@ -90,7 +90,10 @@ function getBrowserContext(): ErrorContext['browser'] {
  * Global error handler configuration
  */
 export interface GlobalErrorHandlerConfig {
-  /** Whether to show user-friendly error messages */
+  /**
+   * Whether production builds add the user-friendly message and suggestion to each
+   * error's report, as metadata.friendlyError. Nothing shows them on the page yet.
+   */
   showUserFriendlyErrors?: boolean;
   /** Whether to suppress known harmless errors */
   suppressHarmlessErrors?: boolean;
@@ -107,6 +110,20 @@ const DEFAULT_CONFIG: GlobalErrorHandlerConfig = {
 
 let isInitialized = false;
 let config = DEFAULT_CONFIG;
+
+/**
+ * What a user would be told about an error. Nothing shows it on the page yet, so
+ * production builds add it to the error's report when showUserFriendlyErrors is set.
+ * @param error - The error, rejection reason or message
+ * @returns Metadata for the report: empty in development builds or with the option off
+ */
+function friendlyErrorMetadata(error: unknown): Record<string, unknown> {
+  if (!config.showUserFriendlyErrors || import.meta.env.DEV) {
+    return {};
+  }
+  const { message, suggestion } = getUserFriendlyError(error);
+  return { friendlyError: { message, suggestion } };
+}
 
 /**
  * Handle uncaught errors
@@ -143,29 +160,18 @@ function handleUncaughtError(event: ErrorEvent): void {
       lineno: event.lineno,
       colno: event.colno,
       timestamp: new Date().toISOString(),
+      ...friendlyErrorMetadata(actualError || errorMessage),
     },
   };
 
-  // Log error
-  logger.error('GlobalErrorHandler', 'Uncaught error', actualError || errorMessage, context);
-
-  // Track error
+  // Track error. The tracker's report is the one line the handler logs for it, and the
+  // browser still reports the error itself.
   const tracker = getErrorTracker();
   tracker.captureError(actualError || new Error(errorMessage), context, ErrorSeverity.ERROR);
 
   // Call custom error handler
   if (config.onError && actualError) {
     config.onError(actualError, context);
-  }
-
-  // Show user-friendly error if enabled
-  if (config.showUserFriendlyErrors && !import.meta.env.DEV) {
-    const friendlyError = getUserFriendlyError(actualError || errorMessage);
-    // Could show a toast notification here
-    console.error('Error:', friendlyError.message);
-    if (friendlyError.suggestion) {
-      console.info('Suggestion:', friendlyError.suggestion);
-    }
   }
 }
 
@@ -190,6 +196,8 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
     return;
   }
 
+  const actualError = toError(error, 'Promise rejected with a value that has no text');
+
   // Build error context
   const context: ErrorContext = {
     userAction: 'Promise rejection',
@@ -197,29 +205,18 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
     metadata: {
       timestamp: new Date().toISOString(),
       promise: event.promise,
+      ...friendlyErrorMetadata(actualError),
     },
   };
 
-  // Log error
-  logger.error('GlobalErrorHandler', 'Unhandled promise rejection', error, context);
-
-  // Track error
+  // Track error. The tracker's report is the one line the handler logs for it, and the
+  // browser still reports the rejection itself.
   const tracker = getErrorTracker();
-  const actualError = toError(error, 'Promise rejected with a value that has no text');
   tracker.captureError(actualError, context, ErrorSeverity.ERROR);
 
   // Call custom error handler
   if (config.onError) {
     config.onError(actualError, context);
-  }
-
-  // Show user-friendly error if enabled
-  if (config.showUserFriendlyErrors && !import.meta.env.DEV) {
-    const friendlyError = getUserFriendlyError(actualError);
-    console.error('Error:', friendlyError.message);
-    if (friendlyError.suggestion) {
-      console.info('Suggestion:', friendlyError.suggestion);
-    }
   }
 }
 
