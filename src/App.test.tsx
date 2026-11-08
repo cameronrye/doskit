@@ -85,6 +85,7 @@ vi.mock('./components/DosPlayerWithApps', async () => {
           <button onClick={() => onAppChange?.(null)}>Clear App</button>
           <button onClick={() => onSelectorVisibilityChange?.(true)}>Show Selector</button>
           <button onClick={() => onSelectorVisibilityChange?.(false)}>Hide Selector</button>
+          <button onClick={() => onAppChange?.(requestedApp ?? null)}>Report Requested App</button>
           <div data-testid="selector-state">{showSelector ? 'visible' : 'hidden'}</div>
           <div data-testid="requested-app">{request}</div>
         </div>
@@ -167,6 +168,40 @@ describe('App', () => {
       expect(screen.getByTestId('selector-state')).toHaveTextContent('hidden');
       expect(screen.getByText('3D Rotation Demo')).toBeInTheDocument();
       expect(document.title).toBe('3D Rotation Demo - DosKit');
+    });
+
+    it('adds no history entry when a deep-linked app reports in', () => {
+      window.history.replaceState({}, '', '/?app=stars');
+      render(<App />);
+      const lengthBefore = window.history.length;
+
+      fireEvent.click(screen.getByText('Report Requested App'));
+
+      expect(window.location.search).toBe('?app=stars');
+      expect(window.history.length).toBe(lengthBefore);
+    });
+
+    it('keeps the forward history when an app reached by going back reports in', async () => {
+      window.history.pushState({}, '', '/?app=stars');
+      window.history.pushState({}, '', '/?app=3drotate');
+      render(<App />);
+      await traverse('back');
+
+      fireEvent.click(screen.getByText('Report Requested App'));
+      await traverse('forward');
+
+      expect(window.location.search).toBe('?app=3drotate');
+      expect(screen.getByTestId('requested-app')).toHaveTextContent('3drotate');
+    });
+
+    it('records an app picked right after going back in the URL', async () => {
+      window.history.pushState({}, '', '/?app=stars');
+      render(<App />);
+      await traverse('back');
+
+      fireEvent.click(screen.getByText('Load App'));
+
+      expect(window.location.search).toBe('?app=testapp');
     });
   });
 

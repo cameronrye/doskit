@@ -38,7 +38,6 @@ function App() {
     return null;
   });
   const isInitialMount = useRef(true);
-  const isHandlingPopState = useRef(false);
 
   const handleDosReady = () => {
     if (import.meta.env.DEV) {
@@ -67,10 +66,9 @@ function App() {
     }
     setCurrentApp(app);
 
-    // Update URL when app changes (but not during popstate handling to avoid loops)
-    if (!isHandlingPopState.current) {
-      updateUrlWithApp(app?.id || null);
-    }
+    // Apps requested by a deep link or back/forward report in once loaded, when the URL
+    // already shows them; updateUrlWithApp then adds no history entry
+    updateUrlWithApp(app?.id || null);
 
     // Update document title
     updateDocumentTitle(app?.name);
@@ -126,8 +124,6 @@ function App() {
   // Handle browser back/forward navigation
   useEffect(() => {
     const handlePopState = () => {
-      isHandlingPopState.current = true;
-
       const appIdFromUrl = getAppIdFromUrl();
 
       if (import.meta.env.DEV) {
@@ -152,11 +148,6 @@ function App() {
         setShowAppSelector(true);
         updateDocumentTitle();
       }
-
-      // Reset flag after a short delay
-      setTimeout(() => {
-        isHandlingPopState.current = false;
-      }, 100);
     };
 
     window.addEventListener('popstate', handlePopState);
