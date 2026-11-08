@@ -6,6 +6,8 @@
 **GitHub Repository**: https://github.com/caiiiycuk/js-dos  
 **License**: GPL-2.0
 
+> **DosKit note:** This is a copy of a third-party reference, kept as it was written; the notes marked DosKit note are DosKit's. Checked against the code of js-dos 8.3.20, which DosKit runs, several parts are wrong: options and methods it does not have (`offscreenCanvas`, `setOffscreenCanvas`, `sockdrivePreload`, `startIpxServer`, `connectIpxAddress`), an `error` event it never sends, on-screen keyboard layouts in a form it cannot render, the browser's key codes where it takes its own, and browser minimums that are too low. A note follows each of them. [`src/types/js-dos.d.ts`](../src/types/js-dos.d.ts) declares what DosKit uses.
+
 ---
 
 ## Table of Contents
@@ -365,6 +367,8 @@ interface DosOptions {
 }
 ```
 
+> **DosKit note:** js-dos reads none of `offscreenCanvas`, `sockdrivePreload`, `startIpxServer` and `connectIpxAddress`: its player's code never names them. Its networking options are `ipx` (the IPX servers to offer, by name; by default it offers one of its own), `ipxBackend` (the one to select), `room`, and `noNetworking`, which is true by default and hides the network button. `softKeyboardLayout` takes rows of key names separated by spaces: see the note under Mobile Support.
+
 ### DosProps Interface
 
 Methods returned by `Dos()` for controlling the player:
@@ -421,6 +425,8 @@ interface DosProps {
     stop(): Promise<void>;           // Stop and dispose player
 }
 ```
+
+> **DosKit note:** js-dos's player has no `setOffscreenCanvas`. It also has `setIpx`, `setIpxBackend`, `setRoom` and `setNoNetworking`, for the options of the same names, and `setFrame("network")`, which opens its network panel.
 
 ### Events System
 
@@ -799,6 +805,8 @@ Dos(element, {
 });
 ```
 
+> **DosKit note:** js-dos has neither `startIpxServer` nor `connectIpxAddress`, so neither player above starts or joins anything. Its players connect from its network panel, each to the same room on one of the IPX servers in `ipx`; `noNetworking: false` shows the panel's button. DosKit uses no networking.
+
 ---
 
 ## Advanced Features
@@ -849,6 +857,8 @@ type SockdrivePreload =
     | "all"       // Preload entire drive
     | "default";  // Smart preloading
 ```
+
+> **DosKit note:** js-dos reads no `sockdrivePreload` option: the example's `sockdrivePreload: "default"` does nothing, and these modes cannot be chosen that way.
 
 ### Cloud Storage
 
@@ -942,6 +952,8 @@ Dos(element, {
 });
 ```
 
+> **DosKit note:** js-dos cannot use either example. It reads a `softKeyboardLayout` whose first element is a list as layouts of columns of rows, so the list of lists above throws "TypeError: e.map is not a function" when the keyboard opens. A row is one string of key names separated by spaces, and a key is a letter, a digit, one of a few punctuation marks, or a name in braces such as `{esc}`, `{f1}`, `{space}`, `{enter}` or `{up}`; "Esc" or "F1" press nothing. In that form the layout is `['{esc} {f1} {f2} {f3}', '1 2 3 4', 'q w e r']`. Labels go by those names, so the arrows' symbols are `[{ '{up}': '↑', '{down}': '↓', '{left}': '←', '{right}': '→' }]`. `SoftKeyboardLayout` in [`src/types/js-dos.d.ts`](../src/types/js-dos.d.ts) lists every name.
+
 ### Performance Optimization
 
 #### OffscreenCanvas (Experimental)
@@ -953,6 +965,8 @@ Dos(element, {
     workerThread: true      // Required for OffscreenCanvas
 });
 ```
+
+> **DosKit note:** js-dos has no `offscreenCanvas` option. It draws every frame on the page's own canvas, on the main thread; only the emulator runs in the worker.
 
 #### Render Backend Selection
 
@@ -1280,7 +1294,7 @@ Dos(element, {
 | Edge | 90+ | Full support |
 | Opera | 76+ | Full support |
 
-> **DosKit note:** These minimums are too low for js-dos 8.3.20. Its player calls `structuredClone()` once a second while it runs, so in a browser without it each of those calls fails with an error. The first versions with `structuredClone()` are DosKit's minimums, listed in the README's [Browser Compatibility](../README.md#browser-compatibility).
+> **DosKit note:** These minimums are too low. js-dos's player calls `structuredClone()` once a second while it runs, so in a browser without it each of those calls fails with an error. The first versions with `structuredClone()` are DosKit's minimums, listed in the README's [Browser Compatibility](../README.md#browser-compatibility).
 
 #### Required Features
 
@@ -1291,6 +1305,8 @@ Dos(element, {
 - **Fullscreen API**: Required for fullscreen mode
 - **IndexedDB**: Required for caching and storage
 - **WebSocket**: Required for networking features
+
+> **DosKit note:** js-dos does not use OffscreenCanvas.
 
 #### Mobile Browsers
 
@@ -1382,6 +1398,8 @@ Dos(element, {
 });
 ```
 
+> **DosKit note:** js-dos sends only the five events under Events System, so `"error"` never arrives here.
+
 ### 4. Mobile Optimization
 
 **Responsive Design:**
@@ -1404,6 +1422,8 @@ Dos(element, {
     ]
 });
 ```
+
+> **DosKit note:** As under Mobile Support, js-dos cannot render this layout, and "↑", "←" or "Space" press nothing. In its form the layout is `['{up}', '{left} {space} {right}', '{down}']`, and `softKeyboardSymbols` can label the arrows.
 
 ### 5. Security
 
@@ -1691,6 +1711,8 @@ document.getElementById("joinBtn").onclick = () => {
 };
 ```
 
+> **DosKit note:** `startIpxServer` and `connectIpxAddress` do nothing in js-dos, so neither `hostGame()` nor `joinGame()` connects anyone: see the note under Pattern 7.
+
 ---
 
 ## Resources
@@ -1767,6 +1789,8 @@ Common keyboard codes for `simulateKeyPress()`:
 | F2 | 113 | F3 | 114 |
 | Ctrl | 17 | Alt | 18 |
 | Shift | 16 | Tab | 9 |
+
+> **DosKit note:** These are the browser's key codes, which `simulateKeyPress()` and `sendKeyEvent()` do not take: js-dos hands their codes to the emulator as they are, in its own numbering. There Enter is 257, Esc 256, Tab 258, the arrows 262 (right), 263 (left), 264 (down) and 265 (up), F1 to F3 290 to 292, and the left Shift, Ctrl and Alt 340, 341 and 342; Space (32), the digits and the uppercase letters keep their ASCII codes. js-dos maps the browser's codes to its own for real key presses, with a table in `js-dos.js`.
 
 ### C. File System Structure
 
