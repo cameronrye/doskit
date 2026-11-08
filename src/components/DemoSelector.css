@@ -179,8 +179,8 @@
   color: #aaa;
 }
 
-/* Error Message */
-.error-message {
+/* Error Message. Scoped: App's URL error banner has an .error-message of its own. */
+.demo-selector .error-message {
   background: var(--color-error-bg, #3a1a1a);
   border: 1px solid var(--color-error, #ff4444);
   color: var(--color-error, #ff4444);
