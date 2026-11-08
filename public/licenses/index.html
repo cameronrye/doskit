@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Licenses - DosKit</title>
+    <meta
+      name="description"
+      content="The licenses of the software DosKit runs in your browser: js-dos, DOSBox, DOSBox-X and libzip, with links to their source code, and of the packages DosKit's own scripts bundle."
+    />
+    <meta name="theme-color" content="#667eea" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.87);
+        background-color: #1a1a1a;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        padding: 0.5rem 2rem;
+      }
+
+      .home {
+        display: inline-flex;
+        align-items: center;
+        gap: 1rem;
+        color: #fff;
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-decoration: none;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      main {
+        max-width: 48rem;
+        margin: 0 auto;
+        padding: 1rem 2rem 3rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin: 1.5rem 0 1rem;
+      }
+
+      h2 {
+        font-size: 1.35rem;
+        margin: 2.5rem 0 0.75rem;
+        padding-bottom: 0.25rem;
+        border-bottom: 1px solid #333;
+      }
+
+      a {
+        color: #8c9cf4;
+      }
+
+      a:hover {
+        color: #b3bdf8;
+      }
+
+      a:focus-visible {
+        outline: 2px solid #646cff;
+        outline-offset: 2px;
+      }
+
+      code {
+        font-family: 'Courier New', Courier, monospace;
+        color: #fff;
+      }
+
+      pre {
+        overflow-x: auto;
+        padding: 1rem;
+        border: 1px solid #333;
+        border-radius: 8px;
+        background-color: #111;
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
+
+      @media (max-width: 480px) {
+        header {
+          padding: 0.5rem 1rem;
+        }
+
+        .home {
+          font-size: 1.25rem;
+        }
+
+        main {
+          padding: 0.5rem 1rem 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="home" href="/">
+        <img src="/logo.svg" alt="" width="40" height="40" />
+        DosKit
+      </a>
+    </header>
+
+    <main>
+      <h1>Licenses</h1>
+      <p>
+        DosKit's own code is under the
+        <a href="https://github.com/cameronrye/doskit/blob/main/LICENSE">MIT License</a>. The DOS
+        player and the emulators it runs in your browser are free software from other projects,
+        under the licenses below. For each, this page links the source code of the version this site
+        serves.
+      </p>
+
+      <h2 id="js-dos">js-dos 8.3.20</h2>
+      <p>
+        The DOS player, <code>/js-dos.js</code> and <code>/js-dos.css</code>, by Alexander Guryanov
+        (caiiiycuk), under the GNU General Public License, version 2 (GPL-2.0).
+      </p>
+      <p>
+        Source code:
+        <a href="https://github.com/caiiiycuk/js-dos/tree/v8.3.20">js-dos at tag v8.3.20</a>
+      </p>
+
+      <h2 id="emulators">DOSBox and DOSBox-X, from emulators 8.3.8</h2>
+      <p>
+        The files the player loads from <code>/emulators/</code>: <code>emulators.js</code>, and
+        DOSBox (<code>wdosbox.js</code>, <code>wdosbox.wasm</code>), DOSBox-X
+        (<code>wdosbox-x.js</code>, <code>wdosbox-x.wasm</code>) and libzip
+        (<code>wlibzip.js</code>, <code>wlibzip.wasm</code>) compiled to WebAssembly. They come from
+        emulators, js-dos's emulator package by Alexander Guryanov (caiiiycuk), under the GPL-2.0.
+      </p>
+      <ul>
+        <li>
+          DOSBox: Copyright (C) 2002-2020 The DOSBox Team, under the GNU General Public License,
+          version 2 or later
+        </li>
+        <li>
+          DOSBox-X: Copyright (C) 2011-2025 The DOSBox-X Team, under the GNU General Public License,
+          version 2 or later
+        </li>
+      </ul>
+      <p>Source code:</p>
+      <ul>
+        <li>
+          <a href="https://github.com/caiiiycuk/emulators/tree/v8.3.8">emulators at tag v8.3.8</a>,
+          with the build scripts and libzip
+        </li>
+        <li>
+          <a href="https://github.com/js-dos/dosbox/tree/98d1639f66ec91652f5661cf2f4df689721a73e0"
+            >DOSBox at commit 98d1639</a
+          >, the version emulators 8.3.8 builds
+        </li>
+        <li>
+          <a href="https://github.com/js-dos/dosbox-x/tree/75f3d209d7b2b8ed4ad6a38d74fba46c68f5dd8a"
+            >DOSBox-X at commit 75f3d20</a
+          >, the version emulators 8.3.8 builds
+        </li>
+      </ul>
+
+      <h2 id="gpl">GNU General Public License, version 2</h2>
+      <p>
+        js-dos, the emulators, DOSBox and DOSBox-X come with this license:
+        <a href="/licenses/gpl-2.0.txt">the full text of the GPL-2.0</a>.
+      </p>
+
+      <h2 id="libzip">libzip</h2>
+      <p>
+        libzip reads the ZIP archives DosKit's apps come in. It is part of
+        <code>wlibzip.wasm</code>, <code>wdosbox.wasm</code> and <code>wdosbox-x.wasm</code>, and
+        its source is in the emulators source above, under <code>native/libzip</code>. Its license
+        (BSD-3-Clause):
+      </p>
+      <pre>
+Copyright (C) 1999-2018 Dieter Baron and Thomas Klausner
+
+The authors can be contacted at &lt;libzip@nih.at&gt;
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in
+   the documentation and/or other materials provided with the
+   distribution.
+3. The names of the authors may not be used to endorse or promote
+   products derived from this software without specific prior
+   written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</pre
+      >
+      <p>libzip's <code>mkstemp.c</code>, adapted from NetBSD's C library, comes with this one:</p>
+      <pre>
+Copyright (c) 1987, 1993
+     The Regents of the University of California.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of the University nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.</pre
+      >
+
+      <h2 id="bundled">React and the other packages in DosKit's scripts</h2>
+      <p>
+        DosKit's scripts in <code>/assets/</code> bundle packages from npm, such as React. The build
+        writes their licenses to
+        <a href="/licenses/third-party-licenses.txt">third-party-licenses.txt</a>.
+      </p>
+    </main>
+  </body>
+</html>

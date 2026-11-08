@@ -63,6 +63,10 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: 'hidden', // Generate source maps but don't reference them in production bundles
+    // The minifier drops the @license comments of the packages it bundles (React and the
+    // rest), so their licenses go to a file that public/licenses/index.html links. It is
+    // Markdown, named .txt so that every browser shows it rather than downloading it.
+    license: { fileName: 'licenses/third-party-licenses.txt' },
     rolldownOptions: {
       output: {
         // React changes far less often than the app, so its own chunk keeps its name across
