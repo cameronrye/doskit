@@ -1,85 +1,105 @@
-# DOS Applications and Games
+# DOS Applications
 
-This directory is reserved for DOS applications, games, and programs that you want to run in the emulator.
+Every app in DosKit's selector is made of three pieces:
 
-## Purpose
+| Piece          | Where                                          | What it holds                                    |
+| -------------- | ---------------------------------------------- | ------------------------------------------------ |
+| Archive        | `public/demos/<id>.zip`                        | The program's files                              |
+| Config module  | `src/dos-apps/<id>.config.ts` (this folder)    | The archive's URL and the DOSBox configuration   |
+| Registry entry | `availableApps` in `src/config/apps.config.ts` | Name, description, and how to load the other two |
 
-Store your DOS programs here to keep them organized and easily accessible. The DosPlayer component can load programs from this directory.
+When someone picks an app, or opens `/?app=<id>`, DosKit downloads the archive and hands it to
+js-dos as the emulator's initial file system, then starts DOSBox with the app's configuration.
+The archive's files are the directory the autoexec mounts as `C:`.
 
-## Supported Formats
+## Adding an app
 
-- `.jsdos` - js-dos bundle format (recommended)
-- `.zip` - ZIP archives containing DOS programs
-- Individual DOS executables and data files
+These steps use `my-demo` as the app's id. Keep ids to lowercase letters, digits and hyphens: the
+id names the archive and the config module, and it is the `?app=` value in links.
 
-## Creating .jsdos Bundles
+### 1. Add the archive
 
-The `.jsdos` format is a bundle that contains your DOS program and its configuration. You can create bundles using:
+Put the program's files in a ZIP archive at `public/demos/my-demo.zip`, with the executable at
+the top level. Vite copies `public/` into the build as it is, so the app downloads the archive
+from `/demos/my-demo.zip`. Record where it comes from and its license in
+[`public/demos/README.md`](../../public/demos/README.md).
 
-1. **js-dos Studio**: https://studio.js-dos.com/
-2. **Command line tools**: Use the js-dos CLI
+### 2. Write the config module
 
-Example structure:
+Create `src/dos-apps/my-demo.config.ts`:
 
-```
-game.jsdos
-├── game.exe
-├── game.dat
-└── dosbox.conf
-```
+```ts
+import { presets } from '../utils/dosboxConfigBuilder';
 
-## Directory Structure
+/** My Demo by Some Group (1994), from <where the archive comes from> */
+export const myDemoZipUrl = '/demos/my-demo.zip';
 
-Organize your DOS programs by category:
-
-```
-src/dos-apps/
-├── games/
-│   ├── doom.jsdos
-│   ├── prince.jsdos
-│   └── commander-keen.jsdos
-├── utilities/
-│   ├── norton-commander.jsdos
-│   └── qbasic.jsdos
-└── demos/
-    └── second-reality.jsdos
+export const myDemoDosboxConf = presets
+  .demo()
+  .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
+  .addAutoexec('@echo off', 'mount c .', 'c:', 'MYDEMO.EXE')
+  .build();
 ```
 
-## Loading Programs
+Start from a preset in `src/utils/dosboxConfigBuilder.ts` (`demo()` for demos and intros,
+`musicTracker()` for trackers) and override what the program needs with the builder's setters.
+The autoexec has to mount the archive (`mount c .`), switch to it (`c:`) and start the program.
 
-To load a DOS program in your application:
+Every app runs on js-dos's default `dosbox` backend, set in `src/config/jsdos.config.ts`, and
+DOSBox ignores settings that backend does not have without a warning. The builder only has
+options for settings that backend applies, and only accepts the CPU cores, CPU types and scaler
+it has. That rules out a few settings DOSBox guides suggest:
 
-```typescript
-import { DosPlayer } from './components/DosPlayer';
+- There is no dynamic core: `core` is `auto`, `normal` or `simple`.
+- There is no `486` or `pentium` CPU type: `cputype` `auto` is the usual choice.
+- There is no `[dos] ver`: DOS reports version 5.00. A program that needs a newer one gets it
+  from `VER SET 7 10` in the autoexec.
+- The builder has no memory setting: DOS gets DOSBox's default 16 MB.
 
-function App() {
-  return (
-    <DosPlayer
-      bundleUrl="/src/dos-apps/games/doom.jsdos"
-      // or
-      // bundleUrl="https://example.com/path/to/game.jsdos"
-    />
-  );
-}
+Keep the comments and the autoexec's banner to what the configuration actually sets.
+
+### 3. Register the app
+
+Add an entry to `availableApps` in `src/config/apps.config.ts`:
+
+```ts
+{
+  id: 'my-demo',
+  name: 'My Demo',
+  description: 'One line for the selector',
+  author: 'Some Group',
+  year: 1994,
+  loadMethod: 'zip',
+  dosboxConf: '',
+  loader: async (onProgress, signal) => {
+    const config = await import('../dos-apps/my-demo.config');
+    return loadZipArchive(config.myDemoZipUrl, onProgress, signal);
+  },
+  loadDosboxConf: async () => {
+    const config = await import('../dos-apps/my-demo.config');
+    return config.myDemoDosboxConf;
+  },
+},
 ```
 
-## Legal Considerations
+Import the config module with `import()`, not statically: each one becomes a small chunk of its
+own that is only downloaded when the app is loaded, or when the selector preloads it on hover.
+`loadZipArchive` is already imported at the top of the file; pass it the `onProgress` and
+`signal` the loader receives, so the selector can show progress and cancel the download.
 
-**Important**: Only include DOS programs that you have the legal right to distribute:
+The app now appears in the selector and opens at `/?app=my-demo`. The address bar shows the id
+without hyphens (`/?app=mydemo`); both forms work.
 
-- Freeware and shareware programs
-- Programs you own the rights to
-- Open source DOS software
-- Abandonware (check local laws)
+### 4. Check it
 
-Do not include:
+- `npx vitest run src/config/apps.config.test.ts` checks every registered app: its loader must
+  download `/demos/<id>.zip`, and its DOSBox configuration must leave out the settings the
+  default backend ignores.
+- Run `npm run dev` and open `http://localhost:5173/?app=my-demo`. The program should start on
+  its own, not stop at a DOS prompt or an error.
 
-- Copyrighted commercial software without permission
-- Pirated games or applications
+## Legal considerations
 
-## Resources
-
-- **Free DOS Games**: https://www.dosgames.com/
-- **Abandonware**: https://www.myabandonware.com/
-- **js-dos Bundles**: https://dos.zone/
-- **FreeDOS**: https://www.freedos.org/
+Only add programs you may redistribute: freeware, public domain, open source, or software whose
+rights holder has given permission. Leave out commercial software and anything whose source and
+license you cannot document.
