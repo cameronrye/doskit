@@ -281,8 +281,8 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
   );
 
   /**
-   * Keys on a disk. The arrow keys, Home and End move to another disk and select it,
-   * Space selects the disk, and Enter loads it. The list's handler sees only keys from
+   * Keys on a disk. The arrow keys, Home and End move to another disk and select it (only
+   * move, while a download runs), Space selects the disk, and Enter loads it. The list's handler sees only keys from
    * inside it, so the buttons and the error's Details keep what Enter and Space do.
    */
   const handleDiskKeyDown = useCallback(
@@ -331,14 +331,18 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
           return;
       }
       event.preventDefault();
-      // The selection follows the focus
       const nextApp = availableApps[next];
       if (nextApp) {
         setFocusedIndex(next);
-        handleSelectApp(nextApp);
+        // The selection follows the focus, but not during a download: choosing another disk
+        // gives the download up, which moving through the list should not do. Space or
+        // Enter there still chooses.
+        if (!isLoading) {
+          handleSelectApp(nextApp);
+        }
       }
     },
-    [handleLoadApp, handleSelectApp]
+    [handleLoadApp, handleSelectApp, isLoading]
   );
 
   /**

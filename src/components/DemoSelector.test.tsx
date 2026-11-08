@@ -986,13 +986,31 @@ describe('DemoSelector', () => {
         expect(mockOnSelect).not.toHaveBeenCalled();
       });
 
-      it('cancels the download when an arrow key selects it', async () => {
+      // Moving through the list chooses nothing while a download runs
+      it('only moves the focus to it with an arrow key, and keeps downloading', async () => {
         const pending = deferDownloads();
         render(<DemoSelector onSelect={mockOnSelect} />);
         fireEvent.keyDown(getFloppyDiskByName('Second Reality'), { key: 'Enter' });
         await waitFor(() => expect(pending.has(secondRealityZipUrl)).toBe(true));
 
         fireEvent.keyDown(getFloppyDiskByName('Second Reality'), { key: 'ArrowRight' });
+
+        const impulseTracker = screen.getByRole('option', { name: /^Impulse Tracker by/ });
+        expect(impulseTracker).toHaveFocus();
+        expect(impulseTracker).toHaveAttribute('aria-selected', 'false');
+        expect(signalOf(secondRealityZipUrl)?.aborted).toBe(false);
+        expect(screen.getByText('Selected: Second Reality')).toBeInTheDocument();
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      });
+
+      it('cancels the download when Space selects it', async () => {
+        const pending = deferDownloads();
+        render(<DemoSelector onSelect={mockOnSelect} />);
+        fireEvent.keyDown(getFloppyDiskByName('Second Reality'), { key: 'Enter' });
+        await waitFor(() => expect(pending.has(secondRealityZipUrl)).toBe(true));
+        fireEvent.keyDown(getFloppyDiskByName('Second Reality'), { key: 'ArrowRight' });
+
+        fireEvent.keyDown(document.activeElement!, { key: ' ' });
 
         expect(signalOf(secondRealityZipUrl)?.aborted).toBe(true);
         expect(screen.getByText('Selected: Impulse Tracker')).toBeInTheDocument();
