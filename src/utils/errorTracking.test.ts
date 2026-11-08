@@ -3,12 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-  initializeErrorTracking,
-  getErrorTracker,
-  ErrorSeverity,
-  type ErrorContext,
-} from './errorTracking';
+import { ErrorSeverity, type ErrorContext, type ErrorTrackingService } from './errorTracking';
 
 /**
  * The tracker is a module-level singleton, so tests of its lifecycle load a
@@ -67,13 +62,19 @@ describe('errorTracking', () => {
   });
 
   describe('ConsoleErrorTracker', () => {
-    beforeEach(() => {
-      initializeErrorTracking();
+    let tracker: ErrorTrackingService;
+
+    // A tracker of its own for each test: initializing the shared one again only warns
+    beforeEach(async () => {
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const fresh = await loadFreshErrorTracking();
+      fresh.initializeErrorTracking();
+      tracker = fresh.getErrorTracker();
+      logSpy.mockRestore();
     });
 
     it('should capture error', () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const tracker = getErrorTracker();
       const error = new Error('Test error');
       const context: ErrorContext = { userAction: 'test' };
 
@@ -90,7 +91,6 @@ describe('errorTracking', () => {
 
     it('should capture React error', () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const tracker = getErrorTracker();
       const error = new Error('React error');
       const errorInfo = { componentStack: 'Component stack' };
 
@@ -107,7 +107,6 @@ describe('errorTracking', () => {
 
     it('should add breadcrumb', () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      const tracker = getErrorTracker();
 
       tracker.addBreadcrumb('Test action', 'navigation', { page: 'home' });
 
