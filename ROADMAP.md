@@ -17,10 +17,10 @@ The plan no longer carries target dates: the quarters it first set, Q2 2025 to Q
 - Solid technical foundation (React 19, TypeScript, js-dos WebAssembly)
 - Cross-platform PWA with offline support: after the first visit the app and its DOS prompt work offline, and each application does once it has been opened online
 - Performance optimizations (WebGL rendering, DOSBox in a worker thread)
-- Comprehensive documentation and test coverage (about 93% of lines)
+- Comprehensive documentation and test coverage (about 98% of lines)
 - Deep linking support (`/?app=<id>`)
 - Mobile-responsive design
-- CI on every pull request to `main` (lint, formatting, type check, tests, build); `main` deploys only once it passes
+- CI on every pull request to `main` (lint, formatting, type check, tests, the build and a check of its CSS against the oldest supported browsers, and an audit of the production dependencies); `main` deploys only once it passes
 - 10 DOS applications configured:
   - **Second Reality** (1993 demo by Future Crew)
   - **Unreal** (1992 demo by Future Crew)
@@ -47,7 +47,7 @@ The plan no longer carries target dates: the quarters it first set, Q2 2025 to Q
 
 **Goal**: Establish DosKit as a comprehensive demoscene and audio application platform
 
-DosKit runs DOS programs only, so an entry below that was released for another platform, such as Windows, needs a DOS version before it can be added.
+DosKit runs DOS programs only, so an entry below that was released for another platform, such as Windows or the Amiga, needs a DOS version before it can be added.
 
 ### Priority 1: Expand Demo Library
 
@@ -60,13 +60,11 @@ DosKit runs DOS programs only, so an entry below that was released for another p
 - **Future Crew**: Unreal (1992), Panic (1993) ✅
 - **Triton**: Crystal Dream 2 (1993) ✅
 - **Orange**: X14 (1995)
-- **Farbrausch**: fr-08: .the .product (2000)
-- **Conspiracy**: Debris (2007)
-- **Fairlight**: Uncovering Static (2008)
-- **Andromeda Software Development**: Lifeforce (2007)
-- **Rgba**: Elevated (2009) - 4KB intro
-- **Mercury**: Blue Flame (1996)
-- **Sanity**: World of Commodore (1992)
+- **Farbrausch**: fr-08: .the .product (2000, Windows), fr-041: debris. (2007, Windows)
+- **Fairlight & Alcatraz**: Uncovering Static (2011, Windows)
+- **Andromeda Software Development**: Lifeforce (2007, Windows)
+- **Rgba & TBC**: Elevated (2009, Windows) - 4KB intro
+- **Sanity**: World of Commodore (1992, Amiga)
 
 **Implementation**:
 
@@ -111,7 +109,7 @@ DosKit runs DOS programs only, so an entry below that was released for another p
 
 **Deliverables**:
 
-- 25 total DOS applications (10 so far)
+- 25 total DOS applications
 - Rich metadata for all applications
 - Screenshots and thumbnails
 - Comprehensive documentation
@@ -177,12 +175,14 @@ Dos(container, { ...options, initFs: [archive, saved] });
 
 **Impact**: MEDIUM | **Effort**: LOW
 
+**Status**: js-dos's settings panel already keeps the volume, the mouse sensitivity, the aspect ratio, the image rendering, the theme and the on-screen controls' scale in `localStorage`, and DosKit passes them to each new player (`getStoredSettings()` in `src/config/jsdos.config.ts`), so they last through app switches and reloads; the rest below is open.
+
 **Settings to Persist**:
 
-- Volume level
+- Volume level ✅
 - Render backend preference (WebGL/Canvas)
 - CPU cycles preference
-- Aspect ratio preference
+- Aspect ratio preference ✅
 - Recently used applications (last 10)
 - Favorites/bookmarks
 - Auto-save preference
@@ -213,7 +213,7 @@ downloadBlob(blob, `${appName}-${timestamp}.png`);
 
 **Impact**: MEDIUM | **Effort**: LOW
 
-The application selector already works from the keyboard (arrow keys, Enter, Space, Escape); DosKit has none of the global shortcuts below yet.
+The application selector already works from the keyboard (the arrow keys, Home, End, Space, Enter and Escape); DosKit has none of the global shortcuts below yet. While the page has the focus, js-dos sends every key to the DOS program, so a shortcut DosKit takes is a key the program loses: `Ctrl+S` below, for one, is Scream Tracker 3's quicksave.
 
 **Global Shortcuts**:
 
@@ -533,8 +533,8 @@ interface AudioRecorder {
 **Optimizations**:
 
 - Lazy loading optimization: preload popular apps (started: the selector preloads an app's config on hover)
-- Memory usage monitoring and cleanup
-- Startup time reduction: WASM preloading ✅ (`index.html` preloads the DOSBox backend's `wdosbox.wasm`)
+- Memory usage monitoring and cleanup (started: DosKit releases each stopped player's WebGL context, while js-dos 8.3.20 still keeps every stopped player in memory)
+- Startup time reduction: WASM preloading ✅ (`index.html` preloads the DOSBox backend's `wdosbox.wasm`, which Chromium uses; Safari does not, and downloads the file twice on a first visit)
 - Service worker prefetching (started: install precaches the app shell, every JS and CSS bundle, and the js-dos player with its DOSBox backend; application archives are cached on first use)
 - Progressive image loading
 - Code splitting optimization ✅ (each app's config is a chunk of its own, and so is React)
@@ -543,7 +543,7 @@ interface AudioRecorder {
 
 **Impact**: MEDIUM | **Effort**: MEDIUM
 
-**Status**: Mobile devices get DosKit's compact on-screen keyboard layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key (`mobileJsDosConfig` in `src/config/jsdos.config.ts`); the enhancements below are open.
+**Status**: Mobile devices get DosKit's compact on-screen keyboard layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key (`mobileJsDosConfig` in `src/config/jsdos.config.ts`). In windows under 500px tall, such as a phone held sideways, the header and footer keep to one row, and on iPhones the page keeps clear of the notch, the status bar and the home indicator. The enhancements below are open.
 
 **Enhancements**:
 
@@ -611,9 +611,9 @@ interface AppStore {
 
 **Priority**: MEDIUM | **Timeline**: Ongoing
 
-**Current**: About 93% of lines, 92% of statements and functions and 82% of branches, over every source file in `src/` (`npm run test:coverage`, November 2026)
-**Floor**: `npm run test:coverage`, which CI runs, fails below the thresholds in `vitest.config.ts`, 4 to 7 points under these figures
-**Target**: 85%+ coverage (met but for branches)
+**Current**: About 98% of lines, 97% of statements, 96% of functions and 91% of branches, over every source file in `src/` (`npm run test:coverage`, November 2026)
+**Floor**: `npm run test:coverage`, which CI runs, fails below the thresholds in `vitest.config.ts`, 8 to 16 points under these figures
+**Target**: 85%+ coverage (met)
 **Benefit**: Fewer bugs, easier refactoring, better documentation
 
 **Focus Areas**:
