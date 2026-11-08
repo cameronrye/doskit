@@ -14,11 +14,11 @@ DosKit has been optimized to provide the best possible performance for DOS emula
 
 ## Key Optimizations Implemented
 
-### 1. OffscreenCanvas Rendering (HIGH Impact)
+### 1. OffscreenCanvas Rendering (No Effect)
 
-**Status:** ✅ Enabled by default
+**Status:** ❌ Not available: js-dos ignores the setting
 
-**Performance Gain:** 10-30% FPS improvement
+**Performance Gain:** None
 
 **Configuration:**
 
@@ -26,15 +26,9 @@ DosKit has been optimized to provide the best possible performance for DOS emula
 offscreenCanvas: true;
 ```
 
-**What it does:** Moves canvas rendering to a Web Worker, freeing the main thread from rendering operations.
+**What it does:** Nothing. `src/config/jsdos.config.ts` sets `offscreenCanvas: true`, but js-dos has no such option and never reads it. It draws every frame on the page's own canvas, on the main thread, with WebGL (section 5); what runs in a Web Worker is the emulator itself (section 6).
 
-**Benefits:**
-
-- Eliminates main thread blocking
-- Improves frame consistency
-- Better overall UI responsiveness
-
-**Browser Support:** Chrome 69+, Firefox 105+, Safari 16.4+
+Drawing in a worker would need js-dos support; see Future Optimization Opportunities.
 
 ---
 
@@ -233,7 +227,7 @@ renderBackend: 'webgl';
 - Faster pixel manipulation and scaling
 - Lower CPU usage
 
-**Fallback:** Automatically falls back to Canvas 2D on devices with poor WebGL support
+**Fallback:** js-dos falls back to Canvas 2D when its WebGL renderer cannot start, for example when the browser gives it no WebGL context
 
 ---
 
@@ -287,12 +281,12 @@ workerThread: true;
 
 Based on the optimizations implemented:
 
-| Metric            | Before   | After            | Improvement              |
-| ----------------- | -------- | ---------------- | ------------------------ |
-| Rendering FPS     | Baseline | 10-30% higher    | OffscreenCanvas + WebGL  |
-| Startup Time      | Baseline | 200-500ms faster | WASM preloading          |
-| Audio Quality     | Good     | Excellent        | Optimized mixer settings |
-| UI Responsiveness | Good     | Excellent        | Worker thread mode       |
+| Metric            | Before    | After            | Improvement              |
+| ----------------- | --------- | ---------------- | ------------------------ |
+| Rendering         | Canvas 2D | 2-5x faster      | WebGL rendering backend  |
+| Startup Time      | Baseline  | 200-500ms faster | WASM preloading          |
+| Audio Quality     | Good      | Excellent        | Optimized mixer settings |
+| UI Responsiveness | Good      | Excellent        | Worker thread mode       |
 
 There is no CPU speed gain to list: the default backend has no dynamic core, so DOSBox's interpreting cores emulate the CPU (see section 2).
 
@@ -302,12 +296,11 @@ There is no CPU speed gain to list: the default backend has no dynamic core, so 
 
 All optimizations are designed with progressive enhancement:
 
-| Feature         | Chrome | Firefox | Safari   | Edge   |
-| --------------- | ------ | ------- | -------- | ------ |
-| OffscreenCanvas | ✅ 69+ | ✅ 105+ | ✅ 16.4+ | ✅ 79+ |
-| WebGL           | ✅ All | ✅ All  | ✅ All   | ✅ All |
-| Worker Threads  | ✅ All | ✅ All  | ✅ All   | ✅ All |
-| WASM Preload    | ✅ All | ✅ All  | ✅ All   | ✅ All |
+| Feature        | Chrome | Firefox | Safari | Edge   |
+| -------------- | ------ | ------- | ------ | ------ |
+| WebGL          | ✅ All | ✅ All  | ✅ All | ✅ All |
+| Worker Threads | ✅ All | ✅ All  | ✅ All | ✅ All |
+| WASM Preload   | ✅ All | ✅ All  | ✅ All | ✅ All |
 
 **Fallback Strategy:** Features gracefully degrade on older browsers while maintaining functionality.
 
@@ -321,11 +314,12 @@ All optimizations are designed with progressive enhancement:
 {
   backend: 'dosbox',           // 20-40% faster than DOSBox-X
   workerThread: true,          // Non-blocking UI
-  offscreenCanvas: true,       // 10-30% FPS improvement
   renderBackend: 'webgl',      // 2-5x rendering performance
   imageRendering: 'pixelated', // 5-15% performance + authentic look
 }
 ```
+
+`src/config/jsdos.config.ts` also sets `offscreenCanvas: true`, which js-dos ignores (see section 1).
 
 ### Optimal DOSBox Configuration
 
@@ -384,6 +378,12 @@ These optimizations were researched but not yet implemented:
 - **Potential Gain:** Limited by DOSBox's single-threaded architecture
 - **Complexity:** Very difficult, requires COOP/COEP headers
 - **Risk:** High deployment complexity, iOS incompatibility
+
+### 5. OffscreenCanvas Rendering (Needs js-dos Support)
+
+- **Potential Gain:** Frees the main thread from drawing frames
+- **Complexity:** js-dos would have to hand its canvas to the emulator worker; it has no option for that, so the `offscreenCanvas: true` in `jsdos.config.ts` does nothing (see section 1)
+- **Risk:** Depends on js-dos adding it
 
 ---
 
