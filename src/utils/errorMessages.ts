@@ -41,11 +41,6 @@ const ERROR_MAPPINGS: ErrorMapping[] = [
     suggestion: 'The file might be corrupted or unavailable. Please try a different application.',
   },
   {
-    pattern: /failed to load.*disk image/i,
-    message: 'Unable to load the disk image',
-    suggestion: 'The disk image file might be corrupted or in an unsupported format.',
-  },
-  {
     pattern: /file.*not found|404/i,
     message: 'The requested file was not found',
     suggestion: 'The file might have been moved or deleted. Please try a different application.',
