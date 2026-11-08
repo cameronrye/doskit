@@ -1,4 +1,5 @@
-import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { versionDefines } from './vite.config.ts';
 
@@ -14,6 +15,14 @@ export default defineConfig({
     // Without them, tests get jsdom's, as on Node 24, which accepts the flag and ignores it.
     execArgv: ['--no-experimental-webstorage'],
     setupFiles: './src/test/setup.ts',
+    // The tests of the service worker read public/sw.js as a file rather than import it, so
+    // `vitest related`, which the pre-commit hook runs, would find none for it: a change to
+    // it runs every test instead, as a change to package.json or this file does. The path
+    // is absolute, as a ** pattern matches no checkout inside a directory named with a dot.
+    forceRerunTriggers: [
+      ...configDefaults.forceRerunTriggers,
+      fileURLToPath(new URL('public/sw.js', import.meta.url)),
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
