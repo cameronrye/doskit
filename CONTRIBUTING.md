@@ -198,7 +198,7 @@ Static files, such as icons and the DOS app archives in `public/demos/`, live in
 
 ### Test Requirements
 
-- **Coverage**: Stay at or above the thresholds in `vitest.config.ts`; `npm run test:coverage`, which CI runs, fails below them
+- **Coverage**: Stay at or above the thresholds in `vitest.config.ts`; `npm run test:coverage`, which CI runs, fails below them. It counts every `.ts` and `.tsx` file in `src/` but the tests (`*.test.ts`, `*.test.tsx`), `src/test/` and the type declarations (`*.d.ts`), so a source file that no test imports counts as uncovered instead of being left out
 - **Unit tests**: Required for all new features and bug fixes
 - **Component tests**: Required for all React components
 - **Integration tests**: Recommended for complex features

@@ -17,7 +17,7 @@ The plan no longer carries target dates: the quarters it first set, Q2 2025 to Q
 - Solid technical foundation (React 19, TypeScript, js-dos WebAssembly)
 - Cross-platform PWA with offline support: after the first visit the app and its DOS prompt work offline, and each application does once it has been opened online
 - Performance optimizations (WebGL rendering, DOSBox in a worker thread)
-- Comprehensive documentation and test coverage (about 89% of lines)
+- Comprehensive documentation and test coverage (about 93% of lines)
 - Deep linking support (`/?app=<id>`)
 - Mobile-responsive design
 - CI on every pull request to `main` (lint, formatting, type check, tests, build); `main` deploys only once it passes
@@ -611,9 +611,9 @@ interface AppStore {
 
 **Priority**: MEDIUM | **Timeline**: Ongoing
 
-**Current**: About 89% of lines and statements and 78% of branches (`npm run test:coverage`, November 2026)
-**Floor**: `npm run test:coverage`, which CI runs, fails below the thresholds in `vitest.config.ts`, set about 3 points under these figures
-**Target**: 85%+ coverage (met for lines and statements)
+**Current**: About 93% of lines, 92% of statements and functions and 82% of branches, over every source file in `src/` (`npm run test:coverage`, November 2026)
+**Floor**: `npm run test:coverage`, which CI runs, fails below the thresholds in `vitest.config.ts`, 4 to 7 points under these figures
+**Target**: 85%+ coverage (met but for branches)
 **Benefit**: Fewer bugs, easier refactoring, better documentation
 
 **Focus Areas**:
