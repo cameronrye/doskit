@@ -32,21 +32,26 @@ class WorkerRequest extends Request {
 }
 
 class CacheMock {
-  #entries = new Map(); // URL -> Response
+  #entries = new Map(); // URL -> body and init of the stored response
 
   constructor(fetch) {
     this.fetch = fetch;
   }
 
   async match(request) {
-    return this.#entries.get(urlOf(request).href)?.clone();
+    const entry = this.#entries.get(urlOf(request).href);
+    return entry && new Response(entry.body, entry.init);
   }
 
+  // Like Cache.put(), this reads the whole body before it stores anything, so a body
+  // that breaks off makes it reject
   async put(request, response) {
+    const body = await response.arrayBuffer();
+    const { status, statusText, headers } = response;
     const url = urlOf(request).href;
     // Like browsers, a replaced entry moves to the end of keys()
     this.#entries.delete(url);
-    this.#entries.set(url, response);
+    this.#entries.set(url, { body, init: { status, statusText, headers: [...headers] } });
   }
 
   async addAll(requests) {
@@ -73,12 +78,37 @@ class CacheMock {
   }
 }
 
+/** A response body that arrives in two halves, the second once `arrived` resolves */
+function bodyOf(bytes, arrived) {
+  const half = Math.ceil(bytes.length / 2);
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue(bytes.slice(0, half));
+      arrived.then(() => {
+        controller.enqueue(bytes.slice(half));
+        controller.close();
+      });
+    },
+  });
+}
+
 /**
  * What outlives a service worker: the server, whose files change with each deploy, and
  * the origin's Cache Storage
  */
 function createBrowser() {
-  const server = { deploy: 'A', online: true, requests: [] };
+  const server = {
+    deploy: 'A',
+    online: true,
+    requests: [],
+    held: new Map(), // path -> promise the second half of its body waits for
+    /** Holds back the second half of the file's body until the returned release() */
+    hold(path) {
+      let release;
+      this.held.set(path, new Promise((resolve) => (release = resolve)));
+      return release;
+    },
+  };
 
   async function fetch(input) {
     server.requests.push({ path: pathOf(input), cache: input.cache ?? 'default' });
@@ -87,7 +117,9 @@ function createBrowser() {
     }
     // Like GitHub Pages, the server answers / (with any query) with index.html
     const file = urlOf(input).pathname === '/' ? '/index.html' : pathOf(input);
-    return new Response(`${file} from deploy ${server.deploy}`, { status: 200 });
+    const bytes = new TextEncoder().encode(`${file} from deploy ${server.deploy}`);
+    const arrived = server.held.get(pathOf(input)) ?? Promise.resolve();
+    return new Response(bodyOf(bytes, arrived), { status: 200 });
   }
 
   const store = new Map(); // cache name -> CacheMock
@@ -473,5 +505,22 @@ describe('cache trimming', () => {
     expect(appCache).toHaveLength(worker.config().MAX_CACHE_SIZE);
     expect(appCache).toEqual(expect.arrayContaining(visited.slice(-10)));
     expect(appCache).not.toContain(visited[0]);
+  });
+
+  it('keeps to its limit while the body it stores is still arriving', async () => {
+    // Cache.put() writes the entry only once it has the whole body
+    const browser = createBrowser();
+    const worker = await installAndActivate(browser);
+    await overflowCache(worker);
+    const release = browser.server.hold('/?app=slow');
+
+    const visit = worker.dispatch('fetch', { request: navigation('/?app=slow') });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    release();
+    await visit;
+
+    const appCache = browser.contents()['doskit-vA'];
+    expect(appCache).toHaveLength(worker.config().MAX_CACHE_SIZE);
+    expect(appCache).toContain('/?app=slow');
   });
 });

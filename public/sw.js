@@ -284,6 +284,24 @@ async function trimCache(cacheName) {
 }
 
 /**
+ * Store a response in CACHE_NAME, then record its use and trim the cache. Cache.put()
+ * reads the whole body before it writes the entry, so a trim that ran alongside it would
+ * count the cache without that entry and leave it over its limit.
+ */
+async function cacheResponse(request, response) {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(request, response);
+  } catch (error) {
+    // Such as a body that broke off because the page stopped loading it
+    console.error('[Service Worker] Error caching response:', request.url, error);
+    return;
+  }
+  await updateCacheMetadata(request.url);
+  await trimCache(CACHE_NAME);
+}
+
+/**
  * Serve an emulator file cache-first. The files of one js-dos version never change, and
  * deploys keep their cache. A file install did not precache is stored on first use.
  */
@@ -343,14 +361,7 @@ self.addEventListener('fetch', (event) => {
         .then((networkResponse) => {
           // Cache the fresh HTML
           if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseToCache);
-              // Update timestamp for LRU cache
-              updateCacheMetadata(request.url);
-              // Trim cache after adding new entry
-              trimCache(CACHE_NAME);
-            });
+            event.waitUntil(cacheResponse(request, networkResponse.clone()));
           }
           return networkResponse;
         })
@@ -401,12 +412,7 @@ self.addEventListener('fetch', (event) => {
         console.log('[Service Worker] Fetching from network (cache-first):', request.url);
         return fetchWithTimeout(request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseToCache);
-              updateCacheMetadata(request.url);
-              trimCache(CACHE_NAME);
-            });
+            event.waitUntil(cacheResponse(request, networkResponse.clone()));
           }
           return networkResponse;
         });
@@ -430,16 +436,8 @@ self.addEventListener('fetch', (event) => {
           fetchWithTimeout(request)
             .then((networkResponse) => {
               if (networkResponse && networkResponse.status === 200) {
-                return caches.open(CACHE_NAME).then((cache) => {
-                  cache.put(request, networkResponse.clone());
-                  // Update timestamp for LRU cache
-                  updateCacheMetadata(request.url);
-                  // Trim cache after adding new entry
-                  trimCache(CACHE_NAME);
-                  return networkResponse;
-                });
+                return cacheResponse(request, networkResponse);
               }
-              return networkResponse;
             })
             .catch(() => {
               // Network failed, but we already returned cache
@@ -455,17 +453,7 @@ self.addEventListener('fetch', (event) => {
         .then((networkResponse) => {
           // Cache successful responses
           if (networkResponse && networkResponse.status === 200) {
-            // Clone the response before caching
-            const responseToCache = networkResponse.clone();
-
-            caches.open(CACHE_NAME).then((cache) => {
-              // Cache the new resource
-              cache.put(request, responseToCache);
-              // Update timestamp for LRU cache
-              updateCacheMetadata(request.url);
-              // Trim cache after adding new entry
-              trimCache(CACHE_NAME);
-            });
+            event.waitUntil(cacheResponse(request, networkResponse.clone()));
           }
 
           return networkResponse;
