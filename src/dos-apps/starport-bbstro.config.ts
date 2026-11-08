@@ -13,8 +13,8 @@ import { presets } from '../utils/dosboxConfigBuilder';
  * Starport BBS Intro II (hosted locally)
  * A small BBS intro by Future Crew (1993)
  *
- * Source: https://github.com/sceners/starport-bbstro-future-crew
- * License: Public Domain
+ * Source: https://files.scene.org/view/demos/groups/future_crew/code/fcsp2src.zip
+ * License: Public Domain (SP2.ASM; see public/demos/README.md)
  * Size: 1993 bytes (the year it was released!)
  */
 export const starportBbstroZipUrl = '/demos/starport-bbstro.zip';

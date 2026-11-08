@@ -76,23 +76,29 @@ bytes.
 ## `starport-bbstro.zip`
 
 **StarPort BBS Intro II** (V1.0) by Future Crew, code by Psi and music by Skaven: a 1,993-byte intro
-for StarPort, Future Crew's home BBS.
+for StarPort, Future Crew's home BBS, with its source.
 
 - **Year**: 1993. README: "Copyright (C) 1993 Future Crew". The release list in FCINFO12.TXT dates
-  the intro, `STARPORT.ZIP`, 21 November 1993 and its source, `SP2SRC.ZIP`, 2 December 1993.
-- **Contents** (4 files; the ZIP is 24,091): `SP2.COM` (1,993), `README` (272), `FILE_ID.DIZ` (141)
-  and `FCINFO12.TXT` (64,850), Future Crew's information file. These are the files of the source
-  package without its `SP2.ASM` and `MAKE.BAT`, and their text has Unix line endings where the
-  originals have CR LF. The file dates (19 November 2025) are not the originals'.
+  the intro, `STARPORT.ZIP`, 21 November 1993 and its source, `SP2SRC.ZIP`, 2 December 1993. Here
+  `SP2.COM` is dated 20 November 1993, `SP2.ASM`, `MAKE.BAT`, `README` and `FILE_ID.DIZ` 26
+  November to 1 December 1993, and `FCINFO12.TXT` 11 October 1990, though its header says
+  02-DEC-1993.
+- **Contents** (7 files; the ZIP is 33,424): `SP2.COM` (1,993), its source `SP2.ASM` (20,856),
+  `MAKE.BAT` (86), which assembles it, `README` (281), `FILE_ID.DIZ` (148) and `FCINFO12.TXT`
+  (66,094), Future Crew's information file; and `scene.org.txt` (2,714), scene.org's notice, which
+  scene.org added in 2006 along with the ZIP's comment.
 - **Source**:
-  [github.com/sceners/starport-bbstro-future-crew](https://github.com/sceners/starport-bbstro-future-crew),
-  which has the same four files and the source. `SP2.COM` is byte for byte the program in Future
-  Crew's own packages on scene.org,
-  [`starprt2.zip`](https://files.scene.org/view/demos/groups/future_crew/intros/starprt2.zip) and
-  [`fcsp2src.zip`](https://files.scene.org/view/demos/groups/future_crew/code/fcsp2src.zip).
+  [`fcsp2src.zip`](https://files.scene.org/view/demos/groups/future_crew/code/fcsp2src.zip) in
+  Future Crew's folder on scene.org, byte for byte (MD5 `d644bbefcc4f838d6b7f97d4a3232910`). The
+  intro's own package there,
+  [`starprt2.zip`](https://files.scene.org/view/demos/groups/future_crew/intros/starprt2.zip),
+  names the program `STARPORT.COM`; it is byte for byte `SP2.COM`.
 - **Terms**: SP2.ASM, the intro's source: "This code is released to the public domain. You can do
   whatever you like with this code, but remember, that if you are just planning on making another
   small intro by changing a few lines of code, be prepared to enter the worldwide lamers' club."
+  FCINFO12.TXT, section 3: "All our demos, except the ones which we have created for different
+  companies, are freeware. This means that you can copy and distribute them freely as long as you
+  make no modifications to them. Also, no money can be charged for copying them."
 - **More**: [pouet.net](https://www.pouet.net/prod.php?which=12217)
 
 ## `scream-tracker.zip`
@@ -264,5 +270,5 @@ To replace an archive, update its entry here too (contents, source, checksum), t
 
 ---
 
-**Last Updated**: 2026-11-07
+**Last Updated**: 2026-11-08
 **Maintained By**: DosKit Project
