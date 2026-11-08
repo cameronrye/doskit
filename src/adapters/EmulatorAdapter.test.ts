@@ -115,25 +115,6 @@ describe('EmulatorAdapter', () => {
         expect(adapter.getName()).toBe('js-dos');
       });
     });
-
-    describe('getVersion', () => {
-      it('should return the js-dos version', () => {
-        const version = adapter.getVersion();
-        expect(version).toBe('8.3.20');
-      });
-
-      it('should return "unknown" when js-dos is not available', () => {
-        delete (window as Partial<Window>).Dos;
-        expect(adapter.getVersion()).toBe('unknown');
-      });
-
-      it('should return "unknown" when version check fails', () => {
-        mockDos.mockImplementation(() => {
-          throw new Error('Failed');
-        });
-        expect(adapter.getVersion()).toBe('unknown');
-      });
-    });
   });
 
   describe('getEmulatorAdapter', () => {

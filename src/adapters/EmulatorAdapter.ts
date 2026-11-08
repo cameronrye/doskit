@@ -34,12 +34,6 @@ export interface EmulatorAdapter {
    * @returns The emulator name (e.g., 'js-dos', 'dosbox-wasm')
    */
   getName(): string;
-
-  /**
-   * Get the version of the emulator
-   * @returns The emulator version string
-   */
-  getVersion(): string;
 }
 
 /**
@@ -78,44 +72,6 @@ export class JsDosAdapter implements EmulatorAdapter {
    */
   getName(): string {
     return 'js-dos';
-  }
-
-  /**
-   * Get the js-dos version
-   */
-  getVersion(): string {
-    if (!this.isAvailable()) {
-      return 'unknown';
-    }
-
-    let tempContainer: HTMLDivElement | null = null;
-    let dosProps: DosProps | null = null;
-
-    try {
-      // Create a temporary container to get version
-      tempContainer = document.createElement('div');
-      tempContainer.style.display = 'none';
-      document.body.appendChild(tempContainer);
-
-      dosProps = window.Dos(tempContainer, {});
-      const [version] = dosProps.getVersion();
-
-      return version;
-    } catch {
-      return 'unknown';
-    } finally {
-      // Always cleanup, even if an error occurs
-      if (dosProps) {
-        try {
-          dosProps.stop();
-        } catch {
-          // Ignore stop errors during cleanup
-        }
-      }
-      if (tempContainer && tempContainer.parentNode) {
-        tempContainer.parentNode.removeChild(tempContainer);
-      }
-    }
   }
 }
 
