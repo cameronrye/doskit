@@ -452,81 +452,79 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Selected App Details */}
-        {selectedApp && (
-          <div className="app-details" role="region">
-            {/* Announced when the app changes; the progress below is not, as it changes often */}
-            <div aria-live="polite">
-              <h3>Selected: {selectedApp.name}</h3>
-              <p>{selectedApp.description}</p>
-            </div>
+      {/* Selected App Details: a footer that stays in view while the disks scroll */}
+      {selectedApp && (
+        <div className="app-details" role="region">
+          {/* Announced when the app changes; the progress below is not, as it changes often */}
+          <div className="app-summary" aria-live="polite">
+            <h3>Selected: {selectedApp.name}</h3>
+            <p>{selectedApp.description}</p>
+          </div>
 
-            {error && (
-              <div className="error-message" role="alert">
-                <p className="error-message-text">{error.message}</p>
-                {error.suggestion && <p className="error-suggestion">{error.suggestion}</p>}
-                {error.originalError && (
-                  <details className="error-details">
-                    <summary>Details</summary>
-                    <code>{error.originalError}</code>
-                  </details>
-                )}
-              </div>
-            )}
-
-            {isLoading && (
-              <div className="load-progress">
-                {/* Without a size to measure against, an indeterminate bar: no aria-valuenow */}
-                <div
-                  className={`progress-bar${progress.percent === null ? ' indeterminate' : ''}`}
-                  role="progressbar"
-                  aria-label="Download progress"
-                  aria-valuenow={progress.percent ?? undefined}
-                  aria-valuemin={progress.percent === null ? undefined : 0}
-                  aria-valuemax={progress.percent === null ? undefined : 100}
-                >
-                  <div
-                    className="progress-fill"
-                    style={
-                      progress.percent === null ? undefined : { width: `${progress.percent}%` }
-                    }
-                  />
-                </div>
-                <p className="progress-text">{progress.text}</p>
-              </div>
-            )}
-
-            <div className="app-actions">
-              {isLoading ? (
+          <div className="app-actions">
+            {isLoading ? (
+              <button
+                className="cancel-loading-button"
+                onClick={handleCancelLoading}
+                aria-label="Cancel loading"
+              >
+                Cancel Loading
+              </button>
+            ) : (
+              <>
                 <button
-                  className="cancel-loading-button"
-                  onClick={handleCancelLoading}
-                  aria-label="Cancel loading"
+                  className="load-button"
+                  onClick={() => handleLoadApp(selectedApp)}
+                  disabled={isLoading}
                 >
-                  Cancel Loading
+                  Load Application
                 </button>
-              ) : (
-                <>
-                  <button
-                    className="load-button"
-                    onClick={() => handleLoadApp(selectedApp)}
-                    disabled={isLoading}
-                  >
-                    Load Application
-                  </button>
-                  <button
-                    className="cancel-button"
-                    onClick={(event) => handleCancel(event.detail === 0)}
-                  >
-                    Cancel
-                  </button>
-                </>
+                <button
+                  className="cancel-button"
+                  onClick={(event) => handleCancel(event.detail === 0)}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
+
+          {error && (
+            <div className="error-message" role="alert">
+              <p className="error-message-text">{error.message}</p>
+              {error.suggestion && <p className="error-suggestion">{error.suggestion}</p>}
+              {error.originalError && (
+                <details className="error-details">
+                  <summary>Details</summary>
+                  <code>{error.originalError}</code>
+                </details>
               )}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+
+          {isLoading && (
+            <div className="load-progress">
+              {/* Without a size to measure against, an indeterminate bar: no aria-valuenow */}
+              <div
+                className={`progress-bar${progress.percent === null ? ' indeterminate' : ''}`}
+                role="progressbar"
+                aria-label="Download progress"
+                aria-valuenow={progress.percent ?? undefined}
+                aria-valuemin={progress.percent === null ? undefined : 0}
+                aria-valuemax={progress.percent === null ? undefined : 100}
+              >
+                <div
+                  className="progress-fill"
+                  style={progress.percent === null ? undefined : { width: `${progress.percent}%` }}
+                />
+              </div>
+              <p className="progress-text">{progress.text}</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

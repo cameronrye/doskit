@@ -211,6 +211,27 @@ describe('DemoSelector', () => {
       expect(cancelButtons.length).toBeGreaterThan(0);
     });
 
+    // The list scrolls on laptops and phones; the details, actions, progress and errors stay
+    // in view below it (DemoSelector.css)
+    it('keeps the selected app, its actions and its errors out of the scrolling list', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(loadZipArchive).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      fireEvent.click(getFloppyDiskByName('Second Reality'));
+      fireEvent.click(screen.getByRole('button', { name: 'Load Application' }));
+      const alert = await screen.findByRole('alert');
+
+      const scrolling = screen.getByRole('listbox').parentElement!;
+      for (const element of [
+        screen.getByText('Selected: Second Reality'),
+        screen.getByRole('button', { name: 'Load Application' }),
+        alert,
+      ]) {
+        expect(scrolling).not.toContainElement(element);
+        expect(screen.getByRole('dialog')).toContainElement(element);
+      }
+    });
+
     it('should clear error when selecting a new app', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       vi.mocked(loadZipArchive).mockRejectedValueOnce(new TypeError('Failed to fetch'));
@@ -578,6 +599,44 @@ describe('DemoSelector', () => {
       expect(vi.mocked(loadZipArchive).mock.calls[0]?.[2]?.aborted).toBe(true);
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
       expect(loadZipArchive).toHaveBeenCalledTimes(1);
+    });
+
+    // The same button turns into Cancel Loading and back. Were it replaced, the focus would
+    // fall to the page behind the dialog, and Tab would leave it.
+    it('keeps the focus on Load Application as it turns into Cancel Loading, and back', async () => {
+      const user = userEvent.setup();
+      vi.mocked(loadZipArchive).mockImplementation(() => new Promise(() => {}));
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      fireEvent.click(getFloppyDiskByName('Panic'));
+      focusOn(screen.getByRole('button', { name: 'Load Application' }));
+
+      await user.keyboard('{Enter}');
+      expect(screen.getByRole('button', { name: /Cancel Loading/i })).toHaveFocus();
+
+      await user.keyboard('{Enter}');
+      expect(screen.getByRole('button', { name: 'Load Application' })).toHaveFocus();
+    });
+
+    it('gives Load Application the focus again when the download fails', async () => {
+      const user = userEvent.setup();
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      let fail!: () => void;
+      vi.mocked(loadZipArchive).mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            fail = () => reject(new TypeError('Failed to fetch'));
+          })
+      );
+      render(<DemoSelector onSelect={mockOnSelect} />);
+      fireEvent.click(getFloppyDiskByName('Panic'));
+      focusOn(screen.getByRole('button', { name: 'Load Application' }));
+      await user.keyboard('{Enter}');
+      await waitFor(() => expect(loadZipArchive).toHaveBeenCalled());
+
+      await act(async () => fail());
+
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Load Application' })).toHaveFocus();
     });
 
     // jsdom does not open details from the keyboard, so check that the keys are left to it

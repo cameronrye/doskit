@@ -72,10 +72,12 @@
   background: #333;
 }
 
+/* The disks, which scroll when the window is too short for them */
 .demo-selector-content {
   padding: 2rem;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
   background: #1e1e1e;
 }
 
@@ -84,7 +86,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 2rem;
-  margin-bottom: 1.5rem;
   justify-items: center;
   padding: 1.5rem;
 }
@@ -105,24 +106,37 @@
   -webkit-user-select: none;
 }
 
-/* App Details */
+/*
+ * App Details: the dialog's footer, which stays in view while the disks scroll. The app and
+ * its actions share a row; an error or the download's progress takes the row below.
+ */
 .app-details {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  padding: 1rem 2rem;
   background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 10px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border-top: 1px solid #333;
+  border-radius: 0 0 12px 12px;
+}
+
+.app-details .error-message,
+.app-details .load-progress {
+  grid-column: 1 / -1;
 }
 
 .app-details h3 {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.125rem;
   color: #e0e0e0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-weight: 600;
 }
 
-.app-details p {
-  margin: 0 0 1rem 0;
+.app-summary p {
+  margin: 0;
   color: #aaa;
 }
 
@@ -137,7 +151,6 @@
   color: #ff8787;
   padding: 0.75rem;
   border-radius: 4px;
-  margin-bottom: 1rem;
 }
 
 /* What went wrong, what to do, and the technical message on request */
@@ -172,10 +185,6 @@
 }
 
 /* Load Progress */
-.load-progress {
-  margin-bottom: 1rem;
-}
-
 .progress-bar {
   width: 100%;
   height: 8px;
@@ -228,7 +237,6 @@
 .app-actions {
   display: flex;
   gap: 0.75rem;
-  margin-top: 1rem;
 }
 
 .load-button,
@@ -309,13 +317,10 @@
     font-size: 1.25rem;
   }
 
-  .app-actions {
-    flex-direction: column;
-  }
-
-  .load-button,
-  .cancel-button {
-    width: 100%;
+  /* The app over its actions, which share one row */
+  .app-details {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.75rem 1.5rem;
   }
 }
 
