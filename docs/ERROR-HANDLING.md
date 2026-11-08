@@ -221,7 +221,9 @@ The selector and the error overlay explain a failed load the same way: they log 
 
 **DosPlayerWithApps** (apps the URL asks for: deep links, back/forward):
 
-- A failed load shows the "Error Loading Application" overlay (`role="alert"`) with that explanation, then Try Again, which boots the default DOS prompt and opens the selector
+- A failed load shows the "Error Loading Application" overlay (`role="alert"`) with that explanation and two buttons. Try Again loads the same app again, behind the loading overlay, and shows the error overlay again if that fails too; offline, an app that is not cached fails again at once, since a download fails at once while the browser reports being offline. Choose Another Application boots the default DOS prompt and opens the selector.
+- Try Again takes the keyboard focus when the overlay appears, or, if the selector is open over it, once the selector closes, so Enter tries again
+- Nothing runs behind the overlay: a requested app stops the running one as its load starts
 - A newer request, a pick in the selector or unmounting aborts the load and drops its result or error
 
 **useDosEmulator, the adapter and DosPlayerUI** (starting js-dos):

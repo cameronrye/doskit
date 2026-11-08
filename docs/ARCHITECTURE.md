@@ -92,7 +92,7 @@ StrictMode (main.tsx)
         │       ├── DemoSelector (modal)
         │       │   └── App selection UI
         │       ├── Loading overlay
-        │       ├── Error overlay
+        │       ├── Error overlay (Try Again, Choose Another Application)
         │       └── DosPlayer (remounted for each app)
         │           ├── useDosEmulator
         │           └── DosPlayerUI
@@ -127,7 +127,7 @@ Apps the URL asks for (deep links, back/forward):
 3. **A newer request**, a pick in the selector, or unmounting aborts the load and drops its result. A request also remounts the selector, which aborts any download the selector still runs. A request that returns to the app the load stopped loads that app again.
 4. **Once loaded**, the app runs as in steps 6 and 7 above. DosPlayerWithApps reports it to App, which finds the URL already in place and adds no history entry.
 
-If a requested app fails to load, the error overlay shows why, and its Try Again boots the default DOS prompt and opens the selector. See [ERROR-HANDLING.md](ERROR-HANDLING.md) for the errors each step can show.
+If a requested app fails to load, the error overlay shows why, with nothing running behind it. Its Try Again, which has the keyboard focus, loads the same app again; Choose Another Application boots the default DOS prompt and opens the selector. See [ERROR-HANDLING.md](ERROR-HANDLING.md) for the errors each step can show.
 
 ### URL Routing
 
@@ -143,7 +143,7 @@ If a requested app fails to load, the error overlay shows why, and its Try Again
 DosKit has no React contexts and no state library. Each component keeps the state it owns, App passes what the player needs down as props, and the player reports back through callbacks:
 
 1. **App** - The current app, whether the selector is shown, the URL error banner's text, and the Ready and Online flags behind the footer badges
-2. **DosPlayerWithApps** - The running session (an app with its files and DOSBox config, or the default DOS prompt; none while a requested app is still loading), the requested app being loaded, and its load error
+2. **DosPlayerWithApps** - The running session (an app with its files and DOSBox config, or the default DOS prompt; none while a requested app is still loading), the requested app being loaded, and its load error, with the app Try Again loads again
 3. **DemoSelector** - Its selection, keyboard focus, load progress and error, the AbortController of its load, and the DOSBox configs it preloaded on hover
 4. **useDosEmulator** - Its loading and error state, and the command interface in a ref (`ciRef`) from `ci-ready` until the player is gone. Each mount's js-dos player lives in that mount's effect, which stops it on unmount.
 5. **OfflineIndicator** - The offline and back-online toasts and the install prompt; it records install-prompt dismissals in localStorage through `safeLocalStorage`
@@ -169,7 +169,7 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 />
 ```
 
-`onAppChange` reports each app that starts running, picked or requested, and `null` after Try Again. `onExit` is called once per `onReady`: when DOS exits, or as soon as unmounting stops a ready player, so the footer shows Loading while the next app boots, and, for an app the URL asks for, while it downloads.
+`onAppChange` reports each app that starts running, picked or requested, and `null` after Choose Another Application. `onExit` is called once per `onReady`: when DOS exits, or as soon as unmounting stops a ready player, so the footer shows Loading while the next app boots, and, for an app the URL asks for, while it downloads.
 
 ## Key Features
 
