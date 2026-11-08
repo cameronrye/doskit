@@ -79,6 +79,36 @@ describe('DosPlayerUI', () => {
       expect(style.zIndex).toBe('999');
     });
 
+    // index.html lets the page run under a phone's notch, rounded corners and home indicator
+    // (viewport-fit=cover)
+    it("keeps js-dos clear of a phone's notch and home indicator", async () => {
+      // jsdom drops env(), so a phone's insets stand in for it
+      const insets = { top: '47px', right: '12px', bottom: '34px', left: '59px' };
+      const phone = document.createElement('style');
+      phone.textContent = (await readPlayerStyles()).replace(
+        /env\(safe-area-inset-(top|right|bottom|left)\)/g,
+        (_, side: keyof typeof insets) => insets[side]
+      );
+      document.head.append(phone);
+      try {
+        const root = renderJsDosRoot();
+
+        root.classList.add('jsdos-fullscreen-workaround');
+
+        const style = getComputedStyle(root);
+        expect([
+          style.paddingTop,
+          style.paddingRight,
+          style.paddingBottom,
+          style.paddingLeft,
+        ]).toEqual(['47px', '12px', '34px', '59px']);
+        // Within the 100% width and height the element has
+        expect(style.boxSizing).toBe('border-box');
+      } finally {
+        phone.remove();
+      }
+    });
+
     it('goes back into the page once js-dos turns it off', () => {
       const root = renderJsDosRoot();
       root.classList.add('jsdos-fullscreen-workaround');

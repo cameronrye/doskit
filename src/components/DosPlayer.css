@@ -33,6 +33,12 @@
   left: 0;
   z-index: 999;
   background: #000;
+  /* index.html lets the page run under a phone's notch, rounded corners and home indicator
+     (viewport-fit=cover): keep js-dos's screen and sidebar clear of them, within the
+     element's 100% width and height */
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
 }
 
 /* Loading indicator. Like the error below, above js-dos's own sidebar (z-index 10) and
