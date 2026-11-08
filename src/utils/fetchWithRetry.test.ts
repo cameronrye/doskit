@@ -6,7 +6,7 @@
  * Fetch with Retry Tests
  */
 
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { fetchWithRetry } from './fetchWithRetry';
 
 // Keep backoff delays at 1ms so retries run on real timers without slowing the suite
@@ -53,6 +53,54 @@ describe('fetchWithRetry', () => {
 
     expect(response.status).toBe(404);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  // Offline, an archive the service worker has not stored fails at once, and every retry
+  // would fail the same way. Only offline is reliable: navigator.onLine is true whenever
+  // a network interface is up, whether or not the server can be reached.
+  describe('when the browser reports being offline', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    it('fails a network error at once instead of retrying it', async () => {
+      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+      const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const failed = vi.fn();
+      // The default retries wait about 1, 2 and 4 seconds
+      fetchWithRetry('/demos/x.zip').catch(failed);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(failed).toHaveBeenCalledWith(expect.objectContaining({ message: 'Failed to fetch' }));
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('stops retrying once the browser goes offline', async () => {
+      const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true);
+      const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const failed = vi.fn();
+      fetchWithRetry('/demos/x.zip', undefined, { initialDelay: 1000, maxDelay: 1000 }).catch(
+        failed
+      );
+      await vi.advanceTimersByTimeAsync(0);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(failed).not.toHaveBeenCalled();
+
+      onLine.mockReturnValue(false);
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(failed).toHaveBeenCalledWith(expect.objectContaining({ message: 'Failed to fetch' }));
+    });
   });
 
   it('does not retry an aborted request', async () => {

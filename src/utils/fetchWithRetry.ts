@@ -86,6 +86,17 @@ function calculateDelay(
 }
 
 /**
+ * Whether the browser reports having no connection. Only an offline report can be
+ * trusted: online only means that a network interface is up, not that the server can
+ * be reached.
+ * @returns true if navigator.onLine is false
+ * @private
+ */
+function isOffline(): boolean {
+  return typeof navigator !== 'undefined' && navigator.onLine === false;
+}
+
+/**
  * Determine if an error is retryable based on error type and status code
  * @param error - The error to check
  * @param retryableStatusCodes - Array of HTTP status codes that should trigger a retry
@@ -95,8 +106,10 @@ function calculateDelay(
 function isRetryableError(error: unknown, retryableStatusCodes: number[]): boolean {
   // fetch() rejects with a TypeError on network failure. The message varies by
   // browser ("Failed to fetch", "NetworkError ...", WebKit's "Load failed").
+  // Offline, such as for an archive the service worker has not stored, every retry
+  // would fail the same way.
   if (error instanceof TypeError) {
-    return true;
+    return !isOffline();
   }
 
   // Check if it's a Response with a retryable status code
@@ -109,6 +122,9 @@ function isRetryableError(error: unknown, retryableStatusCodes: number[]): boole
 
 /**
  * Fetch with automatic retry and exponential backoff
+ *
+ * Retries network errors and the retryable status codes. A network error while the
+ * browser reports being offline is thrown at once.
  *
  * @param input - URL or Request object
  * @param init - Fetch options
