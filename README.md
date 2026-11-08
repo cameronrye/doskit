@@ -231,6 +231,7 @@ doskit/
 │   ├── App.tsx                    # Main application component
 │   ├── App.css                    # Application styles
 │   ├── main.tsx                   # Application entry point
+│   ├── main.test.tsx              # Checks main.tsx's service worker callbacks
 │   ├── index.css                  # Global styles
 │   └── vite-env.d.ts              # Types of the build-time constants
 ├── .gitignore
