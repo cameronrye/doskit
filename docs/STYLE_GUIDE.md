@@ -651,9 +651,9 @@ describe('DosPlayer', () => {
 
 ### Automated Tools
 
-- **ESLint**: Run `npm run lint` to check code
+- **ESLint**: Run `npm run lint`, as CI does, to check the TypeScript, the config files, the scripts in `scripts/` and the service worker `public/sw.js`. The scripts are linted as ES modules, with Node's globals but not CommonJS's `require` or `__dirname`, and with Vitest's too in their tests; `public/sw.js` as a classic script with a service worker's globals. The rest of `public/`, the js-dos copy included, is not linted.
 - **Prettier**: Run `npm run format` to format files; CI runs `npm run format:check` and fails on any file Prettier would change
-- **Husky**: The pre-commit hook runs lint-staged on the staged files: `eslint --fix` and `vitest related --run` for TypeScript, `prettier --write` for TypeScript, CSS, Markdown and JSON
+- **Husky**: The pre-commit hook runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats what `npm run format:check` checks and skips the rest.
 
 ### Before Committing
 
