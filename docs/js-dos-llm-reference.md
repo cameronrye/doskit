@@ -6,7 +6,7 @@
 **GitHub Repository**: https://github.com/caiiiycuk/js-dos  
 **License**: GPL-2.0
 
-> **DosKit note:** This is a copy of a third-party reference, kept as it was written; the notes marked DosKit note are DosKit's. Checked against the code of js-dos 8.3.20, which DosKit runs, several parts are wrong: options and methods it does not have (`offscreenCanvas`, `setOffscreenCanvas`, `sockdrivePreload`, `startIpxServer`, `connectIpxAddress`), an `error` event it never sends, command interface methods that resolve to other values (`fsDeleteFile()`, `persist()`) and an event the listing leaves out (`onUnload`), on-screen keyboard layouts in a form it cannot render, the browser's key codes where it takes its own, and browser minimums that are too low. A note follows each of them. [`src/types/js-dos.d.ts`](../src/types/js-dos.d.ts) declares what DosKit uses.
+> **DosKit note:** This is a copy of a third-party reference, kept as it was written; the notes marked DosKit note are DosKit's. Checked against the code of js-dos 8.3.20, which DosKit runs, several parts are wrong: options and methods it does not have (`offscreenCanvas`, `setOffscreenCanvas`, `sockdrivePreload`, `startIpxServer`, `connectIpxAddress`), an option that does less than it says (`scaleControls`), an `error` event it never sends, command interface methods that resolve to other values (`fsDeleteFile()`, `persist()`) and an event the listing leaves out (`onUnload`), on-screen keyboard layouts in a form it cannot render, the browser's key codes where it takes its own, and browser minimums that are too low. A note follows each of them. [`src/types/js-dos.d.ts`](../src/types/js-dos.d.ts) declares what DosKit uses.
 
 ---
 
@@ -367,7 +367,7 @@ interface DosOptions {
 }
 ```
 
-> **DosKit note:** js-dos reads none of `offscreenCanvas`, `sockdrivePreload`, `startIpxServer` and `connectIpxAddress`: its player's code never names them. Its networking options are `ipx` (the IPX servers to offer, by name; by default it offers one of its own), `ipxBackend` (the one to select), `room`, and `noNetworking`, which is true by default and hides the network button. `softKeyboardLayout` takes rows of key names separated by spaces: see the note under Mobile Support.
+> **DosKit note:** js-dos reads none of `offscreenCanvas`, `sockdrivePreload`, `startIpxServer` and `connectIpxAddress`: its player's code never names them. Its networking options are `ipx` (the IPX servers to offer, by name; by default it offers one of its own), `ipxBackend` (the one to select), `room`, and `noNetworking`, which is true by default and hides the network button. `softKeyboardLayout` takes rows of key names separated by spaces: see the note under Mobile Support. `scaleControls` sizes only the touch controls js-dos builds from a bundle's `.jsdos/jsdos.json` (a `layersConfig` there), by 1 + its value; it does not change the on-screen keyboard.
 
 ### DosProps Interface
 
@@ -954,7 +954,7 @@ Dos(element, {
 });
 ```
 
-> **DosKit note:** js-dos cannot use either example. It reads a `softKeyboardLayout` whose first element is a list as layouts of columns of rows, so the list of lists above throws "TypeError: e.map is not a function" when the keyboard opens. A row is one string of key names separated by spaces, and a key is a letter, a digit, one of a few punctuation marks, or a name in braces such as `{esc}`, `{f1}`, `{space}`, `{enter}` or `{up}`; "Esc" or "F1" press nothing. In that form the layout is `['{esc} {f1} {f2} {f3}', '1 2 3 4', 'q w e r']`. Labels go by those names, so the arrows' symbols are `[{ '{up}': '↑', '{down}': '↓', '{left}': '←', '{right}': '→' }]`. A one-character name that js-dos does not map itself is looked up as the browser key code equal to its character code in upper case. That types the letters and digits, but `\` and `/` press nothing and `` ` `` presses keypad 0, even on js-dos's own full keyboard, while the names `Ü`, `¿` and `À` press `\`, `/` and `` ` ``: DosKit's layouts use those, labelled with the characters they type. `JS_DOS_KEYS` in [`src/config/jsdos.config.test.ts`](../src/config/jsdos.config.test.ts) lists every name and what it presses.
+> **DosKit note:** js-dos cannot use either example. It reads a `softKeyboardLayout` whose first element is a list as layouts of columns of rows, so the list of lists above throws "TypeError: e.map is not a function" when the keyboard opens. A row is one string of key names separated by spaces, and a key is a letter, a digit, one of a few punctuation marks, or a name in braces such as `{esc}`, `{f1}`, `{space}`, `{enter}` or `{up}`; "Esc" or "F1" press nothing. In that form the layout is `['{esc} {f1} {f2} {f3}', '1 2 3 4', 'q w e r']`. Labels go by those names, so the arrows' symbols are `[{ '{up}': '↑', '{down}': '↓', '{left}': '←', '{right}': '→' }]`. A one-character name that js-dos does not map itself is looked up as the browser key code equal to its character code in upper case. That types the letters and digits, but `\` and `/` press nothing and `` ` `` presses keypad 0, even on js-dos's own full keyboard, while the names `Ü`, `¿` and `À` press `\`, `/` and `` ` ``: DosKit's layouts use those, labelled with the characters they type. `JS_DOS_KEYS` in [`src/config/jsdos.config.test.ts`](../src/config/jsdos.config.test.ts) lists every name and what it presses. The example's `scaleControls` does not size the keyboard either: see the note under DosOptions Interface.
 
 ### Performance Optimization
 
@@ -1427,7 +1427,7 @@ Dos(element, {
 });
 ```
 
-> **DosKit note:** As under Mobile Support, js-dos cannot render this layout, and "↑", "←" or "Space" press nothing. In its form the layout is `['{up}', '{left} {space} {right}', '{down}']`, and `softKeyboardSymbols` can label the arrows.
+> **DosKit note:** As under Mobile Support, js-dos cannot render this layout, and "↑", "←" or "Space" press nothing. In its form the layout is `['{up}', '{left} {space} {right}', '{down}']`, and `softKeyboardSymbols` can label the arrows. `scaleControls` does not make these keys larger: see the note under DosOptions Interface.
 
 ### 5. Security
 
