@@ -46,14 +46,26 @@ describe('diskLoader', () => {
       ]);
     });
 
-    it('should reject with the status text when the server returns an error', async () => {
+    it('rejects with the status when the server returns an error', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       vi.mocked(globalThis.fetch).mockResolvedValue(
         new Response(null, { status: 404, statusText: 'Not Found' })
       );
 
-      await expect(loadZipArchive('http://example.com/missing.zip')).rejects.toThrow(
-        'Failed to load ZIP: Not Found'
+      await expect(loadZipArchive('http://example.com/missing.zip')).rejects.toHaveProperty(
+        'message',
+        'Failed to load ZIP: HTTP 404 Not Found'
+      );
+    });
+
+    // GitHub Pages serves HTTP/2, whose responses carry no status text
+    it('names the status code of an error response without status text', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(globalThis.fetch).mockResolvedValue(new Response(null, { status: 404 }));
+
+      await expect(loadZipArchive('http://example.com/missing.zip')).rejects.toHaveProperty(
+        'message',
+        'Failed to load ZIP: HTTP 404'
       );
     });
 

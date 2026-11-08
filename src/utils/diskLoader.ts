@@ -53,7 +53,9 @@ export async function loadZipArchive(
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to load ZIP: ${response.statusText}`);
+      // Name the code: HTTP/2, which GitHub Pages serves, sends no status text
+      const status = `HTTP ${response.status} ${response.statusText}`.trim();
+      throw new Error(`Failed to load ZIP: ${status}`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
