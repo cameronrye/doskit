@@ -189,6 +189,9 @@ export const useDosEmulator = ({
         console.log('[useDosEmulator] Cleaning up...');
       }
       if (dosPlayerRef.current) {
+        // js-dos's emulator worker logs an "ExitStatus" error (exit code 0) as it
+        // shuts down. That is its normal exit, logged to the worker's own console,
+        // which the page's console filter cannot reach.
         dosPlayerRef.current.stop().catch((err: unknown) => {
           console.error('[useDosEmulator] Error stopping player:', err);
         });
