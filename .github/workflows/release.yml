@@ -54,15 +54,16 @@ jobs:
       - name: Build project
         run: npm run build
 
+      # The tag reaches the scripts through env, so it is never pasted into shell code
       - name: Create release archive
+        env:
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
         run: |
           cd dist
-          zip -r ../doskit-${{ needs.release-please.outputs.tag_name }}.zip .
-          cd ..
+          zip -r "../doskit-${TAG_NAME}.zip" .
 
       - name: Upload release artifact
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload ${{ needs.release-please.outputs.tag_name }} \
-            doskit-${{ needs.release-please.outputs.tag_name }}.zip
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: gh release upload "$TAG_NAME" "doskit-${TAG_NAME}.zip"
