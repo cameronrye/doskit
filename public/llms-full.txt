@@ -153,7 +153,7 @@ In development, StrictMode mounts every component twice at once, so each DosPlay
 - **Global handler** (src/utils/globalErrorHandler.ts): logs uncaught errors and unhandled promise rejections, and keeps known harmless ones out of the console: js-dos's fullscreen and keyboard lock calls that fail without a user gesture, keyboard lock requests that a newer one superseded (two players starting milliseconds apart), ResizeObserver loop notices and browser extension errors
 - **Error tracking** (src/utils/errorTracking.ts): a console tracker; no remote service is set up
 - **Downloads**: application archives retry network failures and 408, 429, 500, 502, 503 and 504 responses up to three times with exponential backoff, but a network failure while the browser reports being offline fails at once; a download the user cancels, or a newer navigation supersedes, is not reported as an error
-- **Messages**: the selector and the error box of an application the URL asks for (a deep link, or Back and Forward) explain a failed load with the same messages (cannot connect, not available offline yet, file not found, server unavailable, took too long), with the technical message under a collapsed Details line; an unknown `?app=` id shows a banner; the error box's Try Again, which has the keyboard focus, downloads the application again, and its Choose Another Application opens the selector over the DOS prompt; and the player offers a reload when js-dos cannot start
+- **Messages**: the selector and the error box of an application the URL asks for (a deep link, or Back and Forward) explain a failed load with the same messages (cannot connect, not available offline yet, file not found, server unavailable, took too long), with the technical message under a collapsed Details line; an unknown `?app=` id shows a banner; the error box's Try Again, which has the keyboard focus, downloads the application again, and its Choose Another Application opens the selector over the DOS prompt; and the player shows why, with a Reload Page button, when js-dos cannot start, such as when js-dos.js did not load, or emulators.js, which js-dos loads when the first player starts, failed to download or did not set up the emulator. The next player to start, such as one for an application picked in the selector, downloads emulators.js again
 
 ## Project Structure
 
@@ -615,6 +615,12 @@ Touch Controls are partial on mobile because js-dos draws the on-screen keyboard
 - Try refreshing the page
 - Clear browser cache
 - In a local checkout, `npm run dev` and `npm run build` copy js-dos into public/ first; if that step reports that js-dos is not installed, run `npm ci`
+
+#### "The DOS emulator could not be loaded"
+- /emulators/emulators.js, which js-dos loads when the first player starts, failed to download, or ran without setting the emulator up
+- Check internet connection, then click Reload Page in the player (after the first visit, the service worker serves the file offline)
+- Or pick an application in the selector: the next player to start downloads emulators.js again
+- Check the browser console and network panel for /emulators/emulators.js
 
 #### Black Screen / Emulator Not Starting
 - Check browser console for errors

@@ -611,6 +611,16 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 4. Try refreshing the page
 5. Clear browser cache
 
+#### "The DOS emulator could not be loaded"
+
+**Problem**: js-dos's emulator, `/emulators/emulators.js`, which js-dos loads when the first player starts, failed to download ("failed to download. Check your connection, then reload the page.") or ran without setting the emulator up ("ran but did not set up the emulator. Reload the page.").
+
+**Solutions:**
+
+1. Check your connection, then click **Reload Page** in the player (after the first visit, the service worker serves the file offline)
+2. Or pick an app in the selector: the next player to start downloads `/emulators/emulators.js` again
+3. Check the browser console and Network tab for `/emulators/emulators.js`; in development, check that `public/emulators/` exists (`node scripts/copy-js-dos.js` copies it)
+
 #### Black Screen / Emulator Not Starting
 
 **Problem**: Emulator loads but shows black screen.
