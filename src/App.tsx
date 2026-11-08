@@ -5,10 +5,11 @@
  */
 
 import { useState, useEffect } from 'react';
-import { DosPlayerWithApps, type DosApp } from './components/DosPlayerWithApps';
+import { DosPlayerWithApps } from './components/DosPlayerWithApps';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { findAppById } from './components/DemoSelector';
+import { findAppById } from './config/apps.config';
+import type { DosApp } from './types/dos-app';
 import { getAppRequestFromUrl, updateUrlWithApp, updateDocumentTitle } from './utils/urlRouting';
 import './App.css';
 

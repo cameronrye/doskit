@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { version as installedJsDosVersion } from 'js-dos/package.json';
 import App from './App';
-import type { DosApp } from './components/DosPlayerWithApps';
+import type { DosApp } from './types/dos-app';
 
 // Type definitions for test mocks
 interface DosPlayerWithAppsProps {
