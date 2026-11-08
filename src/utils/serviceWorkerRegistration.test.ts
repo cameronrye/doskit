@@ -30,14 +30,34 @@ const createMockRegistration = (
   return registration as ServiceWorkerRegistration;
 };
 
+// What register() reads from /sw.js on localhost before it registers the worker
+const swScriptResponse = { status: 200, headers: { get: () => 'application/javascript' } };
+
+// Put a property back as it was before a test redefined it
+const restoreProperty = (target: object, key: string, descriptor?: PropertyDescriptor) => {
+  if (descriptor) {
+    Object.defineProperty(target, key, descriptor);
+  } else {
+    Reflect.deleteProperty(target, key);
+  }
+};
+
 describe('serviceWorkerRegistration', () => {
-  let originalNavigator: typeof navigator;
-  let originalWindow: typeof window;
+  const originalServiceWorker = Object.getOwnPropertyDescriptor(navigator, 'serviceWorker');
+  const originalLocation = Object.getOwnPropertyDescriptor(window, 'location');
+  const originalVisibilityState = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+  // register() adds a load listener on every call. They are removed after each test, so a
+  // later test's load event cannot run an earlier test's registration.
+  let loadListeners: EventListenerOrEventListenerObject[] = [];
 
   beforeEach(() => {
-    // Save originals
-    originalNavigator = globalThis.navigator;
-    originalWindow = globalThis.window;
+    const addEventListener = window.addEventListener.bind(window);
+    vi.spyOn(window, 'addEventListener').mockImplementation((type, listener, options) => {
+      if (type === 'load' && listener) {
+        loadListeners.push(listener);
+      }
+      addEventListener(type, listener, options);
+    });
 
     // Mock navigator.serviceWorker
     Object.defineProperty(globalThis.navigator, 'serviceWorker', {
@@ -74,9 +94,12 @@ describe('serviceWorkerRegistration', () => {
   });
 
   afterEach(() => {
-    // Restore originals
-    globalThis.navigator = originalNavigator;
-    globalThis.window = originalWindow;
+    loadListeners.forEach((listener) => window.removeEventListener('load', listener));
+    loadListeners = [];
+    vi.restoreAllMocks();
+    restoreProperty(navigator, 'serviceWorker', originalServiceWorker);
+    restoreProperty(window, 'location', originalLocation);
+    restoreProperty(document, 'visibilityState', originalVisibilityState);
   });
 
   describe('register', () => {
@@ -84,10 +107,13 @@ describe('serviceWorkerRegistration', () => {
       // Mock import.meta.env
       vi.stubEnv('PROD', true);
       vi.stubEnv('BASE_URL', '/');
+      // jsdom serves the page from localhost, where register() first checks that sw.js exists
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(swScriptResponse));
     });
 
     afterEach(() => {
       vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
     });
 
     it('should not register in development mode', () => {
@@ -101,14 +127,10 @@ describe('serviceWorkerRegistration', () => {
     });
 
     it('should not register when service worker is not supported', () => {
-      Object.defineProperty(globalThis.navigator, 'serviceWorker', {
-        writable: true,
-        configurable: true,
-        value: undefined,
-      });
+      Reflect.deleteProperty(navigator, 'serviceWorker');
 
-      // Should not throw
       expect(() => register()).not.toThrow();
+      expect(loadListeners).toHaveLength(0);
     });
 
     it('should not register when PUBLIC_URL is on different origin', () => {
@@ -136,14 +158,6 @@ describe('serviceWorkerRegistration', () => {
         .spyOn(navigator.serviceWorker, 'register')
         .mockResolvedValue(mockRegistration);
 
-      // Mock fetch for localhost check
-      globalThis.fetch = vi.fn().mockResolvedValue({
-        status: 200,
-        headers: {
-          get: () => 'application/javascript',
-        },
-      });
-
       register();
 
       // Trigger load event
@@ -166,14 +180,6 @@ describe('serviceWorkerRegistration', () => {
       };
       const mockRegistration = createMockRegistration({
         installing: createMockWorker(installingWorker),
-      });
-
-      // Mock fetch for localhost check
-      globalThis.fetch = vi.fn().mockResolvedValue({
-        status: 200,
-        headers: {
-          get: () => 'application/javascript',
-        },
       });
 
       vi.spyOn(navigator.serviceWorker, 'register').mockImplementation(async () => {
@@ -227,14 +233,6 @@ describe('serviceWorkerRegistration', () => {
       };
       const mockRegistration = createMockRegistration({
         installing: createMockWorker(installingWorker),
-      });
-
-      // Mock fetch for localhost check
-      globalThis.fetch = vi.fn().mockResolvedValue({
-        status: 200,
-        headers: {
-          get: () => 'application/javascript',
-        },
       });
 
       vi.spyOn(navigator.serviceWorker, 'register').mockImplementation(async () => {
@@ -301,14 +299,10 @@ describe('serviceWorkerRegistration', () => {
     describe('periodic update checks', () => {
       beforeEach(() => {
         vi.useFakeTimers();
-        // jsdom serves the page from localhost, where register() first checks that sw.js exists
-        const swScriptResponse = { status: 200, headers: { get: () => 'application/javascript' } };
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(swScriptResponse));
       });
 
       afterEach(() => {
         vi.useRealTimers();
-        vi.unstubAllGlobals();
       });
 
       it('should check for an update each time the configured interval passes', async () => {
