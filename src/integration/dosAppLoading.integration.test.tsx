@@ -10,6 +10,7 @@ import { DosPlayer } from '../components/DosPlayer';
 import type {
   CommandInterface,
   CommandInterfaceEvents,
+  DosFn,
   DosOptions,
   DosProps,
 } from '../types/js-dos';
@@ -73,7 +74,7 @@ function createMockDosInstance() {
 }
 
 describe('DOS Application Loading Integration Tests', () => {
-  let mockDos: Mock<Window['Dos']>;
+  let mockDos: Mock<DosFn>;
   let mockCommandInterface: CommandInterface;
   let triggerExit: () => void;
   let mockDosInstance: ReturnType<typeof createMockDosInstance>;
@@ -92,7 +93,7 @@ describe('DOS Application Loading Integration Tests', () => {
     mockDosInstance = createMockDosInstance();
 
     // Mock window.Dos
-    mockDos = vi.fn<Window['Dos']>((_container, options) => {
+    mockDos = vi.fn<DosFn>((_container, options) => {
       // Each player gets the events of its own onEvent callback
       const onEvent = options?.onEvent as ((event: string, ci?: unknown) => void) | undefined;
       onEventCallback = onEvent ?? null;
@@ -118,7 +119,7 @@ describe('DOS Application Loading Integration Tests', () => {
   afterEach(() => {
     pendingTimers.forEach(clearTimeout);
     pendingTimers = [];
-    delete (window as Partial<Window>).Dos;
+    delete window.Dos;
     vi.restoreAllMocks();
   });
 
@@ -193,7 +194,7 @@ describe('DOS Application Loading Integration Tests', () => {
 
   it('should handle emulator initialization errors', async () => {
     // Mock Dos to throw error
-    const errorDos = vi.fn<Window['Dos']>(() => {
+    const errorDos = vi.fn<DosFn>(() => {
       throw new Error('Emulator initialization failed');
     });
     window.Dos = errorDos;
@@ -310,7 +311,7 @@ describe('DOS Application Loading Integration Tests', () => {
 
   it('should handle missing window.Dos gracefully', async () => {
     // Remove window.Dos
-    delete (window as Partial<Window>).Dos;
+    delete window.Dos;
 
     const { container } = render(<DosPlayer />);
 
@@ -357,7 +358,7 @@ describe('DOS Application Loading Integration Tests', () => {
 
 // The whole app, with only js-dos and the network faked
 describe('Status badge as players come and go', () => {
-  let mockDos: Mock<Window['Dos']>;
+  let mockDos: Mock<DosFn>;
 
   /** The Ready/Loading badge in the footer */
   const badge = () => document.querySelector('.status-indicators .status-badge');
@@ -380,13 +381,13 @@ describe('Status badge as players come and go', () => {
       vi.fn((query: string) => ({ matches: false, media: query }) as MediaQueryList)
     );
     // Like js-dos, a new player for each call, returned synchronously
-    mockDos = vi.fn<Window['Dos']>(() => createMockDosInstance());
+    mockDos = vi.fn<DosFn>(() => createMockDosInstance());
     window.Dos = mockDos;
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
-    delete (window as Partial<Window>).Dos;
+    delete window.Dos;
     document.getElementById('emulators-js')?.remove();
     delete window.emulators;
     window.history.replaceState({}, '', '/');

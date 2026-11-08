@@ -266,12 +266,17 @@ export interface AsyncifyStats {
   driveIo: { url: string; preload: number; total: number; read: number; write: number }[];
 }
 
-export function Dos(element: HTMLDivElement, options?: Partial<DosOptions>): DosProps;
+/** js-dos's Dos(): renders a player into the element, starts it and returns it at once */
+export type DosFn = (element: HTMLDivElement, options?: Partial<DosOptions>) => DosProps;
 
 // Global Window interface declaration for js-dos
 declare global {
   interface Window {
-    Dos: typeof Dos;
+    /**
+     * js-dos's Dos(), which js-dos.js defines. The page runs without it when that script
+     * fails to download or is blocked.
+     */
+    Dos?: DosFn;
     /**
      * js-dos's emulators package, which emulators.js defines when it runs. DosKit only
      * checks that it is there.

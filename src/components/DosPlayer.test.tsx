@@ -6,7 +6,13 @@ import { StrictMode } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { DosPlayer } from './DosPlayer';
-import type { CommandInterface, CommandInterfaceEvents, DosEvent, DosProps } from '../types/js-dos';
+import type {
+  CommandInterface,
+  CommandInterfaceEvents,
+  DosEvent,
+  DosFn,
+  DosProps,
+} from '../types/js-dos';
 
 /** A js-dos player as window.Dos() returns it, every method a mock */
 function createMockPlayer() {
@@ -64,7 +70,7 @@ function createMockCommandInterface() {
 
 describe('DosPlayer', () => {
   let player: ReturnType<typeof createMockPlayer>;
-  let mockDos: Mock<Window['Dos']>;
+  let mockDos: Mock<DosFn>;
 
   /** Fire a js-dos event at the player that the last window.Dos() call started */
   const emit = (event: DosEvent, arg?: unknown) =>
@@ -73,7 +79,7 @@ describe('DosPlayer', () => {
   beforeEach(() => {
     player = createMockPlayer();
     // Like js-dos, return the player synchronously
-    mockDos = vi.fn<Window['Dos']>(() => player);
+    mockDos = vi.fn<DosFn>(() => player);
     window.Dos = mockDos;
   });
 
@@ -117,7 +123,7 @@ describe('DosPlayer', () => {
 
   describe('Error handling', () => {
     it('should show error when Dos is not available', () => {
-      delete (window as Partial<Window>).Dos;
+      delete window.Dos;
       render(<DosPlayer />);
 
       expect(screen.getByText(/Error/i)).toBeInTheDocument();
@@ -125,7 +131,7 @@ describe('DosPlayer', () => {
     });
 
     it('should show reload button on error', () => {
-      delete (window as Partial<Window>).Dos;
+      delete window.Dos;
       render(<DosPlayer />);
 
       expect(screen.getByRole('button', { name: /Reload Page/i })).toBeInTheDocument();

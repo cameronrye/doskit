@@ -9,6 +9,7 @@ import type {
   CommandInterface,
   CommandInterfaceEvents,
   DosConfig,
+  DosFn,
   DosOptions,
   DosProps,
   FsNode,
@@ -149,6 +150,12 @@ describe('js-dos types', () => {
 
   it('should declare only members of the player js-dos returns', () => {
     expectTypeOf<keyof DosProps>().toExtend<MemberJsDosReturns>();
+  });
+
+  // The page runs without it when js-dos.js fails to download or is blocked
+  it('should declare window.Dos as missing until js-dos.js has run', () => {
+    expectTypeOf<undefined>().toExtend<Window['Dos']>();
+    expectTypeOf<NonNullable<Window['Dos']>>().toEqualTypeOf<DosFn>();
   });
 
   describe('softKeyboardLayout', () => {

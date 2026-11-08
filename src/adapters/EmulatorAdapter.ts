@@ -8,7 +8,7 @@
  * This decouples the application from specific emulator libraries (js-dos, etc.)
  */
 
-import type { DosOptions, DosProps } from '../types/js-dos';
+import type { DosFn, DosOptions, DosProps } from '../types/js-dos';
 
 /**
  * Interface for emulator adapters
@@ -83,16 +83,22 @@ function emulatorsLoad(): Promise<void> | undefined {
   return load;
 }
 
+/** js-dos's Dos(), or undefined while js-dos.js has not run */
+function jsDos(): DosFn | undefined {
+  return typeof window !== 'undefined' && typeof window.Dos === 'function' ? window.Dos : undefined;
+}
+
 /**
  * js-dos Emulator Adapter
  * Adapter for the js-dos v8 emulator library
  */
 export class JsDosAdapter implements EmulatorAdapter {
   /**
-   * Check if js-dos is available on window
+   * Check whether js-dos.js has run: the page runs without window.Dos when that script fails
+   * to download or is blocked
    */
   isAvailable(): boolean {
-    return typeof window !== 'undefined' && typeof window.Dos === 'function';
+    return jsDos() !== undefined;
   }
 
   /**
@@ -102,7 +108,8 @@ export class JsDosAdapter implements EmulatorAdapter {
    * one that has called Dos() stops its player.
    */
   async initialize(container: HTMLDivElement, options: Partial<DosOptions>): Promise<DosProps> {
-    if (!this.isAvailable()) {
+    const Dos = jsDos();
+    if (!Dos) {
       throw new Error('js-dos library is not loaded. Please ensure the script is included.');
     }
 
@@ -112,7 +119,7 @@ export class JsDosAdapter implements EmulatorAdapter {
     let dosProps: DosProps;
     try {
       // js-dos returns the player synchronously
-      dosProps = window.Dos(container, options);
+      dosProps = Dos(container, options);
     } catch (error) {
       throw new Error(
         `Failed to initialize js-dos: ${error instanceof Error ? error.message : 'Unknown error'}`

@@ -8,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { JsDosAdapter, getEmulatorAdapter } from './EmulatorAdapter';
-import type { DosProps } from '../types/js-dos';
+import type { DosFn, DosProps } from '../types/js-dos';
 
 /** The emulators.js script tag js-dos adds, which a test must find */
 function emulatorsScript(): HTMLScriptElement {
@@ -24,7 +24,7 @@ describe('EmulatorAdapter', () => {
   describe('JsDosAdapter', () => {
     let adapter: JsDosAdapter;
     let mockDosProps: DosProps;
-    let mockDos: Mock<Window['Dos']>;
+    let mockDos: Mock<DosFn>;
 
     beforeEach(() => {
       adapter = new JsDosAdapter();
@@ -62,7 +62,7 @@ describe('EmulatorAdapter', () => {
         save: vi.fn().mockResolvedValue(true),
       };
 
-      mockDos = vi.fn<Window['Dos']>().mockReturnValue(mockDosProps);
+      mockDos = vi.fn<DosFn>().mockReturnValue(mockDosProps);
       window.Dos = mockDos;
     });
 
@@ -72,7 +72,7 @@ describe('EmulatorAdapter', () => {
       });
 
       it('should return false when window.Dos is not available', () => {
-        delete (window as Partial<Window>).Dos;
+        delete window.Dos;
         expect(adapter.isAvailable()).toBe(false);
       });
 
@@ -98,7 +98,7 @@ describe('EmulatorAdapter', () => {
       });
 
       it('should throw error when js-dos is not available', async () => {
-        delete (window as Partial<Window>).Dos;
+        delete window.Dos;
         const container = document.createElement('div');
 
         await expect(adapter.initialize(container, {})).rejects.toThrow(
