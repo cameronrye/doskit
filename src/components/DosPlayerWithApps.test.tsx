@@ -303,8 +303,8 @@ describe('DosPlayerWithApps', () => {
       const onReady = vi.fn();
       render(<DosPlayerWithApps onReady={onReady} />);
 
-      const readyButton = screen.getByText('Trigger Ready');
-      readyButton.click();
+      // fireEvent clicks inside act(), as the status a ready player sets is React state
+      fireEvent.click(screen.getByText('Trigger Ready'));
 
       expect(onReady).toHaveBeenCalled();
     });
@@ -313,8 +313,7 @@ describe('DosPlayerWithApps', () => {
       const onExit = vi.fn();
       render(<DosPlayerWithApps onExit={onExit} />);
 
-      const exitButton = screen.getByText('Trigger Exit');
-      exitButton.click();
+      fireEvent.click(screen.getByText('Trigger Exit'));
 
       expect(onExit).toHaveBeenCalled();
     });
