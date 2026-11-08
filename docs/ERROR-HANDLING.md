@@ -176,6 +176,37 @@ try {
 
 ---
 
+### 5. Component-Level Error States
+
+**Files:** `src/components/DemoSelector.tsx`, `src/components/DosPlayerWithApps.tsx`, `src/hooks/useDosEmulator.ts`, `src/utils/diskLoader.ts`
+
+**Purpose:** Shows load and start failures where they happen
+
+Each part that loads or starts something handles its own failures: it logs them with `console.error` and shows them in place, without passing them to the error tracker. A load the user cancelled, or that a newer navigation superseded, is aborted on purpose, and shows and logs nothing.
+
+**DemoSelector** (apps picked in the selector):
+
+- A failed load shows an alert under the selected app: "Network error. Please check your internet connection and try again." when the message mentions `network` or `fetch`, "Loading timed out. The server may be slow. Please try again." when it mentions `timeout`, and otherwise the error's own message
+- A load still running after 30 seconds is aborted with "Loading timed out. Please check your internet connection and try again."
+- Cancel Loading, Escape, closing the selector or loading another app aborts the load quietly
+
+**DosPlayerWithApps** (apps the URL asks for: deep links, back/forward):
+
+- A failed load shows the "Error Loading Application" overlay with the error's message. Its Try Again boots the default DOS prompt and opens the selector.
+- A newer request, a pick in the selector or unmounting aborts the load and drops its result or error
+
+**useDosEmulator and DosPlayerUI** (starting js-dos):
+
+- Without `window.Dos`: "DOS emulator library not loaded. Please refresh the page."
+- If `window.Dos()` throws: its message, which the adapter prefixes with "Failed to initialize js-dos:"
+- Either shows an Error panel with a Reload Page button. A start that fails after the player unmounted is ignored, and failing to unmute audio or to stop a player is only logged.
+
+**diskLoader and fetchWithRetry** (archive downloads):
+
+- `fetchWithRetry` retries network failures (a `TypeError`, whatever the browser's wording) and HTTP 408, 429, 500, 502, 503 and 504 up to 3 times, waiting about 1, 2 and 4 seconds. A status that persists comes back as the response; the last network failure, or any other error, is thrown.
+- `loadZipArchive` turns an error response into `Failed to load ZIP: <status text>`, logs a failure unless the caller aborted, and rethrows
+- An abort rejects with `Operation aborted` before a request or during a wait, or with the browser's `AbortError` during a request
+
 ## Error Flow
 
 ### 1. Uncaught Error Flow
@@ -216,19 +247,25 @@ Render fallback UI
 
 ### 3. Component Error Flow
 
-```
-Error in async operation
+```text
+Error in async operation (load or start)
   ↓
-Catch in try/catch
+Catch in try/catch or a rejection handler
   ↓
-Set local error state
+Aborted on purpose? → Drop it
   ↓
-Map to user-friendly message
+Log to console
+  ↓
+Set local error state (DemoSelector maps network and timeout errors)
   ↓
 Display error UI
-  ↓
-Optionally track with error service
 ```
+
+## Known Console Errors
+
+**`ExitStatus`** - Every time a player stops, as on each app switch or a return to the start page, the console shows an `ExitStatus` error (`Program terminated with exit(0)`). That is js-dos stopping the emulator normally: `stop()` asks DOSBox to exit, Emscripten's `exit(0)` throws `ExitStatus`, and the asyncify loop in js-dos's emulator Web Worker passes it to `console.error` before js-dos treats exit code 0 as a clean shutdown and terminates the worker.
+
+DosKit cannot filter it: the worker logs to a console of its own, which nothing in the page can reach, and js-dos offers no way to stop a player without `exit(0)`. `stopPlayer()` in `src/hooks/useDosEmulator.ts` notes this where the player is stopped.
 
 ## Best Practices
 
