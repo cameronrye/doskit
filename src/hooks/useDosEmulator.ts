@@ -24,6 +24,8 @@ export interface UseDosEmulatorOptions {
    * once per onReady.
    */
   onExit?: () => void;
+  /** Callback when the emulator cannot start, with the error that `error` then holds */
+  onError?: (error: string) => void;
 }
 
 export interface UseDosEmulatorReturn {
@@ -56,6 +58,7 @@ export const useDosEmulator = ({
   options = {},
   onReady,
   onExit,
+  onError,
 }: UseDosEmulatorOptions): UseDosEmulatorReturn => {
   const dosContainerRef = useRef<HTMLDivElement>(null);
   const ciRef = useRef<CommandInterface | null>(null);
@@ -66,11 +69,13 @@ export const useDosEmulator = ({
   // Store callbacks in refs to avoid recreating the event handler
   const onReadyRef = useRef(onReady);
   const onExitRef = useRef(onExit);
+  const onErrorRef = useRef(onError);
 
   useEffect(() => {
     onReadyRef.current = onReady;
     onExitRef.current = onExit;
-  }, [onReady, onExit]);
+    onErrorRef.current = onError;
+  }, [onReady, onExit, onError]);
 
   // Event handler for js-dos events (stable reference)
   const handleDosEvent = useCallback((event: DosEvent, arg?: unknown) => {
@@ -149,10 +154,16 @@ export const useDosEmulator = ({
 
     const adapter = getEmulatorAdapter();
 
+    // Show why the emulator cannot start, and tell the parent
+    const fail = (message: string) => {
+      setError(message);
+      setIsLoading(false);
+      onErrorRef.current?.(message);
+    };
+
     if (!adapter.isAvailable()) {
       console.error('[useDosEmulator] Emulator not available');
-      setError('DOS emulator library not loaded. Please refresh the page.');
-      setIsLoading(false);
+      fail('DOS emulator library not loaded. Please refresh the page.');
       return;
     }
 
@@ -198,8 +209,7 @@ export const useDosEmulator = ({
       } catch (err) {
         if (!mounted) return;
         console.error('[useDosEmulator] Failed to initialize emulator:', err);
-        setError(err instanceof Error ? err.message : 'Failed to initialize DOS emulator');
-        setIsLoading(false);
+        fail(err instanceof Error ? err.message : 'Failed to initialize DOS emulator');
       }
     };
 

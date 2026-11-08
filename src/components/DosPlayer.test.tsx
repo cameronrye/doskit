@@ -177,6 +177,79 @@ describe('DosPlayer', () => {
       expect(screen.queryByText(/Loading DOS emulator/i)).not.toBeInTheDocument();
       expect(player.stop).toHaveBeenCalledTimes(1);
     });
+
+    // So that the page can say so too, as the player does
+    describe('reports why the emulator could not start', () => {
+      beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+      });
+
+      it('when js-dos.js did not load', () => {
+        delete window.Dos;
+        const onError = vi.fn();
+
+        render(<DosPlayer onError={onError} />);
+
+        expect(onError).toHaveBeenCalledExactlyOnceWith(
+          'DOS emulator library not loaded. Please refresh the page.'
+        );
+      });
+
+      it('when js-dos fails to start', async () => {
+        mockDos.mockImplementation(() => {
+          throw new Error('Initialization failed');
+        });
+        const onError = vi.fn();
+
+        render(<DosPlayer onError={onError} />);
+
+        await waitFor(() =>
+          expect(onError).toHaveBeenCalledExactlyOnceWith(
+            'Failed to initialize js-dos: Initialization failed'
+          )
+        );
+      });
+
+      it('when emulators.js fails to load', async () => {
+        mockDos.mockImplementation(() => {
+          const script = document.createElement('script');
+          script.id = 'emulators-js';
+          script.src = '/emulators/emulators.js';
+          document.head.append(script);
+          return player;
+        });
+        const onError = vi.fn();
+        render(<DosPlayer onError={onError} />);
+
+        act(() => {
+          document.getElementById('emulators-js')?.dispatchEvent(new Event('error'));
+        });
+
+        await waitFor(() =>
+          expect(onError).toHaveBeenCalledExactlyOnceWith(
+            expect.stringContaining('The DOS emulator could not be loaded')
+          )
+        );
+      });
+
+      it('only while the player is mounted', async () => {
+        mockDos.mockImplementation(() => {
+          const script = document.createElement('script');
+          script.id = 'emulators-js';
+          document.head.append(script);
+          return player;
+        });
+        const onError = vi.fn();
+        const { unmount } = render(<DosPlayer onError={onError} />);
+        unmount();
+
+        await act(async () => {
+          document.getElementById('emulators-js')?.dispatchEvent(new Event('error'));
+        });
+
+        expect(onError).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe('Initialization', () => {

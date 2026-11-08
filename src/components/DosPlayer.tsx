@@ -28,6 +28,8 @@ export interface DosPlayerProps {
    * once per onReady.
    */
   onExit?: () => void;
+  /** Callback when the emulator cannot start, with the error the player shows */
+  onError?: (error: string) => void;
   /** Custom CSS class name */
   className?: string;
   /** Custom inline styles */
@@ -43,6 +45,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
   options = {},
   onReady,
   onExit,
+  onError,
   className = '',
   style = {},
 }) => {
@@ -51,6 +54,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
     options,
     onReady,
     onExit,
+    onError,
   });
 
   return (
