@@ -30,7 +30,11 @@ const BUILT_INDEX_HTML = `
 function evaluate(source) {
   const listeners = [];
   vm.runInNewContext(source, {
-    self: { addEventListener: (type) => listeners.push(type) },
+    self: {
+      location: new URL('https://doskit.net/sw.js'),
+      addEventListener: (type) => listeners.push(type),
+    },
+    URL,
     console: { log() {} },
   });
   return listeners;

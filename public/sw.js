@@ -37,6 +37,12 @@ const EMULATOR_ASSETS = [
   '/emulators/emulators.js',
 ];
 
+// What install caches: trimming leaves these alone, since /index.html is the offline
+// fallback for every navigation and the app cannot start without the rest
+const PRECACHED_URLS = new Set(
+  [...STATIC_ASSETS, ...EMULATOR_ASSETS].map((path) => new URL(path, self.location.origin).href)
+);
+
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing service worker...', CACHE_NAME);
@@ -221,12 +227,14 @@ async function trimCache(cacheName) {
       // Get metadata with timestamps
       const metadata = await getCacheMetadata();
 
-      // Create array of entries with timestamps
-      const entries = keys.map((request) => ({
-        request,
-        url: request.url,
-        timestamp: metadata[request.url] || 0,
-      }));
+      // Runtime entries with their timestamps; what install precached is never trimmed
+      const entries = keys
+        .filter((request) => !PRECACHED_URLS.has(request.url))
+        .map((request) => ({
+          request,
+          url: request.url,
+          timestamp: metadata[request.url] || 0,
+        }));
 
       // Sort by timestamp (oldest first)
       entries.sort((a, b) => a.timestamp - b.timestamp);
