@@ -248,6 +248,22 @@ describe('UpdateNotification', () => {
       );
     });
 
+    it('reloads 7 seconds after Update Now when the new worker never takes control', () => {
+      // It waits 1, 2 and 4 seconds for controllerchange
+      vi.useFakeTimers();
+      try {
+        render(<UpdateNotification registration={mockRegistration} />);
+        fireEvent.click(screen.getByRole('button', { name: /Update Now/i }));
+
+        vi.advanceTimersByTime(6999);
+        expect(window.location.reload).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+        expect(window.location.reload).toHaveBeenCalledOnce();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('should set up fallback timeout when Update Now is clicked', () => {
       vi.useFakeTimers();
 

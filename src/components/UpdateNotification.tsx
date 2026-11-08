@@ -43,8 +43,8 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
       // (especially critical on iOS Safari where service worker activation can be very fast)
       navigator.serviceWorker.addEventListener('controllerchange', performReload, { once: true });
 
-      // Exponential backoff retry mechanism for fallback reload
-      // Starts at 1s, then 2s, then 4s, with max timeout of 8s total
+      // Fallback reload, should controllerchange never fire: UPDATE_MAX_RETRIES waits that
+      // start at UPDATE_BASE_DELAY and double, 1s, 2s and 4s, so it comes 7s after the click
       const maxRetries = PWA_CONFIG.UPDATE_MAX_RETRIES;
       const baseDelay = PWA_CONFIG.UPDATE_BASE_DELAY;
       let retryCount = 0;
