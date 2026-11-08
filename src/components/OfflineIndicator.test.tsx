@@ -384,4 +384,73 @@ describe('OfflineIndicator', () => {
       expect(localStorage.getItem('pwa-install-last-dismissed')).toBeNull();
     });
   });
+
+  describe('when the browser refuses storage', () => {
+    const originalStorage = Object.getOwnPropertyDescriptor(window, 'localStorage')!;
+    const uncaughtError = vi.fn();
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      window.addEventListener('error', uncaughtError);
+    });
+
+    afterEach(() => {
+      window.removeEventListener('error', uncaughtError);
+      Object.defineProperty(window, 'localStorage', originalStorage);
+      vi.useRealTimers();
+    });
+
+    /** Site data is blocked: even reading window.localStorage throws */
+    const blockStorage = () =>
+      Object.defineProperty(window, 'localStorage', {
+        configurable: true,
+        get() {
+          throw new DOMException('Access is denied for this document.', 'SecurityError');
+        },
+      });
+
+    /** Storage is full: reads work, writes throw */
+    const fillStorage = () => {
+      const storage = localStorage;
+      Object.defineProperty(window, 'localStorage', {
+        configurable: true,
+        value: {
+          getItem: (key: string) => storage.getItem(key),
+          setItem() {
+            throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+          },
+          removeItem: (key: string) => storage.removeItem(key),
+        },
+      });
+    };
+
+    it('still offers to install the app when site data is blocked', () => {
+      blockStorage();
+      render(<OfflineIndicator />);
+
+      offerInstall();
+
+      expect(screen.getByText('Install DosKit')).toBeInTheDocument();
+    });
+
+    it('hides the prompt on "Not now" when the dismissal cannot be saved', () => {
+      fillStorage();
+      render(<OfflineIndicator />);
+      offerInstall();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+
+      expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      expect(uncaughtError).not.toHaveBeenCalled();
+    });
+
+    it('reports no error when the app is installed while site data is blocked', () => {
+      blockStorage();
+      render(<OfflineIndicator />);
+
+      fireEvent(window, new Event('appinstalled'));
+
+      expect(uncaughtError).not.toHaveBeenCalled();
+    });
+  });
 });

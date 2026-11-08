@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { PWA_CONFIG, UI_CONFIG } from '../constants/app';
+import { safeLocalStorage } from '../utils/storage';
 import './OfflineIndicator.css';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -54,19 +55,22 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
    * Check if user has permanently dismissed the install prompt
    */
   const isPermanentlyDismissed = useCallback((): boolean => {
-    const dismissed = localStorage.getItem(STORAGE_KEYS.DISMISSED);
+    const dismissed = safeLocalStorage.getItem(STORAGE_KEYS.DISMISSED);
     if (dismissed === 'permanent') {
       return true;
     }
 
     // Check if user has dismissed too many times
-    const dismissCount = parseInt(localStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || '0', 10);
+    const dismissCount = parseInt(
+      safeLocalStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || '0',
+      10
+    );
     if (dismissCount >= PWA_CONFIG.MAX_INSTALL_DISMISSALS) {
       return true;
     }
 
     // Check if we're still in cooldown period
-    const lastDismissed = localStorage.getItem(STORAGE_KEYS.LAST_DISMISSED);
+    const lastDismissed = safeLocalStorage.getItem(STORAGE_KEYS.LAST_DISMISSED);
     if (lastDismissed) {
       const lastDismissedDate = new Date(lastDismissed);
       const daysSinceDismissal = (Date.now() - lastDismissedDate.getTime()) / PWA_CONFIG.MS_PER_DAY;
@@ -155,9 +159,9 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
       // Clear dismissal tracking since app is now installed
-      localStorage.removeItem(STORAGE_KEYS.DISMISSED);
-      localStorage.removeItem(STORAGE_KEYS.DISMISSED_COUNT);
-      localStorage.removeItem(STORAGE_KEYS.LAST_DISMISSED);
+      safeLocalStorage.removeItem(STORAGE_KEYS.DISMISSED);
+      safeLocalStorage.removeItem(STORAGE_KEYS.DISMISSED_COUNT);
+      safeLocalStorage.removeItem(STORAGE_KEYS.LAST_DISMISSED);
     };
 
     window.addEventListener('online', handleOnline);
@@ -188,18 +192,18 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
       if (outcome === 'accepted') {
         console.log('[PWA] User accepted the install prompt');
         // Clear dismissal tracking
-        localStorage.removeItem(STORAGE_KEYS.DISMISSED);
-        localStorage.removeItem(STORAGE_KEYS.DISMISSED_COUNT);
-        localStorage.removeItem(STORAGE_KEYS.LAST_DISMISSED);
+        safeLocalStorage.removeItem(STORAGE_KEYS.DISMISSED);
+        safeLocalStorage.removeItem(STORAGE_KEYS.DISMISSED_COUNT);
+        safeLocalStorage.removeItem(STORAGE_KEYS.LAST_DISMISSED);
       } else {
         console.log('[PWA] User dismissed the install prompt');
         // Track dismissal
         const currentCount = parseInt(
-          localStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || '0',
+          safeLocalStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || '0',
           10
         );
-        localStorage.setItem(STORAGE_KEYS.DISMISSED_COUNT, String(currentCount + 1));
-        localStorage.setItem(STORAGE_KEYS.LAST_DISMISSED, new Date().toISOString());
+        safeLocalStorage.setItem(STORAGE_KEYS.DISMISSED_COUNT, String(currentCount + 1));
+        safeLocalStorage.setItem(STORAGE_KEYS.LAST_DISMISSED, new Date().toISOString());
       }
     } catch (error) {
       console.error('[PWA] Error showing install prompt:', error);
@@ -215,15 +219,18 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
     setShowInstallPrompt(false);
 
     // Track dismissal
-    const currentCount = parseInt(localStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || '0', 10);
+    const currentCount = parseInt(
+      safeLocalStorage.getItem(STORAGE_KEYS.DISMISSED_COUNT) || '0',
+      10
+    );
     const newCount = currentCount + 1;
 
-    localStorage.setItem(STORAGE_KEYS.DISMISSED_COUNT, String(newCount));
-    localStorage.setItem(STORAGE_KEYS.LAST_DISMISSED, new Date().toISOString());
+    safeLocalStorage.setItem(STORAGE_KEYS.DISMISSED_COUNT, String(newCount));
+    safeLocalStorage.setItem(STORAGE_KEYS.LAST_DISMISSED, new Date().toISOString());
 
     // If user has dismissed multiple times, consider it permanent
     if (newCount >= PWA_CONFIG.MAX_INSTALL_DISMISSALS) {
-      localStorage.setItem(STORAGE_KEYS.DISMISSED, 'permanent');
+      safeLocalStorage.setItem(STORAGE_KEYS.DISMISSED, 'permanent');
       console.log('[PWA] Install prompt permanently dismissed after', newCount, 'dismissals');
     }
   };
