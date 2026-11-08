@@ -253,99 +253,69 @@ describe('OfflineIndicator', () => {
       expect(addEventListenerSpy).toHaveBeenCalledWith('beforeinstallprompt', expect.any(Function));
     });
 
-    it('should not show install prompt if already installed (standalone mode)', () => {
-      // Mock standalone mode
-      Object.defineProperty(window, 'matchMedia', {
-        writable: true,
-        value: vi.fn().mockImplementation((query) => ({
-          matches: query === '(display-mode: standalone)',
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
+    // Each waits out the delay inside act(), so that a prompt the delay shows is rendered
+    // before the check; 'offers the install again once the cooldown has passed' and 'still
+    // offers to install the app when site data is blocked' show that it then is
+    describe('once the delay has passed', () => {
+      beforeEach(() => {
+        vi.useFakeTimers({ now: new Date('2026-03-01T12:00:00.000Z') });
       });
 
-      vi.useFakeTimers();
+      afterEach(() => {
+        vi.useRealTimers();
+      });
 
-      render(<OfflineIndicator />);
+      it('does not offer to install an app that runs installed (standalone)', () => {
+        Object.defineProperty(window, 'matchMedia', {
+          writable: true,
+          value: vi.fn().mockImplementation((query) => ({
+            matches: query === '(display-mode: standalone)',
+            media: query,
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+          })),
+        });
+        render(<OfflineIndicator />);
 
-      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
-      event.prompt = vi.fn();
-      event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
-      event.preventDefault = vi.fn();
+        offerInstall();
 
-      fireEvent(window, event);
-      vi.advanceTimersByTime(5000);
+        expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      });
 
-      expect(screen.queryByText(/Install DosKit/i)).not.toBeInTheDocument();
+      it('does not offer to install once the prompt was turned down for good', () => {
+        localStorage.setItem('pwa-install-dismissed', 'permanent');
+        render(<OfflineIndicator />);
 
-      vi.useRealTimers();
-    });
+        offerInstall();
 
-    it('should not show install prompt if permanently dismissed', async () => {
-      localStorage.setItem('pwa-install-dismissed', 'permanent');
+        expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      });
 
-      vi.useFakeTimers();
+      it('does not offer to install once the prompt was dismissed the most times allowed', () => {
+        localStorage.setItem(
+          'pwa-install-dismissed-count',
+          String(PWA_CONFIG.MAX_INSTALL_DISMISSALS)
+        );
+        render(<OfflineIndicator />);
 
-      render(<OfflineIndicator />);
+        offerInstall();
 
-      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
-      event.prompt = vi.fn();
-      event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
-      event.preventDefault = vi.fn();
+        expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      });
 
-      fireEvent(window, event);
-      vi.advanceTimersByTime(5000);
+      it('does not offer to install within the cooldown after a dismissal', () => {
+        localStorage.setItem('pwa-install-dismissed-count', '1');
+        localStorage.setItem('pwa-install-last-dismissed', '2026-02-27T12:00:00.000Z'); // 2 days ago
+        render(<OfflineIndicator />);
 
-      expect(screen.queryByText(/Install DosKit/i)).not.toBeInTheDocument();
+        offerInstall();
 
-      vi.useRealTimers();
-    });
-
-    it('should not show install prompt if dismissed too many times', async () => {
-      localStorage.setItem('pwa-install-dismissed-count', '3');
-
-      vi.useFakeTimers();
-
-      render(<OfflineIndicator />);
-
-      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
-      event.prompt = vi.fn();
-      event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
-      event.preventDefault = vi.fn();
-
-      fireEvent(window, event);
-      vi.advanceTimersByTime(5000);
-
-      expect(screen.queryByText(/Install DosKit/i)).not.toBeInTheDocument();
-
-      vi.useRealTimers();
-    });
-
-    it('should not show install prompt if in cooldown period', async () => {
-      const now = new Date();
-      const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-      localStorage.setItem('pwa-install-last-dismissed', twoDaysAgo.toISOString());
-
-      vi.useFakeTimers();
-
-      render(<OfflineIndicator />);
-
-      const event = new Event('beforeinstallprompt') as BeforeInstallPromptEvent;
-      event.prompt = vi.fn();
-      event.userChoice = Promise.resolve({ outcome: 'accepted' as const });
-      event.preventDefault = vi.fn();
-
-      fireEvent(window, event);
-      vi.advanceTimersByTime(5000);
-
-      expect(screen.queryByText(/Install DosKit/i)).not.toBeInTheDocument();
-
-      vi.useRealTimers();
+        expect(screen.queryByText('Install DosKit')).not.toBeInTheDocument();
+      });
     });
   });
 
