@@ -187,6 +187,20 @@ describe('UpdateNotification', () => {
       expect(later()).toHaveFocus();
       await user.tab({ shift: true });
       expect(updateNow()).toHaveFocus();
+      // Back from the first button to the last, not out to the page behind
+      await user.tab({ shift: true });
+      expect(later()).toHaveFocus();
+    });
+
+    // A click on its text gives the dialog itself the focus
+    it('goes back to its last button with Shift from the dialog itself', async () => {
+      const user = userEvent.setup();
+      renderOverPage();
+      await user.click(screen.getByText(/A new version of DosKit/));
+
+      await user.tab({ shift: true });
+
+      expect(later()).toHaveFocus();
     });
 
     it('keeps the focus when it is clicked outside its buttons', async () => {

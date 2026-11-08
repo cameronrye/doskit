@@ -1169,6 +1169,24 @@ describe('DemoSelector', () => {
         expect(screen.getByRole('button', { name: 'Load Application' })).toHaveFocus();
       });
 
+      // A click on the dialog's background gives the dialog itself the focus
+      it('goes back to the last control with Shift from the dialog itself', async () => {
+        const user = userEvent.setup();
+        render(
+          <>
+            <button>Behind the selector</button>
+            <DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />
+          </>
+        );
+        fireEvent.click(getFloppyDiskByName('Panic'));
+        await user.click(screen.getByRole('heading', { name: 'Select DOS Application' }));
+        expect(screen.getByRole('dialog')).toHaveFocus();
+
+        await user.tab({ shift: true });
+
+        expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+      });
+
       it('stays on the list when it is all there is to focus', async () => {
         const user = userEvent.setup();
         render(<DemoSelector onSelect={mockOnSelect} />);
