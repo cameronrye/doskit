@@ -185,7 +185,7 @@ doskit/
 │   ├── help.js                    # npm run help
 │   ├── generate-icons.js          # PWA icons from logo.svg
 │   ├── generate-social-images.js  # Social preview PNGs from their SVGs
-│   └── *.test.js                  # Tests of these scripts, the service worker and 404.html
+│   └── *.test.js                  # Tests of these scripts, the service worker, 404.html and robots.txt
 ├── src/
 │   ├── adapters/                  # Emulator adapter around js-dos's window.Dos()
 │   ├── components/                # React components
@@ -210,7 +210,8 @@ doskit/
 │   ├── test/setup.ts              # Test setup
 │   ├── types/                     # TypeScript type definitions
 │   │   ├── dos-app.ts             # DosApp
-│   │   └── js-dos.d.ts            # js-dos type definitions
+│   │   ├── js-dos.d.ts            # js-dos type definitions
+│   │   └── js-dos.test.ts         # Compile-time checks of those types (tsc -b)
 │   ├── utils/                     # Utility functions
 │   │   ├── diskLoader.ts          # Downloads app archives
 │   │   ├── dosboxConfigBuilder.ts # Builds DOSBox configurations
