@@ -21,8 +21,8 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 - **Offline Functionality**: After the first visit, the DOS prompt works offline, and so does every app opened online after that
 - **Modern Tech Stack**: Built with React 19, TypeScript, and Vite
 - **WebAssembly Performance**: Leverages js-dos for near-native DOS emulation
-- **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
-- **Audio Support**: Sound Blaster and AdLib emulation with proper audio output
+- **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters, but for the shortcuts browsers keep for themselves (see [Known Limitations](#known-limitations))
+- **Audio Support**: Sound Blaster, Gravis UltraSound and AdLib emulation with proper audio output
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
 - **Fullscreen**: The fullscreen button in the js-dos sidebar makes the player fill the browser window, over DosKit's header and footer. js-dos then narrows its sidebar to a strip on the left: click the strip to bring back the button, which leaves fullscreen
 - **Touch Controls**: On-screen keyboard in the js-dos sidebar. Phones and tablets get DosKit's compact layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key (see [Mobile Configuration](#mobile-configuration))
@@ -92,7 +92,7 @@ DosKit is a fully-featured **Progressive Web App** that can be installed on your
 - **Offline Support**: After the first visit, the DOS prompt works offline, and so does every app opened online after that
 - **Fast Loading**: Service worker caches assets for instant loading
 - **Native Experience**: Standalone mode without browser UI
-- **Update Prompt**: New versions install in the background, and an "Update Available" prompt switches to them when you choose. DosKit checks for one every hour and whenever you return to the tab
+- **Update Prompt**: New versions install in the background, and an "Update Available" prompt switches to them when you choose **Update Now**. DosKit checks for one every hour and whenever you return to the tab. The prompt gives the keyboard focus to **Later**, which Escape answers too, so a key meant for a DOS program cannot reload the page; keys pressed in the prompt never reach DOS. Once one tab has updated, the other open tabs say that DosKit was updated in another tab and offer **Reload**, even those that had put the update off
 - **Connection Status**: Real-time online/offline indicator
 
 ### Quick Install
@@ -121,7 +121,7 @@ DosKit is a fully-featured **Progressive Web App** that can be installed on your
 2. Tap Share → "Add to Home Screen"
 3. Launch from your home screen
 
-In Chrome, Edge and other Chromium browsers, DosKit also shows its own **Install DosKit** prompt five seconds after the browser reports that the app can be installed. **Not now** hides it for a week, and after the third time it stops asking.
+In Chrome, Edge and other Chromium browsers, DosKit also shows its own **Install DosKit** prompt five seconds after the browser reports that the app can be installed. **Not now** hides it for a week, and after the third time it stops asking. In windows under 450px tall, such as a phone held sideways, the prompt keeps to one row: its title and its two buttons.
 
 ### How Offline Works
 
@@ -384,7 +384,7 @@ Every app runs on js-dos's default `dosbox` backend, which drops settings it doe
 
 ### js-dos Options
 
-DosKit's js-dos settings are in `src/config/jsdos.config.ts`. A DosPlayer's `options` are merged over them:
+DosKit's js-dos settings are in `src/config/jsdos.config.ts`. For six of them, the choices made in js-dos's settings panel win: js-dos saves the volume, the mouse sensitivity, the aspect ratio, the image rendering, the theme and the on-screen controls' scale in `localStorage`, and DosKit passes the saved choices to every new player in place of its own, so they last through app switches and reloads. (A change to Mirror controls, which `Dos()` has no option for, reaches the players after the next reload only.) js-dos also saves the values a start gives it, so once DosKit has run in a browser, a change to its defaults for these settings no longer reaches that browser. A DosPlayer's `options` are merged over both:
 
 ```typescript
 import { DosPlayer } from './components/DosPlayer';
@@ -393,7 +393,6 @@ import { DosPlayer } from './components/DosPlayer';
   options={{
     theme: 'dark',
     volume: 0.7,
-    fullScreen: false,
     autoStart: true,
   }}
 />
@@ -403,7 +402,7 @@ import { DosPlayer } from './components/DosPlayer';
 
 - `theme`: A js-dos theme, such as 'dark' (DosKit's default) or 'light'
 - `volume`: 0.0 to 1.0
-- `fullScreen`: Start in the browser's fullscreen. js-dos applies it before `softFullscreen`, through the browser's Fullscreen API, which browsers only allow just after a click or key press; DosKit leaves it `false`
+- `fullScreen`: Start in the browser's fullscreen. js-dos applies it before `softFullscreen`, through the browser's Fullscreen API, which browsers only allow just after a click or key press. DosKit leaves it unset: set at all, even to `false`, it has js-dos call `document.exitFullscreen()` at every start, which rejects outside fullscreen and leaves the rejection unhandled
 - `softFullscreen`: Have the fullscreen button in the js-dos sidebar make the player fill the browser window, instead of asking the browser's Fullscreen API; DosKit sets it
 - `autoStart`: Auto-start emulator on load
 - `backend`: 'dosbox' or 'dosboxX'. DosKit's DOSBox configurations are written for 'dosbox', and only that backend is precached for offline use
@@ -437,7 +436,13 @@ npm run dev
 
 This will start a DOS prompt that you can interact with directly in your browser.
 
-On the start page, the app selector opens over the prompt. Click an app to see its details and **Load Application**, or double-click it to load it at once. With the keyboard, the arrow keys move between apps, Space or Enter selects one, a second Enter loads it, and Escape cancels a download or closes the selector. The header's **Change Application** (or **Select Application**) button opens it again.
+On the start page, the app selector opens over the prompt. Click an app to see its details and **Load Application** below the disks, or double-click it to load it at once. Picking the app that is running starts it again, such as a demo that has ended at the DOS prompt. The header's **Change Application** (or **Select Application**) button opens the selector again.
+
+With the keyboard, the list of apps is a single Tab stop: the arrow keys, Home and End move between the apps and select them, Space selects the app with the focus, and Enter loads it. Tab and Shift+Tab go round the selector's controls without leaving it. While an app downloads, the arrow keys only move the focus: Space or a click on another app cancels the download and selects that app, and Enter or a double-click on it loads it instead. Escape cancels a download, or else closes the selector. Closed from the keyboard, the selector gives the focus back to what had it when it opened, such as the header's button; after a pick, a close with the mouse, or a close of the selector the start page opened with, the focus is on the page.
+
+Keys pressed on DosKit's own controls, such as the selector, the header's button, the notices and the footer's links, stay with them and never reach the running program. While the page itself has the focus, as after a pick or a click on the DOS screen, DOS gets every key, Tab included, so the keyboard alone cannot get back to DosKit's controls: click one of them (see [Known Limitations](#known-limitations)).
+
+The footer shows whether DOS is **Loading**, **Ready** or stopped by an **Error** (an app that failed to load, an emulator that could not start, or an error that took the player down), and whether the browser is **Online** or **Offline**. It also links to the [licenses](#third-party-licenses) of the software the site serves.
 
 ### Deep Linking
 
@@ -460,9 +465,9 @@ https://doskit.net/?app=impulsetracker
 - **Shareable Links**: URLs automatically update when you select an app
 - **Bookmarkable**: Save direct links to your favorite DOS applications
 - **Other Forms**: Path-style links such as `https://doskit.net/secondreality`, the id with its hyphens (`?app=second-reality`) and any capitalization work too, and the address bar shows them as `/?app=secondreality`
-- **Browser Navigation**: Back and Forward load the app in the URL. The running app stops, sound and all, as soon as the next one starts downloading, and "Loading application..." shows while it downloads. Going back to the start URL stops the running app and returns to the DOS prompt, with the selector open
+- **Browser Navigation**: Back and Forward load the app in the URL. The running app stops, sound and all, as soon as the next one starts downloading, and "Loading application..." shows while it downloads, with a **Cancel** button that stops the download and returns to the DOS prompt, with the selector open. Going back to the start URL stops the running app and returns to the DOS prompt, with the selector open
 - **Refresh-Safe**: Page refreshes maintain the loaded application
-- **Error Handling**: An unknown `?app=` id shows an "Application not found" banner over the start page and is removed from the address bar; a path that names no app opens the start page
+- **Error Handling**: An `?app=` value that names no app, an empty one included, opens the start page, whose selector says "Application not found" above the disks until it closes or an app loads, and the value is removed from the address bar without a new history entry. A value with nothing safe to show, such as one with no letters, digits, hyphens or underscores, or one over 100 characters, gets the message without it. An `?app=` parameter decides even when the path names an app; a path that names no app opens the start page
 
 ### Adding DOS Applications
 
@@ -509,7 +514,7 @@ function MyProgram() {
 }
 ```
 
-DosPlayer's props are `dosboxConf` (the DOS prompt's configuration if left out), `options`, `onReady(ci)`, `onExit()`, `className` and `style`. It reads `dosboxConf` and `options` only when it mounts: to run something else, remount it with a new `key`, as `DosPlayerWithApps` does for each app.
+DosPlayer's props are `dosboxConf` (the DOS prompt's configuration if left out), `options`, `onReady(ci)`, `onExit()`, `onError(error)`, `className` and `style`. It reads `dosboxConf` and `options` only when it mounts: to run something else, remount it with a new `key`, as `DosPlayerWithApps` does for each start, so that picking the app that is running starts it again. `onError` is called, while the player is mounted, with the message it shows when the emulator cannot start.
 
 ### Programmatic Control
 
@@ -565,12 +570,12 @@ DosKit works on all modern browsers that support WebAssembly:
 
 ### Mobile Browsers
 
-- **Chrome Mobile** (Android)
-- **Safari Mobile** (iOS 15.4+)
-- **Firefox Mobile**
-- **Samsung Internet**
+- **Safari** on iOS and iPadOS 15.4+
+- **Chrome** and **Firefox** on Android, from the same versions as on the desktop
 
-These are the first versions with `structuredClone()`, which js-dos's player calls once a second while it runs.
+These are the first versions with `structuredClone()`, which js-dos's player calls once a second while it runs, and the build writes its JavaScript and CSS for them (`build.target` in `vite.config.ts`).
+
+In windows under 500px tall, such as a phone held sideways, the header keeps to one row, without the app's author and year, and so does the footer, with the status badges and the Licenses link. On iPhones, the header, the player and the footer keep clear of the notch, the status bar and the home indicator.
 
 ### Requirements
 
@@ -586,20 +591,25 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 | WebAssembly     | Yes        | Yes             | Yes          | Yes      | Yes     |
 | Service Workers | Yes        | Yes             | Yes          | Yes      | Yes     |
 | PWA Install     | Yes        | 143+ on Windows | 17+          | Yes      | Yes     |
-| Fullscreen API  | Yes        | Yes             | Yes          | Yes      | Partial |
-| Keyboard Lock   | Yes        | No              | No           | Yes      | No      |
+| Fullscreen      | Yes        | Yes             | Yes          | Yes      | Yes     |
 | Audio           | Yes        | Yes             | Yes          | Yes      | Yes     |
 | Touch Controls  | N/A        | N/A             | N/A          | N/A      | Partial |
 | Offline Mode    | Yes        | Yes             | Yes          | Yes      | Yes     |
 
+Fullscreen is the button in the js-dos sidebar, which makes the player fill the browser window with CSS (`softFullscreen`) rather than ask the browser's Fullscreen API for the screen.
+
 ### Known Limitations
 
-- **Older browsers** (before Chrome 98, Firefox 94 or Safari 15.4): no `structuredClone()`, which js-dos's player calls once a second, so each call ends in an error
-- **On-screen keyboard on phones**: js-dos draws it inside the player, under the DOS screen, and it does not scroll, so on a short player the bottom rows of a layout are cut off. Upright, a phone the size of an iPhone 13 loses the last three rows of the function-key layout's keypad, and held sideways, the bottom rows of the compact layout too. The fullscreen button in the js-dos sidebar gives the player the whole window, where every layout fits on such a phone either way up
+- **Older browsers** (before Chrome or Edge 98, Firefox 94, Opera 84 or Safari 15.4): the build does not target them, and js-dos's player calls `structuredClone()`, which they lack, once a second, so each call ends in an error
+- **Keyboard only**: while the page itself has the focus, as after picking an app, closing the selector the start page opened with, or clicking the DOS screen, js-dos sends every key to DOS, Tab included, so the keyboard alone cannot leave the DOS program for DosKit's controls: only a click or a tap on one of them can (see [Basic Usage](#basic-usage))
+- **Browser shortcuts**: on Windows and Linux, browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, so DOS programs never get them: Ctrl+W closes the tab, Ctrl+N opens a window and Ctrl+T a tab. js-dos asks the browser for Ctrl+W and Escape through the Keyboard Lock API, which browsers grant only in their own fullscreen, and DosKit's fullscreen button fills the window instead. Scream Tracker 3 saves on Ctrl-W, so while it or Impulse Tracker runs, the browser asks before the page is closed or reloaded
+- **Saved files**: what a program saves, such as a tracker's song, lives in the emulator's memory only, and is gone once the app is left or started again, or the page reloads or closes
+- **On-screen keyboard on phones**: js-dos draws it inside the player, under the DOS screen, and it does not scroll, so on a short player the bottom rows of a layout are cut off. Upright, a phone the size of an iPhone 13 loses the last three rows of the function-key layout's keypad, and held sideways, the compact layout's bottom row, its ← ↓ → keys. The fullscreen button in the js-dos sidebar gives the player the whole window, where every layout fits on such a phone either way up
 - **js-dos's own keyboard layouts**, which desktop browsers and iPads in Safari get (see [Mobile Configuration](#mobile-configuration)): their `\` and `/` keys press nothing, and their `` ` `` key presses keypad 0
+- **Safari** does not use `index.html`'s preload of `wdosbox.wasm`, the DOSBox backend: on a first visit it downloads the 1.46 MB file twice, and on every page load it logs that the preload went unused. From the 17th player started in one page, DOS prompts included, it also logs "There are too many active WebGL contexts on this page, the oldest context will be lost." and "loseContext: context already lost" at each app switch. DosKit releases each stopped player's WebGL context, but Safari counts a released context until it is garbage-collected, and js-dos keeps every stopped player in memory (see below); a reload starts the count again
+- **js-dos 8.3.20**: when its DOSBox backend (`wdosbox.wasm` or `wdosbox.js`) fails to download, js-dos shows the error only in its own "Oops... Something went wrong..." panel and tells DosKit nothing, so the footer goes on saying **Loading**. Its `stop()`, which every app switch calls, never removes the document listeners each player adds, nor closes the IndexedDB connection each one opens, so every stopped player stays in memory until the page reloads
 - **Internet Explorer**: Not supported (no WebAssembly)
 - **Older Android browsers**: May have performance issues
-- **Keyboard Lock API**: Only supported in Chrome/Edge (not critical for functionality)
 
 ## Troubleshooting
 
@@ -657,11 +667,11 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 
 **Solutions:**
 
-1. Click inside the emulator window to focus it
+1. Click the DOS screen. Keys pressed while one of DosKit's controls has the focus, such as the header's button, or a footer link after it has opened a tab, go to that control, not to DOS
 2. Check if browser has focus (not in another tab)
-3. Try clicking the "Play" button if visible
-4. On touch devices, use the on-screen keyboard from the js-dos sidebar
-5. Check browser console for errors
+3. On touch devices, use the on-screen keyboard from the js-dos sidebar
+4. Check browser console for errors
+5. On Windows and Linux, Ctrl+W, Ctrl+N and Ctrl+T never reach DOS: the browser keeps them (see [Known Limitations](#known-limitations))
 
 #### Audio Not Playing
 
@@ -671,7 +681,7 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 
 1. **Audio is automatically unmuted** when the emulator is ready
 2. Check browser audio is not muted (system volume and browser tab)
-3. Verify volume setting: `volume: 0.7` in options
+3. Check the volume in the js-dos settings panel, in its sidebar: the panel's choice replaces DosKit's `volume: 0.7` and is kept for every app and visit
 4. Click inside emulator to ensure user interaction (required by browsers)
 5. Check if DOS application has sound enabled in its settings
 6. Verify DOSBox sound card configuration (Sound Blaster, GUS, etc.)
@@ -698,7 +708,7 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 
 **Solutions:**
 
-1. Click **Update Now** in the "Update Available" prompt when it appears (DosKit checks for updates when it loads, every hour, and when you return to the tab)
+1. Click **Update Now** in the "Update Available" prompt when it appears (DosKit checks for updates when it loads, every hour, and when you return to the tab). Once one tab has updated, the others show "Update Installed" instead: click **Reload** there
 2. Hard refresh: Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac)
 3. Clear browser cache and reload
 4. Unregister service worker in DevTools > Application > Service Workers
@@ -708,13 +718,14 @@ These are the first versions with `structuredClone()`, which js-dos's player cal
 
 **Problem**: DOS application files fail to download.
 
-The selector, or the **Error Loading Application** box of an app the URL asks for, by a link or by Back and Forward, says what went wrong. **Details**, under the explanation, shows the technical error for bug reports, such as `Failed to fetch` or `Failed to load ZIP: HTTP 404`. In the box, **Try Again**, which has the keyboard focus, downloads the same app again, and **Choose Another Application** returns to the DOS prompt with the selector open; in the selector, **Load Application** tries again.
+The selector, or the **Error Loading Application** box of an app the URL asks for, by a link or by Back and Forward, says what went wrong. **Details**, under the explanation, shows the technical error for bug reports, such as `Failed to fetch` or `Failed to load ZIP: HTTP 404`. In the box, **Try Again**, which has the keyboard focus, downloads the same app again, and **Choose Another Application** returns to the DOS prompt with the selector open; in the selector, **Load Application** tries again. A download that is still running can be given up with **Cancel Loading** in the selector, or with **Cancel** under "Loading application...".
 
 - **Unable to connect to the server**: a network error while the browser reported being online, after the retries
 - **This application isn't available offline yet**: a network error while the browser reports being offline, for an app whose archive the service worker has not stored (see [How Offline Works](#how-offline-works))
 - **The requested file was not found**: the server answered 404; an update of DosKit may have moved the file, so reload the page
 - **The server is temporarily unavailable**: the server answered with an error status (5xx); try again in a few minutes
-- **The request took too long to complete**: a timeout, such as the selector's 30-second limit
+- **The request took too long to complete**: the download received no data for 20 seconds (`Download timed out: no data received for 20 seconds` under Details), counted again from each answer, retries included, and each part of the archive, so a download that keeps receiving data has no time limit. The selector also gives up a load that gets nothing at all in its first 20 seconds, such as one whose app configuration never arrives
+- **Unable to load the application archive**: the server answered with something that is not a ZIP archive, such as the page that Vite's dev and preview servers send for a file they do not have (`Failed to load ZIP: not a ZIP archive (text/html)` under Details)
 
 **Solutions:**
 
@@ -730,10 +741,11 @@ The selector, or the **Error Loading Application** box of an app the URL asks fo
 
 **Solutions:**
 
-1. Close other browser tabs
-2. Clear browser cache
-3. Restart browser
-4. Use a 64-bit browser if available
+1. Reload the page after many app switches: js-dos keeps every player DosKit has stopped in memory until the page reloads (see [Known Limitations](#known-limitations))
+2. Close other browser tabs
+3. Clear browser cache
+4. Restart browser
+5. Use a 64-bit browser if available
 
 ### Debug Mode
 
