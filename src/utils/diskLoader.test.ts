@@ -13,6 +13,18 @@ import { loadZipArchive } from './diskLoader';
 // Mock fetch globally
 globalThis.fetch = vi.fn();
 
+/** A response whose body arrives in these chunks */
+const chunkedResponse = (chunks: number[][], headers?: HeadersInit) =>
+  new Response(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(new Uint8Array(chunk));
+        controller.close();
+      },
+    }),
+    { headers }
+  );
+
 describe('diskLoader', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -34,16 +46,74 @@ describe('diskLoader', () => {
       expect(result.length).toBeGreaterThan(0);
     });
 
-    it('should report progress before and after the download', async () => {
-      vi.mocked(globalThis.fetch).mockResolvedValue(new Response(new Uint8Array([80, 75, 3, 4])));
-      const onProgress = vi.fn();
+    it('resolves with every chunk of the archive', async () => {
+      vi.mocked(globalThis.fetch).mockResolvedValue(
+        chunkedResponse([
+          [80, 75],
+          [3, 4, 9],
+        ])
+      );
 
-      await loadZipArchive('http://example.com/archive.zip', onProgress);
+      const result = await loadZipArchive('http://example.com/archive.zip');
 
-      expect(onProgress.mock.calls).toEqual([
-        [{ loaded: 0, total: 1, currentFile: 'Downloading ZIP archive...' }],
-        [{ loaded: 1, total: 1, currentFile: 'ZIP archive loaded' }],
-      ]);
+      expect(result).toEqual(new Uint8Array([80, 75, 3, 4, 9]));
+    });
+
+    describe('progress', () => {
+      const progressOf = async (response: Response) => {
+        vi.mocked(globalThis.fetch).mockResolvedValue(response);
+        const onProgress = vi.fn();
+        await loadZipArchive('http://example.com/archive.zip', onProgress);
+        return onProgress.mock.calls.map(([progress]) => progress);
+      };
+
+      it('reports the bytes received, against the size the response gives', async () => {
+        const response = chunkedResponse(
+          [
+            [80, 75, 3, 4],
+            [1, 2, 3, 4, 5, 6],
+          ],
+          {
+            'Content-Length': '10',
+          }
+        );
+
+        expect(await progressOf(response)).toEqual([
+          { loadedBytes: 0, totalBytes: 10 },
+          { loadedBytes: 4, totalBytes: 10 },
+          { loadedBytes: 10, totalBytes: 10 },
+        ]);
+      });
+
+      it.each([
+        ['gives no size', undefined],
+        ['gives a size that is not a number', { 'Content-Length': 'about 10' }],
+      ])('reports no total when the response %s', async (_, headers) => {
+        const response = chunkedResponse([[80, 75, 3, 4]], headers);
+
+        expect(await progressOf(response)).toEqual([
+          { loadedBytes: 0, totalBytes: null },
+          { loadedBytes: 4, totalBytes: null },
+        ]);
+      });
+
+      // As when a server compresses the archive: Content-Length then counts the bytes sent,
+      // and the body gives more
+      it('stops reporting a total once more bytes arrive than it said', async () => {
+        const response = chunkedResponse(
+          [
+            [80, 75, 3, 4],
+            [5, 6],
+          ],
+          { 'Content-Length': '4' }
+        );
+
+        expect(await progressOf(response)).toEqual([
+          { loadedBytes: 0, totalBytes: 4 },
+          { loadedBytes: 4, totalBytes: 4 },
+          { loadedBytes: 6, totalBytes: null },
+        ]);
+      });
     });
 
     it('rejects with the status when the server returns an error', async () => {

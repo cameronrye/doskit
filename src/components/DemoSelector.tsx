@@ -59,6 +59,23 @@ function describeApp({ name, author, year }: DosApp): string {
   return `${name}${author ? ` by ${author}` : ''}${year ? ` (${year})` : ''}`;
 }
 
+/**
+ * What the progress bar shows: the share of the archive downloaded when its size is known,
+ * or else the megabytes received, with no percentage for the bar
+ */
+function describeProgress(progress: LoadProgress | null): { percent: number | null; text: string } {
+  if (!progress) {
+    return { percent: null, text: 'Starting download…' };
+  }
+  const { loadedBytes, totalBytes } = progress;
+  if (totalBytes) {
+    // Rounded down, so that 100% means every byte is in
+    const percent = Math.min(100, Math.floor((loadedBytes / totalBytes) * 100));
+    return { percent, text: `Downloading… ${percent}%` };
+  }
+  return { percent: null, text: `Downloading… ${(loadedBytes / 1_000_000).toFixed(1)} MB` };
+}
+
 export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   const [selectedApp, setSelectedApp] = useState<DosApp | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
@@ -125,7 +142,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
 
       setIsLoading(true);
       setError(null);
-      setLoadProgress({ loaded: 0, total: 1, currentFile: 'Starting...' });
+      setLoadProgress(null);
 
       // Set up timeout
       const timeoutId = setTimeout(() => {
@@ -284,6 +301,8 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
     }
   }, [focusedIndex]);
 
+  const progress = describeProgress(loadProgress);
+
   return (
     <div
       className="demo-selector"
@@ -351,9 +370,12 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
 
         {/* Selected App Details */}
         {selectedApp && (
-          <div className="app-details" role="region" aria-live="polite">
-            <h3>Selected: {selectedApp.name}</h3>
-            <p>{selectedApp.description}</p>
+          <div className="app-details" role="region">
+            {/* Announced when the app changes; the progress below is not, as it changes often */}
+            <div aria-live="polite">
+              <h3>Selected: {selectedApp.name}</h3>
+              <p>{selectedApp.description}</p>
+            </div>
 
             {error && (
               <div className="error-message" role="alert">
@@ -368,25 +390,25 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
               </div>
             )}
 
-            {loadProgress && (
+            {isLoading && (
               <div className="load-progress">
+                {/* Without a size to measure against, an indeterminate bar: no aria-valuenow */}
                 <div
-                  className="progress-bar"
+                  className={`progress-bar${progress.percent === null ? ' indeterminate' : ''}`}
                   role="progressbar"
-                  aria-valuenow={(loadProgress.loaded / loadProgress.total) * 100}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
+                  aria-label="Download progress"
+                  aria-valuenow={progress.percent ?? undefined}
+                  aria-valuemin={progress.percent === null ? undefined : 0}
+                  aria-valuemax={progress.percent === null ? undefined : 100}
                 >
                   <div
                     className="progress-fill"
-                    style={{
-                      width: `${(loadProgress.loaded / loadProgress.total) * 100}%`,
-                    }}
+                    style={
+                      progress.percent === null ? undefined : { width: `${progress.percent}%` }
+                    }
                   />
                 </div>
-                <p className="progress-text">
-                  Loading {loadProgress.currentFile}... ({loadProgress.loaded}/{loadProgress.total})
-                </p>
+                <p className="progress-text">{progress.text}</p>
               </div>
             )}
 

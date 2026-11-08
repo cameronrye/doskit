@@ -185,6 +185,30 @@
   border-radius: 4px;
 }
 
+/* Without a size to measure against, a segment sweeps across the bar */
+.progress-bar.indeterminate .progress-fill {
+  width: 40%;
+  animation: demo-selector-progress-sweep 1.5s ease-in-out infinite;
+}
+
+@keyframes demo-selector-progress-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+/* index.css cuts animations short under reduced motion: a still, faded bar instead */
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar.indeterminate .progress-fill {
+    width: 100%;
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
 .progress-text {
   margin: 0;
   font-size: 0.875rem;

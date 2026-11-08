@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import { DemoSelector, type DosApp } from './DemoSelector';
-import { loadZipArchive } from '../utils/diskLoader';
+import { loadZipArchive, type LoadProgress } from '../utils/diskLoader';
 import { availableApps } from '../config/apps.config';
 import { secondRealityDosboxConf, secondRealityZipUrl } from '../dos-apps/second-reality.config';
 import { impulseTrackerZipUrl } from '../dos-apps/impulse-tracker.config';
@@ -272,23 +272,43 @@ describe('DemoSelector', () => {
       });
     });
 
-    it('should show load progress', async () => {
-      vi.mocked(loadZipArchive).mockImplementation(
-        () => new Promise((resolve) => setTimeout(resolve, 100))
-      );
+    describe('progress', () => {
+      /** Load Second Reality, whose download reports this progress and then waits */
+      const loadReporting = async (...reports: LoadProgress[]) => {
+        vi.mocked(loadZipArchive).mockImplementation(async (_url, onProgress) => {
+          reports.forEach((progress) => onProgress?.(progress));
+          return new Promise(() => {});
+        });
+        render(<DemoSelector onSelect={mockOnSelect} />);
+        fireEvent.click(getFloppyDiskByName('Second Reality')!);
+        fireEvent.click(screen.getByRole('button', { name: /Load Application/i }));
+        return screen.findByRole('progressbar', { name: 'Download progress' });
+      };
 
-      render(<DemoSelector onSelect={mockOnSelect} />);
+      it('says the download is starting until the first progress arrives', async () => {
+        const bar = await loadReporting();
 
-      const floppyDisk = getFloppyDiskByName('Second Reality');
-      fireEvent.click(floppyDisk!);
-
-      const loadButton = screen.getByRole('button', {
-        name: /Load Application/i,
+        expect(screen.getByText('Starting download…')).toBeInTheDocument();
+        expect(bar).not.toHaveAttribute('aria-valuenow');
       });
-      fireEvent.click(loadButton);
 
-      await waitFor(() => {
-        expect(screen.getByText(/Loading Starting.../i)).toBeInTheDocument();
+      it('shows the share downloaded when the size is known', async () => {
+        const bar = await loadReporting(
+          { loadedBytes: 0, totalBytes: 2_000_000 },
+          { loadedBytes: 913_000, totalBytes: 2_000_000 }
+        );
+
+        expect(await screen.findByText('Downloading… 45%')).toBeInTheDocument();
+        expect(bar).toHaveAttribute('aria-valuenow', '45');
+        expect(bar).toHaveAttribute('aria-valuemin', '0');
+        expect(bar).toHaveAttribute('aria-valuemax', '100');
+      });
+
+      it('shows the megabytes received on an indeterminate bar when the size is unknown', async () => {
+        const bar = await loadReporting({ loadedBytes: 1_250_000, totalBytes: null });
+
+        expect(await screen.findByText('Downloading… 1.3 MB')).toBeInTheDocument();
+        expect(bar).not.toHaveAttribute('aria-valuenow');
       });
     });
 
