@@ -1,7 +1,6 @@
 /**
- * Compile-time checks of the js-dos types against what js-dos 8.3.20 takes. `tsc -b`
- * type-checks this file and fails if one of these expectations stops holding; at run time
- * they do nothing.
+ * Compile-time checks of the js-dos types against js-dos 8.3.20. `tsc -b` type-checks this
+ * file and fails if one of these expectations stops holding; at run time they do nothing.
  */
 
 import { describe, it, expectTypeOf } from 'vitest';
@@ -9,7 +8,96 @@ import type { DosOptions, DosProps } from './js-dos';
 
 type SoftKeyboardLayout = NonNullable<DosOptions['softKeyboardLayout']>;
 
+/**
+ * Every option js-dos 8.3.20 reads from what Dos() is given (in its src/main.tsx, store.ts
+ * and window/dos/dos-window.tsx)
+ */
+type OptionJsDosReads =
+  | 'url'
+  | 'dosboxConf'
+  | 'jsdosConf'
+  | 'initFs'
+  | 'backend'
+  | 'backendLocked'
+  | 'backendHardware'
+  | 'workerThread'
+  | 'pathPrefix'
+  | 'pathSuffix'
+  | 'theme'
+  | 'lang'
+  | 'background'
+  | 'imageRendering'
+  | 'renderBackend'
+  | 'renderAspect'
+  | 'fullScreen'
+  | 'softFullscreen'
+  | 'thinSidebar'
+  | 'scaleControls'
+  | 'mouseCapture'
+  | 'mouseSensitivity'
+  | 'noCursor'
+  | 'softKeyboardLayout'
+  | 'softKeyboardSymbols'
+  | 'volume'
+  | 'autoStart'
+  | 'countDownStart'
+  | 'autoSave'
+  | 'kiosk'
+  | 'noCloud'
+  | 'key'
+  | 'noNetworking'
+  | 'ipx'
+  | 'ipxBackend'
+  | 'room'
+  | 'onEvent';
+
+/** Every member of the player js-dos 8.3.20's Dos() returns (at the end of its src/main.tsx) */
+type MemberJsDosReturns =
+  | 'getVersion'
+  | 'getToken'
+  | 'setTheme'
+  | 'setLang'
+  | 'setBackend'
+  | 'setBackendLocked'
+  | 'setWorkerThread'
+  | 'setMouseCapture'
+  | 'setIpx'
+  | 'setIpxBackend'
+  | 'setRoom'
+  | 'setFrame'
+  | 'setBackground'
+  | 'setFullScreen'
+  | 'setAutoStart'
+  | 'setCountDownStart'
+  | 'setAutoSave'
+  | 'setKiosk'
+  | 'setImageRendering'
+  | 'setRenderBackend'
+  | 'setRenderAspect'
+  | 'setNoNetworking'
+  | 'setNoCloud'
+  | 'setPaused'
+  | 'setScaleControls'
+  | 'setMouseSensitivity'
+  | 'setNoCursor'
+  | 'setSoftKeyboardLayout'
+  | 'setSoftKeyboardSymbols'
+  | 'setVolume'
+  | 'setKey'
+  | 'setSoftFullscreen'
+  | 'setThinSidebar'
+  | 'save'
+  | 'stop';
+
 describe('js-dos types', () => {
+  it('should declare only options js-dos reads', () => {
+    expectTypeOf<keyof DosOptions>().toExtend<OptionJsDosReads>();
+  });
+
+  it('should declare only members of the player js-dos returns', () => {
+    expectTypeOf<keyof DosProps>().toExtend<MemberJsDosReturns>();
+  });
+
   describe('softKeyboardLayout', () => {
     it('should take rows of key names, or layouts of columns of rows', () => {
       expectTypeOf(['{esc} {f1} {f2}', 'q w e r t', '{up}']).toExtend<SoftKeyboardLayout>();

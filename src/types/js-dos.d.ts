@@ -3,8 +3,10 @@
  * Copyright (c) 2025 Cameron Rye
  * Licensed under the MIT License
  *
- * TypeScript type definitions for js-dos v8.3.20
- * Based on the official js-dos API reference
+ * TypeScript type definitions for js-dos 8.3.20, checked against its code
+ * (node_modules/js-dos/dist/js-dos.js and its source map). DosOptions declares only options
+ * Dos() reads and DosProps only members of the player it returns, which js-dos.test.ts
+ * checks; what DosKit does not use, such as js-dos's IPX networking, is left out.
  */
 
 export interface DosOptions {
@@ -52,9 +54,6 @@ export interface DosOptions {
   // Cloud/Network Settings
   noCloud?: boolean;
   key?: string;
-  sockdrivePreload?: 'none' | 'all' | 'default';
-  startIpxServer?: boolean;
-  connectIpxAddress?: string;
 
   // Advanced
   pathPrefix?: string;
