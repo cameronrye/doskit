@@ -3,7 +3,7 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const eslint = new ESLint({ cwd: ROOT });
@@ -13,6 +13,13 @@ async function lint(code, path) {
   const [result] = await eslint.lintText(code, { filePath: join(ROOT, path) });
   return result.messages;
 }
+
+// The first lint loads the config, its plugins and both parsers, which takes seconds on a
+// busy machine, longer than a test's own time limit: done once here, with time to spare
+beforeAll(async () => {
+  await lint('', 'public/sw.js');
+  await lint('', 'scripts/warm-up.js');
+}, 60_000);
 
 describe('public/sw.js', () => {
   // The page registers it as a classic script, where import and export are syntax errors
