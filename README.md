@@ -24,6 +24,7 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
 - **Audio Support**: Sound Blaster and AdLib emulation with proper audio output
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **Fullscreen**: The fullscreen button in the js-dos sidebar makes the player fill the browser window, over DosKit's header and footer. js-dos then narrows its sidebar to a strip on the left: click the strip to bring back the button, which leaves fullscreen
 - **Touch Controls**: On-screen keyboard in the js-dos sidebar. Phones and tablets get DosKit's compact layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key (see [Mobile Configuration](#mobile-configuration))
 - **Type-Safe**: Full TypeScript support with comprehensive type definitions
 - **Service Worker Caching**: Fast loading with intelligent cache management
@@ -394,7 +395,8 @@ import { DosPlayer } from './components/DosPlayer';
 
 - `theme`: A js-dos theme, such as 'dark' (DosKit's default) or 'light'
 - `volume`: 0.0 to 1.0
-- `fullScreen`: Enable fullscreen mode
+- `fullScreen`: Start in the browser's fullscreen. js-dos applies it before `softFullscreen`, through the browser's Fullscreen API, which browsers only allow just after a click or key press; DosKit leaves it `false`
+- `softFullscreen`: Have the fullscreen button in the js-dos sidebar make the player fill the browser window, instead of asking the browser's Fullscreen API; DosKit sets it
 - `autoStart`: Auto-start emulator on load
 - `backend`: 'dosbox' or 'dosboxX'. DosKit's DOSBox configurations are written for 'dosbox', and only that backend is precached for offline use
 - `mouseCapture`: Auto-capture mouse input

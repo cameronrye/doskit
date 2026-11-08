@@ -42,6 +42,7 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
 - **Audio Support**: Sound Blaster and AdLib emulation with proper audio output
 - **Responsive Design**: Optimized layouts for desktop, tablet, and mobile devices
+- **Fullscreen**: The fullscreen button in the js-dos sidebar makes the player fill the browser window, over DosKit's header and footer; js-dos then narrows its sidebar to a strip on the left, which brings back the button when clicked
 - **Touch Controls**: On-screen keyboard in the js-dos sidebar; phones and tablets get DosKit's compact layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key
 - **Type-Safe Development**: Full TypeScript support with comprehensive type definitions
 - **Service Worker Caching**: Emulator files and application archives stay cached across deploys until js-dos or the archives change, and so do the bundles a deploy leaves unchanged
@@ -312,12 +313,13 @@ myapp.exe
 
 ### js-dos Options
 
-Customize the emulator behavior with js-dos options in `src/config/jsdos.config.ts`. DosKit's defaults: the DOSBox backend in a worker thread, WebGL rendering at a 4:3 aspect ratio, volume 0.7, autoStart with no countdown, js-dos cloud features off (`noCloud`), and emulator files from `/emulators/`.
+Customize the emulator behavior with js-dos options in `src/config/jsdos.config.ts`. DosKit's defaults: the DOSBox backend in a worker thread, WebGL rendering at a 4:3 aspect ratio, soft fullscreen, volume 0.7, autoStart with no countdown, js-dos cloud features off (`noCloud`), and emulator files from `/emulators/`.
 
 Available options:
 - `theme`: 'dark' or 'light'
 - `volume`: 0.0 to 1.0
-- `fullScreen`: Enable fullscreen mode
+- `fullScreen`: Start in the browser's fullscreen. js-dos applies it before `softFullscreen`, through the browser's Fullscreen API, which browsers only allow just after a click or key press; DosKit leaves it `false`
+- `softFullscreen`: Have the fullscreen button in the js-dos sidebar make the player fill the browser window, instead of asking the browser's Fullscreen API; DosKit sets it
 - `autoStart`: Auto-start emulator on load
 - `backend`: 'dosbox' or 'dosboxX' (DosKit's DOSBox configurations are written for 'dosbox')
 - `mouseCapture`: Auto-capture mouse input
