@@ -193,16 +193,14 @@ describe('UpdateNotification', () => {
       expect(window.location.reload).not.toHaveBeenCalled();
     });
 
-    it('should handle missing waiting service worker', () => {
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const registrationWithoutWaiting = { ...mockRegistration, waiting: null };
-      render(<UpdateNotification registration={registrationWithoutWaiting} />);
+    it('reloads at once when another tab has already let the update take over', () => {
+      // Update Now in another tab activated the worker this prompt is for: nothing waits
+      render(<UpdateNotification registration={{ ...mockRegistration, waiting: null }} />);
 
       clickUpdateNow();
 
-      expect(consoleWarn).toHaveBeenCalledWith(
-        expect.stringContaining('No waiting service worker found')
-      );
+      expect(window.location.reload).toHaveBeenCalledOnce();
+      expect(vi.getTimerCount()).toBe(0);
     });
 
     it('reloads at once when it cannot message the waiting worker', () => {

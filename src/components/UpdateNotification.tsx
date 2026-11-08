@@ -106,7 +106,10 @@ export function UpdateNotification({ registration, onDismiss }: UpdateNotificati
         performReload();
       }
     } else {
-      console.warn('[UpdateNotification] No waiting service worker found');
+      // Nothing waits once Update Now in another tab has let the worker take over. This tab
+      // is then under the new worker already, and a reload gets the new version.
+      logger.info(LOG_CONTEXT, 'The update has taken over from another tab: reloading');
+      window.location.reload();
     }
   };
 
