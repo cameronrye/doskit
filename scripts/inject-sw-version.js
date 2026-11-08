@@ -91,9 +91,7 @@ function injectVersionAndAssets() {
     // Inject bundled assets into STATIC_ASSETS array
     // Find the STATIC_ASSETS array and add bundled assets before the closing bracket
     if (bundledAssets.length > 0) {
-      const assetsToInject = bundledAssets
-        .map((asset) => `  \`\${BASE_PATH}${asset}\`,`)
-        .join('\n');
+      const assetsToInject = bundledAssets.map((asset) => `  '${asset}',`).join('\n');
 
       swContent = swContent.replace(
         /(const STATIC_ASSETS = \[[^\]]+)(];)/s,

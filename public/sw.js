@@ -16,38 +16,26 @@ const CONFIG = {
   MAX_CACHE_AGE: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
 };
 
-// Base path handling for GitHub Pages vs local
-const getBasePath = () => {
-  // Check if we're on GitHub Pages
-  if (self.location.pathname.startsWith('/doskit/')) {
-    return '/doskit';
-  }
-  return '';
-};
-
-const BASE_PATH = getBasePath();
-
-// Assets to cache on install
+// Assets to cache on install (the build appends the bundles from dist/index.html)
 const STATIC_ASSETS = [
-  `${BASE_PATH}/`,
-  `${BASE_PATH}/index.html`,
-  `${BASE_PATH}/offline.html`,
-  `${BASE_PATH}/manifest.json`,
-  `${BASE_PATH}/logo.svg`,
-  `${BASE_PATH}/favicon.svg`,
-  `${BASE_PATH}/js-dos.js`,
-  `${BASE_PATH}/js-dos.css`,
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/logo.svg',
+  '/favicon.svg',
+  '/js-dos.js',
+  '/js-dos.css',
 ];
 
 // WASM and emulator files to cache
 const EMULATOR_ASSETS = [
-  `${BASE_PATH}/emulators/wdosbox.wasm`,
-  `${BASE_PATH}/emulators/wdosbox.js`,
-  `${BASE_PATH}/emulators/wdosbox-x.wasm`,
-  `${BASE_PATH}/emulators/wdosbox-x.js`,
-  `${BASE_PATH}/emulators/wlibzip.wasm`,
-  `${BASE_PATH}/emulators/wlibzip.js`,
-  `${BASE_PATH}/emulators/emulators.js`,
+  '/emulators/wdosbox.wasm',
+  '/emulators/wdosbox.js',
+  '/emulators/wdosbox-x.wasm',
+  '/emulators/wdosbox-x.js',
+  '/emulators/wlibzip.wasm',
+  '/emulators/wlibzip.js',
+  '/emulators/emulators.js',
 ];
 
 // Install event - cache static assets
@@ -152,7 +140,7 @@ function calculateTimeout(request) {
     return 10000;
   }
 
-  if (pathname.endsWith('.html') || pathname === BASE_PATH + '/') {
+  if (pathname.endsWith('.html') || pathname === '/') {
     // HTML documents: 5 seconds (should be fast)
     return CONFIG.NETWORK_TIMEOUT_BASE;
   }
@@ -294,7 +282,7 @@ self.addEventListener('fetch', (event) => {
     request.mode === 'navigate' ||
     request.destination === 'document' ||
     url.pathname.endsWith('.html') ||
-    url.pathname === BASE_PATH + '/'
+    url.pathname === '/'
   ) {
     event.respondWith(
       fetchWithTimeout(request)
@@ -324,7 +312,8 @@ self.addEventListener('fetch', (event) => {
               // Update timestamp when serving from cache
               updateCacheMetadata(request.url);
             }
-            return cachedResponse || caches.match(`${BASE_PATH}/index.html`);
+            // A URL never visited online (such as a new deep link) gets the app shell
+            return cachedResponse || caches.match('/index.html');
           });
         })
     );
@@ -337,7 +326,7 @@ self.addEventListener('fetch', (event) => {
   if (
     url.pathname.endsWith('.wasm') ||
     url.pathname.endsWith('.wasm.gz') ||
-    url.pathname.startsWith(`${BASE_PATH}/demos/`)
+    url.pathname.startsWith('/demos/')
   ) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
@@ -423,19 +412,6 @@ self.addEventListener('fetch', (event) => {
         })
         .catch((error) => {
           console.error('[Service Worker] Fetch failed:', error);
-
-          // Return offline page for navigation requests
-          if (request.mode === 'navigate') {
-            return caches.match(`${BASE_PATH}/offline.html`).then((offlineResponse) => {
-              if (offlineResponse) {
-                return offlineResponse;
-              }
-              // Fallback to index.html if offline.html not cached
-              return caches.match(`${BASE_PATH}/index.html`);
-            });
-          }
-
-          // For other requests, throw the error
           throw error;
         });
     })
@@ -446,60 +422,11 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   console.log('[Service Worker] Message received:', event.data);
 
+  // Sent by the update prompt (UpdateNotification) when the user accepts an update
   if (event.data && event.data.type === 'SKIP_WAITING') {
     console.log('[Service Worker] SKIP_WAITING message received - activating new version');
     self.skipWaiting();
   }
-
-  if (event.data && event.data.type === 'CACHE_URLS') {
-    event.waitUntil(
-      caches.open(CACHE_NAME).then((cache) => {
-        return cache.addAll(event.data.urls);
-      })
-    );
-  }
-
-  if (event.data && event.data.type === 'CLEAR_CACHE') {
-    event.waitUntil(
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName.startsWith('doskit-')) {
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-    );
-  }
-});
-
-// Background sync for future enhancements
-self.addEventListener('sync', (event) => {
-  console.log('[Service Worker] Background sync:', event.tag);
-
-  if (event.tag === 'sync-dos-state') {
-    event.waitUntil(
-      // Future: sync DOS state when online
-      Promise.resolve()
-    );
-  }
-});
-
-// Push notifications for future enhancements
-self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push notification received');
-
-  const options = {
-    body: event.data ? event.data.text() : 'New update available',
-    icon: `${BASE_PATH}/icons/icon-192x192.png`,
-    badge: `${BASE_PATH}/icons/icon-72x72.png`,
-    vibrate: [200, 100, 200],
-    tag: 'doskit-notification',
-    requireInteraction: false,
-  };
-
-  event.waitUntil(self.registration.showNotification('DosKit', options));
 });
 
 console.log('[Service Worker] Service worker script loaded');
