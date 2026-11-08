@@ -280,6 +280,45 @@ describe('DosPlayer', () => {
       );
     });
 
+    // js-dos would otherwise go back to DosKit's at each app switch and reload
+    describe("with choices made in js-dos's settings panel", () => {
+      afterEach(() => {
+        localStorage.clear();
+      });
+
+      it("starts js-dos with them instead of DosKit's", () => {
+        localStorage.setItem('jsdos.8.volume', '0.2');
+        localStorage.setItem('jsdos.8.theme', 'light');
+
+        render(<DosPlayer />);
+
+        expect(mockDos).toHaveBeenCalledWith(
+          expect.any(HTMLDivElement),
+          expect.objectContaining({ volume: 0.2, theme: 'light', renderAspect: '4/3' })
+        );
+      });
+
+      it("starts js-dos with DosKit's before the user has chosen any", () => {
+        render(<DosPlayer />);
+
+        expect(mockDos).toHaveBeenCalledWith(
+          expect.any(HTMLDivElement),
+          expect.objectContaining({ volume: 0.7, theme: 'dark' })
+        );
+      });
+
+      it('leaves options given to DosPlayer over them', () => {
+        localStorage.setItem('jsdos.8.volume', '0.2');
+
+        render(<DosPlayer options={{ volume: 0.5 }} />);
+
+        expect(mockDos).toHaveBeenCalledWith(
+          expect.any(HTMLDivElement),
+          expect.objectContaining({ volume: 0.5 })
+        );
+      });
+    });
+
     it('should not initialize twice', () => {
       const { rerender } = render(<DosPlayer />);
       rerender(<DosPlayer />);

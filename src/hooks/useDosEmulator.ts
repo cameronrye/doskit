@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { DosOptions, DosProps, CommandInterface, DosEvent } from '../types/js-dos';
-import { getDefaultConfig } from '../config/jsdos.config';
+import { getDefaultConfig, getStoredSettings } from '../config/jsdos.config';
 import { getEmulatorAdapter } from '../adapters/EmulatorAdapter';
 
 export interface UseDosEmulatorOptions {
@@ -185,6 +185,8 @@ export const useDosEmulator = ({
         const config = getDefaultConfig();
         const mergedOptions: Partial<DosOptions> = {
           ...config,
+          // The user's choices in js-dos's settings panel, over DosKit's defaults
+          ...getStoredSettings(),
           ...options,
           dosboxConf,
           onEvent: (event, arg) => {

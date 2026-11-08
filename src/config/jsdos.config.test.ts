@@ -8,6 +8,7 @@ import {
   mobileJsDosConfig,
   isMobileDevice,
   getDefaultConfig,
+  getStoredSettings,
 } from './jsdos.config';
 
 /** js-dos's code for the left Shift key, which it presses with some punctuation */
@@ -392,6 +393,66 @@ describe('jsdos.config', () => {
         writable: true,
       });
       expect(isMobileDevice()).toBe(false);
+    });
+  });
+
+  // js-dos keeps them in localStorage, reads them only once, when js-dos.js loads, and
+  // applies the options each Dos() call gets over them
+  describe("getStoredSettings: the choices made in js-dos's settings panel", () => {
+    afterEach(() => {
+      localStorage.clear();
+    });
+
+    it('gives none before the user has made any', () => {
+      expect(getStoredSettings()).toEqual({});
+    });
+
+    it('gives the volume, mouse sensitivity, aspect ratio, image rendering and theme', () => {
+      // As js-dos 8.3.20 stores them
+      localStorage.setItem('jsdos.8.volume', '0.20000002119276258');
+      localStorage.setItem('jsdos.8.mouse_sensitivity', '0.35');
+      localStorage.setItem('jsdos.8.renderAspect', '16/10');
+      localStorage.setItem('jsdos.8.imageRendering', 'smooth');
+      localStorage.setItem('jsdos.8.theme', 'light');
+
+      expect(getStoredSettings()).toEqual({
+        volume: 0.20000002119276258,
+        mouseSensitivity: 0.35,
+        renderAspect: '16/10',
+        imageRendering: 'smooth',
+        theme: 'light',
+      });
+    });
+
+    it('gives each one that is stored, and leaves the others to DosKit', () => {
+      localStorage.setItem('jsdos.8.volume', '0');
+
+      expect(getStoredSettings()).toEqual({ volume: 0 });
+    });
+
+    it('leaves out values js-dos would not have stored', () => {
+      localStorage.setItem('jsdos.8.volume', 'loud');
+      localStorage.setItem('jsdos.8.mouse_sensitivity', '1.5');
+      localStorage.setItem('jsdos.8.renderAspect', '21/9');
+      localStorage.setItem('jsdos.8.imageRendering', 'blurry');
+      localStorage.setItem('jsdos.8.theme', '');
+
+      expect(getStoredSettings()).toEqual({});
+    });
+
+    it('gives none when the browser refuses storage', () => {
+      const original = Object.getOwnPropertyDescriptor(window, 'localStorage')!;
+      Object.defineProperty(window, 'localStorage', {
+        configurable: true,
+        get() {
+          throw new DOMException('Access is denied for this document.', 'SecurityError');
+        },
+      });
+      try {
+        expect(getStoredSettings()).toEqual({});
+      } finally {
+        Object.defineProperty(window, 'localStorage', original);
+      }
     });
   });
 

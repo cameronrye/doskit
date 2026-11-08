@@ -8,6 +8,7 @@
  */
 
 import type { DosOptions } from '../types/js-dos';
+import { safeLocalStorage } from '../utils/storage';
 
 /**
  * The options DosKit gives js-dos's Dos() on desktop browsers. mobileJsDosConfig adds
@@ -181,4 +182,51 @@ export function getDefaultConfig(): Partial<DosOptions> {
     return mobileJsDosConfig;
   }
   return defaultJsDosConfig;
+}
+
+type RenderAspect = NonNullable<DosOptions['renderAspect']>;
+type ImageRendering = NonNullable<DosOptions['imageRendering']>;
+
+const RENDER_ASPECTS: readonly RenderAspect[] = [
+  'AsIs',
+  '1/1',
+  '5/4',
+  '4/3',
+  '16/10',
+  '16/9',
+  'Fit',
+];
+const IMAGE_RENDERINGS: readonly ImageRendering[] = ['pixelated', 'smooth'];
+
+/**
+ * The choices made in js-dos's settings panel for the options DosKit sets too: volume, mouse
+ * sensitivity, aspect ratio, image rendering and theme. js-dos 8.3.20 keeps them in
+ * localStorage (src/store/dos.ts and src/store/ui.ts, under the prefix of
+ * src/host/lstorage.ts), but reads them only when js-dos.js loads, and applies the options
+ * each Dos() call gets over them. Passed in place of DosKit's, they last through app
+ * switches and reloads. A value js-dos would not have stored is left out, as is everything
+ * when the browser refuses storage.
+ */
+export function getStoredSettings(): Partial<DosOptions> {
+  const stored = (key: string) => safeLocalStorage.getItem(`jsdos.8.${key}`);
+  // js-dos's sliders go from 0 to 1
+  const fraction = (key: string) => {
+    const value = Number.parseFloat(stored(key) ?? '');
+    return value >= 0 && value <= 1 ? value : undefined;
+  };
+  const oneOf = <T extends string>(key: string, values: readonly T[]) =>
+    values.find((value) => value === stored(key));
+
+  const settings: Partial<DosOptions> = {
+    volume: fraction('volume'),
+    mouseSensitivity: fraction('mouse_sensitivity'),
+    renderAspect: oneOf('renderAspect', RENDER_ASPECTS),
+    imageRendering: oneOf('imageRendering', IMAGE_RENDERINGS),
+    theme: stored('theme') || undefined,
+  };
+  // What is not stored is left to DosKit's options, which an undefined would replace
+  for (const key of Object.keys(settings) as (keyof DosOptions)[]) {
+    if (settings[key] === undefined) delete settings[key];
+  }
+  return settings;
 }
