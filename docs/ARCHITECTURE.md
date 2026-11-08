@@ -173,14 +173,14 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 **Service Worker** (`public/sw.js`, registered in production builds only):
 
 - **Caching Strategy**:
-  - Network-first for HTML (5-second timeout), falling back to the cached page, or to `/index.html` for a URL never visited online, such as a new deep link
+  - Network-first for pages, revalidated with the server (`cache: 'no-cache'`), with a 5-second timeout. The response is passed on as it came, including the 404 that GitHub Pages answers path-style links with, and is never stored: offline or on a timeout, every URL gets the one `index.html` install stored under `/`
   - Cache-first for emulator files and demo archives, each from a cache of its own
-  - Cache-first for other WASM files
-  - Stale-while-revalidate for JS/CSS and other assets
+  - Cache-first for the hashed bundles in `/assets/` and for other WASM files; a miss is fetched and kept as a runtime entry
+  - Stale-while-revalidate for other files, such as `js-dos.js`, `js-dos.css`, the manifest and the icons
   - Cross-origin requests and the worker script itself are left to the browser
   - Lookups ignore `Vary`, so a host that answers with `Vary: Origin` (such as `vite preview`) cannot make cached files miss
 - **Caches**:
-  - `doskit-<build version>` - Install precaches the app shell (`/`, `/index.html`, `/manifest.json`, `/logo.svg`, `/favicon.svg`, `/js-dos.js`, `/js-dos.css`), revalidated with the server so a stale HTTP-cache copy never gets in, and every JS and CSS bundle in `dist/assets`, the lazily imported chunks included. Pages and assets fetched later are added as runtime entries. Each deploy gets a new one, and activation deletes the previous deploy's.
+  - `doskit-<build version>` - Install precaches the app shell (`/`, `/manifest.json`, `/logo.svg`, `/favicon.svg`, `/js-dos.js`, `/js-dos.css`), revalidated with the server so a stale HTTP-cache copy never gets in, and every JS and CSS bundle in `dist/assets`, the lazily imported chunks included. A bundle that an earlier deploy's cache holds under the same name is copied from there instead of downloaded. Assets fetched later, but not pages, are added as runtime entries. Each deploy gets a new one, and activation deletes the previous deploy's.
   - `doskit-emulators-<js-dos version>` - The default backend's files, precached at install; any other emulator file (the DOSBox-X backend) is stored on first use. Deploys keep this cache until js-dos changes, and an install downloads only the files it lacks.
   - `doskit-demos-<archive hash>` - Demo archives, stored on first use and never trimmed. Deploys keep this cache until the archives change.
 - **LRU Cache**: The deploy's cache holds at most 100 entries. Trimming removes the least recently used runtime entries, by the timestamps kept in `doskit-<build version>-metadata`, and never a precached file. Nothing expires by age.
@@ -208,11 +208,11 @@ DosKit has no React contexts and no state library. Each component keeps the stat
 ### 3. Performance Optimizations
 
 - **Lazy loading**: DOS app configs (and the DOSBox config builder they use) are loaded on demand, and the selector preloads an app's DOSBox config when the pointer rests on it for 150 ms
-- **Code splitting**: React has a chunk of its own (`react-vendor`), which stays cached across releases
+- **Code splitting**: React has a chunk of its own (`react-vendor`), whose name stays the same across releases that leave its content alone, so the service worker's install copies it from the previous release's cache
 - **Preloading**: `index.html` preloads the default backend's `wdosbox.wasm`, and loads `js-dos.js` deferred at high fetch priority
 - **AbortController**: Cancellable fetch requests
 - **Retry logic**: Automatic retry with exponential backoff
-- **Efficient caching**: Emulator files and demo archives stay cached across deploys, and runtime entries are trimmed least recently used first
+- **Efficient caching**: Emulator files, demo archives and the bundles a deploy leaves unchanged stay cached across deploys, and runtime entries are trimmed least recently used first
 
 ### 4. Type Safety
 
