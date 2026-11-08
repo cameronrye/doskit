@@ -81,7 +81,7 @@ DosKit serves js-dos from its own origin, not from a CDN. `package.json` pins an
 
 - The js-dos library is a third-party dependency, under the GPL-2.0: the [licenses page](https://doskit.net/licenses/) gives its license and links the source of the version the site serves
 - The page loads js-dos from its own origin, without Subresource Integrity hashes. `package-lock.json` records the integrity hash of the js-dos package, which `npm ci` checks when it installs it
-- js-dos changes only with `package.json` and `package-lock.json`. The service worker keeps js-dos's files in a cache named after its version, so an open page goes on running the player and emulator files of one version
+- js-dos changes only with `package.json` and `package-lock.json`. The service worker keeps js-dos's files in a cache named after its version, and serves a page the files of the version its worker installed. A worker with another js-dos version takes over only after Update Now (that tab reloads) or once every tab has closed. Other open tabs are then asked to reload; until they do, a new player in them can get the new version's emulator files
 - js-dos has cloud features, and loads its emulator files from its own CDN by default. DosKit's settings in `src/config/jsdos.config.ts` turn the cloud features off (`noCloud`) and load the emulator files from `/emulators/` (`pathPrefix`), so the page loads nothing from other origins
 
 ### WebAssembly Execution
