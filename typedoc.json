@@ -3,7 +3,6 @@
   "entryPoints": [
     "src/utils",
     "src/hooks",
-    "src/contexts",
     "src/adapters",
     "src/config",
     "src/constants",
@@ -31,15 +30,7 @@
   "plugin": [],
   "theme": "default",
   "categorizeByGroup": true,
-  "categoryOrder": [
-    "Utilities",
-    "Hooks",
-    "Contexts",
-    "Adapters",
-    "Configuration",
-    "Constants",
-    "*"
-  ],
+  "categoryOrder": ["Utilities", "Hooks", "Adapters", "Configuration", "Constants", "*"],
   "sort": ["source-order"],
   "visibilityFilters": {
     "protected": false,
