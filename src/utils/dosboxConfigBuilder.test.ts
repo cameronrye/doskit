@@ -127,22 +127,6 @@ describe('DOSBoxConfigBuilder', () => {
   });
 
   describe('Presets', () => {
-    it('should create default preset', () => {
-      const config = presets.default().build();
-
-      expect(config).toContain('[cpu]');
-      expect(config).toContain('core=simple');
-      expect(config).toContain('cputype=auto');
-      expect(config).toContain('cycles=25000');
-      expect(config).toContain('[render]');
-      expect(config).toContain('scaler=none');
-      expect(config).toContain('[mixer]');
-      expect(config).toContain('rate=44100');
-      expect(config).toContain('blocksize=2048');
-      expect(config).toContain('[sblaster]');
-      expect(config).toContain('sbtype=sb16');
-    });
-
     it('should create music tracker preset', () => {
       const config = presets.musicTracker().build();
 
@@ -175,12 +159,13 @@ describe('DOSBoxConfigBuilder', () => {
 
     it('should allow customizing presets', () => {
       const config = presets
-        .default()
+        .demo()
         .setCPU({ cycles: 10000 })
         .addAutoexec('@echo off', 'echo Custom autoexec')
         .build();
 
       expect(config).toContain('cycles=10000');
+      expect(config).not.toContain('cycles=30000');
       expect(config).toContain('[autoexec]');
       expect(config).toContain('echo Custom autoexec');
     });

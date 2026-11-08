@@ -307,44 +307,6 @@ export function createDOSBoxConfig(): DOSBoxConfigBuilder {
  */
 export const presets = {
   /**
-   * Default configuration for general DOS applications
-   * Optimized for performance with high-quality audio
-   * Uses fixed cycles (25000) to prevent audio stuttering
-   */
-  default: (): DOSBoxConfigBuilder =>
-    createDOSBoxConfig()
-      .setCPU({ core: 'simple', cputype: 'auto', cycles: 25000 })
-      .setRender({ scaler: 'none', aspect: false })
-      .setDOS({ umb: true, ems: true, xms: true })
-      .setMixer({ rate: 44100, blocksize: 2048, prebuffer: 64 })
-      .setSoundBlaster({
-        sbtype: 'sb16',
-        sbbase: 220,
-        irq: 7,
-        dma: 1,
-        hdma: 5,
-        sbmixer: true,
-        oplmode: 'auto',
-        oplemu: 'default',
-        oplrate: 44100,
-      })
-      .setGUS({ gus: false })
-      .setSpeaker({
-        pcspeaker: true,
-        pcrate: 44100,
-        tandy: 'auto',
-        tandyrate: 44100,
-        disney: true,
-      })
-      .setJoystick({ joysticktype: 'auto' })
-      .setSerial({
-        serial1: 'dummy',
-        serial2: 'dummy',
-        serial3: 'disabled',
-        serial4: 'disabled',
-      }),
-
-  /**
    * Configuration optimized for music trackers and MOD playback
    * (Impulse Tracker, FastTracker, ScreamTracker, etc.)
    *
