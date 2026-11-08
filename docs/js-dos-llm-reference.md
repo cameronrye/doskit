@@ -6,7 +6,7 @@
 **GitHub Repository**: https://github.com/caiiiycuk/js-dos  
 **License**: GPL-2.0
 
-> **DosKit note:** This is a copy of a third-party reference, kept as it was written; the notes marked DosKit note are DosKit's. Checked against the code of js-dos 8.3.20, which DosKit runs, several parts are wrong: options and methods it does not have (`offscreenCanvas`, `setOffscreenCanvas`, `sockdrivePreload`, `startIpxServer`, `connectIpxAddress`), an `error` event it never sends, on-screen keyboard layouts in a form it cannot render, the browser's key codes where it takes its own, and browser minimums that are too low. A note follows each of them. [`src/types/js-dos.d.ts`](../src/types/js-dos.d.ts) declares what DosKit uses.
+> **DosKit note:** This is a copy of a third-party reference, kept as it was written; the notes marked DosKit note are DosKit's. Checked against the code of js-dos 8.3.20, which DosKit runs, several parts are wrong: options and methods it does not have (`offscreenCanvas`, `setOffscreenCanvas`, `sockdrivePreload`, `startIpxServer`, `connectIpxAddress`), an `error` event it never sends, command interface methods that resolve to other values (`fsDeleteFile()`, `persist()`) and an event the listing leaves out (`onUnload`), on-screen keyboard layouts in a form it cannot render, the browser's key codes where it takes its own, and browser minimums that are too low. A note follows each of them. [`src/types/js-dos.d.ts`](../src/types/js-dos.d.ts) declares what DosKit uses.
 
 ---
 
@@ -532,6 +532,8 @@ interface CommandInterfaceEvents {
     onNetworkDisconnected(consumer: (networkType: NetworkType) => void): void;
 }
 ```
+
+> **DosKit note:** js-dos's emulators package, which provides the command interface, declares it a little differently. `fsDeleteFile()` resolves to whether the file was deleted, a boolean, and `persist()` can also resolve to `{ drives: { url, persist }[] }`: with `onlyChanges`, the default, a bundle that mounts sockdrives gets the changes of each drive. The events also have `onUnload(consumer: () => Promise<void>)`, which only the DOSBox-X backend reports. Of the types named above, `DosConfig` is `{ dosboxConf: string; jsdosConf: { version: string } }`; `FsNode` is `{ name, size, nodes }`, where a folder's size and a file's nodes are null; `NetworkType` is a numeric enum whose only member is `NETWORK_DOSBOX_IPX`, 0; and `AsyncifyStats` holds the emulator's counters and each sockdrive's reads and writes. [`src/types/js-dos.d.ts`](../src/types/js-dos.d.ts) declares them all as the package does.
 
 **Example Usage:**
 
