@@ -17,18 +17,10 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/test/',
-        'src/main.tsx',
-        'src/utils/serviceWorkerRegistration.ts',
-        '**/*.d.ts',
-        '**/*.config.*',
-        '**/mockData',
-        'dist/',
-        'public/**',
-        'scripts/**',
-      ],
+      // All of the app's source, so that a file no test imports counts as uncovered: without
+      // an include, Vitest reports only the files the tests load.
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/**/*.d.ts'],
       // About 3 points under the coverage measured in November 2026 (statements 89.19%,
       // branches 78.21%, functions 91.19%, lines 89.44%): room for small shifts as tests
       // change, while a real drop fails CI. Raise them as coverage grows.
