@@ -40,9 +40,10 @@ interface DosPlayerWithAppsProps {
 }
 
 /**
- * How the player is doing: 'loading' while an app downloads or its emulator starts, and
- * after DOS has exited until the next start; 'ready' once js-dos reports the emulator
- * ready; 'error' while the load error or the emulator's start error shows
+ * How the player is doing: 'loading' while a requested app downloads or an emulator starts,
+ * and after DOS has exited until the next start (a download in the selector leaves the
+ * status as it is); 'ready' once js-dos reports the emulator ready; 'error' while the load
+ * error or the emulator's start error shows
  */
 export type PlayerStatus = 'loading' | 'ready' | 'error';
 

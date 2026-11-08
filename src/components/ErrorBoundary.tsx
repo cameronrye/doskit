@@ -53,8 +53,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       errorInfo,
     });
 
-    // The tracker's report is the one line logged for the error: the console tracker logs it
-    // with its component stack
+    // The boundary logs nothing itself: the console tracker logs the error with its component
+    // stack, and React logs it too, through the default onCaughtError createRoot keeps
     const tracker = getErrorTracker();
     tracker.captureReactError(error, errorInfo, {
       component: 'ErrorBoundary',

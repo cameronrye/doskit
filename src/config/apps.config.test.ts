@@ -158,8 +158,9 @@ describe('availableApps', () => {
   });
 
   it('should ask before the page closes only while a tracker runs', () => {
-    // Browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, and Scream Tracker 3 saves on
-    // Ctrl-W: the tab would close with the song unsaved. A demo has nothing to lose.
+    // On Windows, Linux and ChromeOS, browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves,
+    // and Scream Tracker 3 saves on Ctrl-W: the tab would close with the song unsaved. A demo
+    // has nothing to lose.
     const asking = availableApps.filter((app) => app.warnBeforeLeaving).map((app) => app.id);
 
     expect(asking).toEqual(['impulse-tracker', 'scream-tracker']);

@@ -17,7 +17,7 @@
  *          it then holds js-dos's own layers, its toasts included
  *   1000   the loading and error overlays over the whole player (here)
  *   1100   the selector's backdrop (here), 1101 the selector (DemoSelector.css)
- *   9999   the install prompt (OfflineIndicator.css), and js-dos's toasts
+ *   9999   the install prompt (OfflineIndicator.css)
  *   10000  the offline and back-online notices (OfflineIndicator.css), and the update
  *          prompt (UpdateNotification.css), whose root comes later in the page
  * The offline banner and the install prompt are above the selector, but the selector is

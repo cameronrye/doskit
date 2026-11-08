@@ -164,9 +164,10 @@ function App() {
   }, []);
 
   // Ask before the page goes while an app people make things in runs. Its work lives only
-  // in the emulator's memory, and browsers keep keys such as Ctrl+W (Scream Tracker's save)
-  // for themselves, so one key press could close the tab. Only once its player is ready:
-  // while it downloads, or after it failed, there is nothing to lose.
+  // in the emulator's memory, and on Windows, Linux and ChromeOS browsers keep keys such as
+  // Ctrl+W (Scream Tracker's save) for themselves, so one key press could close the tab.
+  // Only once its player is ready: while it downloads, or after it failed, there is nothing
+  // to lose.
   const warnBeforeLeaving = (currentApp?.warnBeforeLeaving ?? false) && playerStatus === 'ready';
   useEffect(() => {
     if (!warnBeforeLeaving) return;

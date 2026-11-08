@@ -223,8 +223,9 @@ describe('jsdos.config', () => {
       expect(defaultJsDosConfig).not.toHaveProperty('scaleControls');
     });
 
-    // Set, even to false, it makes js-dos call document.exitFullscreen() at every start,
-    // which rejects outside fullscreen: unhandled, and in Safari not known to be harmless
+    // Set to false, it makes js-dos call document.exitFullscreen() at every start, which
+    // rejects outside fullscreen: unhandled, and in Safari not known to be harmless. Set to
+    // true, it calls requestFullscreen()
     it('should not set fullScreen, so that js-dos makes no Fullscreen API call at start', () => {
       expect(defaultJsDosConfig).not.toHaveProperty('fullScreen');
       expect(mobileJsDosConfig).not.toHaveProperty('fullScreen');

@@ -15,7 +15,8 @@ import { logger } from './logger';
  * Known harmless errors: uncaught errors and unhandled rejections that match are suppressed
  */
 const HARMLESS_ERROR_PATTERNS = [
-  // Keyboard lock errors (require user interaction)
+  // Keyboard lock errors: js-dos asks for a lock at every start, and leaves its promise
+  // unhandled
   /lock\(\) request could not be registered/i,
   /keyboard.*lock/i,
   // js-dos locks the keyboard each time a player starts. When two start milliseconds

@@ -54,7 +54,9 @@ export const defaultJsDosConfig: Partial<DosOptions> = {
   // Behavior Settings
   autoStart: true, // Auto-start the emulator
   countDownStart: 0, // No countdown
-  autoSave: false, // Manual save control
+  // js-dos saves only bundles loaded from a url, so it saves nothing of DosKit's players
+  // either way
+  autoSave: false,
   kiosk: false, // Show UI controls
 
   // UI Settings
@@ -87,13 +89,14 @@ const softKeyboardLayout: string[][][] = [
       '{left} {down} {right}',
     ],
   ],
-  // js-dos 8.3.20's own two layouts, which its keyboard shows unless given others
-  // (softKeyboardLayout in its src/store/dos.ts): the full keyboard first, then function keys
-  // and a keypad. Three of its keys do not press what they show: js-dos presses nothing for \
-  // and / and keypad 0 for `. It reads a one-character name as the browser key code equal to
-  // its character code, and the browser's codes for those keys are those of Ü, ¿ and À, so
-  // here those are their names, which the labels below show as \ / and `. Its {symbols} key,
-  // which switches to its labels in Russian, is left out: DosKit gives one set of labels.
+  // js-dos 8.3.20's own two layouts, which its keyboard shows, function keys and a keypad
+  // first, unless given others (softKeyboardLayout in its src/store/dos.ts). Here the full
+  // keyboard comes first, then function keys and a keypad. Three of its keys do not press
+  // what they show: js-dos presses nothing for \ and / and keypad 0 for `. It reads a
+  // one-character name as the browser key code equal to its character code, and the browser's
+  // codes for those keys are those of Ü, ¿ and À, so here those are their names, which the
+  // labels below show as \ / and `. Its {symbols} key, which switches to its labels in
+  // Russian, is left out: DosKit gives one set of labels.
   [
     [
       '{esc} À 1 2 3 4 5 6 7 8 9 0 ( ) - = {bksp} {enter}',

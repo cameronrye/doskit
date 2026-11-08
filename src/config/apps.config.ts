@@ -12,8 +12,9 @@ import { loadZipArchive } from '../utils/diskLoader';
 
 /**
  * Available DOS applications and demos
- * Each app's config module (src/dos-apps) is imported lazily, so its code is only
- * downloaded when the app is loaded or its config preloaded
+ * Each app's config module (src/dos-apps) is imported lazily, so the page only imports its
+ * code when the app is loaded or its config preloaded (production builds still store every
+ * chunk in the service worker's cache when it installs, for offline use)
  */
 export const availableApps: DosApp[] = [
   {
@@ -76,7 +77,7 @@ export const availableApps: DosApp[] = [
     year: 1994,
     loadMethod: 'zip',
     dosboxConf: '',
-    warnBeforeLeaving: true, // a song in progress; its Ctrl-W (save) closes the tab
+    warnBeforeLeaving: true, // a song in progress; outside macOS its Ctrl-W (save) closes the tab
     loader: async (onProgress, signal) => {
       const config = await import('../dos-apps/scream-tracker.config');
       return loadZipArchive(config.screamTrackerZipUrl, onProgress, signal);

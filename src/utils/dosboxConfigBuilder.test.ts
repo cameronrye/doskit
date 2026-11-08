@@ -83,7 +83,8 @@ describe('DOSBoxConfigBuilder', () => {
     });
 
     it('should accept only the scaler that says what happens', () => {
-      // @ts-expect-error: the backend has normal2x too, but frames reach js-dos unscaled either way
+      // @ts-expect-error: the backend's only scaler is none (normal2x is just the default it
+      // resets other values to), and frames reach js-dos unscaled either way
       createDOSBoxConfig().setRender({ scaler: 'normal2x' });
     });
 
