@@ -91,6 +91,39 @@ describe('DOSBoxConfigBuilder', () => {
       builder.setGUS({ gusrate: 44100 });
     });
 
+    it('should not accept sound values the backend would change', () => {
+      const builder = createDOSBoxConfig();
+
+      // @ts-expect-error: prebuffer stops at 100 ms; DOSBox lowers 500 to 100
+      builder.setMixer({ prebuffer: 500 });
+      // @ts-expect-error: nor can it go below 0; DOSBox raises -5 to 0
+      builder.setMixer({ prebuffer: -5 });
+      // @ts-expect-error: not a rate the mixer has; DOSBox would use 44100
+      builder.setMixer({ rate: 96000 });
+      // @ts-expect-error: the OPL takes the same rates as the mixer
+      builder.setSoundBlaster({ oplrate: 44000 });
+      // @ts-expect-error: so does the PC speaker
+      builder.setSpeaker({ pcrate: 96000 });
+      // @ts-expect-error: and the Tandy sound
+      builder.setSpeaker({ tandyrate: 96000 });
+    });
+
+    it('should accept the sound values the backend keeps', () => {
+      const lowest = createDOSBoxConfig()
+        .setMixer({ rate: 8000, prebuffer: 0 })
+        .setSoundBlaster({ oplrate: 8000 })
+        .build();
+      const highest = createDOSBoxConfig()
+        .setMixer({ rate: 49716, prebuffer: 100 })
+        .setSpeaker({ pcrate: 49716, tandyrate: 49716 })
+        .build();
+
+      expect(lowest).toContain('prebuffer=0');
+      expect(lowest).toContain('oplrate=8000');
+      expect(highest).toContain('prebuffer=100');
+      expect(highest).toContain('tandyrate=49716');
+    });
+
     it('should have no setters for sections the backend does not have', () => {
       const builder = createDOSBoxConfig();
 

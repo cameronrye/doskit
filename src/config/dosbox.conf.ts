@@ -9,8 +9,8 @@
  *
  * Audio Optimization Notes:
  * - Fixed CPU cycles (25000) instead of "max" to prevent audio stuttering/crackling
- * - Mixer prebuffer increased to 64 for smoother audio buffering
- *   (can go up to 8192 max for extremely problematic cases)
+ * - Mixer prebuffer increased to 64 ms for smoother audio buffering
+ *   (it goes up to 100: DOSBox lowers anything higher to 100)
  * - Blocksize 2048 provides good balance between latency and stability
  * - Sample rate 44100 Hz is standard for DOS audio (CD quality)
  *

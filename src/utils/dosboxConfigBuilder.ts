@@ -41,11 +41,26 @@ export interface DOSConfig {
   xms?: boolean;
 }
 
+/**
+ * The sample rates, in Hz, the backend has for the mixer, the OPL, the PC speaker and the
+ * Tandy sound. It resets any other rate to 44100.
+ */
+export type SampleRate = 8000 | 11025 | 16000 | 22050 | 32000 | 44100 | 48000 | 49716;
+
+/** The whole numbers from 0 to Max */
+export type UpTo<Max extends number, Counted extends number[] = []> = Counted['length'] extends Max
+  ? Counted[number] | Max
+  : UpTo<Max, [...Counted, Counted['length']]>;
+
 export interface MixerConfig {
   nosound?: boolean;
-  rate?: number;
+  rate?: SampleRate;
   blocksize?: number;
-  prebuffer?: number;
+  /**
+   * How many milliseconds of audio the mixer keeps on top of each block, from 0 to 100:
+   * DOSBox lowers anything above 100 to 100. Left out, it is 40.
+   */
+  prebuffer?: UpTo<100>;
 }
 
 export interface SoundBlasterConfig {
@@ -58,7 +73,7 @@ export interface SoundBlasterConfig {
   sbmixer?: boolean;
   oplmode?: 'auto' | 'cms' | 'opl2' | 'dualopl2' | 'opl3' | 'none';
   oplemu?: 'default' | 'compat' | 'fast';
-  oplrate?: number;
+  oplrate?: SampleRate;
 }
 
 export interface GUSConfig {
@@ -72,9 +87,9 @@ export interface GUSConfig {
 
 export interface SpeakerConfig {
   pcspeaker?: boolean;
-  pcrate?: number;
+  pcrate?: SampleRate;
   tandy?: 'auto' | 'on' | 'off';
-  tandyrate?: number;
+  tandyrate?: SampleRate;
   disney?: boolean;
 }
 
@@ -312,7 +327,7 @@ export const presets = {
    *
    * Optimizations:
    * - Fixed cycles (18000) for stable audio timing
-   * - Increased prebuffer (64) for smooth MOD playback (max 8192 if needed)
+   * - Increased prebuffer (64 ms) for smooth MOD playback (it goes up to 100)
    * - Blocksize 2048 for optimal buffering
    * - EMS and XMS, so large samples can use DOSBox's default 16 MB of RAM
    */
