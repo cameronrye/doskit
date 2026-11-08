@@ -38,29 +38,29 @@ offscreenCanvas: true;
 
 ---
 
-### 2. Dynamic CPU Core with Fixed Cycles (VERY HIGH Impact)
+### 2. Simple CPU Core with Fixed Cycles (HIGH Impact for Audio)
 
 **Status:** ✅ Enabled by default
 
-**Performance Gain:** 3-5x faster than normal core, with stable audio
+**Performance Gain:** Stable audio timing. The core itself brings no speed-up: the default backend has no dynamic core.
 
 **Configuration:**
 
 ```ini
 [cpu]
-core=dynamic
+core=simple
 cputype=auto
 cycles=25000
 ```
 
-**What it does:** Uses dynamic recompilation for CPU emulation with fixed cycle count.
+**What it does:** Emulates a fixed number of instructions per millisecond (`cycles`) on DOSBox's simple core. This is the default DOS prompt's configuration (`src/config/dosbox.conf.ts`); the `musicTracker()` and `demo()` presets in `src/utils/dosboxConfigBuilder.ts` use the same core with 18000 and 30000 cycles. Each app's config in `src/dos-apps/` can override them: the trackers keep fixed cycles on the simple core, Second Reality runs `cycles=max` on it, and the other demos and intros use `core=auto`, `cputype=auto` and `cycles=auto`.
+
+**No dynamic core:** js-dos's default backend (`dosbox`, `wdosbox.wasm`), which every app runs on, only has the `auto`, `normal` and `simple` cores. DOSBox resets a value it does not accept to the setting's default without a warning, and this backend's default core is `simple`, so the `core=dynamic` these configs used to ask for always ran the simple core: nothing was ever recompiled. `core=auto` cannot switch to a dynamic core either.
 
 **Benefits:**
 
-- Dramatically faster CPU emulation
-- Better performance for CPU-intensive DOS applications
 - **Fixed cycles prevent audio stuttering** (cycles=max causes timing issues)
-- Automatic fallback to compatible modes when needed
+- Stable timing for programs that synchronize audio and video
 
 **Why Fixed Cycles?**
 
@@ -87,7 +87,7 @@ prebuffer=64
 
 - Maintains high audio quality (44.1kHz CD-quality sample rate)
 - Uses optimal buffer size (2048) to balance latency and stability
-- Increased prebuffer (64) to prevent audio dropouts and crackling (max 8192 if needed)
+- Increased prebuffer (64 ms of audio on top of the block) to prevent audio dropouts and crackling (DOSBox accepts up to 100)
 
 **Benefits:**
 
@@ -108,10 +108,10 @@ Based on extensive research from:
 **Key Findings:**
 
 - `blocksize=2048` is optimal for web-based emulation (balances latency vs stability)
-- `prebuffer=64` prevents audio stuttering in most scenarios (can go up to 8192 for problematic cases)
+- `prebuffer=64` prevents audio stuttering in most scenarios (it can go up to 100 for problematic cases; DOSBox lowers anything higher to 100)
 - `rate=44100` is standard for DOS audio and matches most DOS games' expectations
 
-**Trade-offs:** Slightly higher audio latency (~67ms), which is imperceptible for most use cases and far outweighed by the elimination of audio artifacts
+**Trade-offs:** Higher audio latency: the settings buffer a 2048-sample block (about 46 ms at 44.1 kHz) plus 64 ms of prebuffer, about 110 ms in all. For demos and music playback that is far outweighed by the elimination of audio artifacts
 
 ---
 
@@ -133,25 +133,30 @@ const config = presets.musicTracker().build();
 
 ```ini
 [cpu]
-core=dynamic
-cputype=pentium
+core=simple
+cputype=auto
 cycles=18000
 
+[dos]
+umb=true
+ems=true
+xms=true
+
 [mixer]
+nosound=false
 rate=44100
 blocksize=2048
 prebuffer=64
-
-[memory]
-memsize=16
 ```
+
+The preset also configures a Sound Blaster 16 and the PC speaker, and turns off the Gravis UltraSound and the joystick.
 
 **What it does:**
 
 - Uses **fixed cycles (18000)** specifically tuned for music tracker applications
-- **Pentium CPU type** provides better instruction set for audio processing
-- **Increased prebuffer (64)** for ultra-smooth MOD playback without dropouts (max 8192)
-- **16MB RAM** for loading large sample sets
+- Runs on the **simple CPU core** with the **auto CPU type**: the default backend has no Pentium type and resets `cputype=pentium` to `auto`
+- **Increased prebuffer (64)** for ultra-smooth MOD playback without dropouts (DOSBox accepts up to 100)
+- **EMS and XMS**, so large sample sets can use DOSBox's default 16 MB of memory (the backend has no `[memory]` section; its memory setting is `memsize` in `[dosbox]`)
 
 **Why This Matters for MOD Music:**
 
@@ -185,11 +190,11 @@ MOD files (and related formats like IT, XM, S3M) require precise timing for samp
 
 ---
 
-### 4. Scaler Optimization (MEDIUM-HIGH Impact)
+### 4. Scaler Settings (Backend Default)
 
-**Status:** ✅ Enabled by default
+**Status:** ✅ Always on: these are the default backend's own defaults
 
-**Performance Gain:** 20-50% rendering improvement
+**Performance Gain:** None from the setting itself: the backend has no software scalers to turn off
 
 **Configuration:**
 
@@ -199,13 +204,12 @@ scaler=none
 aspect=false
 ```
 
-**What it does:** Disables software scaling in DOSBox, letting WebGL handle scaling more efficiently.
+**What it does:** States what the backend does anyway. `none` is the only scaler it accepts and aspect correction is off by default, so DOSBox hands js-dos each frame at the program's own resolution. Only the default DOS prompt's configuration states these lines; the presets leave `[render]` at the same defaults. js-dos then scales the frame on the GPU with WebGL (section 5), and its `renderAspect: '4/3'` option in `src/config/jsdos.config.ts` gives the picture its 4:3 shape.
 
 **Benefits:**
 
-- Offloads scaling to GPU via WebGL
-- Eliminates CPU overhead from software scalers
-- Better performance with no visual quality loss
+- Scaling happens on the GPU, via WebGL
+- No CPU time goes to software scalers
 
 ---
 
@@ -283,15 +287,14 @@ workerThread: true;
 
 Based on the optimizations implemented:
 
-| Metric              | Before   | After            | Improvement              |
-| ------------------- | -------- | ---------------- | ------------------------ |
-| CPU Emulation Speed | Baseline | 3-5x faster      | Dynamic core             |
-| Rendering FPS       | Baseline | 10-30% higher    | OffscreenCanvas + WebGL  |
-| Startup Time        | Baseline | 200-500ms faster | WASM preloading          |
-| Audio Quality       | Good     | Excellent        | Optimized mixer settings |
-| UI Responsiveness   | Good     | Excellent        | Worker thread mode       |
+| Metric            | Before   | After            | Improvement              |
+| ----------------- | -------- | ---------------- | ------------------------ |
+| Rendering FPS     | Baseline | 10-30% higher    | OffscreenCanvas + WebGL  |
+| Startup Time      | Baseline | 200-500ms faster | WASM preloading          |
+| Audio Quality     | Good     | Excellent        | Optimized mixer settings |
+| UI Responsiveness | Good     | Excellent        | Worker thread mode       |
 
-**Overall Performance Improvement:** 5-10x in optimal conditions
+There is no CPU speed gain to list: the default backend has no dynamic core, so DOSBox's interpreting cores emulate the CPU (see section 2).
 
 ---
 
@@ -305,7 +308,6 @@ All optimizations are designed with progressive enhancement:
 | WebGL           | ✅ All | ✅ All  | ✅ All   | ✅ All |
 | Worker Threads  | ✅ All | ✅ All  | ✅ All   | ✅ All |
 | WASM Preload    | ✅ All | ✅ All  | ✅ All   | ✅ All |
-| Dynamic Core    | ✅ All | ✅ All  | ✅ All   | ✅ All |
 
 **Fallback Strategy:** Features gracefully degrade on older browsers while maintaining functionality.
 
@@ -327,21 +329,31 @@ All optimizations are designed with progressive enhancement:
 
 ### Optimal DOSBox Configuration
 
+The default DOS prompt's settings, from `src/config/dosbox.conf.ts`:
+
 ```ini
 [cpu]
-core=dynamic    # 3-5x faster than normal
+# The default backend has no dynamic core
+core=simple
 cputype=auto
-cycles=max
+# Fixed cycles keep audio stable
+cycles=25000
 
 [render]
-scaler=none     # Let WebGL handle scaling
+# The only scaler the backend has; WebGL scales the frame
+scaler=none
 aspect=false
 
 [mixer]
-rate=44100      # High-quality audio
-blocksize=2048  # Larger buffer for stability
-prebuffer=40    # Prevent audio dropouts
+# High-quality audio
+rate=44100
+# Larger buffer for stability
+blocksize=2048
+# Prevent audio dropouts (up to 100)
+prebuffer=64
 ```
+
+DOSBox only treats a line that starts with `#` as a comment. A comment after a value becomes part of it, which makes a word value such as `core=normal` invalid, and DOSBox resets it to the default without a warning.
 
 ---
 
