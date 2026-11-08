@@ -445,6 +445,7 @@ describe('DemoSelector', () => {
       act(() => getFloppyDiskByName('Impulse Tracker').focus());
       fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
 
+      expect(screen.getByText('Selected: Impulse Tracker')).toBeInTheDocument();
       await waitFor(() => expect(mockOnSelect).toHaveBeenCalledTimes(1));
       expect(mockOnSelect.mock.calls[0]?.[0].app.id).toBe('impulse-tracker');
     });
@@ -895,6 +896,80 @@ describe('DemoSelector', () => {
       });
       expect(mockOnSelect).toHaveBeenCalledTimes(1);
       expect(mockOnSelect.mock.calls[0]?.[0].app.id).toBe('impulse-tracker');
+    });
+
+    // The details below the disks always name the app that is downloading
+    describe('another disk chosen during a download', () => {
+      const signalOf = (url: string) =>
+        vi.mocked(loadZipArchive).mock.calls.find(([called]) => called === url)?.[2];
+
+      it('cancels the download when it is clicked, and selects it', async () => {
+        const pending = deferDownloads();
+        render(<DemoSelector onSelect={mockOnSelect} />);
+        await startLoadingSecondReality(pending);
+
+        fireEvent.click(getFloppyDiskByName('Impulse Tracker'));
+
+        expect(signalOf(secondRealityZipUrl)?.aborted).toBe(true);
+        expect(screen.getByText('Selected: Impulse Tracker')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Load Application' })).toBeInTheDocument();
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+        await act(async () => pending.get(secondRealityZipUrl)!(new Uint8Array([1])));
+        expect(mockOnSelect).not.toHaveBeenCalled();
+      });
+
+      it('cancels the download when an arrow key selects it', async () => {
+        const pending = deferDownloads();
+        render(<DemoSelector onSelect={mockOnSelect} />);
+        fireEvent.keyDown(getFloppyDiskByName('Second Reality'), { key: 'Enter' });
+        await waitFor(() => expect(pending.has(secondRealityZipUrl)).toBe(true));
+
+        fireEvent.keyDown(getFloppyDiskByName('Second Reality'), { key: 'ArrowRight' });
+
+        expect(signalOf(secondRealityZipUrl)?.aborted).toBe(true);
+        expect(screen.getByText('Selected: Impulse Tracker')).toBeInTheDocument();
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      });
+
+      it('loads it instead when it is double-clicked, and names it', async () => {
+        const user = userEvent.setup();
+        const pending = deferDownloads();
+        render(<DemoSelector onSelect={mockOnSelect} />);
+        await startLoadingSecondReality(pending);
+
+        await user.dblClick(getFloppyDiskByName('Impulse Tracker'));
+        await waitFor(() => expect(pending.has(impulseTrackerZipUrl)).toBe(true));
+
+        expect(signalOf(secondRealityZipUrl)?.aborted).toBe(true);
+        expect(screen.getByText('Selected: Impulse Tracker')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Cancel Loading/i })).toBeInTheDocument();
+      });
+    });
+
+    describe('the disk that is downloading, chosen again', () => {
+      it('keeps downloading it on a double-click', async () => {
+        const user = userEvent.setup();
+        const pending = deferDownloads();
+        render(<DemoSelector onSelect={mockOnSelect} />);
+        await startLoadingSecondReality(pending);
+
+        await user.dblClick(getFloppyDiskByName('Second Reality'));
+
+        expect(loadZipArchive).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(loadZipArchive).mock.calls[0]?.[2]?.aborted).toBe(false);
+        expect(screen.getByRole('button', { name: /Cancel Loading/i })).toBeInTheDocument();
+      });
+
+      it('keeps downloading it on Enter', async () => {
+        const pending = deferDownloads();
+        render(<DemoSelector onSelect={mockOnSelect} />);
+        await startLoadingSecondReality(pending);
+
+        fireEvent.keyDown(getFloppyDiskByName('Second Reality'), { key: 'Enter' });
+
+        expect(loadZipArchive).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(loadZipArchive).mock.calls[0]?.[2]?.aborted).toBe(false);
+      });
     });
   });
 

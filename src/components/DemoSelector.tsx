@@ -103,7 +103,8 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadProgress, setLoadProgress] = useState<LoadProgress | null>(null);
   const [error, setError] = useState<FriendlyError | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  // The load that is running, if any: the app it loads, and what aborts it
+  const loadRef = useRef<{ app: DosApp; controller: AbortController } | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -119,10 +120,29 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
    */
   const preloadedConfigsRef = useRef(new Map<string, Promise<string>>());
 
-  const handleSelectApp = useCallback((app: DosApp) => {
-    setSelectedApp(app);
+  /** Cancel current loading operation */
+  const handleCancelLoading = useCallback(() => {
+    loadRef.current?.controller.abort();
+    loadRef.current = null;
+    setIsLoading(false);
+    setLoadProgress(null);
     setError(null);
   }, []);
+
+  /**
+   * Select an app. Choosing another app than the one downloading gives up its download, so
+   * that the details below the disks always name the app that is loading.
+   */
+  const handleSelectApp = useCallback(
+    (app: DosApp) => {
+      if (loadRef.current && loadRef.current.app.id !== app.id) {
+        handleCancelLoading();
+      }
+      setSelectedApp(app);
+      setError(null);
+    },
+    [handleCancelLoading]
+  );
 
   /**
    * Preload app configuration on hover for faster perceived loading
@@ -162,12 +182,17 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
    */
   const handleLoadApp = useCallback(
     async (app: DosApp) => {
+      // Already downloading it: another double-click or Enter would start over
+      if (loadRef.current?.app.id === app.id) {
+        return;
+      }
       // Supersede any ongoing load. Each load checks its own controller, so a
       // cancelled or superseded load can never deliver its result.
-      abortControllerRef.current?.abort();
+      loadRef.current?.controller.abort();
       const controller = new AbortController();
-      abortControllerRef.current = controller;
+      loadRef.current = { app, controller };
 
+      setSelectedApp(app);
       setIsLoading(true);
       setError(null);
       setLoadProgress(null);
@@ -208,6 +233,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
         }
 
         console.error('[DemoSelector] Error loading application:', err);
+        loadRef.current = null;
         setError(getUserFriendlyError(err, { online: navigator.onLine }));
         setIsLoading(false);
         setLoadProgress(null);
@@ -215,17 +241,6 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
     },
     [onSelect]
   );
-
-  /** Cancel current loading operation */
-  const handleCancelLoading = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    setIsLoading(false);
-    setLoadProgress(null);
-    setError(null);
-  }, []);
 
   /**
    * Close the selector. From the keyboard, the focus then goes back to what had it before:
@@ -288,7 +303,6 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
           return;
         case 'Enter':
           event.preventDefault();
-          handleSelectApp(app);
           handleLoadApp(app);
           return;
         default:
@@ -347,9 +361,7 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
   // no longer on the page); otherwise it stays on the page, where js-dos gives DOS the keys.
   useEffect(() => {
     return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      loadRef.current?.controller.abort();
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
@@ -426,7 +438,6 @@ export function DemoSelector({ onSelect, onCancel }: DemoSelectorProps) {
               }}
               onDoubleClick={() => {
                 setFocusedIndex(index);
-                handleSelectApp(app);
                 handleLoadApp(app); // Pass app directly to avoid race condition
               }}
               onMouseEnter={() => handleHoverStart(app)}
