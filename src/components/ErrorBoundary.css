@@ -20,10 +20,11 @@
 .error-boundary-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
-  animation: pulse 2s ease-in-out infinite;
+  animation: error-boundary-pulse 2s ease-in-out infinite;
 }
 
-@keyframes pulse {
+/* Keyframe names are global: plain pulse replaced js-dos.css's, which its own UI uses */
+@keyframes error-boundary-pulse {
   0%,
   100% {
     transform: scale(1);

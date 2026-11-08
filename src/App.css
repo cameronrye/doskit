@@ -142,10 +142,11 @@
   font-size: 0.9rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   z-index: 100;
-  animation: slideDown 0.3s ease-out;
+  animation: app-slide-down 0.3s ease-out;
 }
 
-@keyframes slideDown {
+/* Keyframe names are global: an app- prefix keeps them apart from other stylesheets' */
+@keyframes app-slide-down {
   from {
     transform: translateY(-100%);
     opacity: 0;
@@ -241,7 +242,7 @@
 
 /* Not .loading: js-dos.css styles that class page-wide as a spinner */
 .status-badge.is-loading {
-  animation: pulse-loading 1.5s ease-in-out infinite;
+  animation: app-pulse-loading 1.5s ease-in-out infinite;
 }
 
 .status-dot {
@@ -249,18 +250,18 @@
   height: 6px;
   border-radius: 50%;
   background: currentColor;
-  animation: pulse-dot 2s infinite;
+  animation: app-pulse-dot 2s infinite;
 }
 
 .status-badge.is-loading .status-dot {
-  animation: pulse-loading 1.5s ease-in-out infinite;
+  animation: app-pulse-loading 1.5s ease-in-out infinite;
 }
 
 .status-badge.offline .status-dot {
   animation: none;
 }
 
-@keyframes pulse-loading {
+@keyframes app-pulse-loading {
   0%,
   100% {
     opacity: 1;
@@ -270,7 +271,7 @@
   }
 }
 
-@keyframes pulse-dot {
+@keyframes app-pulse-dot {
   0%,
   100% {
     opacity: 1;
@@ -306,7 +307,7 @@
 .app-footer .made-with .heart {
   display: inline-block;
   color: #e25555;
-  animation: heartbeat 1.5s ease-in-out infinite;
+  animation: app-heartbeat 1.5s ease-in-out infinite;
 }
 
 .app-footer .made-with a {
@@ -320,7 +321,7 @@
   text-decoration: underline;
 }
 
-@keyframes heartbeat {
+@keyframes app-heartbeat {
   0%,
   100% {
     transform: scale(1);
