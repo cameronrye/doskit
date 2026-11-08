@@ -7,32 +7,100 @@
  * Maps technical errors to user-friendly messages
  */
 
-interface ErrorMapping {
-  pattern: RegExp;
+/** A technical error, explained for users */
+export interface FriendlyError {
+  /** What went wrong */
   message: string;
+  /** What to do about it */
   suggestion?: string;
+  /** The technical message, in development builds */
+  originalError?: string;
+}
+
+type Explanation = Omit<FriendlyError, 'originalError'>;
+
+interface ErrorMapping extends Explanation {
+  pattern: RegExp;
+}
+
+const CONNECTION_FAILED: Explanation = {
+  message: 'Unable to connect to the server',
+  suggestion: 'Please check your internet connection and try again.',
+};
+
+const TIMED_OUT: Explanation = {
+  message: 'The request took too long to complete',
+  suggestion: 'The connection or the server might be slow. Please try again.',
+};
+
+const CANCELLED: Explanation = {
+  message: 'Operation was cancelled',
+  suggestion: 'The operation was stopped before it could complete. Please try again.',
+};
+
+const NOT_FOUND: Explanation = {
+  message: 'The requested file was not found',
+  suggestion: 'It might have moved in an update of DosKit. Reload the page and try again.',
+};
+
+const SERVER_UNAVAILABLE: Explanation = {
+  message: 'The server is temporarily unavailable',
+  suggestion: 'Please try again in a few minutes.',
+};
+
+const TOO_MANY_REQUESTS: Explanation = {
+  message: 'Too many requests',
+  suggestion: 'Please wait a few minutes before trying again.',
+};
+
+const UNEXPECTED: Explanation = {
+  message: 'An unexpected error occurred',
+  suggestion: 'Please try again. If the problem persists, try refreshing the page.',
+};
+
+/**
+ * How browsers word a network failure. fetch() and lazily loaded modules reject with a
+ * TypeError, but so do bugs, so the message decides.
+ */
+const NETWORK_FAILURES = [
+  // Chrome and Edge, also as "Failed to fetch dynamically imported module: <url>"
+  /failed to fetch/i,
+  // Firefox: "NetworkError when attempting to fetch resource."
+  /network ?error/i,
+  // Safari, and every browser on iOS
+  /^load failed$/i,
+  // Firefox and Safari, for a lazily loaded module
+  /error loading dynamically imported module/i,
+  /importing a module script failed/i,
+  // fetchWithRetry's own, should every attempt fail without an error
+  /fetch failed/i,
+];
+
+/**
+ * The status in the message of a download that failed with one: loadZipArchive's
+ * "Failed to load ZIP: HTTP 404" (with the status text over HTTP/1.1) and the
+ * "HTTP 503 Service Unavailable" errors fetchWithRetry hands to onRetry
+ */
+const HTTP_STATUS = /\bHTTP ([1-5]\d\d)\b/;
+
+/**
+ * Explain an HTTP status, if it says more than that the download failed
+ * @param status - HTTP status code
+ * @returns The explanation, or undefined
+ */
+function explainStatus(status: number): Explanation | undefined {
+  if (status === 404 || status === 410) return NOT_FOUND;
+  if (status === 408) return TIMED_OUT;
+  if (status === 429) return TOO_MANY_REQUESTS;
+  if (status >= 500) return SERVER_UNAVAILABLE;
+  return undefined;
 }
 
 /**
- * Common error patterns and their user-friendly messages
+ * Errors explained by their message alone; the first match wins
  */
 const ERROR_MAPPINGS: ErrorMapping[] = [
-  // Network errors
-  {
-    pattern: /fetch.*failed|network.*error|failed to fetch/i,
-    message: 'Unable to connect to the server',
-    suggestion: 'Please check your internet connection and try again.',
-  },
-  {
-    pattern: /timeout|timed out/i,
-    message: 'The request took too long to complete',
-    suggestion: 'The server might be slow or unavailable. Please try again later.',
-  },
-  {
-    pattern: /rate limit/i,
-    message: 'Too many requests',
-    suggestion: 'Please wait a few minutes before trying again.',
-  },
+  { pattern: /rate limit/i, ...TOO_MANY_REQUESTS },
 
   // File loading errors
   {
@@ -40,11 +108,7 @@ const ERROR_MAPPINGS: ErrorMapping[] = [
     message: 'Unable to load the application archive',
     suggestion: 'The file might be corrupted or unavailable. Please try a different application.',
   },
-  {
-    pattern: /file.*not found|404/i,
-    message: 'The requested file was not found',
-    suggestion: 'The file might have been moved or deleted. Please try a different application.',
-  },
+  { pattern: /file.*not found/i, ...NOT_FOUND },
 
   // Service Worker errors
   {
@@ -79,73 +143,72 @@ const ERROR_MAPPINGS: ErrorMapping[] = [
     suggestion: 'Please grant the necessary permissions and try again.',
   },
 
-  // Abort errors
-  {
-    pattern: /abort|cancelled/i,
-    message: 'Operation was cancelled',
-    suggestion: 'The operation was stopped before it could complete.',
-  },
-
   // Memory errors
   {
     pattern: /out of memory|memory.*exceeded/i,
     message: 'Not enough memory',
     suggestion: 'Please close other tabs or applications and try again.',
   },
-
-  // Generic HTTP errors
-  {
-    pattern: /500|internal server error/i,
-    message: 'Server error',
-    suggestion: 'The server encountered an error. Please try again later.',
-  },
-  {
-    pattern: /502|bad gateway/i,
-    message: 'Server is temporarily unavailable',
-    suggestion: 'Please try again in a few minutes.',
-  },
-  {
-    pattern: /503|service unavailable/i,
-    message: 'Service is temporarily unavailable',
-    suggestion: 'The service is undergoing maintenance. Please try again later.',
-  },
 ];
 
 /**
+ * Get the message of an error, or the text of any other value
+ * @returns The text, or '' for no value or one with no string form, such as an object
+ *   without a prototype, for which String() throws
+ */
+function errorText(error: unknown): string {
+  if (error == null) return '';
+  try {
+    return typeof error === 'object' && 'message' in error ? String(error.message) : String(error);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Get the name of an error, such as a DOMException's "AbortError"
+ * @returns The name, or '' for a value without one
+ */
+function errorName(error: unknown): string {
+  try {
+    return typeof error === 'object' && error !== null && 'name' in error ? String(error.name) : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Explain an error by its name and message
+ */
+function explain(name: string, text: string): Explanation {
+  // A cancelled request is an AbortError, whose message need not say so: Chromium's
+  // "This request has been superseded by a subsequent lock() method call."
+  if (name === 'AbortError') return CANCELLED;
+
+  if (NETWORK_FAILURES.some((pattern) => pattern.test(text))) return CONNECTION_FAILED;
+  // Timeouts before aborts: the TimeoutError of AbortSignal.timeout() reads "signal
+  // timed out" in browsers, but "The operation was aborted due to timeout" in Node
+  if (/time ?out|timed out/i.test(text)) return TIMED_OUT;
+  if (/abort|cancell?ed/i.test(text)) return CANCELLED;
+
+  const status = HTTP_STATUS.exec(text);
+  const byStatus = status ? explainStatus(Number(status[1])) : undefined;
+  if (byStatus) return byStatus;
+
+  return ERROR_MAPPINGS.find((mapping) => mapping.pattern.test(text)) ?? UNEXPECTED;
+}
+
+/**
  * Get user-friendly error message from technical error
- * @param error - The error object or message
+ * @param error - The error object or message; can be anything, including undefined
  * @returns User-friendly error message with optional suggestion
  */
-export function getUserFriendlyError(error: unknown): {
-  message: string;
-  suggestion?: string;
-  originalError?: string;
-} {
-  // Extract error message
-  let errorMessage = '';
-  if (error instanceof Error) {
-    errorMessage = error.message;
-  } else if (typeof error === 'string') {
-    errorMessage = error;
-  } else {
-    errorMessage = String(error);
-  }
-
-  // Try to match against known patterns
-  for (const mapping of ERROR_MAPPINGS) {
-    if (mapping.pattern.test(errorMessage)) {
-      return {
-        message: mapping.message,
-        suggestion: mapping.suggestion,
-        originalError: import.meta.env.DEV ? errorMessage : undefined,
-      };
-    }
-  }
-
-  // Default fallback message
+export function getUserFriendlyError(error: unknown): FriendlyError {
+  const text = errorText(error);
+  const { message, suggestion } = explain(errorName(error), text);
   return {
-    message: 'An unexpected error occurred',
-    suggestion: 'Please try again. If the problem persists, try refreshing the page.',
-    originalError: import.meta.env.DEV ? errorMessage : undefined,
+    message,
+    suggestion,
+    originalError: import.meta.env.DEV ? text : undefined,
   };
 }
