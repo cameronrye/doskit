@@ -144,6 +144,11 @@
     outline: 3px solid Highlight;
     outline-offset: 2px;
   }
+
+  /* The keyboard focus on the selected disk, which would otherwise look like the selection */
+  .floppy-wrapper[aria-selected='true']:focus-visible {
+    outline: 6px double Highlight;
+  }
 }
 
 /*
@@ -271,6 +276,17 @@
   font-size: 0.875rem;
   color: #aaa;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Forced colors drop the bar's gradient, which left it blank. After the rules it overrides. */
+@media (forced-colors: active) {
+  .progress-bar {
+    border: 1px solid CanvasText;
+  }
+
+  .progress-fill {
+    background: Highlight;
+  }
 }
 
 /* Actions */
