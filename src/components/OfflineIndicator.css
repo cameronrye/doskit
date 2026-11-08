@@ -65,11 +65,19 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Online Indicator (brief notification) */
+/*
+ * Online Indicator (brief notification), at the top in the middle: the header's Change
+ * Application button and the selector's Close button are at the top right, which it would
+ * cover for its 3 seconds
+ */
 .online-indicator {
   position: fixed;
   top: 1rem;
-  right: 1rem;
+  left: 0;
+  right: 0;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  margin: 0 auto;
   background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
   color: white;
   padding: 0.75rem 1.25rem;
@@ -204,11 +212,11 @@
 
 @keyframes online-indicator-slide-in {
   from {
-    transform: translateX(100%);
+    transform: translateY(-100%);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
+    transform: translateY(0);
     opacity: 1;
   }
 }
@@ -238,6 +246,48 @@
 
   .install-actions {
     flex-direction: column;
+  }
+}
+
+/*
+ * In a short window, such as a phone's held sideways, the install prompt keeps to one row,
+ * so that the selector keeps room between it and the offline banner. After the rules above,
+ * which it overrides on a narrow phone too.
+ */
+@media (max-height: 450px) {
+  .install-prompt {
+    bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .install-content {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .install-icon,
+  .install-text p {
+    display: none;
+  }
+
+  .install-text {
+    flex: 1;
+  }
+
+  .install-text strong {
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+
+  .install-actions {
+    flex-direction: row;
+    margin-top: 0;
+  }
+
+  .install-button {
+    flex: none;
+    padding: 0.5rem 1rem;
   }
 }
 
