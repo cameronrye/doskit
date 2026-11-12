@@ -8,6 +8,8 @@ DOS demoscene classics and the trackers behind them, playable in your browser.
 
 [doskit.net](https://doskit.net) runs Future Crew's Second Reality, Unreal and Panic, Triton's Crystal Dream 2, two BBS intros, and the Impulse Tracker and Scream Tracker 3 music trackers, from their original 1990s files, in DOSBox compiled to WebAssembly by [js-dos](https://js-dos.com). There is nothing to install, and a production opened once plays offline too.
 
+![Second Reality's landscape and credits, running in DosKit](docs/images/doskit-second-reality.png)
+
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![js-dos](https://img.shields.io/github/package-json/dependency-version/cameronrye/doskit/js-dos?color=green)
 ![React](https://img.shields.io/github/package-json/dependency-version/cameronrye/doskit/react?color=blue)
