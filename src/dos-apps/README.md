@@ -74,7 +74,14 @@ out a few settings DOSBox guides suggest:
 - There is no `486` or `pentium` CPU type: `cputype` `auto` is the usual choice.
 - There is no `[dos] ver`: DOS reports version 5.00. A program that needs a newer one gets it
   from `VER SET 7 10` in the autoexec.
-- The builder has no memory setting: DOS gets DOSBox's default 16 MB.
+- Memory is `memsize` in the `[dosbox]` section, set with `setMachine({ memsize })`, up to 63 MB;
+  left out, DOS gets DOSBox's default 16 MB. There is no `[memory]` section.
+- The machine is `svga_s3` unless `setMachine({ machine: 'vgaonly' })` says otherwise. `svga_s3`
+  applies palette changes once a frame; a program that changes the palette while a frame is
+  drawn (raster bars, split palettes, as in Panic and the Squid intro) needs `vgaonly`, which
+  draws line by line as a real VGA does, at the cost of 16-bit colour and about 10% more CPU.
+- `cputype` also has `486_slow` and `pentium_slow`, besides `auto`, `386`, `386_slow` and
+  `386_prefetch`.
 - There is no mixer `blocksize`: the mixer always works in 2048-sample blocks.
 - `prebuffer` goes from 0 to 100 ms, and the sample rates (`rate`, `oplrate`, `pcrate`,
   `tandyrate`) are 8000, 11025, 16000, 22050, 32000, 44100, 48000 or 49716 Hz.
