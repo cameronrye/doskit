@@ -479,6 +479,10 @@ export function DosPlayerWithApps({
     // Modules just brought in are only in this session until a save packs them
     const soon = session.imports?.length ? setTimeout(saveQuietly, 1_000) : undefined;
     window.addEventListener('keydown', onKey);
+    // A tap counts too: a phone's on-screen keyboard sends its keys to DOS from taps, never
+    // as key events. A tap on DosKit's own controls costs only a save that writes nothing
+    // new. In the capture phase, so that no handler of js-dos's can stop it first
+    window.addEventListener('pointerup', onKey, true);
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', saveQuietly);
     saveFilesRef.current = saveNow;
@@ -487,6 +491,7 @@ export function DosPlayerWithApps({
       clearTimeout(soon);
       clearInterval(every);
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerup', onKey, true);
       document.removeEventListener('visibilitychange', onHide);
       window.removeEventListener('pagehide', saveQuietly);
       if (saveFilesRef.current === saveNow) saveFilesRef.current = null;

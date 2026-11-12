@@ -423,7 +423,7 @@ Each has a data file in `src/apps/`, and each opens at its own page:
 
 ### Tracker Files
 
-Impulse Tracker and Scream Tracker 3 keep what they save. DosKit asks js-dos for the files that differ from the tracker's archive (`ci.persist(true)`) 3 seconds after the last key that reached DOS, every 30 seconds, and when the tab is hidden or the page goes, keeps them in the browser's IndexedDB, and starts the tracker with them after its archive the next time. Where the browser cannot keep files, as in some private windows, the tracker starts without them, and its Files panel says so.
+Impulse Tracker and Scream Tracker 3 keep what they save. DosKit asks js-dos for the files that differ from the tracker's archive (`ci.persist(true)`) 3 seconds after the last key or tap, every 30 seconds, and when the tab is hidden or the page goes, keeps them in the browser's IndexedDB, and starts the tracker with them after its archive the next time. Where the browser cannot keep files, as in some private windows, the tracker starts without them, and its Files panel says so.
 
 The Files button at the top right of a running tracker opens "Your files": Download your files saves the ZIP as js-dos packed it, as `<id>-files.zip`; Bring in modules writes modules from the computer into `C:\` under DOS 8.3 names in capitals that differ from the names of the archive's files and the saved ones, and restarts the tracker to read them, and they are kept with its saved files from then on; Start over asks, then deletes the kept files and restarts the tracker as it came.
 

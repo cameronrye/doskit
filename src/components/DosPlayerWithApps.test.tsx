@@ -703,6 +703,54 @@ describe('DosPlayerWithApps', () => {
       }
     });
 
+    // A phone's on-screen keyboard sends its keys to DOS from taps, never as key events, and
+    // js-dos stops the pointerup of a tap on its screen before it bubbles to the window
+    it('are kept a few seconds after a tap, even one js-dos stops, as on a phone', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+      const dosScreen = document.createElement('div');
+      dosScreen.addEventListener('pointerup', (event) => event.stopPropagation());
+      document.body.append(dosScreen);
+      try {
+        (window as WindowWithMockApp).__mockLoadedApp = { ...mockLoadedApp, app: tracker };
+        render(<DosPlayerWithApps showSelector={true} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+        persisted.next = new Uint8Array([1, 2, 3]);
+
+        fireEvent.pointerUp(dosScreen);
+        await act(() => vi.advanceTimersByTimeAsync(2_900));
+        expect(putSavedFiles).not.toHaveBeenCalled();
+        await act(() => vi.advanceTimersByTimeAsync(200));
+
+        expect(putSavedFiles).toHaveBeenCalledWith('tracker', new Uint8Array([1, 2, 3]));
+      } finally {
+        dosScreen.remove();
+        vi.useRealTimers();
+      }
+    });
+
+    it('wait for no more keys or taps once the tracker has gone', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+      try {
+        (window as WindowWithMockApp).__mockLoadedApp = { ...mockLoadedApp, app: tracker };
+        const { unmount } = render(<DosPlayerWithApps showSelector={true} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+        persisted.next = new Uint8Array([1, 2, 3]);
+
+        unmount();
+        fireEvent.keyDown(document.body, { key: 'Enter' });
+        fireEvent.pointerUp(document.body);
+        await act(() => vi.advanceTimersByTimeAsync(3_100));
+
+        expect(putSavedFiles).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('are kept when the tab is hidden, and the same files only once', async () => {
       await pickTracker();
       persisted.next = new Uint8Array([4]);
