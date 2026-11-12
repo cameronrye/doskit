@@ -6,5 +6,14 @@
   "description": "Future Crew's demo, first at Assembly '92",
   "author": "Future Crew",
   "year": 1992,
-  "archiveBytes": 1314736
+  "archiveBytes": 1314736,
+  "start": {
+    "keys": ["Right", "Right", "Down", "Down", "Enter"],
+    "gapMs": 100,
+    "ready": {
+      "frames": [2896014827]
+    },
+    "note": "Its sound setup starts on No sound: DosKit picks SoundBlaster Pro at 20 kHz."
+  },
+  "hint": "Unreal waits at its sound setup, which starts on No sound: press Right, Right, Down, Down, then Enter for SoundBlaster Pro at 20 kHz."
 }

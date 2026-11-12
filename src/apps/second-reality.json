@@ -7,5 +7,13 @@
   "author": "Future Crew",
   "year": 1993,
   "archiveBytes": 2122910,
-  "flashing": true
+  "flashing": true,
+  "start": {
+    "keys": ["Enter"],
+    "ready": {
+      "frames": [2260734480]
+    },
+    "note": "DosKit picks the Gravis UltraSound in its setup. The demo opens on about 17 seconds of black while its music starts."
+  },
+  "hint": "Second Reality waits at its setup: press Enter to start it with the Gravis UltraSound."
 }

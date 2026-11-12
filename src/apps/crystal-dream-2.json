@@ -7,5 +7,13 @@
   "author": "Triton",
   "year": 1993,
   "archiveBytes": 2074898,
-  "flashing": true
+  "flashing": true,
+  "start": {
+    "keys": ["Enter"],
+    "ready": {
+      "frames": [1142211240]
+    },
+    "note": "It plays a title of its own for about 8 seconds, then DosKit picks Ultrasound in its menu. Its SoundBlaster choice doesn't work here."
+  },
+  "hint": "Crystal Dream 2 waits at its menu: press Enter for Ultrasound. Its SoundBlaster choice doesn't work here."
 }

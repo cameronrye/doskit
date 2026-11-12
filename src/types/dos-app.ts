@@ -7,6 +7,7 @@
  */
 
 import type { LoadProgress } from '../utils/diskLoader';
+import type { ReadySignal, StartRecipe } from '../utils/startRecipe';
 
 /** What a production is, which decides where the selector lists it */
 export type AppKind = 'demo' | 'intro' | 'tracker' | 'effect';
@@ -33,6 +34,18 @@ export interface AppData {
   flashing?: boolean;
   /** See DosApp.warnBeforeLeaving */
   warnBeforeLeaving?: boolean;
+  /** The keys that start it at its setup screen, for a production that waits at one */
+  start?: {
+    /** One step per key, by its name in src/utils/dosKeys.ts; keys held together joined by + */
+    keys: string[];
+    /** Between one key's release and the next one's press; 250 ms when left out */
+    gapMs?: number;
+    ready: ReadySignal;
+    /** What the start does, for the Play screen: what it picks, and what comes first */
+    note: string;
+  };
+  /** The keys to press when DosKit cannot start it, shown once its own start gives up */
+  hint?: string;
 }
 
 /**
@@ -58,6 +71,12 @@ export interface DosApp {
    * limit of WCAG 2.3.1: the selector and the Play screen warn of it
    */
   flashing?: boolean;
+  /** The keys DosKit sends to get past its setup screen, once that screen is up */
+  start?: StartRecipe;
+  /** What that start does, for the Play screen */
+  startNote?: string;
+  /** The keys to press when DosKit's start gives up */
+  hint?: string;
   /** How the application's files arrive, shown on its disk in the selector: every app is a ZIP */
   loadMethod: 'zip';
   /** DOSBox configuration string */

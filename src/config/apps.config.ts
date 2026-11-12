@@ -9,6 +9,8 @@
 
 import type { AppData, DosApp } from '../types/dos-app';
 import { loadZipArchive } from '../utils/diskLoader';
+import { dosKey, isDosKeyName } from '../utils/dosKeys';
+import type { StartRecipe } from '../utils/startRecipe';
 
 /** What an app's config module, src/dos-apps/<id>.config.ts, gives the registry */
 interface AppConfigModule {
@@ -25,6 +27,21 @@ const appData = import.meta.glob<AppData>(['../apps/*.json', '!../apps/*.page.js
 // Every app's config module, each imported only when its app loads: a chunk of its own, which
 // production builds still store in the service worker's cache when it installs, for offline use
 const configModules = import.meta.glob<AppConfigModule>('../dos-apps/*.config.ts');
+
+/** An app's start keys as js-dos's key codes: "Right" is 262, "LeftCtrl+L" two keys at once */
+function startRecipeOf(id: string, start: NonNullable<AppData['start']>): StartRecipe {
+  return {
+    steps: start.keys.map((step) => ({
+      keys: step.split('+').map((name) => {
+        if (!isDosKeyName(name))
+          throw new Error(`src/apps/${id}.json names an unknown key: ${name}`);
+        return dosKey[name];
+      }),
+    })),
+    gapMs: start.gapMs ?? 250,
+    ready: start.ready,
+  };
+}
 
 /**
  * The DosApp of an app's data: its archive is /demos/<id>.zip, and its DOSBox config comes
@@ -47,6 +64,10 @@ function appFromData(data: AppData): DosApp {
     dosboxConf: '', // Loaded dynamically
     ...(data.flashing ? { flashing: true } : {}),
     ...(data.warnBeforeLeaving ? { warnBeforeLeaving: true } : {}),
+    ...(data.start
+      ? { start: startRecipeOf(data.id, data.start), startNote: data.start.note }
+      : {}),
+    ...(data.hint ? { hint: data.hint } : {}),
     loader: (onProgress, signal) => loadZipArchive(`/demos/${data.id}.zip`, onProgress, signal),
     loadDosboxConf: async () => (await loadConfig()).dosboxConf,
   };

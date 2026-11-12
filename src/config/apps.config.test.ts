@@ -191,6 +191,35 @@ describe('availableApps', () => {
     ]);
   });
 
+  it('should start each production that waits at a setup screen with its own keys', () => {
+    // Starport, Squid and the starfield start by themselves
+    const started = availableApps.filter((app) => app.start).map((app) => app.id);
+
+    expect(started).toEqual([
+      'second-reality',
+      'unreal',
+      'panic',
+      'crystal-dream-2',
+      'impulse-tracker',
+      'scream-tracker',
+      '3drotate',
+    ]);
+  });
+
+  it("should start Unreal on SoundBlaster Pro at 20 kHz, not its setup's No sound", () => {
+    const keys = findAppById('unreal')?.start?.steps.map((step) => step.keys);
+
+    // Right, Right, Down, Down, Enter, as js-dos's key codes
+    expect(keys).toEqual([[262], [262], [264], [264], [257]]);
+  });
+
+  it('should tell the visitor what each start does, and which keys to press when it cannot', () => {
+    for (const app of availableApps.filter((each) => each.start)) {
+      expect(app.startNote, app.id).toMatch(/\.$/);
+      expect(app.hint, app.id).toMatch(/\b(press|Press)\b/);
+    }
+  });
+
   it('should warn of flashing lights in the productions that flash', () => {
     // Measured frame by frame against WCAG 2.3.1's three flashes a second: Panic for 79 s
     // of 247, Second Reality's techno part, and Crystal Dream 2's opening and 20 s more
