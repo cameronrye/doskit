@@ -62,5 +62,20 @@ export default defineConfig(
     languageOptions: {
       globals: globals.vitest,
     },
+  },
+  {
+    // The browser tests' server and tools run in Node, as ES modules
+    files: ['e2e/**/*.mjs'],
+    languageOptions: {
+      globals: globals.nodeBuiltin,
+    },
+  },
+  {
+    // An init script Playwright runs in the page before the site's own scripts
+    files: ['e2e/hook.js'],
+    languageOptions: {
+      sourceType: 'script',
+      globals: globals.browser,
+    },
   }
 );
