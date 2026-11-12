@@ -6,6 +6,40 @@ release-please writes each release's entry from the conventional commits merged 
 before it (see [CONTRIBUTING.md](CONTRIBUTING.md#release-process)), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0](https://github.com/cameronrye/doskit/compare/v1.2.0...v1.3.0) (2026-11-12)
+
+
+### Features
+
+* a share card per production, from a frame of it running ([48785a4](https://github.com/cameronrye/doskit/commit/48785a4d1e0f7e9e5cbafb27dfe953fbc2e4d014))
+* give each production a page of its own at /&lt;id&gt; ([6992288](https://github.com/cameronrye/doskit/commit/6992288498fb24844240562a40d4e018dca1d863))
+* give each waiting production its start keys and the screen to wait for ([3d97d86](https://github.com/cameronrye/doskit/commit/3d97d86e07d0c58c6a8ec8178bd82f91fe7b727b))
+* hand out the running player and what DOS prints, and copy start files ([82f2992](https://github.com/cameronrye/doskit/commit/82f2992068430fedcb0c194e50c6745c3685d279))
+* keep what you save in Impulse Tracker and Scream Tracker 3 across visits ([572d39c](https://github.com/cameronrye/doskit/commit/572d39c68215b3d5cb39eca6bad9b7f909316d44))
+* let app configs choose DOSBox's machine type and memory ([cf1102f](https://github.com/cameronrye/doskit/commit/cf1102f39a371f96f2afa2ad9def8264916b36d5))
+* one press plays a production, with sound, from a link or the library ([f0b82c0](https://github.com/cameronrye/doskit/commit/f0b82c0a2cc34eb8fee40aada5bce18961a8b59d))
+* print a line DosKit can hear when a program returns to DOS ([94c9ede](https://github.com/cameronrye/doskit/commit/94c9ede9fc8b7571fb986702d8bdabd54f4b0162))
+* production pages, one-press Play, faithful configs and kept tracker files ([635df11](https://github.com/cameronrye/doskit/commit/635df111307fdea655b6b1d96ed07e5da1440f3d))
+* show each archive's real size, and warn of flashing before it loads ([5224ee3](https://github.com/cameronrye/doskit/commit/5224ee390cbb68540d4f9e6cdc907f56b35d06df))
+* start a production with its own keys once its setup screen is up ([ec6ed24](https://github.com/cameronrye/doskit/commit/ec6ed240863f931f9c02934c82e59896020cb12b))
+* tell visitors what they're watching, who made it and how faithful it is ([c3017c9](https://github.com/cameronrye/doskit/commit/c3017c9450f4394439b3cd0a56db6324c9c792fb))
+
+
+### Bug Fixes
+
+* keep a held key's repeats from DOS once the control it went down on is gone ([b2ad113](https://github.com/cameronrye/doskit/commit/b2ad1137b86b07b3ea62fe83fb7a83037e17eca8))
+* keep the modules brought into a tracker across visits ([105e285](https://github.com/cameronrye/doskit/commit/105e285083dfab129cd73587b155d6aa41a462f4))
+* leave js-dos's fullscreen at a program's end only when it is in it ([4e07ce7](https://github.com/cameronrye/doskit/commit/4e07ce7eb2a1060358a308590ef299e41f70ecaf))
+* never lose a tracker's saved work on Play again, a second import or a full disk ([4d4d2c2](https://github.com/cameronrye/doskit/commit/4d4d2c26d4855bd0f523c9f5e59facda02be4723))
+* run Panic, Squid and Second Reality as they look on real hardware ([a3cebfa](https://github.com/cameronrye/doskit/commit/a3cebfa3b2f0fc9eb33d44201a80ccc34d7e83a7))
+* start a production whose setup screen came up before its keys listened ([82f261c](https://github.com/cameronrye/doskit/commit/82f261c05ee24ba31094943d653e80cd130decd9))
+
+
+### Performance Improvements
+
+* keep a visitor's other archives when one archive changes ([81af11d](https://github.com/cameronrye/doskit/commit/81af11d9c1e1dcc07a838522be1fbf1db7d5e7a5))
+* run nothing behind the selector, and pause what it covers ([cdf38e0](https://github.com/cameronrye/doskit/commit/cdf38e08b6ba598218bfc5d34530d9d7df5653d6))
+
 ## [1.2.0](https://github.com/cameronrye/doskit/compare/v1.1.0...v1.2.0) (2026-11-08)
 
 
