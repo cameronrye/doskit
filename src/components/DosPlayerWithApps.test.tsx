@@ -703,6 +703,28 @@ describe('DosPlayerWithApps', () => {
       }
     });
 
+    // A phone's on-screen keyboard sends its keys to DOS from taps, never as key events
+    it('are kept a few seconds after a tap, as on the on-screen keyboard', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+      try {
+        (window as WindowWithMockApp).__mockLoadedApp = { ...mockLoadedApp, app: tracker };
+        render(<DosPlayerWithApps showSelector={true} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+        persisted.next = new Uint8Array([1, 2, 3]);
+
+        fireEvent.pointerUp(document.body);
+        await act(() => vi.advanceTimersByTimeAsync(2_900));
+        expect(putSavedFiles).not.toHaveBeenCalled();
+        await act(() => vi.advanceTimersByTimeAsync(200));
+
+        expect(putSavedFiles).toHaveBeenCalledWith('tracker', new Uint8Array([1, 2, 3]));
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('are kept when the tab is hidden, and the same files only once', async () => {
       await pickTracker();
       persisted.next = new Uint8Array([4]);

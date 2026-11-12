@@ -146,7 +146,7 @@ For a program that waits at a setup screen for a key, add its `start` and `hint`
 program people make things in, such as a tracker:
 
 - `saveFiles: true` keeps what the program saves: DosKit asks js-dos for the files that differ from
-  the archive 3 seconds after the last key that reached DOS, every 30 seconds, and when the tab is
+  the archive 3 seconds after the last key or tap, every 30 seconds, and when the tab is
   hidden or the page goes, keeps them in the browser's IndexedDB, and starts the app with them
   after its archive the next time. The app gets the Files button, which downloads them, brings in
   modules, or starts over, and picking another app in the selector asks before it leaves.

@@ -526,7 +526,7 @@ When a program returns to DOS, DosKit leaves js-dos's fullscreen, if the player 
 
 ### Tracker Files
 
-Impulse Tracker and Scream Tracker 3 keep what you save in them with their own save. DosKit asks js-dos for the files that differ from the tracker's archive 3 seconds after the last key that reached DOS, every 30 seconds, and when the tab is hidden or the page goes, and keeps them in the browser's IndexedDB. The tracker's next start in that browser gets them back after its archive. Where the browser cannot keep files, as in some private windows, the tracker starts without them, and its Files panel says so.
+Impulse Tracker and Scream Tracker 3 keep what you save in them with their own save. DosKit asks js-dos for the files that differ from the tracker's archive 3 seconds after the last key or tap, every 30 seconds, and when the tab is hidden or the page goes, and keeps them in the browser's IndexedDB. The tracker's next start in that browser gets them back after its archive. Where the browser cannot keep files, as in some private windows, the tracker starts without them, and its Files panel says so.
 
 The **Files** button at the top right of a running tracker opens **Your files**:
 
