@@ -16,5 +16,9 @@
     },
     "note": "DosKit goes past the sound card dialog with the Sound Blaster 16 it found. F9 loads a song, F5 plays it."
   },
-  "hint": "Press Enter to go on with the Sound Blaster 16; then F9 loads one of the example songs and F5 plays it."
+  "hint": "Press Enter to go on with the Sound Blaster 16; then F9 loads one of the example songs and F5 plays it.",
+  "saveFiles": true,
+  "jsdos": {
+    "renderAspect": "AsIs"
+  }
 }

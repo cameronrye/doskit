@@ -358,3 +358,29 @@
   outline: 3px solid #ffc078;
   outline-offset: 2px;
 }
+
+/* A running tracker's Files button, at the top right of the player, clear of js-dos's
+   sidebar on the left */
+.doskit-files-open {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  z-index: 1000;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 0.4rem;
+  /* White on this tint over black: 14:1 */
+  background: rgba(20, 20, 26, 0.85);
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.doskit-files-open:hover {
+  background: rgba(40, 40, 52, 0.95);
+}
+
+.doskit-files-open:focus-visible {
+  outline: 3px solid #ffc078;
+  outline-offset: 2px;
+}

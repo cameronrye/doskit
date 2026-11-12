@@ -8,6 +8,7 @@
 
 import type { LoadProgress } from '../utils/diskLoader';
 import type { ReadySignal, StartRecipe } from '../utils/startRecipe';
+import type { DosOptions } from './js-dos';
 
 /** What a production is, which decides where the selector lists it */
 export type AppKind = 'demo' | 'intro' | 'tracker' | 'effect';
@@ -34,6 +35,10 @@ export interface AppData {
   flashing?: boolean;
   /** See DosApp.warnBeforeLeaving */
   warnBeforeLeaving?: boolean;
+  /** See DosApp.saveFiles */
+  saveFiles?: boolean;
+  /** See DosApp.jsdos */
+  jsdos?: Partial<DosOptions>;
   /** The keys that start it at its setup screen, for a production that waits at one */
   start?: {
     /** One step per key, by its name in src/utils/dosKeys.ts; keys held together joined by + */
@@ -99,6 +104,16 @@ export interface DosApp {
   startNote?: string;
   /** The keys to press when DosKit's start gives up */
   hint?: string;
+  /**
+   * Keep the files it saves in the browser, such as a tracker's songs: they come back after
+   * its archive at its next start, and can be downloaded, replaced or reset
+   */
+  saveFiles?: boolean;
+  /**
+   * js-dos options of its own, over DosKit's and the visitor's: Impulse Tracker draws its
+   * own mouse pointer, which lines up with the real one only at the AsIs aspect
+   */
+  jsdos?: Partial<DosOptions>;
   /** How the application's files arrive, shown on its disk in the selector: every app is a ZIP */
   loadMethod: 'zip';
   /** DOSBox configuration string */

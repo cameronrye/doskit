@@ -8,6 +8,7 @@
  */
 
 import type { DosApp } from '../types/dos-app';
+import type { InitFileEntry } from '../types/js-dos';
 import type { FriendlyError } from '../utils/errorMessages';
 
 /** What the emulator runs: an app with its files, or the default DOS prompt */
@@ -17,6 +18,10 @@ export interface Session {
   app: DosApp | null;
   files?: Uint8Array;
   dosboxConf?: string;
+  /** The files the app saved before, as a bundle that follows its archive */
+  saved?: Uint8Array;
+  /** Files of the visitor's own, brought in through the Files panel */
+  imports?: InitFileEntry[];
 }
 
 /** A requested app that failed to load: what the error overlay says, and the app to retry */
@@ -32,6 +37,8 @@ export type Phase =
   | { kind: 'idle' }
   | { kind: 'loading'; app: DosApp }
   | { kind: 'error'; error: LoadError }
+  /** A tracker's files are in, and the files it saved before are being read */
+  | { kind: 'preparing'; session: Session; play: boolean }
   /** An app's files are in, waiting for Play: a start with sound needs the visitor's click */
   | { kind: 'poster'; session: Session }
   | { kind: 'running'; session: Session };
@@ -63,12 +70,19 @@ export type PlayerAction =
   | { type: 'loadFailed'; app: DosApp; error: FriendlyError }
   /** An app was picked in the selector, its files already loaded; play as for 'loaded' */
   | { type: 'picked'; app: DosApp; files: Uint8Array; dosboxConf: string; play: boolean }
+  /** The files a tracker saved before were read: null for none, or none to be had */
+  | { type: 'prepared'; sessionId: number; saved: Uint8Array | null }
   /** Play on the Play screen */
   | { type: 'played' }
   /** Play again, once the program has returned to DOS: the same files, a new player */
   | { type: 'replayed' }
   /** Back to DOS: the end card goes, the DOS prompt stays */
   | { type: 'endDismissed' }
+  /**
+   * The running app starts again with other saved files or files of the visitor's own, such
+   * as a tracker after Bring in modules or Start over
+   */
+  | { type: 'restarted'; saved: Uint8Array | null; imports: InitFileEntry[] }
   /** The selector, opened from inside the player */
   | { type: 'selectorOpened' }
   /** The selector closed without a pick */
@@ -115,9 +129,18 @@ export function posterOf(state: PlayerState): Session | null {
   return state.phase.kind === 'poster' ? state.phase.session : null;
 }
 
+/** The session whose saved files are being read, if any */
+export function preparingOf(state: PlayerState): Session | null {
+  return state.phase.kind === 'preparing' ? state.phase.session : null;
+}
+
 /** A session that starts now, or waits on the Play screen */
 const starting = (session: Session, play: boolean): Phase =>
   play || !session.app ? running(session) : { kind: 'poster', session };
+
+/** A new session: a tracker reads the files it saved first */
+const opening = (session: Session, play: boolean): Phase =>
+  session.app?.saveFiles ? { kind: 'preparing', session, play } : starting(session, play);
 
 /**
  * The state a player starts in. A deep link never boots the default prompt first, and nothing
@@ -146,7 +169,7 @@ export function initialPlayerState({
 
 export function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
   const session = sessionOf(state);
-  const current = session ?? posterOf(state);
+  const current = session ?? posterOf(state) ?? preparingOf(state);
   switch (action.type) {
     case 'requested': {
       const { app } = action;
@@ -179,7 +202,7 @@ export function playerReducer(state: PlayerState, action: PlayerAction): PlayerS
       if (state.phase.kind !== 'loading' || state.phase.app !== action.app) return state;
       return {
         ...state,
-        phase: starting(newSession(action.app, action.files, action.dosboxConf), action.play),
+        phase: opening(newSession(action.app, action.files, action.dosboxConf), action.play),
       };
 
     case 'loadFailed':
@@ -191,9 +214,17 @@ export function playerReducer(state: PlayerState, action: PlayerAction): PlayerS
       // if it is the one running
       return {
         ...state,
-        phase: starting(newSession(action.app, action.files, action.dosboxConf), action.play),
+        phase: opening(newSession(action.app, action.files, action.dosboxConf), action.play),
         selectorOpen: false,
       };
+
+    case 'prepared': {
+      if (state.phase.kind !== 'preparing' || state.phase.session.id !== action.sessionId) {
+        return state;
+      }
+      const prepared = { ...state.phase.session, saved: action.saved ?? undefined };
+      return { ...state, phase: starting(prepared, state.phase.play) };
+    }
 
     case 'played':
       if (state.phase.kind !== 'poster') return state;
@@ -203,12 +234,25 @@ export function playerReducer(state: PlayerState, action: PlayerAction): PlayerS
       if (!session || state.endedSessionId !== session.id) return state;
       return {
         ...state,
-        phase: running(newSession(session.app, session.files, session.dosboxConf)),
+        phase: running({ ...session, id: newSession(null).id }),
         endedSessionId: null,
       };
 
     case 'endDismissed':
       return { ...state, endedSessionId: null };
+
+    case 'restarted':
+      if (!session) return state;
+      return {
+        ...state,
+        phase: running({
+          ...session,
+          id: newSession(null).id,
+          saved: action.saved ?? undefined,
+          imports: action.imports,
+        }),
+        endedSessionId: null,
+      };
 
     case 'selectorOpened':
       return { ...state, selectorOpen: true, endedSessionId: null };
@@ -247,6 +291,7 @@ export function statusOf(state: PlayerState): PlayerStatus {
     case 'poster':
       return 'idle';
     case 'loading':
+    case 'preparing':
       return 'loading';
     case 'error':
       return 'error';

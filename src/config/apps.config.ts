@@ -64,6 +64,8 @@ function appFromData(data: AppData): DosApp {
     dosboxConf: '', // Loaded dynamically
     ...(data.flashing ? { flashing: true } : {}),
     ...(data.warnBeforeLeaving ? { warnBeforeLeaving: true } : {}),
+    ...(data.saveFiles ? { saveFiles: true } : {}),
+    ...(data.jsdos ? { jsdos: data.jsdos } : {}),
     ...(data.start
       ? { start: startRecipeOf(data.id, data.start), startNote: data.start.note }
       : {}),

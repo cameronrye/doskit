@@ -103,3 +103,62 @@
   outline: 3px solid #ffc078;
   outline-offset: 2px;
 }
+
+/* The Files panel's actions */
+.doskit-files-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.doskit-files-actions p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.doskit-files-button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 1px solid #5c5c6e;
+  border-radius: 0.45rem;
+  background: #24242e;
+  color: #f1f3f5;
+  font: inherit;
+  cursor: pointer;
+}
+
+.doskit-files-button:hover {
+  background: #2e2e3a;
+}
+
+/* White on #c92a2a: 5.4:1 */
+.doskit-files-danger {
+  border-color: #c92a2a;
+  background: #c92a2a;
+}
+
+.doskit-files-button:focus-visible,
+.doskit-files-input:focus-visible + .doskit-files-button {
+  outline: 3px solid #ffc078;
+  outline-offset: 2px;
+}
+
+/* The file input stays focusable and labelled, drawn as its label's button */
+.doskit-files-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.doskit-files-note {
+  font-size: 0.9rem;
+  color: #b8bcc8;
+}
+
+/* Amber, as for warnings: 10:1 on the panel */
+.doskit-files-notice {
+  color: #ffc078;
+}

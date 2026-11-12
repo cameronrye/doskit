@@ -9,6 +9,7 @@ import { DosPlayerWithApps } from './DosPlayerWithApps';
 import type { DosApp } from '../types/dos-app';
 import type { DosOptions } from '../types/js-dos';
 import type { LoadedApp } from './DemoSelector';
+import { getSavedFiles, putSavedFiles, removeSavedFiles } from '../utils/savedFiles';
 
 // Type definitions for test mocks
 interface DemoSelectorProps {
@@ -58,6 +59,13 @@ const boots = vi.hoisted(() => [] as string[]);
 /** Every emulator stop, in order, named as in boots */
 const stops = vi.hoisted(() => [] as string[]);
 
+/** The files each emulator start got, in order, and its other js-dos options */
+const startFs = vi.hoisted(() => [] as unknown[]);
+const startOptions = vi.hoisted(() => [] as unknown[]);
+
+/** What the fake ci.persist() answers: the bundle of files a program saved */
+const persisted = vi.hoisted(() => ({ next: null as Uint8Array | null, calls: 0 }));
+
 /**
  * The handle of each emulator that got ready, in order: its player's pause calls, and a way
  * to print a line on its DOS console
@@ -74,6 +82,12 @@ const handles = vi.hoisted(
 );
 
 // Mock DosPlayer component
+vi.mock('../utils/savedFiles', () => ({
+  getSavedFiles: vi.fn(async () => null),
+  putSavedFiles: vi.fn(async () => {}),
+  removeSavedFiles: vi.fn(async () => {}),
+}));
+
 vi.mock('./DosPlayer', async () => {
   const { useEffect, useState } = await import('react');
   return {
@@ -94,12 +108,16 @@ vi.mock('./DosPlayer', async () => {
     }) => {
       // Like useDosEmulator, which starts js-dos once per mount and stops it on unmount
       const [boot] = useState(options?.initFs ? (dosboxConf ?? 'no config') : 'default');
+      const [initFs] = useState(options?.initFs);
+      const [startedWith] = useState(options);
       useEffect(() => {
         boots.push(boot);
+        startFs.push(initFs);
+        startOptions.push(startedWith);
         return () => {
           stops.push(boot);
         };
-      }, [boot]);
+      }, [boot, initFs, startedWith]);
       // Like useDosEmulator, which hands out the player with what DOS prints once ready
       const ready = () => {
         onReady?.();
@@ -119,6 +137,10 @@ vi.mock('./DosPlayer', async () => {
             height: () => 400,
             sendKeyEvent: (code: number, pressed: boolean) =>
               entry.keys.push(`${code} ${pressed ? 'down' : 'up'}`),
+            persist: async () => {
+              persisted.calls += 1;
+              return persisted.next;
+            },
           },
           player: {
             setPaused: (paused: boolean) => entry.paused.push(paused),
@@ -243,6 +265,10 @@ describe('DosPlayerWithApps', () => {
     boots.length = 0;
     stops.length = 0;
     handles.length = 0;
+    startFs.length = 0;
+    startOptions.length = 0;
+    persisted.next = null;
+    persisted.calls = 0;
     // Store mock app and loaded app in window for the mock selector to use
     (window as WindowWithMockApp).__mockApp = mockApp;
     (window as WindowWithMockApp).__mockLoadedApp = mockLoadedApp;
@@ -614,6 +640,191 @@ describe('DosPlayerWithApps', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+  });
+
+  describe("A tracker's saved files", () => {
+    const tracker: DosApp = {
+      ...mockApp,
+      id: 'tracker',
+      name: 'Tracker',
+      kind: 'tracker',
+      saveFiles: true,
+    };
+    const pickTracker = async () => {
+      (window as WindowWithMockApp).__mockLoadedApp = { ...mockLoadedApp, app: tracker };
+      render(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      await waitFor(() => expect(boots).toHaveLength(1));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+    };
+
+    it('come back after its archive when it starts', async () => {
+      vi.mocked(getSavedFiles).mockResolvedValueOnce({
+        bytes: new Uint8Array([9, 9]),
+        savedAt: 1,
+      });
+
+      await pickTracker();
+
+      expect(startFs[0]).toEqual([mockLoadedApp.files, new Uint8Array([9, 9])]);
+    });
+
+    it('stay out where the browser cannot keep files, and the tracker still starts', async () => {
+      vi.mocked(getSavedFiles).mockRejectedValueOnce(new Error('IndexedDB is not available'));
+
+      await pickTracker();
+
+      expect(startFs[0]).toEqual([mockLoadedApp.files]);
+    });
+
+    it('are kept a few seconds after keys reach DOS', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+      try {
+        (window as WindowWithMockApp).__mockLoadedApp = { ...mockLoadedApp, app: tracker };
+        render(<DosPlayerWithApps showSelector={true} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+        persisted.next = new Uint8Array([1, 2, 3]);
+
+        fireEvent.keyDown(document.body, { key: 'Enter' });
+        await act(() => vi.advanceTimersByTimeAsync(2_900));
+        expect(putSavedFiles).not.toHaveBeenCalled();
+        await act(() => vi.advanceTimersByTimeAsync(200));
+
+        expect(putSavedFiles).toHaveBeenCalledWith('tracker', new Uint8Array([1, 2, 3]));
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('are kept when the tab is hidden, and the same files only once', async () => {
+      await pickTracker();
+      persisted.next = new Uint8Array([4]);
+      const hide = () => {
+        Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+        document.dispatchEvent(new Event('visibilitychange'));
+      };
+      try {
+        hide();
+        await waitFor(() => expect(putSavedFiles).toHaveBeenCalledTimes(1));
+        hide();
+        await waitFor(() => expect(persisted.calls).toBe(2));
+
+        expect(putSavedFiles).toHaveBeenCalledTimes(1);
+      } finally {
+        Object.defineProperty(document, 'visibilityState', {
+          configurable: true,
+          value: 'visible',
+        });
+      }
+    });
+  });
+
+  describe("A tracker's Files panel", () => {
+    const tracker: DosApp = {
+      ...mockApp,
+      id: 'tracker',
+      name: 'Tracker',
+      kind: 'tracker',
+      saveFiles: true,
+      jsdos: { renderAspect: 'AsIs' },
+    };
+    const runTracker = async () => {
+      (window as WindowWithMockApp).__mockLoadedApp = { ...mockLoadedApp, app: tracker };
+      const result = render(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      await waitFor(() => expect(boots).toHaveLength(1));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      return result;
+    };
+
+    it('opens from the Files button, there only while a tracker runs', async () => {
+      await runTracker();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+
+      expect(screen.getByRole('dialog', { name: 'Your files' })).toBeInTheDocument();
+    });
+
+    it('downloads what the tracker saved, as the ZIP js-dos packed', async () => {
+      const objectUrls: Blob[] = [];
+      vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
+        objectUrls.push(blob as Blob);
+        return 'blob:files';
+      });
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+      const clicked = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+      await runTracker();
+      persisted.next = new Uint8Array([80, 75, 5, 6]);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+      fireEvent.click(screen.getByRole('button', { name: /download/i }));
+
+      await waitFor(() => expect(clicked).toHaveBeenCalled());
+      const downloaded = await new Promise<ArrayBuffer>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as ArrayBuffer);
+        reader.readAsArrayBuffer(objectUrls[0]!);
+      });
+      expect(new Uint8Array(downloaded)).toEqual(new Uint8Array([80, 75, 5, 6]));
+      expect((clicked.mock.contexts[0] as HTMLAnchorElement).download).toBe('tracker-files.zip');
+    });
+
+    it("restarts the tracker with modules of the visitor's own, under DOS names", async () => {
+      await runTracker();
+      fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+
+      const song = new File([new Uint8Array([7, 7])], 'My Song.it');
+      fireEvent.change(screen.getByLabelText(/bring in modules/i), { target: { files: [song] } });
+
+      await waitFor(() => expect(boots).toHaveLength(2));
+      expect(startFs[1]).toEqual([
+        mockLoadedApp.files,
+        { path: 'MYSONG.IT', contents: new Uint8Array([7, 7]) },
+      ]);
+    });
+
+    it('deletes the kept files and restarts the tracker as it came, on Start over', async () => {
+      vi.mocked(getSavedFiles).mockResolvedValueOnce({ bytes: new Uint8Array([9]), savedAt: 1 });
+      await runTracker();
+      fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Start over' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Delete them and restart' }));
+
+      await waitFor(() => expect(boots).toHaveLength(2));
+      expect(removeSavedFiles).toHaveBeenCalledWith('tracker');
+      expect(startFs[1]).toEqual([mockLoadedApp.files]);
+    });
+
+    it("starts with the js-dos options the app asks for, such as Impulse Tracker's aspect", async () => {
+      await runTracker();
+
+      expect(startOptions[0]).toMatchObject({ renderAspect: 'AsIs' });
+    });
+
+    it('asks before a pick in the selector leaves a running tracker, and saves first', async () => {
+      const { rerender } = await runTracker();
+      const other = { ...mockLoadedApp, app: { ...mockApp, id: 'other', name: 'Other' } };
+      (window as WindowWithMockApp).__mockLoadedApp = other;
+      rerender(<DosPlayerWithApps showSelector={false} />);
+      rerender(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      const ask = screen.getByRole('dialog', { name: 'Leave Tracker?' });
+      fireEvent.click(within(ask).getByRole('button', { name: 'Stay' }));
+      expect(boots).toHaveLength(1);
+
+      rerender(<DosPlayerWithApps showSelector={false} />);
+      rerender(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      persisted.next = new Uint8Array([5]);
+      fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
+
+      await waitFor(() => expect(boots).toHaveLength(2));
+      expect(putSavedFiles).toHaveBeenCalledWith('tracker', new Uint8Array([5]));
     });
   });
 

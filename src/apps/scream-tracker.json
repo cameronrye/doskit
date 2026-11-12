@@ -15,5 +15,6 @@
     },
     "note": "DosKit goes past its title screen to the pattern editor. Ctrl+L loads a song, F5 plays it."
   },
-  "hint": "Press any key to go past the title screen; then Ctrl+L loads the example song, ARMANI.S3M, and F5 plays it."
+  "hint": "Press any key to go past the title screen; then Ctrl+L loads the example song, ARMANI.S3M, and F5 plays it.",
+  "saveFiles": true
 }

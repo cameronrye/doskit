@@ -16,10 +16,16 @@ import type { PlayerHandle } from '../hooks/useDosEmulator';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { endMarkerFor, withEndMarker } from '../utils/endMarker';
 import { runStartRecipe, type RecipeEmulator, type RecipeState } from '../utils/startRecipe';
+import { createPersistQueue } from '../utils/persistQueue';
+import { getSavedFiles, putSavedFiles, removeSavedFiles } from '../utils/savedFiles';
+import { dosNameFor, zipEntryNames } from '../utils/dosNames';
+import { TrackerFiles } from './TrackerFiles';
+import { fnv1a } from '../utils/frameHash';
 import {
   initialPlayerState,
   playerReducer,
   posterOf,
+  preparingOf,
   sessionOf,
   statusOf,
   type PlayerStatus,
@@ -73,6 +79,17 @@ function recipeEmulatorOf(handle: PlayerHandle): RecipeEmulator {
   };
 }
 
+/** A file's bytes, through FileReader, which every supported browser has */
+function readBytes(file: Blob): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(new Uint8Array(reader.result as ArrayBuffer));
+    reader.onerror = () =>
+      reject(reader.error ?? new Error(`${file.size} bytes could not be read`));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
 /** "Author · year", or whichever of the two an app gives */
 function releaseOf({ author, year }: DosApp): string {
   return [author, year].filter(Boolean).join(' · ');
@@ -96,6 +113,7 @@ export function DosPlayerWithApps({
   );
   const session = sessionOf(state);
   const posterSession = posterOf(state);
+  const preparingSession = preparingOf(state);
   const loadingApp = state.phase.kind === 'loading' ? state.phase.app : null;
   const error = state.phase.kind === 'error' ? state.phase.error : null;
   const showAppSelector = state.selectorOpen;
@@ -225,22 +243,108 @@ export function DosPlayerWithApps({
     recipe.state === 'fallback' &&
     hintDismissed !== session.id;
 
-  const handleSelectApp = useCallback(
-    (loadedApp: LoadedApp) => {
-      // Files are already loaded by DemoSelector. The user's pick wins over a requested
-      // app still loading, and starts the app again if it is the one running.
-      dispatch({
-        type: 'picked',
-        app: loadedApp.app,
-        files: loadedApp.files,
-        dosboxConf: loadedApp.dosboxConf,
-        play: hasFreshActivation(),
-      });
-      onAppChange?.(loadedApp.app);
-      onSelectorVisibilityChange?.(false);
-    },
-    [onAppChange, onSelectorVisibilityChange]
-  );
+  // Run an app picked in the selector, its files already loaded. The pick wins over a
+  // requested app still loading, and starts the app again if it is the one running.
+  const runPick = (loadedApp: LoadedApp) => {
+    dispatch({
+      type: 'picked',
+      app: loadedApp.app,
+      files: loadedApp.files,
+      dosboxConf: loadedApp.dosboxConf,
+      play: hasFreshActivation(),
+    });
+    onAppChange?.(loadedApp.app);
+  };
+
+  // A pick that would end a running tracker waits for the visitor to say so: unsaved work in
+  // it would be lost, and its saved files are kept first
+  const [pendingPick, setPendingPick] = useState<LoadedApp | null>(null);
+  const trackerRuns = sessionApp?.saveFiles === true && status === 'ready';
+  const handleSelectApp = (loadedApp: LoadedApp) => {
+    if (trackerRuns) {
+      setPendingPick(loadedApp);
+      dispatch({ type: 'selectorCancelled' });
+    } else {
+      runPick(loadedApp);
+    }
+    onSelectorVisibilityChange?.(false);
+  };
+  const handleLeave = async () => {
+    const pick = pendingPick;
+    setPendingPick(null);
+    if (!pick) return;
+    await keepFilesNow();
+    runPick(pick);
+  };
+
+  // The Files panel of a running tracker
+  const [filesOpenFor, setFilesOpenFor] = useState<number | null>(null);
+  const [filesNotice, setFilesNotice] = useState<string | null>(null);
+  const filesOpen = session !== null && filesOpenFor === session.id;
+  /** Keep the tracker's files now, giving up after 3 s; the bundle, if any */
+  const keepFilesNow = async (): Promise<Uint8Array | null> => {
+    const saveNow = saveFilesRef.current;
+    if (!saveNow) return null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        saveNow(),
+        new Promise<null>((resolve) => {
+          timer = setTimeout(() => resolve(null), 3_000);
+        }),
+      ]);
+    } catch (err) {
+      console.warn('[DosPlayerWithApps] Files could not be kept:', err);
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  const handleDownload = async () => {
+    if (!sessionApp) return;
+    const bytes =
+      (await keepFilesNow()) ??
+      (await getSavedFiles(sessionApp.id).catch(() => null))?.bytes ??
+      null;
+    if (!bytes) {
+      setFilesNotice(`Nothing to download yet: save something in ${sessionApp.name} first.`);
+      return;
+    }
+    // The bundle as js-dos packed it: a ZIP of the saved files, byte for byte
+    const url = URL.createObjectURL(new Blob([bytes.slice()], { type: 'application/zip' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${sessionApp.id}-files.zip`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  };
+  const handleImport = async (chosen: File[]) => {
+    if (!session?.app || !session.files) return;
+    const saved = (await keepFilesNow()) ?? session.saved ?? null;
+    // Names of their own: js-dos writes loose files before it unpacks the archive and the
+    // saved files, whose files of the same name would replace them
+    const taken = new Set([
+      ...zipEntryNames(session.files),
+      ...(saved ? zipEntryNames(saved) : []),
+      ...(session.imports ?? []).map((file) => file.path),
+    ]);
+    const imports = [...(session.imports ?? [])];
+    for (const file of chosen) {
+      const path = dosNameFor(file.name, taken);
+      taken.add(path);
+      imports.push({ path, contents: await readBytes(file) });
+    }
+    setFilesOpenFor(null);
+    dispatch({ type: 'restarted', saved, imports });
+  };
+  const handleReset = async () => {
+    if (!sessionApp) return;
+    await removeSavedFiles(sessionApp.id).catch((err: unknown) => {
+      console.warn('[DosPlayerWithApps] Saved files could not be deleted:', err);
+    });
+    setFilesOpenFor(null);
+    dispatch({ type: 'restarted', saved: null, imports: [] });
+  };
 
   const handleCancelSelector = useCallback(() => {
     dispatch({ type: 'selectorCancelled' });
@@ -259,6 +363,81 @@ export function DosPlayerWithApps({
     onAppChange?.(null);
     onSelectorVisibilityChange?.(true);
   }, [onAppChange, onSelectorVisibilityChange]);
+
+  // A tracker's files from its earlier visits come back after its archive. Where the
+  // browser cannot keep files, it starts without them.
+  const [filesKept, setFilesKept] = useState(true);
+  useEffect(() => {
+    if (!preparingSession?.app) return;
+    const sessionId = preparingSession.id;
+    let current = true;
+    getSavedFiles(preparingSession.app.id).then(
+      (found) => {
+        if (current) dispatch({ type: 'prepared', sessionId, saved: found?.bytes ?? null });
+      },
+      (err: unknown) => {
+        console.warn('[DosPlayerWithApps] Saved files could not be read:', err);
+        if (!current) return;
+        setFilesKept(false);
+        dispatch({ type: 'prepared', sessionId, saved: null });
+      }
+    );
+    return () => {
+      current = false;
+    };
+  }, [preparingSession]);
+
+  // What a tracker saves is kept: a few seconds after keys reach DOS, every 30 seconds, and
+  // when the tab is hidden or the page goes. ci.persist() packs the files that differ from
+  // the archive, the earlier visits' included, and the browser keeps that bundle.
+  const [filesSavedAt, setFilesSavedAt] = useState<{ sessionId: number; at: number } | null>(null);
+  const saveFilesRef = useRef<(() => Promise<Uint8Array | null>) | null>(null);
+  useEffect(() => {
+    if (!handle || !sessionApp?.saveFiles || !session) return;
+    const appId = sessionApp.id;
+    const sessionId = session.id;
+    const queue = createPersistQueue((onlyChanges) => handle.ci.persist(onlyChanges));
+    let lastWritten = session.saved ? fnv1a(session.saved) : null;
+    const saveNow = async (): Promise<Uint8Array | null> => {
+      const bytes = await queue.save();
+      if (!bytes) return null;
+      const written = fnv1a(bytes);
+      if (written !== lastWritten) {
+        await putSavedFiles(appId, bytes);
+        lastWritten = written;
+        setFilesSavedAt({ sessionId, at: Date.now() });
+      }
+      return bytes;
+    };
+    const saveQuietly = () => {
+      saveNow().catch((err: unknown) => {
+        console.warn('[DosPlayerWithApps] Files could not be kept:', err);
+        setFilesKept(false);
+      });
+    };
+    let afterKeys: ReturnType<typeof setTimeout> | undefined;
+    // On window, where keys DosKit's own controls stop never arrive: these went to DOS
+    const onKey = () => {
+      clearTimeout(afterKeys);
+      afterKeys = setTimeout(saveQuietly, 3_000);
+    };
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') saveQuietly();
+    };
+    const every = setInterval(saveQuietly, 30_000);
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', saveQuietly);
+    saveFilesRef.current = saveNow;
+    return () => {
+      clearTimeout(afterKeys);
+      clearInterval(every);
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', saveQuietly);
+      if (saveFilesRef.current === saveNow) saveFilesRef.current = null;
+    };
+  }, [handle, sessionApp, session]);
 
   // The selector, opened from the end card
   const handleOpenSelector = useCallback(() => {
@@ -360,6 +539,50 @@ export function DosPlayerWithApps({
         </div>
       )}
 
+      {/* A running tracker's files. The button takes no focus from a click, so that keys go
+          on reaching DOS. */}
+      {session?.app?.saveFiles && status === 'ready' && (
+        <button
+          className="doskit-files-open"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            setFilesNotice(null);
+            setFilesOpenFor(session.id);
+          }}
+        >
+          Files
+        </button>
+      )}
+      {filesOpen && session?.app && (
+        <TrackerFiles
+          appName={session.app.name}
+          savedAt={filesSavedAt?.sessionId === session.id ? filesSavedAt.at : null}
+          kept={filesKept}
+          notice={filesNotice}
+          onDownload={() => void handleDownload()}
+          onImport={(chosen) => void handleImport(chosen)}
+          onReset={() => void handleReset()}
+          onClose={() => setFilesOpenFor(null)}
+        />
+      )}
+
+      {/* Leaving a running tracker: its saved files are kept, unsaved work is lost */}
+      {pendingPick && sessionApp && (
+        <div className="doskit-end-card" role="dialog" aria-labelledby="doskit-leave-title">
+          <h2 id="doskit-leave-title">Leave {sessionApp.name}?</h2>
+          <p>
+            What you saved in it stays in this browser. Work you haven't saved with its own save is
+            lost.
+          </p>
+          <div className="doskit-end-actions">
+            <button autoFocus onClick={() => void handleLeave()}>
+              Leave
+            </button>
+            <button onClick={() => setPendingPick(null)}>Stay</button>
+          </div>
+        </div>
+      )}
+
       {/* End card, once the program has returned to DOS */}
       {ended && session && endMarker && (
         <div className="doskit-end-card" role="dialog" aria-labelledby="doskit-end-title">
@@ -379,7 +602,20 @@ export function DosPlayerWithApps({
         <DosPlayer
           key={session.id} // A new session starts a new player
           dosboxConf={sessionConf}
-          options={session.app ? { initFs: session.files } : {}}
+          options={
+            session.app && session.files
+              ? {
+                  // The archive, then what the app saved before, whose files replace the
+                  // archive's; loose files of the visitor's own are written before both
+                  initFs: [
+                    session.files,
+                    ...(session.saved ? [session.saved] : []),
+                    ...(session.imports ?? []),
+                  ],
+                  ...session.app.jsdos,
+                }
+              : {}
+          }
           onReady={(ci) => {
             dispatch({ type: 'started', sessionId: session.id, status: 'ready' });
             onReady?.(ci);

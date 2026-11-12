@@ -2,7 +2,7 @@
  * Tests for the queue that sends keys to DOS one at a time
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createKeyQueue } from './keyQueue';
 import { dosKey } from './dosKeys';
 
@@ -52,6 +52,46 @@ describe('createKeyQueue', () => {
     await queue.release([dosKey.Right, dosKey.Enter]);
 
     expect(sent).toEqual(['0 262 up', '0 257 up']);
+  });
+});
+
+describe('createKeyQueue in real time', () => {
+  it('waits on the clock between a press and its release', async () => {
+    vi.useFakeTimers();
+    try {
+      const sent: string[] = [];
+      const queue = createKeyQueue({
+        sendKeyEvent: (code, pressed) => sent.push(`${code} ${pressed ? 'down' : 'up'}`),
+      });
+
+      const done = queue.press([dosKey.Enter]);
+      await vi.advanceTimersByTimeAsync(59);
+      expect(sent).toEqual(['257 down']);
+      await vi.advanceTimersByTimeAsync(1);
+      await done;
+
+      expect(sent).toEqual(['257 down', '257 up']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('goes on with the next key when sending one fails', async () => {
+    let calls = 0;
+    const queue = createKeyQueue(
+      {
+        sendKeyEvent: () => {
+          calls += 1;
+          if (calls === 1) throw new Error('worker gone');
+        },
+      },
+      { sleep: async () => {} }
+    );
+
+    await expect(queue.press([dosKey.Enter])).rejects.toThrow('worker gone');
+    await queue.press([dosKey.Space]);
+
+    expect(calls).toBe(3);
   });
 });
 

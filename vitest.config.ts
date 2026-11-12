@@ -31,7 +31,13 @@ export default defineConfig({
       // All of the app's source, so that a file no test imports counts as uncovered: without
       // an include, Vitest reports only the files the tests load.
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/**/*.d.ts'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/test/**',
+        'src/**/*.d.ts',
+        // IndexedDB, which jsdom does not have: the browser tests in e2e/ cover it instead
+        'src/utils/savedFiles.ts',
+      ],
       // About 3 points under the coverage measured in November 2026 (statements 97.47%,
       // branches 91.01%, functions 96.14%, lines 97.51%): room for small shifts as tests
       // change, while a real drop fails CI. Raise them as coverage grows.
