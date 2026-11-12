@@ -21,13 +21,16 @@ import { presets } from '../utils/dosboxConfigBuilder';
  * This configuration uses:
  * - Gravis UltraSound (the backend's always has 1 MB of memory, and js-dos plays its sound in
  *   mono)
- * - Maximum cycles on the simple CPU core
+ * - A fixed 24000 cycles on the simple CPU core, about a 486DX2-66, the machine its setup
+ *   says it was made for ("33Mhz 486 computers"). At 'max' it showed the default VGA palette
+ *   for about 12 s near 1:30 in most runs; at 24000 it never did, and its timeline stays
+ *   within about 1% of a capture made on a real 486DX2-66.
  * - DOSBox's default 16 MB of memory, with EMS/XMS enabled
  * - Sound Blaster 16 too, for the setup's other card
  */
 export const secondRealityDosboxConf = presets
   .demo()
-  .setCPU({ core: 'simple', cputype: 'auto', cycles: 'max' })
+  .setCPU({ core: 'simple', cputype: 'auto', cycles: 24000 })
   .setGUS({
     gus: true,
     gusbase: 240,
@@ -44,7 +47,7 @@ export const secondRealityDosboxConf = presets
     'echo ========================================',
     'echo.',
     'echo Audio: Gravis UltraSound',
-    'echo CPU: Maximum Cycles',
+    'echo CPU: 24000 cycles',
     'echo.',
     'echo Mounting C: drive...',
     'mount c .',

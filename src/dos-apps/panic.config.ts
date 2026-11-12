@@ -32,11 +32,14 @@ export const panicZipUrl = '/demos/panic.zip';
  *   which its opening runs seconds behind and some effects drop to 22-45 frames a second; at
  *   'max' it plays no sound.
  * - Sound Blaster 16 for audio
- * - Standard VGA graphics
+ * - A plain VGA (machine vgaonly): Panic changes the palette while a frame is drawn, which
+ *   DOSBox's default SVGA machine applies once a frame, tearing its chrome-letter scroller and
+ *   striping its plasma
  * - DOSBox's default 16 MB of memory, with EMS enabled
  */
 export const panicDosboxConf = presets
   .demo()
+  .setMachine({ machine: 'vgaonly' })
   .setCPU({ core: 'auto', cputype: 'auto', cycles: 30000 })
   .setSoundBlaster({
     sbtype: 'sb16',

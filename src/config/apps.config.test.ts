@@ -188,6 +188,23 @@ describe('availableApps', () => {
     expect(conf).toMatch(/^cycles=max$/m);
   });
 
+  it.each(['panic', 'squid-bbstro'])('should draw %s on a plain VGA', async (id) => {
+    // Both change the palette while a frame is drawn. DOSBox's default SVGA machine applies
+    // palette changes once a frame, which tears Panic's scroller and plasma and leaves Squid
+    // without its raster bars; vgaonly draws line by line, as a real VGA does.
+    const conf = await findAppById(id)?.loadDosboxConf?.();
+
+    expect(conf).toMatch(/^\[dosbox\]\nmachine=vgaonly$/m);
+  });
+
+  it('should run Second Reality at about the speed of a 486DX2-66', async () => {
+    // At 'max' it showed the default VGA palette for about 12 s near 1:30 in most runs; at a
+    // fixed 24000 it never did, and its timeline stays within about 1% of a real 486DX2-66
+    const conf = await findAppById('second-reality')?.loadDosboxConf?.();
+
+    expect(conf).toMatch(/^cycles=24000$/m);
+  });
+
   it.each(['starport-bbstro', 'unreal', 'panic', '3drotate'])(
     'should run %s at a fixed 30000 cycles',
     async (id) => {

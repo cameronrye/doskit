@@ -36,7 +36,8 @@ export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';
  *   at a fixed 30000 cycles the demo stops with "System overloaded!"
  * - Gravis UltraSound, the setup's first choice: without one, DOSBox sets no ULTRASND and
  *   that choice ends at the DOS prompt
- * - Sound Blaster 16 for the setup's second choice
+ * - Sound Blaster 16 for the setup's second choice, which does not work here: it asks for a
+ *   mixing rate and then crashes. DosKit starts the demo on Ultrasound.
  * - Standard VGA graphics
  * - DOSBox's default 16 MB of memory
  *
