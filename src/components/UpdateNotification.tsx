@@ -57,11 +57,25 @@ export function UpdateNotification({
   // gives it back when it goes to whatever had it, which may be the page itself. The focus
   // goes to Later: the prompt can appear while someone types into a DOS program, and a key
   // meant for DOS must not reload the page under it.
+  //
+  // The page behind can take the focus after the prompt appears, as a production's Play
+  // button does when it mounts with autoFocus: the prompt takes it back to Later, and once
+  // it closes gives it to what took it.
   useEffect(() => {
     if (!show) return;
-    const previous = document.activeElement;
+    let previous = document.activeElement;
     laterButton.current?.focus();
+    const keepFocus = (event: FocusEvent) => {
+      const prompt = laterButton.current?.closest('.update-notification');
+      if (!prompt || !(event.target instanceof HTMLElement) || prompt.contains(event.target)) {
+        return;
+      }
+      previous = event.target;
+      laterButton.current?.focus();
+    };
+    document.addEventListener('focusin', keepFocus);
     return () => {
+      document.removeEventListener('focusin', keepFocus);
       if (previous instanceof HTMLElement) {
         previous.focus();
       }

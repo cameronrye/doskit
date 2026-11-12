@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { UpdateNotification } from './UpdateNotification';
 import {
@@ -232,6 +232,20 @@ describe('UpdateNotification', () => {
 
       await user.click(later());
 
+      expect(behind).toHaveFocus();
+    });
+
+    // A production's Play button has autoFocus, and mounts once its archive has loaded,
+    // which can be after the prompt appeared
+    it('takes the focus back when the page behind takes it, and gives it there once it closes', async () => {
+      const user = userEvent.setup();
+      renderOverPage();
+      const behind = screen.getByRole('button', { name: 'Change Application' });
+
+      act(() => behind.focus());
+
+      expect(later()).toHaveFocus();
+      await user.click(later());
       expect(behind).toHaveFocus();
     });
   });
