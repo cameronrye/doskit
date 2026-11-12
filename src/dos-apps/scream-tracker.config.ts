@@ -11,7 +11,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * Scream Tracker 3.21 (hosted locally)
- * The legendary tracker by Future Crew that created the S3M format
+ * Future Crew's music tracker, for which the S3M module format was made
  *
  * Source: https://archive.org/details/scrmt321_202207
  * License: Freeware
@@ -60,7 +60,7 @@ export const screamTrackerDosboxConf = presets
     'echo   by Future Crew (1994)',
     'echo ========================================',
     'echo.',
-    'echo The legendary S3M tracker',
+    'echo Where the S3M module format began',
     'echo Code by Psi (Sami Tammilehto)',
     'echo.',
     'echo CPU: 12000 cycles',

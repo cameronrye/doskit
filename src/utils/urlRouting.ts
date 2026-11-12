@@ -142,6 +142,6 @@ export function updateDocumentTitle(appName?: string): void {
   if (appName) {
     document.title = `${appName} - DosKit`;
   } else {
-    document.title = 'DosKit - Cross-Platform DOS Emulator';
+    document.title = 'DosKit - DOS demoscene classics in your browser';
   }
 }

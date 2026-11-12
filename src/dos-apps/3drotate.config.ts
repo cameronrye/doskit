@@ -12,7 +12,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * 3D Rotate Demo (hosted locally)
- * A classic 3D rotation demo effect, from VLA's "Intro To 3d Rotations" by Draeden
+ * The example program of VLA's tutorial "Intro To 3d Rotations" by Draeden
  *
  * Source: https://github.com/sceners/grumpys-source-pack-collection
  * License: none found (see public/demos/README.md)

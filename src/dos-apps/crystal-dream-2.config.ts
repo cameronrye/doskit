@@ -11,7 +11,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * Crystal Dream 2 by Triton (hosted locally)
- * A legendary 1993 demo that won 1st place at The Computer Crossroads 1993
+ * Triton's demo that won the PC demo competition at The Computer Crossroads 1993
  *
  * Source: https://files.scene.org/get/demos/groups/triton/cd2-trn.zip
  * License: none found (see public/demos/README.md)

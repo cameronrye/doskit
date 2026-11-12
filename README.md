@@ -4,7 +4,9 @@
 
 # DosKit
 
-A robust, cross-platform foundation for running DOS applications using js-dos WebAssembly technology. This project works seamlessly across different platforms (Windows, macOS, Linux) and devices (desktop, mobile, tablet).
+DOS demoscene classics and the trackers behind them, playable in your browser.
+
+[doskit.net](https://doskit.net) runs Future Crew's Second Reality, Unreal and Panic, Triton's Crystal Dream 2, two BBS intros, and the Impulse Tracker and Scream Tracker 3 music trackers, from their original 1990s files, in DOSBox compiled to WebAssembly by [js-dos](https://js-dos.com). There is nothing to install, and a production opened once plays offline too.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![js-dos](https://img.shields.io/github/package-json/dependency-version/cameronrye/doskit/js-dos?color=green)
@@ -14,20 +16,19 @@ A robust, cross-platform foundation for running DOS applications using js-dos We
 ## Features
 
 - **Interactive DOS Prompt**: Boots directly to a fully functional DOS command prompt
-- **App Library**: Classic demos such as Second Reality, Unreal and Crystal Dream 2, and the Impulse Tracker and Scream Tracker 3 music trackers, picked from a floppy-disk selector
+- **App Library**: Demos such as Second Reality, Unreal, Panic and Crystal Dream 2, and the Impulse Tracker and Scream Tracker 3 music trackers, picked from a floppy-disk selector
 - **Cross-Platform**: Works on Windows, macOS, Linux, iOS, and Android
 - **Progressive Web App (PWA)**: Install as a native app with offline support
 - **Deep Linking**: Load specific applications directly via URL (e.g., `?app=secondreality`)
 - **Offline Functionality**: After the first visit, the DOS prompt works offline, and so does every app opened online after that
 - **Modern Tech Stack**: Built with React 19, TypeScript, and Vite
-- **WebAssembly Performance**: Leverages js-dos for near-native DOS emulation
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters, but for the shortcuts browsers keep for themselves (see [Known Limitations](#known-limitations))
-- **Audio Support**: Sound Blaster, Gravis UltraSound and AdLib emulation with proper audio output
+- **Sound**: Sound Blaster, Gravis UltraSound and AdLib emulation, in mono: js-dos mixes the two channels into one
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
 - **Fullscreen**: The fullscreen button in the js-dos sidebar makes the player fill the browser window, over DosKit's header and footer. js-dos then narrows its sidebar to a strip on the left: click the strip to bring back the button, which leaves fullscreen
 - **Touch Controls**: On-screen keyboard in the js-dos sidebar. Phones and tablets get DosKit's compact layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key (see [Mobile Configuration](#mobile-configuration))
 - **Type-Safe**: Full TypeScript support with comprehensive type definitions
-- **Service Worker Caching**: Fast loading with intelligent cache management
+- **Service Worker Caching**: The page, the emulator and every archive opened are stored for offline use
 
 ## Table of Contents
 
@@ -806,15 +807,19 @@ The site serves js-dos and its emulators, which come with licenses of their own.
 - **retro-floppy**: MIT License
 - **Demos and trackers**: [public/demos/README.md](public/demos/README.md) records each archive's source and the terms its authors gave it, or that none were found
 
+### For Rights Holders
+
+DosKit serves each production unmodified, from the archive its authors or the scene's archives released, and credits it on its page. Three archives carry no terms of their own: the 3D Rotation Demo and the Starfield Effect, from VLA's tutorials, and Crystal Dream 2 by Triton. If you made one of these productions, or hold its rights, and want it credited differently or taken down, email **cameron@rye.dev** and it will be done, no questions asked.
+
 ## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Acknowledgments
 
-- **js-dos** by caiiiycuk - For the amazing WebAssembly DOS emulator
+- **js-dos** by caiiiycuk - For the WebAssembly DOS emulator DosKit runs on
 - **DOSBox** team - For the original DOS emulation
-- **React** team - For the excellent UI framework
+- **React** team - For the UI framework
 
 ---
 

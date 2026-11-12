@@ -6,7 +6,7 @@
 
 ## Overview
 
-DosKit implements a multi-layered error handling strategy to ensure a robust user experience and facilitate debugging. The system captures errors at multiple levels, shows load and start failures where they happen, keeps known harmless browser errors out of the console, and reports the rest through an error tracking interface that logs to the console.
+DosKit handles errors at several levels, so that a failure shows where it happens and can be debugged. The system captures errors at multiple levels, shows load and start failures where they happen, keeps known harmless browser errors out of the console, and reports the rest through an error tracking interface that logs to the console.
 
 ## Architecture
 

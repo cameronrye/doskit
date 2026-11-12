@@ -264,7 +264,7 @@ describe('App', () => {
       expect(screen.getByTestId('requested-app')).toHaveTextContent('none');
       expect(screen.getByTestId('selector-state')).toHaveTextContent('visible');
       expect(screen.queryByText('Starfield Effect')).not.toBeInTheDocument();
-      expect(document.title).toBe('DosKit - Cross-Platform DOS Emulator');
+      expect(document.title).toBe('DosKit - DOS demoscene classics in your browser');
     });
 
     it('requests the app that going forward lands on', async () => {

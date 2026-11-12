@@ -11,7 +11,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * Unreal demo (hosted locally)
- * A groundbreaking demo by Future Crew (1992)
+ * Future Crew's demo that won the PC demo competition at Assembly '92
  *
  * Source: https://archive.org/details/unreal_zip
  * License: Freeware
@@ -55,10 +55,7 @@ export const unrealDosboxConf = presets
     'echo   1992 - Assembly 1992 Winner',
     'echo ========================================',
     'echo.',
-    'echo A groundbreaking demo featuring:',
-    'echo - Advanced 3D graphics',
-    'echo - Smooth animations',
-    'echo - Excellent music by Purple Motion',
+    'echo Music by Purple Motion',
     'echo.',
     'echo Audio: Sound Blaster 16',
     'echo CPU: 30000 cycles',

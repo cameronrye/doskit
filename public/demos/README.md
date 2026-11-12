@@ -256,6 +256,13 @@ code, Lizardking and Vogue with the music, Vogue with the graphics and Loot with
 - **More**: [pouet.net](https://www.pouet.net/prod.php?which=462),
   [Demozoo](https://demozoo.org/productions/175/)
 
+## For Rights Holders
+
+Every archive here is served as its source has it, byte for byte, and credited on its
+production's page. Three have no terms of their own: `3drotate.zip`, `stars.zip` and
+`crystal-dream-2.zip`. If you made one of these productions, or hold its rights, and want it
+credited differently or taken down, email cameron@rye.dev and it will be done.
+
 ## Adding an Archive
 
 The steps for adding an app, its archive included, are in

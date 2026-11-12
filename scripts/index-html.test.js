@@ -46,4 +46,35 @@ describe("index.html's metadata", () => {
     expect(metaContent('og:image')).toBe('https://doskit.net/og-image.png');
     expect(nodeOf('SoftwareApplication').screenshot).not.toBe(metaContent('og:image'));
   });
+
+  // The one sentence DosKit introduces itself with, wherever it does
+  const IDENTITY = 'DOS demoscene classics and the trackers behind them, playable in your browser.';
+
+  it('introduces DosKit with the same sentence everywhere', () => {
+    const manifest = JSON.parse(readFileSync(join(PUBLIC_DIR, 'manifest.json'), 'utf8'));
+    const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+
+    for (const description of [
+      metaContent('description'),
+      metaContent('og:description'),
+      metaContent('twitter:description'),
+      nodeOf('WebSite').description,
+      nodeOf('SoftwareApplication').description,
+      manifest.description,
+      pkg.description,
+    ]) {
+      expect(description?.startsWith(IDENTITY)).toBe(true);
+    }
+  });
+
+  it('names what it is in its title', () => {
+    const title = 'DosKit - DOS demoscene classics in your browser';
+
+    expect(html).toContain(`<title>${title}</title>`);
+    expect([metaContent('title'), metaContent('og:title'), metaContent('twitter:title')]).toEqual([
+      title,
+      title,
+      title,
+    ]);
+  });
 });

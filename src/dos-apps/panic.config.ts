@@ -11,7 +11,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * Panic demo (hosted locally)
- * A classic demo by Future Crew (1993)
+ * Future Crew's demo, shown at The Party 1992 and released in February 1993
  *
  * Source: https://files.scene.org/view/demos/groups/future_crew/demos/panic.zip
  * License: Freeware
@@ -58,11 +58,8 @@ export const panicDosboxConf = presets
     'echo   1993 - 2nd at The Party 1992',
     'echo ========================================',
     'echo.',
-    'echo A classic demo featuring:',
-    'echo - Voxel fractals',
-    'echo - Shadebobs',
-    'echo - Hard techno music by Purple Motion',
-    'echo - Dark atmosphere',
+    'echo Code by Wildfire, Psi and Trug',
+    'echo Music by Purple Motion, graphics by Pixel',
     'echo.',
     'echo Audio: Sound Blaster 16',
     'echo CPU: 30000 cycles',

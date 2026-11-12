@@ -227,12 +227,12 @@ describe('urlRouting', () => {
 
     it('should set default title when no app name provided', () => {
       updateDocumentTitle();
-      expect(document.title).toBe('DosKit - Cross-Platform DOS Emulator');
+      expect(document.title).toBe('DosKit - DOS demoscene classics in your browser');
     });
 
     it('should set default title when undefined is provided', () => {
       updateDocumentTitle(undefined);
-      expect(document.title).toBe('DosKit - Cross-Platform DOS Emulator');
+      expect(document.title).toBe('DosKit - DOS demoscene classics in your browser');
     });
 
     it('should handle different app names', () => {

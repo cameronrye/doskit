@@ -1,6 +1,6 @@
 # DosKit - Comprehensive Documentation
 
-> A robust, cross-platform foundation for running DOS applications using js-dos WebAssembly technology
+> DOS demoscene classics and the trackers behind them, playable in your browser
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@
 
 ## Overview
 
-DosKit is a modern web application that enables users to run classic DOS applications and demos directly in their browser without any installation. Built with cutting-edge web technologies, it provides a seamless, cross-platform DOS emulation experience that works on desktop and mobile devices.
+DosKit runs DOS demoscene productions and the music trackers they were made with in the browser, from their original files, with nothing to install: Second Reality, Unreal, Panic and Crystal Dream 2, two BBS intros, and Impulse Tracker and Scream Tracker 3. It is a web app around js-dos, which runs DOSBox compiled to WebAssembly.
 
 The project leverages js-dos v8.3.20, a WebAssembly-based DOS emulator built on DOSBox. Combined with React 19's modern component architecture and Vite's lightning-fast build system, DosKit delivers an exceptional user experience for retro computing enthusiasts and developers.
 
@@ -34,13 +34,13 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 
 - **Interactive DOS Prompt**: The start page boots a fully functional DOS command prompt where users can execute DOS commands, with the application selector open over it
 - **Application Library**: Demoscene productions and music trackers, picked from a selector of floppy disks that works with the mouse or the keyboard (arrow keys, Home, End, Space, Enter, Escape; see Basic Usage under Usage)
-- **Cross-Platform Compatibility**: Works seamlessly on Windows, macOS, Linux, iOS, and Android
+- **Platforms**: Desktop browsers on Windows, macOS and Linux, and phones and tablets on iOS and Android, where the on-screen keyboard stands in for a real one
 - **Progressive Web App (PWA)**: Can be installed as a native app, with offline support
 - **Deep Linking**: Load specific applications directly via URL parameters (e.g., `?app=secondreality`)
 - **Offline Functionality**: After the first visit the app and its DOS prompt work offline; each application works offline once it has been opened online
 - **WebAssembly Performance**: js-dos v8.3.20 runs DOSBox as WebAssembly in a worker thread and renders with WebGL
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
-- **Audio Support**: Sound Blaster, Gravis UltraSound and AdLib emulation with proper audio output
+- **Sound**: Sound Blaster, Gravis UltraSound and AdLib emulation, in mono: js-dos mixes the two channels into one
 - **Responsive Design**: Optimized layouts for desktop, tablet, and mobile devices
 - **Fullscreen**: The fullscreen button in the js-dos sidebar makes the player fill the browser window, over DosKit's header and footer; js-dos then narrows its sidebar to a strip on the left, which brings back the button when clicked
 - **Touch Controls**: On-screen keyboard in the js-dos sidebar; phones and tablets get DosKit's compact layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key
