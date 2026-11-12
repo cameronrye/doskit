@@ -50,22 +50,30 @@ function createMockPlayer() {
   } satisfies DosProps;
 }
 
-/** A command interface with what DosPlayer uses, and a trigger for its exit event */
+/** A command interface with what DosPlayer uses, and triggers for its exit and its output */
 function createMockCommandInterface() {
   let exitConsumer: (() => void) | undefined;
+  const stdoutConsumers: ((message: string) => void)[] = [];
   const unmute = vi.fn<CommandInterface['unmute']>();
   // Only what DosPlayer calls; the rest of the interface is left out
   const events: Partial<CommandInterfaceEvents> = {
     onExit: vi.fn((consumer: () => void) => {
       exitConsumer = consumer;
     }),
-    onStdout: vi.fn(),
+    onStdout: vi.fn((consumer: (message: string) => void) => {
+      stdoutConsumers.push(consumer);
+    }),
   };
   const ci: Partial<CommandInterface> = {
     events: () => events as CommandInterfaceEvents,
     unmute,
   };
-  return { ci: ci as CommandInterface, unmute, exit: () => exitConsumer?.() };
+  return {
+    ci: ci as CommandInterface,
+    unmute,
+    exit: () => exitConsumer?.(),
+    print: (message: string) => stdoutConsumers.forEach((consumer) => consumer(message)),
+  };
 }
 
 describe('DosPlayer', () => {
@@ -284,6 +292,22 @@ describe('DosPlayer', () => {
       );
     });
 
+    it('gives js-dos a copy of the start files, which a start empties', () => {
+      const archive = new Uint8Array([1, 2, 3]);
+      const loose = { path: 'SONG.S3M', contents: new Uint8Array([4, 5]) };
+
+      render(<DosPlayer options={{ initFs: [archive, loose] }} />);
+      const [given, givenLoose] = mockDos.mock.lastCall?.[1]?.initFs as [
+        Uint8Array,
+        { path: string; contents: Uint8Array },
+      ];
+
+      expect(given).not.toBe(archive);
+      expect(given).toEqual(archive);
+      expect(givenLoose).toEqual(loose);
+      expect(givenLoose.contents).not.toBe(loose.contents);
+    });
+
     it('should merge custom options with defaults', () => {
       const customOptions = { volume: 0.5, theme: 'light' };
       render(<DosPlayer options={customOptions} />);
@@ -351,6 +375,36 @@ describe('DosPlayer', () => {
       emit('ci-ready', ci);
 
       expect(onReady).toHaveBeenCalledWith(ci);
+    });
+
+    it('hands out the ready player with its command interface', async () => {
+      const onHandle = vi.fn();
+      const { ci } = createMockCommandInterface();
+
+      render(<DosPlayer onHandle={onHandle} />);
+      emit('ci-ready', ci);
+
+      await waitFor(() => expect(onHandle).toHaveBeenCalledTimes(1));
+      expect(onHandle.mock.calls[0]?.[0]).toMatchObject({ ci, player });
+    });
+
+    it('hands out what DOS prints, the lines before the handle included', async () => {
+      const onHandle = vi.fn();
+      const { ci, print } = createMockCommandInterface();
+      render(<DosPlayer onHandle={onHandle} />);
+      emit('ci-ready', ci);
+      print('Starting Stars...');
+      await waitFor(() => expect(onHandle).toHaveBeenCalled());
+
+      const heard: string[] = [];
+      const stopListening = onHandle.mock.calls[0]?.[0].stdout.subscribe((line: string) =>
+        heard.push(line)
+      );
+      print('Stars has ended.');
+      stopListening();
+      print('C:\\>');
+
+      expect(heard).toEqual(['Starting Stars...', 'Stars has ended.']);
     });
 
     it('should unmute audio when Command Interface is ready', () => {
