@@ -1,6 +1,6 @@
 {
   "name": "doskit",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "DOS demoscene classics and the trackers behind them, playable in your browser. A React and TypeScript PWA around js-dos, the DOSBox WebAssembly build.",
   "type": "module",
   "author": "Cameron Rye <cameron@rye.dev>",
