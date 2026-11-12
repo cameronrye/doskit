@@ -76,3 +76,6 @@ export const panicDosboxConf = presets
     'PANIC.EXE'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { panicDosboxConf as dosboxConf };

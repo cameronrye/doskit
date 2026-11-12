@@ -1,0 +1,10 @@
+{
+  "id": "3drotate",
+  "order": 9,
+  "kind": "effect",
+  "name": "3D Rotation Demo",
+  "description": "The example program of VLA's 3D rotation tutorial",
+  "author": "Draeden of VLA",
+  "year": 1993,
+  "archiveBytes": 2991
+}

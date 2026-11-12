@@ -57,3 +57,6 @@ export const starsDosboxConf = presets
     'STARS.EXE'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { starsDosboxConf as dosboxConf };

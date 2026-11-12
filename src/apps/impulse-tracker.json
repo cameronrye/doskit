@@ -1,0 +1,11 @@
+{
+  "id": "impulse-tracker",
+  "order": 7,
+  "kind": "tracker",
+  "name": "Impulse Tracker",
+  "description": "Jeffrey Lim's music tracker, version 2.14",
+  "author": "Jeffrey Lim",
+  "year": 1997,
+  "archiveBytes": 1047473,
+  "warnBeforeLeaving": true
+}

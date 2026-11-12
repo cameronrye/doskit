@@ -75,3 +75,6 @@ export const screamTrackerDosboxConf = presets
     'ST3.EXE'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { screamTrackerDosboxConf as dosboxConf };

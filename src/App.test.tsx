@@ -53,6 +53,8 @@ const mockApp: DosApp = {
   description: 'A test DOS application',
   author: 'Test Author',
   year: 1995,
+  kind: 'demo',
+  archiveBytes: 3,
   loadMethod: 'zip',
   dosboxConf: '[cpu]\ncore=auto',
   loader: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),

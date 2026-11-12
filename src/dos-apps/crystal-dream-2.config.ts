@@ -99,3 +99,6 @@ export const crystalDream2DosboxConf = presets
     'CD2.EXE'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { crystalDream2DosboxConf as dosboxConf };

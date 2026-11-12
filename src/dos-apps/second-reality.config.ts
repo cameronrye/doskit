@@ -69,3 +69,6 @@ export const secondRealityDosboxConf = presets
  * Contains: SECOND.EXE, REALITY.FC, README.1ST, FCINFO10.TXT, FILE_ID.DIZ
  */
 export const secondRealityZipUrl = '/demos/second-reality.zip';
+
+/** The config under the name the registry reads */
+export { secondRealityDosboxConf as dosboxConf };

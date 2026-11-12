@@ -70,3 +70,6 @@ export const starportBbstroDosboxConf = presets
     'SP2.COM'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { starportBbstroDosboxConf as dosboxConf };

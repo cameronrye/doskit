@@ -133,6 +133,17 @@ describe('availableApps', () => {
       expect(conf).not.toMatch(/^echo .*(\d+ ?KB|stereo)/im);
     });
 
+    it('should record the size of its archive, which its disk shows', () => {
+      const archive = readFileSync(new URL(`${app.id}.zip`, DEMOS));
+
+      expect(app.archiveBytes).toBe(archive.byteLength);
+    });
+
+    it('should describe itself without superlatives', () => {
+      // Facts read better than praise, and the selector's line has room for one
+      expect(app.description).not.toMatch(/legendary|groundbreaking|classic|iconic|ultimate/i);
+    });
+
     it('should name no other year for its release in its description or banner', async () => {
       // A year in the description, or a banner's "by Triton (1993)" or "1993 - ...", is the
       // release year; a party's year in the banner ("The Party 1992") is not
@@ -155,6 +166,29 @@ describe('availableApps', () => {
 
     expect(new Set(ids).size).toBe(ids.length);
     expect(new Set(ids.map(getUrlFriendlyId)).size).toBe(ids.length);
+  });
+
+  it('should list the four demos first, then the intros, the trackers and the effects', () => {
+    expect(availableApps.map((app) => [app.id, app.kind])).toEqual([
+      ['second-reality', 'demo'],
+      ['unreal', 'demo'],
+      ['panic', 'demo'],
+      ['crystal-dream-2', 'demo'],
+      ['starport-bbstro', 'intro'],
+      ['squid-bbstro', 'intro'],
+      ['impulse-tracker', 'tracker'],
+      ['scream-tracker', 'tracker'],
+      ['3drotate', 'effect'],
+      ['stars', 'effect'],
+    ]);
+  });
+
+  it('should warn of flashing lights in the productions that flash', () => {
+    // Measured frame by frame against WCAG 2.3.1's three flashes a second: Panic for 79 s
+    // of 247, Second Reality's techno part, and Crystal Dream 2's opening and 20 s more
+    const flashing = availableApps.filter((app) => app.flashing).map((app) => app.id);
+
+    expect(flashing).toEqual(['second-reality', 'panic', 'crystal-dream-2']);
   });
 
   it('should ask before the page closes only while a tracker runs', () => {

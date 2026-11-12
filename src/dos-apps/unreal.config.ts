@@ -72,3 +72,6 @@ export const unrealDosboxConf = presets
     'UNREAL.EXE'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { unrealDosboxConf as dosboxConf };

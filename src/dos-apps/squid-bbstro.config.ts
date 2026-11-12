@@ -79,3 +79,6 @@ export const squidBbstroDosboxConf = presets
     'SQUID1.COM'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { squidBbstroDosboxConf as dosboxConf };

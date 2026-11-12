@@ -1,0 +1,10 @@
+{
+  "id": "squid-bbstro",
+  "order": 6,
+  "kind": "intro",
+  "name": "Squid BBS Intro",
+  "description": "A BBS intro in 1899 bytes, with AdLib music",
+  "author": "cld & The Doctor",
+  "year": 1994,
+  "archiveBytes": 21014
+}

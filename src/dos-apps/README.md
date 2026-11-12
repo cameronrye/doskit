@@ -90,34 +90,33 @@ Keep the comments and the autoexec's banner to what the configuration actually s
 
 ### 3. Register the app
 
-Add an entry to `availableApps` in `src/config/apps.config.ts`:
+Add a data file for it, `src/apps/my-demo.json`, named after its id:
 
-```ts
+```json
 {
-  id: 'my-demo',
-  name: 'My Demo',
-  description: 'One line for the selector',
-  author: 'Some Group',
-  year: 1994,
-  loadMethod: 'zip',
-  dosboxConf: '',
-  loader: async (onProgress, signal) => {
-    const config = await import('../dos-apps/my-demo.config');
-    return loadZipArchive(config.myDemoZipUrl, onProgress, signal);
-  },
-  loadDosboxConf: async () => {
-    const config = await import('../dos-apps/my-demo.config');
-    return config.myDemoDosboxConf;
-  },
-},
+  "id": "my-demo",
+  "order": 11,
+  "kind": "demo",
+  "name": "My Demo",
+  "description": "Some Group's demo, first at Some Party '94",
+  "author": "Some Group",
+  "year": 1994,
+  "archiveBytes": 123456
+}
 ```
 
-Import the config module with `import()`, not statically: each one becomes a small chunk of its
-own that the page only imports when the app is loaded, or when the selector preloads it on hover.
-(In production builds the service worker still stores every chunk when it installs, so that the
-app can start offline.)
-`loadZipArchive` is already imported at the top of the file; pass it the `onProgress` and
-`signal` the loader receives, so the selector can show progress and cancel the download.
+`src/config/apps.config.ts` builds the registry from these files, in `order`, and finds the
+config module by the same id: `src/dos-apps/my-demo.config.ts` must export its config as
+`dosboxConf` too (`export { myDemoDosboxConf as dosboxConf };`). The archive is always
+`/demos/<id>.zip`. The config module is imported only when the app loads, or when the selector
+preloads it on hover: each one is a small chunk of its own (in production builds the service
+worker still stores every chunk when it installs, so that the app can start offline).
+
+- `kind` places it in the selector: the demos first, then `intro`, `tracker` and `effect`.
+- `description` is one line of facts for the selector: no "legendary" or "classic".
+- `archiveBytes` is the archive's size in bytes, which its disk shows; a test checks it.
+- `flashing: true` for a production that flashes more than three times a second over a large
+  part of the picture: the selector warns of it.
 
 `author` and `year` are the release's, from the archive's own files where they say; the header
 shows them as "Some Group (1994)", or whichever of the two the app has, and the selector names

@@ -1,0 +1,10 @@
+{
+  "id": "stars",
+  "order": 10,
+  "kind": "effect",
+  "name": "Starfield Effect",
+  "description": "The example program of VLA's starfield tutorial",
+  "author": "Draeden of VLA",
+  "year": 1993,
+  "archiveBytes": 1482
+}

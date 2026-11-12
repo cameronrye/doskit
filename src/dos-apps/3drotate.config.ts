@@ -57,3 +57,6 @@ export const rotate3dDosboxConf = presets
     '3DROTATE.EXE'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { rotate3dDosboxConf as dosboxConf };
