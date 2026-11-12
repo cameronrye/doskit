@@ -47,6 +47,7 @@
     "generate-icons": "node scripts/generate-icons.js",
     "generate-social-images": "node scripts/generate-social-images.js",
     "generate-app-cards": "node scripts/generate-app-cards.js",
+    "generate-app-lists": "node scripts/generate-app-lists.js",
     "docs": "typedoc",
     "docs:watch": "typedoc --watch",
     "prepare": "husky"

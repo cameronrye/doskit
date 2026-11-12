@@ -10,6 +10,27 @@ DOS demoscene classics and the trackers behind them, playable in your browser.
 
 ![Second Reality's landscape and credits, running in DosKit](docs/images/doskit-second-reality.png)
 
+## What's On It
+
+Each production starts with one press, from its own page, and each page's About panel says who made it, where it was shown and how faithful DosKit's version is.
+
+<!-- prettier-ignore-start -->
+<!-- apps:start -->
+| Production | By | Year | What it is | Page |
+| --- | --- | --- | --- | --- |
+| Second Reality | Future Crew | 1993 | Demo: Future Crew's demo, first at Assembly '93 | [doskit.net/secondreality](https://doskit.net/secondreality) |
+| Unreal | Future Crew | 1992 | Demo: Future Crew's demo, first at Assembly '92 | [doskit.net/unreal](https://doskit.net/unreal) |
+| Panic | Future Crew | 1993 | Demo: Future Crew's demo, second at The Party '92 | [doskit.net/panic](https://doskit.net/panic) |
+| Crystal Dream 2 | Triton | 1993 | Demo: Triton's demo, first at The Computer Crossroads 1993 | [doskit.net/crystaldream2](https://doskit.net/crystaldream2) |
+| StarPort BBS Intro II | Future Crew | 1993 | Intro: A BBS intro in 1993 bytes, by Future Crew | [doskit.net/starportbbstro](https://doskit.net/starportbbstro) |
+| Squid BBS Intro | cld & The Doctor | 1994 | Intro: A BBS intro in 1899 bytes, with AdLib music | [doskit.net/squidbbstro](https://doskit.net/squidbbstro) |
+| Impulse Tracker | Jeffrey Lim | 1997 | Tracker: Jeffrey Lim's music tracker, version 2.14 | [doskit.net/impulsetracker](https://doskit.net/impulsetracker) |
+| Scream Tracker 3 | Future Crew | 1994 | Tracker: Future Crew's music tracker, where the S3M format began | [doskit.net/screamtracker](https://doskit.net/screamtracker) |
+| 3D Rotation Demo | Draeden of VLA | 1993 | Effect: The example program of VLA's 3D rotation tutorial | [doskit.net/3drotate](https://doskit.net/3drotate) |
+| Starfield Effect | Draeden of VLA | 1993 | Effect: The example program of VLA's starfield tutorial | [doskit.net/stars](https://doskit.net/stars) |
+<!-- apps:end -->
+<!-- prettier-ignore-end -->
+
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![js-dos](https://img.shields.io/github/package-json/dependency-version/cameronrye/doskit/js-dos?color=green)
 ![React](https://img.shields.io/github/package-json/dependency-version/cameronrye/doskit/react?color=blue)

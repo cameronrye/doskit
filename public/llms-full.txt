@@ -357,18 +357,20 @@ Keys pressed on DosKit's own controls (the selector, the header's button, the no
 
 ### Bundled Applications
 
-`src/config/apps.config.ts` registers these, and each opens at its link:
+Each has a data file in `src/apps/`, and each opens at its own page:
 
-- Second Reality (Future Crew, 1993): https://doskit.net/?app=secondreality
-- Impulse Tracker (Jeffrey Lim, 1997): https://doskit.net/?app=impulsetracker
-- Starport BBS Intro II (Future Crew, 1993): https://doskit.net/?app=starportbbstro
-- Scream Tracker 3 (Future Crew, 1994): https://doskit.net/?app=screamtracker
-- Unreal (Future Crew, 1992): https://doskit.net/?app=unreal
-- Panic (Future Crew, 1993): https://doskit.net/?app=panic
-- Squid BBS Intro (cld & The Doctor, 1994): https://doskit.net/?app=squidbbstro
-- 3D Rotation Demo (Draeden of VLA, 1993): https://doskit.net/?app=3drotate
-- Starfield Effect (Draeden of VLA, 1993): https://doskit.net/?app=stars
-- Crystal Dream 2 (Triton, 1993): https://doskit.net/?app=crystaldream2
+<!-- apps:start -->
+- Second Reality (Future Crew, 1993), demo: https://doskit.net/secondreality
+- Unreal (Future Crew, 1992), demo: https://doskit.net/unreal
+- Panic (Future Crew, 1993), demo: https://doskit.net/panic
+- Crystal Dream 2 (Triton, 1993), demo: https://doskit.net/crystaldream2
+- StarPort BBS Intro II (Future Crew, 1993), intro: https://doskit.net/starportbbstro
+- Squid BBS Intro (cld & The Doctor, 1994), intro: https://doskit.net/squidbbstro
+- Impulse Tracker (Jeffrey Lim, 1997), tracker: https://doskit.net/impulsetracker
+- Scream Tracker 3 (Future Crew, 1994), tracker: https://doskit.net/screamtracker
+- 3D Rotation Demo (Draeden of VLA, 1993), effect: https://doskit.net/3drotate
+- Starfield Effect (Draeden of VLA, 1993), effect: https://doskit.net/stars
+<!-- apps:end -->
 
 While Impulse Tracker or Scream Tracker 3 runs, closing or reloading the page asks first. A song in progress lives only in the emulator's memory, as does any file saved inside an application, and is gone once another player starts or the page reloads; and on Windows, Linux and ChromeOS browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, so there Scream Tracker 3's Ctrl-W (save) would close the tab (macOS browsers use ⌘ for these, and Ctrl+W reaches DOS).
 
