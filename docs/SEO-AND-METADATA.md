@@ -13,7 +13,7 @@ DosKit now includes a complete suite of web metadata, SEO optimizations, and dis
 #### Open Graph (Facebook, LinkedIn, etc.)
 
 - `og:type` - Website type
-- `og:url` - Canonical URL (https://doskit.net/)
+- `og:url` - Canonical URL (https://doskit.net/, and each app's own on its page)
 - `og:site_name` - Site name
 - `og:title` - Page title
 - `og:description` - Detailed description
@@ -48,6 +48,10 @@ DosKit now includes a complete suite of web metadata, SEO optimizations, and dis
   - Includes additional context and branding
   - Proper dimensions for GitHub's requirements
 
+- **Share Cards**: `cards/<id>.png` (1200x630px), one per app, with the id's hyphens removed
+  - A frame of the production running, with its name, author and year
+  - The card of the app's page (see [App Pages](#app-pages)); the home page keeps `og-image.png`
+
 #### Image Generation Process
 
 1. SVG source files created in `/public/`:
@@ -64,32 +68,44 @@ DosKit now includes a complete suite of web metadata, SEO optimizations, and dis
    - The build does not regenerate the images: the PNGs only change when an SVG does, and their bytes depend on the local Sharp build, so they are committed
    - Vite copies them from `public/` into `dist/` like any other static file
 
+The share cards are made the same way, by hand, and committed: `npm run generate-app-cards` (`scripts/generate-app-cards.js`) draws each one from a frame of the app running, `cards-src/<id>.png` at the emulator's own resolution, and the name, author and year in the app's data file, `src/apps/<id>.json`, and writes `public/cards/<id>.png`. Its text is drawn with the machine's fonts, and the frames need a browser and the emulator: `e2e/tools/frames.mjs` captures them from the production build. Run it after changing a frame or an app's name, author or year.
+
 ### 3. SEO and Structured Data
 
 #### Sitemap.xml
 
-Location: `/public/sitemap.xml`
+Location: `dist/sitemap.xml`, which the build writes (`renderSitemap` in `scripts/app-pages.ts`, through the `appPages` plugin in `vite.config.ts`); there is no `public/sitemap.xml`
 
 Includes:
 
-- Main page, https://doskit.net/ (priority 1.0)
-- Its `lastmod`, the date of the page's last significant change, set by hand (see [Updating Metadata](#updating-metadata))
-- Change frequency hint (weekly)
+- Main page, https://doskit.net/
+- Every app's page, by its canonical URL, in the selector's order, such as https://doskit.net/secondreality
 
-Google ignores `priority` and `changefreq`, and uses `lastmod` only while it stays consistently accurate, so the date has to move with the page.
+It has no `lastmod`, `priority` or `changefreq`. Google ignores `priority` and `changefreq`, and uses `lastmod` only while it stays consistently accurate, which a date the build set at every deploy would not be.
 
-It lists only pages on doskit.net that exist: the documentation is not deployed with the site, and a sitemap may only list URLs on its own host. To list app pages, use their canonical form (see Deep Links).
+It lists only pages on doskit.net that exist: the documentation is not deployed with the site, and a sitemap may only list URLs on its own host.
 
-#### Deep Links
+#### App Pages
 
-An app's URL is `/?app=<id>` with the id's hyphens dropped, such as https://doskit.net/?app=secondreality. The app rewrites the other forms it accepts, a path-style `/secondreality` or another spelling such as `?app=Second-Reality`, to this one without adding a history entry. Share and list app pages in this form:
+Each app has a page of its own at `/<id>`, its id with the hyphens dropped, such as https://doskit.net/secondreality. The build writes it as `dist/<id>.html` from the built `index.html` (`renderAppPage` in `scripts/app-pages.ts`), and GitHub Pages serves it at `/<id>` with a 200. It differs from the home page in:
 
-- GitHub Pages has no file for a path such as `/secondreality`, so it answers with `404.html` (the build's copy of `index.html`) and HTTP status 404. The app still opens, but crawlers treat the URL as missing.
-- Every URL serves the same `index.html`, so a crawler that does not run JavaScript, such as a social media preview, sees the home page's title, description, `og:url` and image for every app. Only `document.title` changes, to `<App name> - DosKit`, once the page's script has read the URL.
+- `<title>`, `title`, `og:title` and `twitter:title`: `<App name> - DosKit`, the title the app sets once it runs
+- `description`, `og:description` and `twitter:description`: the description in the app's page file, `src/apps/<id>.page.json`
+- The canonical link, `og:url` and `twitter:url`: `https://doskit.net/<id>`
+- `og:image` and `twitter:image`: its share card, `https://doskit.net/cards/<id>.png` (1200x630), with the page file's `imageAlt` as `og:image:alt` and `twitter:image:alt`
+- The JSON-LD: the WebSite, a WebPage for the app's page, and the production as a SoftwareApplication, with `operatingSystem` MS-DOS, its author and year from its data file, its card, and its pages elsewhere as `sameAs`
+- `#root`, which holds the app's name, author and year, its page file's `about` and `released` text, and its flashing warning where it has one, for crawlers that run no scripts; React replaces it when it boots
+
+Every tag the build rewrites must be in `index.html` exactly once: a tag that is renamed or reformatted fails the build rather than leave a page with the home page's metadata. The build also fails when an app's id would take a name the site already uses (`findPageCollisions`): a file or directory at the site's root, such as `index` or `licenses`, a name kept for the site's own pages, such as `about` or `cards`, or another app's id without its hyphens.
+
+The app writes `/<id>` as each app's URL, and rewrites the other forms it accepts, an old `/?app=secondreality` link or another spelling such as `?app=Second-Reality`, to it without adding a history entry. It also sets the canonical link to the URL it shows, since picking another app in the selector changes the URL without loading that app's page. Share and list app pages in the `/<id>` form:
+
+- A `/?app=` link is answered with the home page's `index.html`, so a crawler that does not run JavaScript, such as a social media preview, sees the home page's title, description, `og:url` and image there.
+- GitHub Pages has no file for a path with a trailing slash or capitals, such as `/secondreality/` or `/SecondReality`, so it answers with `404.html` (the build's copy of `index.html`) and HTTP status 404. The app still opens, but crawlers treat the URL as missing.
 
 #### JSON-LD Structured Data
 
-Location: `index.html` (in `<head>`)
+Location: `index.html` (in `<head>`); each app's page has its own instead (see [App Pages](#app-pages))
 
 Implements Schema.org types:
 
@@ -211,22 +227,26 @@ DosKit has no user accounts, so it serves no `.well-known/change-password`: that
 public/
 ├── .well-known/
 │   └── security.txt
+├── cards/<id>.png (generated from cards-src/<id>.png)
 ├── social-preview.svg
 ├── github-social-preview.svg
 ├── og-image.png (generated)
 ├── github-social.png (generated)
-├── sitemap.xml
 ├── robots.txt
 ├── humans.txt
 ├── llms.txt
 ├── llms-full.txt
 ├── llm.txt (points to llms.txt)
 └── llm-full.txt (points to llms-full.txt)
+
+src/apps/
+├── <id>.json (an app's data: its name, author, year, kind and the rest)
+└── <id>.page.json (its page text: description, about, terms, accuracy notes, links, imageAlt)
 ```
 
 ### Build Output
 
-Vite copies every file in `public/` into `dist/` as it is. The build also writes `dist/404.html`, a copy of the built `index.html` that serves path-style deep links on GitHub Pages (see Deep Links), and `dist/licenses/third-party-licenses.txt`, the licenses of the packages bundled into the app, which the licenses page links.
+Vite copies every file in `public/` into `dist/` as it is. The build also writes a page per app, `dist/<id>.html`, and `dist/sitemap.xml` (see [App Pages](#app-pages)); `dist/404.html`, a copy of the built `index.html` that GitHub Pages serves for the paths no page answers; and `dist/licenses/third-party-licenses.txt`, the licenses of the packages bundled into the app, which the licenses page links.
 
 ## Build Process
 
@@ -240,22 +260,30 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 
    Converts SVG source files to PNG images. Run it by hand after editing an SVG; the build does not run it.
 
-2. **Build**
+2. **Generate Share Cards**
+
+   ```bash
+   npm run generate-app-cards
+   ```
+
+   Draws each app's share card from its frame in `cards-src/`. Run it by hand after changing a frame or an app's name, author or year; the build does not run it.
+
+3. **Build**
    ```bash
    npm run build
    ```
    Full build process:
    - Copy js-dos into `public/` (the `prebuild` script)
    - TypeScript compilation
-   - Vite production build
+   - Vite production build, with a page per app and the sitemap
    - Service worker version injection
 
 ### Automated Steps
 
 1. `copy-js-dos.js` copies the js-dos player and emulator files from `node_modules/js-dos` into `public/` (the copies are gitignored)
 2. `tsc -b` type-checks the project
-3. Vite builds the app and copies `public/` into `dist/`, replacing `%VITE_APP_VERSION%` in `index.html` with the version in `package.json` and writing `dist/404.html` and `dist/licenses/third-party-licenses.txt`
-4. `inject-sw-version.js` gives the service worker its cache version, a hash of the site the build made, so only a deploy that changes the site or the worker installs a new worker; the list of bundles to precache; and the js-dos version and demo archive hash that name its other caches
+3. Vite builds the app and copies `public/` into `dist/`, replacing `%VITE_APP_VERSION%` in `index.html` with the version in `package.json` and writing the app pages, `dist/sitemap.xml`, `dist/404.html` and `dist/licenses/third-party-licenses.txt`
+4. `inject-sw-version.js` gives the service worker its cache version, a hash of the site the build made but for the app pages and the sitemap, which the worker never stores, so only a deploy that changes the rest of the site or the worker installs a new worker; the list of bundles to precache; the js-dos version, which names its emulator cache; and each demo archive's version, a hash of its bytes, under which its demo cache keeps the archive
 
 ## Validation
 
@@ -275,6 +303,8 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
    - Use LinkedIn Post Inspector: https://www.linkedin.com/post-inspector/
    - Enter URL: https://doskit.net/
    - Check preview
+
+Check an app's page too, such as https://doskit.net/secondreality, whose preview shows the production's own card and description. In the repository, `e2e/pages.spec.ts` checks each page of the built site for its 200 status, title, canonical link and card, and the sitemap for every page (see [CONTRIBUTING.md](../CONTRIBUTING.md#browser-tests)).
 
 ### Testing Structured Data
 
@@ -319,10 +349,11 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 ### Updating Metadata
 
 1. **index.html**: Update meta tags as needed; the build fills in the JSON-LD's `softwareVersion`
-2. **sitemap.xml**: Set the page's `lastmod` to the deploy's date whenever what crawlers read on it changes: its text, its links, or the metadata in `index.html`, such as the description, the keywords or the JSON-LD. Google counts changes to the main content, the structured data and the links, not a new copyright year. Nothing sets the date for you: the build copies `sitemap.xml` as it is.
-3. **llms.txt / llms-full.txt**: Update when features or documentation changes; `llm.txt` and `llm-full.txt` only point to them
-4. **humans.txt**: Update when the team, the tools or the bundled productions change, and set its "Last update" date by hand when you do. It names no versions of DosKit or of its tools, so releases and upgrades need no edit there. Its browser list is written by hand too: keep it to the minimums in the README's [Browser Compatibility](../README.md#browser-compatibility).
-5. **.well-known/security.txt**: Renew `Expires` before it passes, keeping it less than a year ahead
+2. **sitemap.xml**: Nothing to update by hand: the build writes it from the app data files in `src/apps/`, so an app is listed once its data file is there
+3. **App pages**: Edit an app's page file, `src/apps/<id>.page.json`, for its description, text and card's alt text, and its data file for its name, author and year; the build writes the page from both. `scripts/app-pages.test.ts` fails for an app without a page file, a description that does not end its sentence, or a share card that is not 1200x630
+4. **llms.txt / llms-full.txt**: Update when features or documentation changes; `llm.txt` and `llm-full.txt` only point to them. The application lists in `llms-full.txt` and `README.md` are written by `npm run generate-app-lists`, and a test fails while one is out of date
+5. **humans.txt**: Update when the team, the tools or the bundled productions change, and set its "Last update" date by hand when you do. It names no versions of DosKit or of its tools, so releases and upgrades need no edit there. Its browser list is written by hand too: keep it to the minimums in the README's [Browser Compatibility](../README.md#browser-compatibility).
+6. **.well-known/security.txt**: Renew `Expires` before it passes, keeping it less than a year ahead
 
 ## Best Practices
 
@@ -390,8 +421,9 @@ Vite copies every file in `public/` into `dist/` as it is. The build also writes
 
 ### App Pages Reported as Not Found
 
-1. Check the URL's form: path-style links such as https://doskit.net/secondreality are served by `404.html` with HTTP status 404
-2. Link to and list the canonical form instead, such as https://doskit.net/?app=secondreality (see Deep Links)
+1. Check the URL's form: an app's page is its id in lowercase, without hyphens or a trailing slash, such as https://doskit.net/secondreality. GitHub Pages serves `/secondreality/` and `/SecondReality` with `404.html` and HTTP status 404, and `/?app=secondreality` with the home page
+2. Link to and list that form, which the sitemap lists too (see [App Pages](#app-pages))
+3. Check that the build wrote the page: `dist/<id>.html`, one for each data file in `src/apps/`
 
 ## Future Enhancements
 
@@ -407,4 +439,4 @@ Potential additions:
 
 ---
 
-Last updated: 2026-11-08
+Last updated: 2026-11-11
