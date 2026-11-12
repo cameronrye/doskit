@@ -58,18 +58,28 @@ const boots = vi.hoisted(() => [] as string[]);
 /** Every emulator stop, in order, named as in boots */
 const stops = vi.hoisted(() => [] as string[]);
 
+/**
+ * The handle of each emulator that got ready, in order: its player's pause calls, and a way
+ * to print a line on its DOS console
+ */
+const handles = vi.hoisted(
+  () => [] as { boot: string; paused: boolean[]; print: (line: string) => void }[]
+);
+
 // Mock DosPlayer component
 vi.mock('./DosPlayer', async () => {
   const { useEffect, useState } = await import('react');
   return {
     DosPlayer: ({
       onReady,
+      onHandle,
       onExit,
       onError,
       dosboxConf,
       options,
     }: {
       onReady?: () => void;
+      onHandle?: (handle: unknown) => void;
       onExit?: () => void;
       onError?: (error: string) => void;
       dosboxConf?: string;
@@ -83,9 +93,31 @@ vi.mock('./DosPlayer', async () => {
           stops.push(boot);
         };
       }, [boot]);
+      // Like useDosEmulator, which hands out the player with what DOS prints once ready
+      const ready = () => {
+        onReady?.();
+        const listeners = new Set<(line: string) => void>();
+        const entry = {
+          boot,
+          paused: [] as boolean[],
+          print: (line: string) => listeners.forEach((listener) => listener(line)),
+        };
+        handles.push(entry);
+        onHandle?.({
+          ci: {},
+          player: { setPaused: (paused: boolean) => entry.paused.push(paused) },
+          stdout: {
+            subscribe: (listener: (line: string) => void) => {
+              listeners.add(listener);
+              return () => listeners.delete(listener);
+            },
+          },
+          messages: { subscribe: () => () => {} },
+        });
+      };
       return (
         <div data-testid="dos-player-mock" data-dosbox-conf={dosboxConf ?? 'default'}>
-          <button onClick={onReady}>Trigger Ready</button>
+          <button onClick={ready}>Trigger Ready</button>
           <button onClick={onExit}>Trigger Exit</button>
           <button onClick={() => onError?.('Failed to initialize js-dos')}>Trigger Error</button>
         </div>
@@ -192,6 +224,7 @@ describe('DosPlayerWithApps', () => {
     vi.clearAllMocks();
     boots.length = 0;
     stops.length = 0;
+    handles.length = 0;
     // Store mock app and loaded app in window for the mock selector to use
     (window as WindowWithMockApp).__mockApp = mockApp;
     (window as WindowWithMockApp).__mockLoadedApp = mockLoadedApp;
@@ -432,6 +465,56 @@ describe('DosPlayerWithApps', () => {
 
       expect(onReady).toHaveBeenCalledOnce();
       expect(onExit).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('Behind the selector', () => {
+    it('runs nothing behind a selector open from the start, and reports idle', () => {
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps showSelector={true} onStatusChange={onStatusChange} />);
+
+      expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
+      expect(boots).toEqual([]);
+      expect(onStatusChange).toHaveBeenLastCalledWith('idle');
+    });
+
+    it('boots the DOS prompt once that selector is cancelled', () => {
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(boots).toEqual(['default']);
+    });
+
+    it('pauses the running app while the selector is open, and resumes it on Cancel', () => {
+      const { rerender } = render(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+
+      rerender(<DosPlayerWithApps showSelector={false} />);
+      rerender(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(handles[0]?.paused).toEqual([true, false]);
+    });
+  });
+
+  describe("A program's end", () => {
+    const loadedWithAutoexec: LoadedApp = {
+      ...mockLoadedApp,
+      dosboxConf: '[cpu]\ncore=auto\n\n[autoexec]\nTEST.EXE\n',
+    };
+
+    it('has the autoexec print a line once the program returns to DOS', () => {
+      (window as WindowWithMockApp).__mockLoadedApp = loadedWithAutoexec;
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(screen.getByTestId('dos-player-mock')).toHaveAttribute(
+        'data-dosbox-conf',
+        '[cpu]\ncore=auto\n\n[autoexec]\nTEST.EXE\necho.\necho Test App has ended.\n'
+      );
     });
   });
 
@@ -725,7 +808,7 @@ describe('DosPlayerWithApps', () => {
       expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
     });
 
-    it('runs the default DOS prompt under the selector on Choose Another Application', async () => {
+    it('opens the selector over nothing on Choose Another Application', async () => {
       const onAppChange = vi.fn();
       const onSelectorVisibilityChange = vi.fn();
       render(
@@ -741,7 +824,7 @@ describe('DosPlayerWithApps', () => {
 
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
       expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
-      expect(boots).toEqual(['default']);
+      expect(boots).toEqual([]);
       expect(mockAppWithError.loader).toHaveBeenCalledOnce();
       expect(onAppChange).toHaveBeenCalledExactlyOnceWith(null);
       expect(onSelectorVisibilityChange).toHaveBeenCalledExactlyOnceWith(true);
@@ -760,6 +843,8 @@ describe('DosPlayerWithApps', () => {
       // A later load fails and the user picks another application
       rerender(<DosPlayerWithApps showSelector={true} requestedApp={mockAppWithError} />);
       fireEvent.click(await screen.findByRole('button', { name: 'Choose Another Application' }));
+      // Nothing runs under the selector until it closes
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
       expect(screen.getByTestId('dos-player-mock')).toHaveAttribute('data-dosbox-conf', 'default');
     });
@@ -792,10 +877,11 @@ describe('DosPlayerWithApps', () => {
 
       await stars.finish();
 
-      expect(boots).toEqual(['[autoexec]\nSTARS.EXE']);
+      // With the line it prints once its program returns to DOS
+      expect(boots).toEqual(['[autoexec]\nSTARS.EXE\necho.\necho stars has ended.\n']);
       expect(screen.getByTestId('dos-player-mock')).toHaveAttribute(
         'data-dosbox-conf',
-        '[autoexec]\nSTARS.EXE'
+        '[autoexec]\nSTARS.EXE\necho.\necho stars has ended.\n'
       );
     });
 
@@ -877,9 +963,9 @@ describe('DosPlayerWithApps', () => {
 
       expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
       expect(mockApp.loader).not.toHaveBeenCalled();
-      expect(boots).toEqual(['default', '[cpu]\ncore=auto']);
+      expect(boots).toEqual(['[cpu]\ncore=auto']);
       // The picked app goes on running
-      expect(stops).toEqual(['default']);
+      expect(stops).toEqual([]);
     });
 
     // Such as a demo that has ended at the DOS prompt, or a program the user quit
@@ -892,11 +978,11 @@ describe('DosPlayerWithApps', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
 
-      expect(boots).toEqual(['default', '[cpu]\ncore=auto', '[cpu]\ncore=auto']);
-      expect(stops).toEqual(['default', '[cpu]\ncore=auto']);
+      expect(boots).toEqual(['[cpu]\ncore=auto', '[cpu]\ncore=auto']);
+      expect(stops).toEqual(['[cpu]\ncore=auto']);
     });
 
-    it('keeps the DOS prompt Choose Another Application started when no app is requested next', async () => {
+    it('keeps the selector Choose Another Application opened when no app is requested next', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       const onAppChange = vi.fn();
       const { rerender } = render(
@@ -908,8 +994,8 @@ describe('DosPlayerWithApps', () => {
       expect(onAppChange).toHaveBeenCalledExactlyOnceWith(null);
       rerender(<DosPlayerWithApps requestedApp={null} onAppChange={onAppChange} />);
 
-      expect(boots).toEqual(['default']);
-      expect(stops).toEqual([]);
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+      expect(boots).toEqual([]);
     });
 
     it('leaves the selector open when a requested app finishes loading behind it', async () => {
@@ -982,7 +1068,7 @@ describe('DosPlayerWithApps', () => {
       expect(screen.getByRole('status')).toHaveTextContent(/^Loading application\.\.\.$/);
     });
 
-    it('stops the load on Cancel and runs the default DOS prompt under the selector', async () => {
+    it('stops the load on Cancel and opens the selector over nothing', async () => {
       const stars = deferredApp('stars');
       const onAppChange = vi.fn();
       const onSelectorVisibilityChange = vi.fn();
@@ -999,14 +1085,14 @@ describe('DosPlayerWithApps', () => {
       expect(stars.signal()?.aborted).toBe(true);
       expect(screen.queryByText('Loading application...')).not.toBeInTheDocument();
       expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
-      expect(boots).toEqual(['default']);
+      expect(boots).toEqual([]);
       expect(onAppChange).toHaveBeenCalledExactlyOnceWith(null);
       expect(onSelectorVisibilityChange).toHaveBeenCalledExactlyOnceWith(true);
 
       // A download that finishes all the same is dropped
       await stars.finish();
 
-      expect(boots).toEqual(['default']);
+      expect(boots).toEqual([]);
       expect(onAppChange).toHaveBeenCalledOnce();
     });
   });
@@ -1174,7 +1260,9 @@ describe('DosPlayerWithApps', () => {
 
       await act(async () => selectorDownload.finish(mockLoadedApp));
 
-      expect(boots).toEqual(['conf:stars', 'default']);
+      // Nothing runs under the start page's selector
+      expect(boots).toEqual(['conf:stars']);
+      expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
       expect(onAppChange).toHaveBeenCalledExactlyOnceWith(stars.app);
       expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
     });

@@ -14,7 +14,7 @@ interface DosPlayerWithAppsProps {
   onExit?: () => void;
   onAppChange?: (app: DosApp | null) => void;
   onSelectorVisibilityChange?: (visible: boolean) => void;
-  onStatusChange?: (status: 'loading' | 'ready' | 'error') => void;
+  onStatusChange?: (status: 'idle' | 'loading' | 'ready' | 'error') => void;
   showSelector?: boolean;
   requestedApp?: DosApp | null;
   selectorNotice?: string | null;
@@ -101,6 +101,7 @@ vi.mock('./components/DosPlayerWithApps', async () => {
           </div>
           <button onClick={() => onStatusChange?.('ready')}>Report Ready</button>
           <button onClick={() => onStatusChange?.('loading')}>Report Loading</button>
+          <button onClick={() => onStatusChange?.('idle')}>Report Idle</button>
           <button onClick={() => onStatusChange?.('error')}>Report Error</button>
           <button onClick={() => onAppChange?.(mockApp)}>Load App</button>
           <button onClick={() => onAppChange?.(null)}>Clear App</button>
@@ -507,6 +508,18 @@ describe('App', () => {
 
       expect(badge).not.toHaveClass('loading');
       expect(badge).toHaveClass('is-loading');
+    });
+
+    it('shows Idle while nothing runs, such as under the selector on the start page', () => {
+      render(<App />);
+
+      fireEvent.click(screen.getByText('Report Idle'));
+
+      expect(screen.getByRole('status')).toHaveTextContent(/^Idle/);
+      expect(screen.getByText('Idle').closest('.status-badge')).toHaveAttribute(
+        'title',
+        'No application is running'
+      );
     });
 
     it('shows Ready once the player is ready', () => {

@@ -225,6 +225,17 @@
   animation: none;
 }
 
+/* While nothing runs: grey and still. 5.9:1 on the badge's tint over the footer */
+.status-badge.is-idle {
+  background-color: rgba(189, 189, 189, 0.15);
+  color: #cfcfcf;
+  border: 1px solid #8a8a8a;
+}
+
+.status-badge.is-idle .status-dot {
+  animation: none;
+}
+
 .status-dot {
   width: 6px;
   height: 6px;

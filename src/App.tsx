@@ -71,6 +71,7 @@ function keepKeysFromDos(event: React.KeyboardEvent) {
 
 /** What the footer's DOS badge shows for each status of the player */
 const STATUS_BADGES: Record<PlayerStatus, { className: string; label: string; title: string }> = {
+  idle: { className: 'is-idle', label: 'Idle', title: 'No application is running' },
   loading: { className: 'is-loading', label: 'Loading', title: 'Loading DOS emulator' },
   ready: { className: 'ready', label: 'Ready', title: 'DOS emulator is ready' },
   error: {

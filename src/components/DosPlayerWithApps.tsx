@@ -7,13 +7,24 @@
  * Enhanced DosPlayer that supports loading different DOS applications
  */
 
-import { useState, useCallback, useEffect, useEffectEvent, useRef } from 'react';
+import { useState, useCallback, useEffect, useEffectEvent, useReducer, useRef } from 'react';
 import { DosPlayer } from './DosPlayer';
 import { DemoSelector, type LoadedApp } from './DemoSelector';
 import type { DosApp } from '../types/dos-app';
 import type { CommandInterface } from '../types/js-dos';
-import { getUserFriendlyError, type FriendlyError } from '../utils/errorMessages';
+import type { PlayerHandle } from '../hooks/useDosEmulator';
+import { getUserFriendlyError } from '../utils/errorMessages';
+import { endMarkerFor, withEndMarker } from '../utils/endMarker';
+import {
+  initialPlayerState,
+  playerReducer,
+  sessionOf,
+  statusOf,
+  type PlayerStatus,
+} from './playerSession';
 import './DosPlayerWithApps.css';
+
+export type { PlayerStatus } from './playerSession';
 
 interface DosPlayerWithAppsProps {
   onReady?: (ci: CommandInterface) => void;
@@ -22,14 +33,13 @@ interface DosPlayerWithAppsProps {
   showSelector?: boolean;
   /**
    * App to run, such as the one a URL names. Each new value stops what is running and loads
-   * that app, unless it is already running; null runs the default DOS prompt. Apps picked in
-   * the selector run without it.
+   * that app, unless it is already running; null runs the default DOS prompt, or nothing while
+   * the selector is open. Apps picked in the selector run without it.
    */
   requestedApp?: DosApp | null;
   /**
    * Called when an app starts running (picked or requested), and with null when Choose
-   * Another Application after a failed load, or Cancel during one, returns to the default
-   * DOS prompt
+   * Another Application after a failed load, or Cancel during one, returns to the selector
    */
   onAppChange?: (app: DosApp | null) => void;
   onSelectorVisibilityChange?: (visible: boolean) => void;
@@ -37,41 +47,6 @@ interface DosPlayerWithAppsProps {
   onStatusChange?: (status: PlayerStatus) => void;
   /** A notice for the selector to show above the disks, such as a link that named no app */
   selectorNotice?: string | null;
-}
-
-/**
- * How the player is doing: 'loading' while a requested app downloads or an emulator starts,
- * and after DOS has exited until the next start (a download in the selector leaves the
- * status as it is); 'ready' once js-dos reports the emulator ready; 'error' while the load
- * error or the emulator's start error shows
- */
-export type PlayerStatus = 'loading' | 'ready' | 'error';
-
-/** What the emulator runs: an app with its files, or the default DOS prompt */
-interface Session {
-  /** Tells the sessions apart: each one starts its own player */
-  id: number;
-  app: DosApp | null;
-  files?: Uint8Array;
-  dosboxConf?: string;
-}
-
-/** A requested app that failed to load: what the error overlay says, and the app to retry */
-interface LoadError extends FriendlyError {
-  app: DosApp;
-}
-
-/** The id of the last session newSession() made */
-let lastSessionId = 0;
-
-/**
- * A session with an id of its own, so that it starts a new player even for the app already
- * running: picking that app runs it again, such as a demo that has ended at the DOS prompt.
- * The default DOS prompt gets one each time too, so that its status is its own.
- */
-function newSession(app: DosApp | null, files?: Session['files'], dosboxConf?: string): Session {
-  lastSessionId += 1;
-  return { id: lastSessionId, app, files, dosboxConf };
 }
 
 export function DosPlayerWithApps({
@@ -85,72 +60,39 @@ export function DosPlayerWithApps({
   onStatusChange,
   selectorNotice = null,
 }: DosPlayerWithAppsProps) {
-  // Nothing runs while a requested app loads: a deep link never boots the default prompt
-  // first, and the app or prompt that was running stops, sound and all, as the load starts
-  const [session, setSession] = useState<Session | null>(() =>
-    requestedApp ? null : newSession(null)
+  const [state, dispatch] = useReducer(
+    playerReducer,
+    { requestedApp, showSelector },
+    initialPlayerState
   );
-  const [loadingApp, setLoadingApp] = useState<DosApp | null>(requestedApp);
-  const [requestedId, setRequestedId] = useState(requestedApp?.id ?? null);
-  const [showAppSelector, setShowAppSelector] = useState(showSelector);
-  const [error, setError] = useState<LoadError | null>(null);
-  // What became of the session's emulator, once it is ready or has failed to start
-  const [started, setStarted] = useState<{
-    session: Session;
-    status: 'ready' | 'error';
-  } | null>(null);
+  const session = sessionOf(state);
+  const loadingApp = state.phase.kind === 'loading' ? state.phase.app : null;
+  const error = state.phase.kind === 'error' ? state.phase.error : null;
+  const showAppSelector = state.selectorOpen;
   const tryAgainRef = useRef<HTMLButtonElement>(null);
+  // The running session's emulator, once js-dos has handed it out
+  const [handed, setHanded] = useState<{ sessionId: number; handle: PlayerHandle } | null>(null);
+  const handle = handed && handed.sessionId === session?.id ? handed.handle : null;
 
-  // A new session is loading until its own emulator is ready
-  const status: PlayerStatus = error
-    ? 'error'
-    : session && started?.session === session
-      ? started.status
-      : 'loading';
-
+  const status = statusOf(state);
   const reportStatus = useEffectEvent((current: PlayerStatus) => onStatusChange?.(current));
   useEffect(() => {
     reportStatus(status);
   }, [status]);
 
-  // A new request supersedes any load still running for an earlier one, and a request for
-  // the app already running changes nothing. Adjusting state while rendering instead of in
-  // an effect:
+  // The parent's props, adjusted for while rendering instead of in an effect: the selector's
+  // prop first, so that a request for no app sees whether the selector is open. A new
+  // request supersedes any load still running for an earlier one, and a request for the app
+  // already running changes nothing.
   // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
-  if ((requestedApp?.id ?? null) !== requestedId) {
-    setRequestedId(requestedApp?.id ?? null);
-    setError(null);
-    if (!requestedApp) {
-      setLoadingApp(null);
-      // A DOS prompt already running, such as Choose Another Application's, goes on running
-      if (session?.app !== null) setSession(newSession(null));
-    } else if (requestedApp.id === session?.app?.id) {
-      setLoadingApp(null);
-    } else {
-      setLoadingApp(requestedApp);
-      setSession(null);
-    }
+  if (showSelector !== state.shownBy) {
+    dispatch({ type: 'selectorProp', open: showSelector });
+  }
+  if ((requestedApp?.id ?? null) !== state.requestedId) {
+    dispatch({ type: 'requested', app: requestedApp });
   }
 
-  // The parent's showSelector opens or closes the selector whenever it changes, and the
-  // selector's own buttons close it in between. Adjusted while rendering, as for requestedApp.
-  const [shownBy, setShownBy] = useState(showSelector);
-  if (showSelector !== shownBy) {
-    setShownBy(showSelector);
-    setShowAppSelector(showSelector);
-  }
-
-  const runLoadedApp = useEffectEvent((app: DosApp, files: Session['files'], conf: string) => {
-    setSession(newSession(app, files, conf));
-    setLoadingApp(null);
-    onAppChange?.(app);
-  });
-
-  const showLoadError = useEffectEvent((app: DosApp, err: unknown) => {
-    console.error('[DosPlayerWithApps] Error loading application:', err);
-    setError({ ...getUserFriendlyError(err, { online: navigator.onLine }), app });
-    setLoadingApp(null);
-  });
+  const reportAppRunning = useEffectEvent((app: DosApp) => onAppChange?.(app));
 
   // Give Try Again the keyboard focus when the error appears, and when the selector over it
   // closes, without taking the focus from an open selector
@@ -175,23 +117,62 @@ export function DosPlayerWithApps({
         : Promise.resolve(loadingApp.dosboxConf),
     ]).then(
       ([files, conf]) => {
-        if (!controller.signal.aborted) runLoadedApp(loadingApp, files, conf);
+        if (controller.signal.aborted) return;
+        dispatch({ type: 'loaded', app: loadingApp, files, dosboxConf: conf });
+        reportAppRunning(loadingApp);
       },
       (err: unknown) => {
-        if (!controller.signal.aborted) showLoadError(loadingApp, err);
+        if (controller.signal.aborted) return;
+        console.error('[DosPlayerWithApps] Error loading application:', err);
+        dispatch({
+          type: 'loadFailed',
+          app: loadingApp,
+          error: getUserFriendlyError(err, { online: navigator.onLine }),
+        });
       }
     );
     return () => controller.abort();
   }, [loadingApp]);
 
+  // Nobody watches the running app while the selector covers it: pause it there, sound and
+  // all, and let it go on once the selector closes. Through the player: js-dos undoes
+  // ci.pause() when the tab is hidden and shown again.
+  const pausedRef = useRef(false);
+  useEffect(() => {
+    if (!handle || pausedRef.current === showAppSelector) return;
+    pausedRef.current = showAppSelector;
+    handle.player.setPaused(showAppSelector);
+  }, [handle, showAppSelector]);
+  useEffect(() => {
+    pausedRef.current = false;
+  }, [handle]);
+
+  // An app's autoexec prints its end marker once its program returns to DOS
+  const sessionApp = session?.app ?? null;
+  const endMarker = sessionApp ? endMarkerFor(sessionApp.name) : null;
+  // Read once, as the session's player starts
+  const sessionConf =
+    session?.dosboxConf && endMarker
+      ? withEndMarker(session.dosboxConf, endMarker)
+      : session?.dosboxConf;
+  useEffect(() => {
+    if (!handle || !endMarker || !session) return;
+    const sessionId = session.id;
+    return handle.stdout.subscribe((line) => {
+      if (line.includes(endMarker)) dispatch({ type: 'ended', sessionId });
+    });
+  }, [handle, endMarker, session]);
+
   const handleSelectApp = useCallback(
     (loadedApp: LoadedApp) => {
       // Files are already loaded by DemoSelector. The user's pick wins over a requested
       // app still loading, and starts the app again if it is the one running.
-      setLoadingApp(null);
-      setError(null);
-      setSession(newSession(loadedApp.app, loadedApp.files, loadedApp.dosboxConf));
-      setShowAppSelector(false);
+      dispatch({
+        type: 'picked',
+        app: loadedApp.app,
+        files: loadedApp.files,
+        dosboxConf: loadedApp.dosboxConf,
+      });
       onAppChange?.(loadedApp.app);
       onSelectorVisibilityChange?.(false);
     },
@@ -199,23 +180,19 @@ export function DosPlayerWithApps({
   );
 
   const handleCancelSelector = useCallback(() => {
-    setShowAppSelector(false);
+    dispatch({ type: 'selectorCancelled' });
     onSelectorVisibilityChange?.(false);
   }, [onSelectorVisibilityChange]);
 
   // Try Again: load the app that failed once more, behind the loading overlay
   const handleRetry = useCallback((app: DosApp) => {
-    setError(null);
-    setLoadingApp(app);
+    dispatch({ type: 'retried', app });
   }, []);
 
   // Choose Another Application, and Cancel while a requested app loads, which stops the
-  // load: the default DOS prompt, with the selector open over it
+  // load: the selector, with nothing running under it
   const handleChooseAnother = useCallback(() => {
-    setSession(newSession(null));
-    setLoadingApp(null);
-    setError(null);
-    setShowAppSelector(true);
+    dispatch({ type: 'choseAnother' });
     onAppChange?.(null);
     onSelectorVisibilityChange?.(true);
   }, [onAppChange, onSelectorVisibilityChange]);
@@ -228,7 +205,7 @@ export function DosPlayerWithApps({
           <div className="selector-overlay" onClick={handleCancelSelector} />
           {/* A new request remounts the selector, which aborts a download it still runs */}
           <DemoSelector
-            key={requestedId ?? 'none'}
+            key={state.requestedId ?? 'none'}
             onSelect={handleSelectApp}
             onCancel={handleCancelSelector}
             notice={selectorNotice}
@@ -274,17 +251,18 @@ export function DosPlayerWithApps({
       {session && (
         <DosPlayer
           key={session.id} // A new session starts a new player
-          dosboxConf={session.dosboxConf}
+          dosboxConf={sessionConf}
           options={session.app ? { initFs: session.files } : {}}
           onReady={(ci) => {
-            setStarted({ session, status: 'ready' });
+            dispatch({ type: 'started', sessionId: session.id, status: 'ready' });
             onReady?.(ci);
           }}
+          onHandle={(handle) => setHanded({ sessionId: session.id, handle })}
           onExit={() => {
-            setStarted(null);
+            dispatch({ type: 'exited', sessionId: session.id });
             onExit?.();
           }}
-          onError={() => setStarted({ session, status: 'error' })}
+          onError={() => dispatch({ type: 'started', sessionId: session.id, status: 'error' })}
           className="dos-player-instance"
         />
       )}
