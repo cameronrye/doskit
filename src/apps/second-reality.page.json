@@ -1,0 +1,21 @@
+{
+  "description": "Second Reality by Future Crew, the winner of the PC demo competition at Assembly '93, running from its original 1993 files in your browser.",
+  "about": [
+    "Second Reality is Future Crew's demo for MS-DOS, released on 7 October 1993 after it won the PC demo competition at Assembly '93.",
+    "Its source code and data were published in 2013, for its 20th anniversary, under the Unlicense. DosKit runs the 1993 release, not a build of that source."
+  ],
+  "released": "Assembly '93: first in the PC demo competition. Released on 7 October 1993.",
+  "terms": "Freeware: “This demo is freeware. It can be freely distributed without modifications. No money can be charged for it.” (README.1ST)",
+  "accuracy": [
+    "It runs at 24,000 cycles, about a 486DX2-66, the machine its setup says it was made for. Compared frame by frame with a capture of a real 486DX2-66, its timeline matches to about 1%.",
+    "Its voxel landscape runs at about 68 frames a second, where the 486DX2-66 managed 35.",
+    "Mono: js-dos mixes the Gravis UltraSound's two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=63"
+    }
+  ],
+  "imageAlt": "Second Reality's landscape and credits, running in DosKit"
+}

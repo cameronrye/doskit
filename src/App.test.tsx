@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { version as installedJsDosVersion } from 'js-dos/package.json';
 import App from './App';
 import type { DosApp } from './types/dos-app';
@@ -698,6 +698,45 @@ describe('App', () => {
           expect(link).toHaveAttribute('rel', 'noopener noreferrer');
         }
       });
+    });
+  });
+
+  describe('About button', () => {
+    it('is there only while an app is current', () => {
+      render(<App />);
+      expect(screen.queryByRole('button', { name: 'About' })).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('Load App'));
+
+      expect(screen.getByRole('button', { name: 'About' })).toBeInTheDocument();
+    });
+
+    it('opens the About panel for the current app, and closes it', async () => {
+      render(<App />);
+      // As picking an app does: it runs, and the selector closes
+      fireEvent.click(screen.getByText('Load App'));
+      fireEvent.click(screen.getByText('Hide Selector'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'About' }));
+      const panel = screen.getByRole('dialog', { name: 'Test Application' });
+      expect(await within(panel).findByText('A test DOS application')).toBeInTheDocument();
+
+      fireEvent.click(within(panel).getByRole('button', { name: 'Close' }));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      // The focus goes back to the button that opened it
+      expect(screen.getByRole('button', { name: 'About' })).toHaveFocus();
+    });
+
+    it('closes the panel when the selector opens', () => {
+      render(<App />);
+      fireEvent.click(screen.getByText('Load App'));
+      fireEvent.click(screen.getByText('Hide Selector'));
+      fireEvent.click(screen.getByRole('button', { name: 'About' }));
+      expect(screen.getByRole('dialog', { name: 'Test Application' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Change Application' }));
+
+      expect(screen.queryByRole('dialog', { name: 'Test Application' })).not.toBeInTheDocument();
     });
   });
 

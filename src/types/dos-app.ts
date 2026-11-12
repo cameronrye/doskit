@@ -49,6 +49,28 @@ export interface AppData {
 }
 
 /**
+ * What an app's page file, src/apps/<id>.page.json, says for visitors: the build puts it in
+ * the app's static page (scripts/app-pages.ts reads the same files), and the About panel
+ * loads it when it opens
+ */
+export interface AppPage {
+  /** The meta description and the text of the share card */
+  description: string;
+  about: string[];
+  /** Where and when it was shown or released, and how it placed */
+  released?: string;
+  credits?: string;
+  /** Its authors' terms, quoted or summed up */
+  terms?: string;
+  /** How DosKit's version differs from the original on real hardware */
+  accuracy?: string[];
+  /** Its pages elsewhere, such as pouet.net's and Demozoo's */
+  links?: { label: string; url: string }[];
+  imageAlt: string;
+  authorType?: 'Organization' | 'Person';
+}
+
+/**
  * Represents a DOS application that can be loaded and run in the emulator
  */
 export interface DosApp {

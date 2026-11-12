@@ -1,0 +1,26 @@
+{
+  "description": "Crystal Dream 2 by Triton, the winner of the PC demo competition at The Computer Crossroads 1993, running from its original files in your browser.",
+  "about": [
+    "Crystal Dream 2 is Triton's demo for MS-DOS, which won the PC demo competition at The Computer Crossroads 1993, held from 29 to 31 May 1993 in Gothenburg."
+  ],
+  "credits": "Code by Mr. H and Vogue, music by Lizardking and Vogue, graphics by Vogue, 3D objects by Loot (as Demozoo credits them).",
+  "released": "The Computer Crossroads 1993: first in the PC demo competition.",
+  "terms": "None found: the archive has no readme, and its program is packed. Rights holders can reach DosKit's owner below.",
+  "accuracy": [
+    "Its SoundBlaster choice crashes here: DosKit picks Ultrasound.",
+    "Its opening flashes come brighter and last longer than in a capture made on real hardware.",
+    "It needs a fast device: on a slow one it falls behind, or stops with “System overloaded!”",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=462"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/175/"
+    }
+  ],
+  "imageAlt": "Crystal Dream 2's Triton logo, running in DosKit"
+}

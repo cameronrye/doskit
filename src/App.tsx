@@ -4,10 +4,11 @@
  * Licensed under the MIT License
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DosPlayerWithApps, type PlayerStatus } from './components/DosPlayerWithApps';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { AppInfo } from './components/AppInfo';
 import { findAppById } from './config/apps.config';
 import type { DosApp } from './types/dos-app';
 import { getAppRequestFromUrl, updateUrlWithApp, updateDocumentTitle } from './utils/urlRouting';
@@ -92,6 +93,14 @@ function App() {
   const [currentApp, setCurrentApp] = useState(initialRoute.app);
   const [showAppSelector, setShowAppSelector] = useState(!initialRoute.app);
   const [urlError, setUrlError] = useState(initialRoute.error);
+  // The About panel, for the current app; it closes when the app changes or the selector opens
+  const [infoFor, setInfoFor] = useState<DosApp | null>(null);
+  const aboutButtonRef = useRef<HTMLButtonElement>(null);
+  const showInfo = infoFor !== null && infoFor === currentApp && !showAppSelector;
+  const closeInfo = () => {
+    setInfoFor(null);
+    aboutButtonRef.current?.focus();
+  };
 
   const handleNetworkStatusChange = (online: boolean) => {
     if (import.meta.env.DEV) {
@@ -207,12 +216,23 @@ function App() {
             </div>
           )}
           <div className="header-right">
+            {currentApp && (
+              <button
+                ref={aboutButtonRef}
+                className="header-about-button"
+                onClick={() => setInfoFor(currentApp)}
+              >
+                About
+              </button>
+            )}
             <button className="header-change-app-button" onClick={handleChangeAppClick}>
               {currentApp ? 'Change Application' : 'Select Application'}
             </button>
           </div>
         </div>
       </header>
+
+      {showInfo && <AppInfo app={currentApp} onClose={closeInfo} />}
 
       <main className="app-main">
         {/* A render error takes the player down with it, and no status comes from it then */}

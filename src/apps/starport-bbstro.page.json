@@ -1,0 +1,20 @@
+{
+  "description": "StarPort BBS Intro II by Future Crew, a 1,993-byte advert for their home BBS, running in your browser.",
+  "about": [
+    "A 1,993-byte intro Future Crew made for StarPort, their home BBS, in November 1993, released with its source."
+  ],
+  "credits": "Code by Psi, music by Skaven.",
+  "released": "Released on 21 November 1993, and its source on 2 December 1993.",
+  "terms": "Public domain: “This code is released to the public domain.” (SP2.ASM)",
+  "accuracy": [
+    "Its AdLib music plays through the FM chip of the emulated Sound Blaster 16.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=12217"
+    }
+  ],
+  "imageAlt": "StarPort BBS Intro II's text flying through its starfield, running in DosKit"
+}

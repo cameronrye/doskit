@@ -1,0 +1,21 @@
+{
+  "description": "Impulse Tracker 2.14 by Jeffrey Lim, the DOS music tracker, running in your browser with its example songs.",
+  "about": [
+    "Impulse Tracker is a music tracker for MS-DOS by Jeffrey Lim, written mostly in 1995 and 1996. This is version 2.14 with Patch 3, from December 1997, with two example songs.",
+    "What you save in it stays in this browser: the Files button can download it, bring in modules of your own, or start over."
+  ],
+  "released": "Version 2.14 Patch 3, dated 21 December 1997.",
+  "terms": "Freeware for non-commercial use: “YOU MAY NOT CHARGE ANYTHING FOR THIS PROGRAM” (IT.TXT). Its source was later released under the BSD 3-Clause license.",
+  "accuracy": [
+    "It runs its non-MMX sound driver, so its resonant filters are off: FILTERS.TXT says only the MMX drivers have them.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=13366"
+    }
+  ],
+  "imageAlt": "Impulse Tracker's Load Module screen, running in DosKit",
+  "authorType": "Person"
+}

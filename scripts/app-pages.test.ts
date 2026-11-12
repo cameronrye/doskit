@@ -155,6 +155,17 @@ describe("DosKit's apps", () => {
     expect(findPageCollisions(apps, readdirSync('public'))).toEqual([]);
   });
 
+  it('each have page text of their own: what it is, its terms, and how faithful it runs', () => {
+    for (const app of apps) {
+      const file = JSON.parse(readFileSync(`src/apps/${app.id}.page.json`, 'utf8'));
+      expect(file.description, app.id).toMatch(/\.$/);
+      expect(file.about.length, app.id).toBeGreaterThan(0);
+      expect(file.terms, app.id).toBeTruthy();
+      expect(file.accuracy.length, app.id).toBeGreaterThan(0);
+      expect(file.imageAlt, app.id).toMatch(/running in DosKit$/);
+    }
+  });
+
   it('each have a share card of their own, 1200x630', () => {
     for (const app of apps) {
       const card = readFileSync(`public/cards/${urlIdOf(app.id)}.png`);
