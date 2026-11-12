@@ -32,6 +32,8 @@ export type Phase =
   | { kind: 'idle' }
   | { kind: 'loading'; app: DosApp }
   | { kind: 'error'; error: LoadError }
+  /** An app's files are in, waiting for Play: a start with sound needs the visitor's click */
+  | { kind: 'poster'; session: Session }
   | { kind: 'running'; session: Session };
 
 export interface PlayerState {
@@ -52,12 +54,23 @@ export type PlayerAction =
   | { type: 'requested'; app: DosApp | null }
   /** The showSelector prop changed */
   | { type: 'selectorProp'; open: boolean }
-  /** A requested app's files and config arrived */
-  | { type: 'loaded'; app: DosApp; files: Uint8Array; dosboxConf: string }
+  /**
+   * A requested app's files and config arrived. It starts at once with play, when the page has
+   * a fresh click or key press to start sound with, and shows the Play screen otherwise.
+   */
+  | { type: 'loaded'; app: DosApp; files: Uint8Array; dosboxConf: string; play: boolean }
   /** A requested app failed to load */
   | { type: 'loadFailed'; app: DosApp; error: FriendlyError }
-  /** An app was picked in the selector, its files already loaded */
-  | { type: 'picked'; app: DosApp; files: Uint8Array; dosboxConf: string }
+  /** An app was picked in the selector, its files already loaded; play as for 'loaded' */
+  | { type: 'picked'; app: DosApp; files: Uint8Array; dosboxConf: string; play: boolean }
+  /** Play on the Play screen */
+  | { type: 'played' }
+  /** Play again, once the program has returned to DOS: the same files, a new player */
+  | { type: 'replayed' }
+  /** Back to DOS: the end card goes, the DOS prompt stays */
+  | { type: 'endDismissed' }
+  /** The selector, opened from inside the player */
+  | { type: 'selectorOpened' }
   /** The selector closed without a pick */
   | { type: 'selectorCancelled' }
   /** Try Again on a load error */
@@ -97,6 +110,15 @@ export function sessionOf(state: PlayerState): Session | null {
   return state.phase.kind === 'running' ? state.phase.session : null;
 }
 
+/** The session waiting for Play, if any */
+export function posterOf(state: PlayerState): Session | null {
+  return state.phase.kind === 'poster' ? state.phase.session : null;
+}
+
+/** A session that starts now, or waits on the Play screen */
+const starting = (session: Session, play: boolean): Phase =>
+  play || !session.app ? running(session) : { kind: 'poster', session };
+
 /**
  * The state a player starts in. A deep link never boots the default prompt first, and nothing
  * runs behind a selector that is open from the start: the prompt boots if it is cancelled.
@@ -124,6 +146,7 @@ export function initialPlayerState({
 
 export function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
   const session = sessionOf(state);
+  const current = session ?? posterOf(state);
   switch (action.type) {
     case 'requested': {
       const { app } = action;
@@ -137,8 +160,8 @@ export function playerReducer(state: PlayerState, action: PlayerAction): PlayerS
           phase: state.selectorOpen ? { kind: 'idle' } : running(newSession(null)),
         };
       }
-      // A request for the app already running changes nothing
-      if (session?.app?.id === app.id) return next;
+      // A request for the app already running, or waiting for Play, changes nothing
+      if (current?.app?.id === app.id) return next;
       // Whatever runs stops, sound and all, as the load starts
       return { ...next, phase: { kind: 'loading', app } };
     }
@@ -154,7 +177,10 @@ export function playerReducer(state: PlayerState, action: PlayerAction): PlayerS
 
     case 'loaded':
       if (state.phase.kind !== 'loading' || state.phase.app !== action.app) return state;
-      return { ...state, phase: running(newSession(action.app, action.files, action.dosboxConf)) };
+      return {
+        ...state,
+        phase: starting(newSession(action.app, action.files, action.dosboxConf), action.play),
+      };
 
     case 'loadFailed':
       if (state.phase.kind !== 'loading' || state.phase.app !== action.app) return state;
@@ -165,9 +191,27 @@ export function playerReducer(state: PlayerState, action: PlayerAction): PlayerS
       // if it is the one running
       return {
         ...state,
-        phase: running(newSession(action.app, action.files, action.dosboxConf)),
+        phase: starting(newSession(action.app, action.files, action.dosboxConf), action.play),
         selectorOpen: false,
       };
+
+    case 'played':
+      if (state.phase.kind !== 'poster') return state;
+      return { ...state, phase: running(state.phase.session) };
+
+    case 'replayed':
+      if (!session || state.endedSessionId !== session.id) return state;
+      return {
+        ...state,
+        phase: running(newSession(session.app, session.files, session.dosboxConf)),
+        endedSessionId: null,
+      };
+
+    case 'endDismissed':
+      return { ...state, endedSessionId: null };
+
+    case 'selectorOpened':
+      return { ...state, selectorOpen: true, endedSessionId: null };
 
     case 'selectorCancelled':
       return {
@@ -200,6 +244,7 @@ export function playerReducer(state: PlayerState, action: PlayerAction): PlayerS
 export function statusOf(state: PlayerState): PlayerStatus {
   switch (state.phase.kind) {
     case 'idle':
+    case 'poster':
       return 'idle';
     case 'loading':
       return 'loading';

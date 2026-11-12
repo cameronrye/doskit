@@ -63,7 +63,14 @@ const stops = vi.hoisted(() => [] as string[]);
  * to print a line on its DOS console
  */
 const handles = vi.hoisted(
-  () => [] as { boot: string; paused: boolean[]; print: (line: string) => void }[]
+  () =>
+    [] as {
+      boot: string;
+      paused: boolean[];
+      fullScreen: boolean[];
+      keys: string[];
+      print: (line: string) => void;
+    }[]
 );
 
 // Mock DosPlayer component
@@ -100,12 +107,23 @@ vi.mock('./DosPlayer', async () => {
         const entry = {
           boot,
           paused: [] as boolean[],
+          fullScreen: [] as boolean[],
+          keys: [] as string[],
           print: (line: string) => listeners.forEach((listener) => listener(line)),
         };
         handles.push(entry);
         onHandle?.({
-          ci: {},
-          player: { setPaused: (paused: boolean) => entry.paused.push(paused) },
+          ci: {
+            events: () => ({ onFrame: () => {} }),
+            width: () => 640,
+            height: () => 400,
+            sendKeyEvent: (code: number, pressed: boolean) =>
+              entry.keys.push(`${code} ${pressed ? 'down' : 'up'}`),
+          },
+          player: {
+            setPaused: (paused: boolean) => entry.paused.push(paused),
+            setFullScreen: (fullScreen: boolean) => entry.fullScreen.push(fullScreen),
+          },
           stdout: {
             subscribe: (listener: (line: string) => void) => {
               listeners.add(listener);
@@ -499,11 +517,173 @@ describe('DosPlayerWithApps', () => {
     });
   });
 
+  describe('Play screen', () => {
+    /** Whether the page has a click or key press of the last few seconds to start sound with */
+    const setActivation = (isActive: boolean) =>
+      Object.defineProperty(navigator, 'userActivation', {
+        configurable: true,
+        value: { isActive, hasBeenActive: isActive },
+      });
+    afterEach(() => setActivation(true));
+
+    it('asks for Play before it starts a production opened with no fresh click', async () => {
+      setActivation(false);
+      const stars = deferredApp('stars');
+      const onStatusChange = vi.fn();
+      render(<DosPlayerWithApps requestedApp={stars.app} onStatusChange={onStatusChange} />);
+      await stars.finish();
+
+      // Nothing runs behind it: sound started by the click that starts the emulator plays
+      expect(boots).toEqual([]);
+      expect(onStatusChange).toHaveBeenLastCalledWith('idle');
+      fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+
+      expect(boots).toEqual(['conf:stars']);
+      expect(screen.queryByRole('button', { name: 'Play' })).not.toBeInTheDocument();
+    });
+
+    it('starts a production picked with a fresh click at once', () => {
+      render(<DosPlayerWithApps showSelector={true} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(screen.queryByRole('button', { name: 'Play' })).not.toBeInTheDocument();
+      expect(boots).toEqual(['[cpu]\ncore=auto']);
+    });
+
+    it('warns of flashing lights, and says what its start will do', async () => {
+      setActivation(false);
+      const panic = deferredApp('panic');
+      Object.assign(panic.app, {
+        flashing: true,
+        startNote: 'DosKit picks Execute the demo in its menu.',
+      });
+      render(<DosPlayerWithApps requestedApp={panic.app} />);
+      await panic.finish();
+
+      expect(screen.getByText(/contains flashing lights/i)).toBeInTheDocument();
+      expect(screen.getByText('DosKit picks Execute the demo in its menu.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Play' })).toHaveFocus();
+    });
+
+    it("names a tracker's button Start", async () => {
+      setActivation(false);
+      const tracker = deferredApp('tracker');
+      Object.assign(tracker.app, { kind: 'tracker' });
+      render(<DosPlayerWithApps requestedApp={tracker.app} />);
+      await tracker.finish();
+
+      expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
+    });
+  });
+
+  describe('Start keys', () => {
+    const appWithStart: DosApp = {
+      ...mockApp,
+      id: 'with-start',
+      name: 'Start App',
+      start: { steps: [{ keys: [257] }], gapMs: 250, ready: { stdout: 'READY' } },
+      startNote: 'DosKit presses Enter at its setup.',
+      hint: 'Press Enter to start it.',
+    };
+    const pickAppWithStart = () => {
+      (window as WindowWithMockApp).__mockLoadedApp = { ...mockLoadedApp, app: appWithStart };
+      render(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+    };
+
+    it('sends its keys once its setup screen is up', async () => {
+      pickAppWithStart();
+      expect(handles[0]?.keys).toEqual([]);
+
+      act(() => handles[0]?.print('READY'));
+
+      await waitFor(() => expect(handles[0]?.keys).toContain('257 down'));
+    });
+
+    it('shows the keys to press when its setup screen never comes', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+      try {
+        pickAppWithStart();
+
+        await act(() => vi.advanceTimersByTimeAsync(46_000));
+
+        expect(screen.getByText('Press Enter to start it.')).toBeInTheDocument();
+        expect(handles[0]?.keys).toEqual([]);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   describe("A program's end", () => {
     const loadedWithAutoexec: LoadedApp = {
       ...mockLoadedApp,
       dosboxConf: '[cpu]\ncore=auto\n\n[autoexec]\nTEST.EXE\n',
     };
+
+    const runToTheEnd = () => {
+      (window as WindowWithMockApp).__mockLoadedApp = loadedWithAutoexec;
+      const result = render(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      act(() => handles[0]?.print('Test App has ended.'));
+      return result;
+    };
+
+    it('offers to play it again, or to choose another, once it returns to DOS', () => {
+      runToTheEnd();
+
+      const card = screen.getByRole('dialog', { name: 'Test App has ended.' });
+      expect(within(card).getByRole('button', { name: 'Play again' })).toHaveFocus();
+      expect(within(card).getByRole('button', { name: 'Choose another' })).toBeInTheDocument();
+      expect(within(card).getByRole('button', { name: 'Back to DOS' })).toBeInTheDocument();
+    });
+
+    it("leaves js-dos's fullscreen, where the card would be hidden", () => {
+      runToTheEnd();
+
+      expect(handles[0]?.fullScreen).toEqual([false]);
+    });
+
+    it('plays it again from the files it has, on Play again', () => {
+      runToTheEnd();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Play again' }));
+
+      const conf = `${loadedWithAutoexec.dosboxConf}echo.\necho Test App has ended.\n`;
+      expect(boots).toEqual([conf, conf]);
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('leaves the DOS prompt on Back to DOS', () => {
+      runToTheEnd();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Back to DOS' }));
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(boots).toHaveLength(1);
+    });
+
+    it('opens the selector on Choose another', () => {
+      const onSelectorVisibilityChange = vi.fn();
+      (window as WindowWithMockApp).__mockLoadedApp = loadedWithAutoexec;
+      render(
+        <DosPlayerWithApps
+          showSelector={true}
+          onSelectorVisibilityChange={onSelectorVisibilityChange}
+        />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      act(() => handles[0]?.print('Test App has ended.'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Choose another' }));
+
+      expect(screen.getByTestId('demo-selector-mock')).toBeInTheDocument();
+      expect(onSelectorVisibilityChange).toHaveBeenLastCalledWith(true);
+    });
 
     it('has the autoexec print a line once the program returns to DOS', () => {
       (window as WindowWithMockApp).__mockLoadedApp = loadedWithAutoexec;

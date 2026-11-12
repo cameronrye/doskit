@@ -15,9 +15,11 @@ import type { CommandInterface } from '../types/js-dos';
 import type { PlayerHandle } from '../hooks/useDosEmulator';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { endMarkerFor, withEndMarker } from '../utils/endMarker';
+import { runStartRecipe, type RecipeEmulator, type RecipeState } from '../utils/startRecipe';
 import {
   initialPlayerState,
   playerReducer,
+  posterOf,
   sessionOf,
   statusOf,
   type PlayerStatus,
@@ -49,6 +51,32 @@ interface DosPlayerWithAppsProps {
   selectorNotice?: string | null;
 }
 
+/**
+ * Whether the page has a click or key press of the last few seconds to start sound with.
+ * Browsers start sound only within a few seconds of one (Safari after about 5), and a demo
+ * opened from a link has none: it waits on the Play screen for the click that starts it.
+ */
+function hasFreshActivation(): boolean {
+  return navigator.userActivation?.isActive ?? false;
+}
+
+/** What the start keys need of a running emulator */
+function recipeEmulatorOf(handle: PlayerHandle): RecipeEmulator {
+  return {
+    stdout: handle.stdout,
+    messages: handle.messages,
+    onFrame: (listener) => handle.ci.events().onFrame(listener),
+    width: () => handle.ci.width(),
+    height: () => handle.ci.height(),
+    sendKeyEvent: (keyCode, pressed) => handle.ci.sendKeyEvent(keyCode, pressed),
+  };
+}
+
+/** "Author · year", or whichever of the two an app gives */
+function releaseOf({ author, year }: DosApp): string {
+  return [author, year].filter(Boolean).join(' · ');
+}
+
 export function DosPlayerWithApps({
   onReady,
   onExit,
@@ -66,6 +94,7 @@ export function DosPlayerWithApps({
     initialPlayerState
   );
   const session = sessionOf(state);
+  const posterSession = posterOf(state);
   const loadingApp = state.phase.kind === 'loading' ? state.phase.app : null;
   const error = state.phase.kind === 'error' ? state.phase.error : null;
   const showAppSelector = state.selectorOpen;
@@ -118,7 +147,13 @@ export function DosPlayerWithApps({
     ]).then(
       ([files, conf]) => {
         if (controller.signal.aborted) return;
-        dispatch({ type: 'loaded', app: loadingApp, files, dosboxConf: conf });
+        dispatch({
+          type: 'loaded',
+          app: loadingApp,
+          files,
+          dosboxConf: conf,
+          play: hasFreshActivation(),
+        });
         reportAppRunning(loadingApp);
       },
       (err: unknown) => {
@@ -159,9 +194,35 @@ export function DosPlayerWithApps({
     if (!handle || !endMarker || !session) return;
     const sessionId = session.id;
     return handle.stdout.subscribe((line) => {
-      if (line.includes(endMarker)) dispatch({ type: 'ended', sessionId });
+      if (!line.includes(endMarker)) return;
+      // The end card shows in the page; js-dos's fullscreen player would cover it
+      handle.player.setFullScreen(false);
+      dispatch({ type: 'ended', sessionId });
     });
   }, [handle, endMarker, session]);
+  const ended = session !== null && state.endedSessionId === session.id;
+
+  // A production that waits at a setup screen gets its keys once that screen is up; if they
+  // cannot be sent, or did not take, the visitor gets the keys to press instead
+  const [recipe, setRecipe] = useState<{ sessionId: number; state: RecipeState } | null>(null);
+  const [hintDismissed, setHintDismissed] = useState<number | null>(null);
+  const startRecipe = sessionApp?.start;
+  useEffect(() => {
+    if (!handle || !startRecipe || !session) return;
+    const sessionId = session.id;
+    const controller = new AbortController();
+    void runStartRecipe(recipeEmulatorOf(handle), startRecipe, {
+      signal: controller.signal,
+      onState: (current) => setRecipe({ sessionId, state: current }),
+    });
+    return () => controller.abort();
+  }, [handle, startRecipe, session]);
+  const showHint =
+    session !== null &&
+    sessionApp?.hint !== undefined &&
+    recipe?.sessionId === session.id &&
+    recipe.state === 'fallback' &&
+    hintDismissed !== session.id;
 
   const handleSelectApp = useCallback(
     (loadedApp: LoadedApp) => {
@@ -172,6 +233,7 @@ export function DosPlayerWithApps({
         app: loadedApp.app,
         files: loadedApp.files,
         dosboxConf: loadedApp.dosboxConf,
+        play: hasFreshActivation(),
       });
       onAppChange?.(loadedApp.app);
       onSelectorVisibilityChange?.(false);
@@ -196,6 +258,12 @@ export function DosPlayerWithApps({
     onAppChange?.(null);
     onSelectorVisibilityChange?.(true);
   }, [onAppChange, onSelectorVisibilityChange]);
+
+  // The selector, opened from the end card
+  const handleOpenSelector = useCallback(() => {
+    dispatch({ type: 'selectorOpened' });
+    onSelectorVisibilityChange?.(true);
+  }, [onSelectorVisibilityChange]);
 
   return (
     <div className={`dos-player-with-apps ${className || ''}`}>
@@ -243,6 +311,64 @@ export function DosPlayerWithApps({
                 Choose Another Application
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Play screen: the click on Play starts the emulator, and with it the sound */}
+      {posterSession?.app && (
+        <div className="doskit-poster">
+          <div className="doskit-poster-box" role="group" aria-labelledby="doskit-poster-title">
+            <h2 id="doskit-poster-title">{posterSession.app.name}</h2>
+            {releaseOf(posterSession.app) && (
+              <p className="doskit-poster-release">{releaseOf(posterSession.app)}</p>
+            )}
+            <p>{posterSession.app.description}</p>
+            {posterSession.app.flashing && (
+              <p className="doskit-flash-warning">
+                <span aria-hidden="true">⚠ </span>
+                Contains flashing lights, which may affect people with photosensitive epilepsy.
+              </p>
+            )}
+            {posterSession.app.startNote && (
+              <p className="doskit-poster-note">{posterSession.app.startNote}</p>
+            )}
+            <button
+              className="doskit-play-button"
+              autoFocus
+              onClick={() => dispatch({ type: 'played' })}
+            >
+              {posterSession.app.kind === 'tracker' ? 'Start' : 'Play'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* The keys to press, once DosKit's own start has given up. Its button takes no focus
+          from a click, so that keys go on reaching DOS. */}
+      {showHint && session && (
+        <div className="doskit-start-hint" role="status">
+          <p>{sessionApp?.hint}</p>
+          <button
+            aria-label="Dismiss the hint"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => setHintDismissed(session.id)}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* End card, once the program has returned to DOS */}
+      {ended && session && endMarker && (
+        <div className="doskit-end-card" role="dialog" aria-labelledby="doskit-end-title">
+          <h2 id="doskit-end-title">{endMarker}</h2>
+          <div className="doskit-end-actions">
+            <button autoFocus onClick={() => dispatch({ type: 'replayed' })}>
+              Play again
+            </button>
+            <button onClick={handleOpenSelector}>Choose another</button>
+            <button onClick={() => dispatch({ type: 'endDismissed' })}>Back to DOS</button>
           </div>
         </div>
       )}
