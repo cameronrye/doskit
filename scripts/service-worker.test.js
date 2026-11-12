@@ -6,6 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { injectIntoServiceWorker } from './inject-sw-version.js';
@@ -309,12 +310,17 @@ async function dispatch(listener, init = {}) {
 /** Starts public/sw.js as one build would ship it */
 function startWorker(
   browser,
-  { cacheVersion = 'vA', jsDosVersion = '8.3.20', demosHash = 'aaaa', bundles = BUNDLES } = {}
+  {
+    cacheVersion = 'vA',
+    jsDosVersion = '8.3.20',
+    demoVersions = DEMO_VERSIONS,
+    bundles = BUNDLES,
+  } = {}
 ) {
   const source = injectIntoServiceWorker(SERVICE_WORKER, {
     version: cacheVersion,
     jsDosVersion,
-    demosHash,
+    demoVersions,
     assets: bundles,
   });
   const listeners = {};
@@ -333,6 +339,7 @@ function startWorker(
     Request: WorkerRequest,
     Response,
     URL,
+    crypto: globalThis.crypto,
     console: { log() {}, warn() {}, error() {} },
     // The timeout of a fetch that already settled must not keep the test run alive
     setTimeout: (callback, ms) => setTimeout(callback, ms).unref(),
@@ -376,8 +383,16 @@ const DEFAULT_BACKEND = [
 const JS_DOS_FILES = [...JS_DOS_PLAYER, ...DEFAULT_BACKEND];
 const DOSBOX_X = ['/emulators/wdosbox-x.js', '/emulators/wdosbox-x.wasm'];
 const isJsDosFile = (path) => JS_DOS_PLAYER.includes(path) || path.startsWith('/emulators/');
-// Named after the hash of the archives startWorker() stamps by default
-const DEMO_CACHE = 'doskit-demos-aaaa';
+// The archives' versions startWorker() stamps by default, and the cache that keeps them
+const DEMO_VERSIONS = {
+  '/demos/stars.zip': 'aaaa',
+  '/demos/panic.zip': 'aaaa',
+  '/demos/second-reality.zip': 'aaaa',
+};
+const DEMO_CACHE = 'doskit-demos';
+/** What the server sends for an archive, and the version the build gives those bytes */
+const archiveOf = (path, deploy = 'A') => `${path} from deploy ${deploy}`;
+const versionOf = (text) => createHash('sha256').update(text).digest('hex').slice(0, 12);
 
 describe('install', () => {
   it('precaches the app shell and the bundles, and js-dos in the cache of its version', async () => {
@@ -778,7 +793,7 @@ describe('demo archives', () => {
 
     expect(await response?.text()).toBe('/demos/stars.zip from deploy A');
     expect(requestedPaths(browser)).toEqual(['/demos/stars.zip']);
-    expect(browser.contents()[DEMO_CACHE]).toEqual(['/demos/stars.zip']);
+    expect(browser.contents()[DEMO_CACHE]).toEqual(['/demos/stars.zip?v=aaaa']);
   });
 
   it('serves a cached archive with the headers it was downloaded with', async () => {
@@ -833,13 +848,16 @@ describe('demo archives', () => {
     expect(requestedPaths(browser).filter(isDemo)).toEqual([]);
   });
 
-  it('replaces them when an archive changes, once the new worker activates', async () => {
+  it('replaces only the archive that changed, once the new worker activates', async () => {
     const browser = createBrowser();
-    const previous = await installAndActivate(browser, { cacheVersion: 'vA', demosHash: 'aaaa' });
-    await previous.dispatch('fetch', { request: subresource('/demos/stars.zip') });
+    const previous = await installAndActivate(browser, { cacheVersion: 'vA' });
+    for (const path of ['/demos/stars.zip', '/demos/panic.zip']) {
+      await previous.dispatch('fetch', { request: subresource(path) });
+    }
     browser.server.deploy = 'B';
 
-    const worker = startWorker(browser, { cacheVersion: 'vB', demosHash: 'bbbb' });
+    const changed = { ...DEMO_VERSIONS, '/demos/stars.zip': 'bbbb' };
+    const worker = startWorker(browser, { cacheVersion: 'vB', demoVersions: changed });
     await worker.dispatch('install');
     // The waiting update must not change the archives under the open page
     const { response: current } = await previous.dispatch('fetch', {
@@ -849,12 +867,59 @@ describe('demo archives', () => {
 
     await worker.dispatch('activate');
 
-    expect(Object.keys(browser.contents()).filter((name) => name.includes('demos'))).toEqual([]);
+    expect(browser.contents()[DEMO_CACHE]).toEqual(['/demos/panic.zip?v=aaaa']);
+    const { response: replaced } = await worker.dispatch('fetch', {
+      request: subresource('/demos/stars.zip'),
+    });
+    const { response: kept } = await worker.dispatch('fetch', {
+      request: subresource('/demos/panic.zip'),
+    });
+    expect(await replaced?.text()).toBe('/demos/stars.zip from deploy B');
+    expect(await kept?.text()).toBe('/demos/panic.zip from deploy A');
+  });
+
+  it('drops an archive the new deploy no longer has', async () => {
+    const browser = createBrowser();
+    const previous = await installAndActivate(browser);
+    await previous.dispatch('fetch', { request: subresource('/demos/panic.zip') });
+
+    const withoutPanic = Object.fromEntries(
+      Object.entries(DEMO_VERSIONS).filter(([path]) => path !== '/demos/panic.zip')
+    );
+    await installAndActivate(browser, { cacheVersion: 'vB', demoVersions: withoutPanic });
+
+    expect(browser.contents()[DEMO_CACHE]).toEqual([]);
+  });
+
+  it('keeps what an earlier worker stored under a hash of all archives, if unchanged', async () => {
+    // Workers before this one kept every archive in a cache named after one hash of them all
+    const browser = createBrowser();
+    const old = await browser.caches.open('doskit-demos-0123456789ab');
+    for (const path of ['/demos/stars.zip', '/demos/panic.zip']) {
+      await old.put(subresource(path), new Response(archiveOf(path)));
+    }
+    browser.server.deploy = 'B';
+
+    const worker = await installAndActivate(browser, {
+      demoVersions: {
+        ...DEMO_VERSIONS,
+        '/demos/stars.zip': versionOf(archiveOf('/demos/stars.zip')),
+        // Panic's archive changed since that worker stored it
+        '/demos/panic.zip': versionOf(archiveOf('/demos/panic.zip', 'B')),
+      },
+    });
+
+    expect(Object.keys(browser.contents()).filter((name) => name.includes('demos'))).toEqual([
+      DEMO_CACHE,
+    ]);
+    expect(browser.contents()[DEMO_CACHE]).toEqual([
+      `/demos/stars.zip?v=${versionOf(archiveOf('/demos/stars.zip'))}`,
+    ]);
+    browser.server.online = false;
     const { response } = await worker.dispatch('fetch', {
       request: subresource('/demos/stars.zip'),
     });
-    expect(await response?.text()).toBe('/demos/stars.zip from deploy B');
-    expect(browser.contents()['doskit-demos-bbbb']).toEqual(['/demos/stars.zip']);
+    expect(await response?.text()).toBe('/demos/stars.zip from deploy A');
   });
 
   it('passes on a failed download without storing it', async () => {
@@ -874,7 +939,7 @@ describe('demo archives', () => {
 
     expect(failed?.status).toBe(404);
     expect(retried?.status).toBe(200);
-    expect(browser.contents()[DEMO_CACHE]).toEqual(['/demos/stars.zip']);
+    expect(browser.contents()[DEMO_CACHE]).toEqual(['/demos/stars.zip?v=aaaa']);
   });
 
   describe('on a slow network', () => {
@@ -939,7 +1004,7 @@ describe('demo archives', () => {
       request: subresource('/demos/second-reality.zip'),
     });
     expect(await response?.text()).toBe('/demos/second-reality.zip from deploy A');
-    expect(browser.contents()[DEMO_CACHE]).toEqual(['/demos/second-reality.zip']);
+    expect(browser.contents()[DEMO_CACHE]).toEqual(['/demos/second-reality.zip?v=aaaa']);
   });
 });
 

@@ -3,15 +3,16 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   collectBundledAssets,
   extractBundledAssets,
   findMissingFiles,
-  hashDemoArchives,
   injectIntoServiceWorker,
   precachedPaths,
+  versionDemoArchives,
 } from './inject-sw-version.js';
 
 const SCRIPTS = dirname(fileURLToPath(import.meta.url));
@@ -111,7 +112,8 @@ describe('collectBundledAssets', () => {
 
 describe('injectIntoServiceWorker', () => {
   const assets = ['/assets/index-abc123.js', '/assets/index-789xyz.css'];
-  const build = { version: 'v1a2b3c4d', jsDosVersion: '8.3.20', demosHash: '0123456789ab', assets };
+  const demoVersions = { '/demos/panic.zip': '0123456789ab', '/demos/stars.zip': 'ba9876543210' };
+  const build = { version: 'v1a2b3c4d', jsDosVersion: '8.3.20', demoVersions, assets };
 
   it('stamps the version and precaches the bundles', () => {
     const result = injectIntoServiceWorker(serviceWorker, build);
@@ -126,10 +128,16 @@ describe('injectIntoServiceWorker', () => {
     expect(result).toContain("const JS_DOS_VERSION = '8.3.20';");
   });
 
-  it('stamps the hash of the demo archives, which names the demo cache', () => {
+  it("stamps each demo archive's version, under which the demo cache keeps it", () => {
     const result = injectIntoServiceWorker(serviceWorker, build);
 
-    expect(result).toContain("const DEMOS_HASH = '0123456789ab';");
+    expect(
+      vm.runInNewContext(`${result}; DEMO_VERSIONS`, {
+        self: { location: new URL('https://doskit.net/sw.js'), addEventListener() {} },
+        URL,
+        console: { log() {} },
+      })
+    ).toEqual(demoVersions);
   });
 
   it('produces a worker that still loads', () => {
@@ -165,23 +173,25 @@ describe('injectIntoServiceWorker', () => {
     }
   );
 
-  it('fails when the demo archive hash placeholder is missing', () => {
+  it('fails when the demo archive versions placeholder is missing', () => {
     const source = serviceWorker.replace(
-      "const DEMOS_HASH = 'dev';",
-      "const DEMOS_HASH = '0123456789ab';"
+      'const DEMO_VERSIONS = {};',
+      'const DEMO_VERSIONS = {"x":1};'
     );
 
-    expect(() => injectIntoServiceWorker(source, build)).toThrow(/DEMOS_HASH/);
+    expect(() => injectIntoServiceWorker(source, build)).toThrow(/DEMO_VERSIONS/);
   });
 
-  it.each([undefined, '', "0a'; importScripts('https://example.com/x.js'); '"])(
-    'fails on the demo archive hash %j',
-    (demosHash) => {
-      expect(() => injectIntoServiceWorker(serviceWorker, { ...build, demosHash })).toThrow(
-        /demo archive hash/
-      );
-    }
-  );
+  it.each([
+    ['no versions', undefined],
+    ['no archives', {}],
+    ['a path outside /demos/', { '/sw.js': '0123456789ab' }],
+    ['a version that is no hex digest', { '/demos/x.zip': "0'; importScripts('x'); '" }],
+  ])('fails on %s', (_, demoVersions) => {
+    expect(() => injectIntoServiceWorker(serviceWorker, { ...build, demoVersions })).toThrow(
+      /demo archive/
+    );
+  });
 
   it('fails when there is no STATIC_ASSETS list to extend', () => {
     const source = serviceWorker.replace('const STATIC_ASSETS', 'const APP_SHELL');
@@ -239,17 +249,17 @@ describe('findMissingFiles', () => {
   });
 });
 
-describe('hashDemoArchives', () => {
+describe('versionDemoArchives', () => {
   const dists = [];
   const ARCHIVES = { 'panic.zip': 'PK panic', 'stars.zip': 'PK stars' };
 
-  /** The hash of a dist/demos holding these files */
-  function hashOf(files) {
+  /** The versions of a dist/demos holding these files */
+  function versionsOf(files) {
     const dist = createDist(
       Object.fromEntries(Object.entries(files).map(([name, bytes]) => [`demos/${name}`, bytes]))
     );
     dists.push(dist);
-    return hashDemoArchives(dist);
+    return versionDemoArchives(dist);
   }
 
   afterEach(() => {
@@ -258,28 +268,31 @@ describe('hashDemoArchives', () => {
     }
   });
 
-  it('is a short hex digest that the same archives always give', () => {
-    expect(hashOf(ARCHIVES)).toMatch(/^[0-9a-f]{12}$/);
-    expect(hashOf({ 'stars.zip': 'PK stars', 'panic.zip': 'PK panic' })).toBe(hashOf(ARCHIVES));
+  it('gives each archive a short hex digest of its bytes, by its path on the site', () => {
+    const versions = versionsOf(ARCHIVES);
+
+    expect(Object.keys(versions)).toEqual(['/demos/panic.zip', '/demos/stars.zip']);
+    // The first 12 hex digits of SHA-256, which the worker computes too, to keep archives
+    // an earlier worker stored
+    expect(versions['/demos/stars.zip']).toBe(
+      createHash('sha256').update('PK stars').digest('hex').slice(0, 12)
+    );
   });
 
   it('leaves out files other than .zip archives', () => {
-    expect(hashOf({ ...ARCHIVES, 'README.md': '# Demos' })).toBe(hashOf(ARCHIVES));
+    expect(versionsOf({ ...ARCHIVES, 'README.md': '# Demos' })).toEqual(versionsOf(ARCHIVES));
   });
 
-  it.each([
-    ['an archive changes', { ...ARCHIVES, 'stars.zip': 'PK stars 2' }],
-    ['an archive is renamed', { 'panic.zip': 'PK panic', 'starz.zip': 'PK stars' }],
-    ['an archive is added', { ...ARCHIVES, 'unreal.zip': 'PK unreal' }],
-    ['an archive is removed', { 'stars.zip': 'PK stars' }],
-    // Hashed one after the other, names and bytes alone would read the same
-    ['one archive holds what reads as the next', { 'panic.zip': 'PK panicstars.zip\0PK stars' }],
-  ])('changes when %s', (_, archives) => {
-    expect(hashOf(archives)).not.toBe(hashOf(ARCHIVES));
+  it('changes the version of a changed archive only', () => {
+    const before = versionsOf(ARCHIVES);
+    const after = versionsOf({ ...ARCHIVES, 'stars.zip': 'PK stars 2' });
+
+    expect(after['/demos/panic.zip']).toBe(before['/demos/panic.zip']);
+    expect(after['/demos/stars.zip']).not.toBe(before['/demos/stars.zip']);
   });
 
   it('fails when dist/demos has no archives', () => {
-    expect(() => hashOf({ 'README.md': '# Demos' })).toThrow(/no \.zip archives/);
+    expect(() => versionsOf({ 'README.md': '# Demos' })).toThrow(/no \.zip archives/);
   });
 });
 
