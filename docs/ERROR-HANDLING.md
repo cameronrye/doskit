@@ -1,12 +1,12 @@
 # Error Handling Strategy
 
 **Document Version:** 2.0  
-**Date:** 2026-11-08  
+**Date:** 2026-11-11  
 **Status:** Implemented
 
 ## Overview
 
-DosKit implements a multi-layered error handling strategy to ensure a robust user experience and facilitate debugging. The system captures errors at multiple levels, shows load and start failures where they happen, keeps known harmless browser errors out of the console, and reports the rest through an error tracking interface that logs to the console.
+DosKit handles errors at several levels, so that a failure shows where it happens and can be debugged. The system captures errors at multiple levels, shows load and start failures where they happen, keeps known harmless browser errors out of the console, and reports the rest through an error tracking interface that logs to the console.
 
 ## Architecture
 
@@ -229,7 +229,7 @@ The selector and the error overlay explain a failed load the same way: they log 
 
 **DosPlayerWithApps** (apps the URL asks for: deep links, back/forward):
 
-- A failed load shows the "Error Loading Application" overlay (`role="alert"`) with that explanation and two buttons. Try Again loads the same app again, behind the loading overlay, and shows the error overlay again if that fails too; offline, an app that is not cached fails again at once, since a download fails at once while the browser reports being offline. Choose Another Application boots the default DOS prompt and opens the selector.
+- A failed load shows the "Error Loading Application" overlay (`role="alert"`) with that explanation and two buttons. Try Again loads the same app again, behind the loading overlay, and shows the error overlay again if that fails too; offline, an app that is not cached fails again at once, since a download fails at once while the browser reports being offline. Choose Another Application opens the selector with nothing running under it; closed without a pick, the selector boots the default DOS prompt.
 - Try Again takes the keyboard focus when the overlay appears, or, if the selector is open over it, once the selector closes, so Enter tries again
 - A download that stalls ends in the same overlay, as the timeout described under diskLoader below, so Try Again is offered. Nothing times out the app's config chunk on this path: the loading overlay's Cancel stops the load and does what Choose Another Application does.
 - Nothing runs behind the overlay: a requested app stops the running one as its load starts

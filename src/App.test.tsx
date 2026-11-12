@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { version as installedJsDosVersion } from 'js-dos/package.json';
 import App from './App';
 import type { DosApp } from './types/dos-app';
@@ -14,7 +14,7 @@ interface DosPlayerWithAppsProps {
   onExit?: () => void;
   onAppChange?: (app: DosApp | null) => void;
   onSelectorVisibilityChange?: (visible: boolean) => void;
-  onStatusChange?: (status: 'loading' | 'ready' | 'error') => void;
+  onStatusChange?: (status: 'idle' | 'loading' | 'ready' | 'error') => void;
   showSelector?: boolean;
   requestedApp?: DosApp | null;
   selectorNotice?: string | null;
@@ -53,6 +53,8 @@ const mockApp: DosApp = {
   description: 'A test DOS application',
   author: 'Test Author',
   year: 1995,
+  kind: 'demo',
+  archiveBytes: 3,
   loadMethod: 'zip',
   dosboxConf: '[cpu]\ncore=auto',
   loader: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
@@ -99,6 +101,7 @@ vi.mock('./components/DosPlayerWithApps', async () => {
           </div>
           <button onClick={() => onStatusChange?.('ready')}>Report Ready</button>
           <button onClick={() => onStatusChange?.('loading')}>Report Loading</button>
+          <button onClick={() => onStatusChange?.('idle')}>Report Idle</button>
           <button onClick={() => onStatusChange?.('error')}>Report Error</button>
           <button onClick={() => onAppChange?.(mockApp)}>Load App</button>
           <button onClick={() => onAppChange?.(null)}>Clear App</button>
@@ -262,7 +265,7 @@ describe('App', () => {
       expect(screen.getByTestId('requested-app')).toHaveTextContent('none');
       expect(screen.getByTestId('selector-state')).toHaveTextContent('visible');
       expect(screen.queryByText('Starfield Effect')).not.toBeInTheDocument();
-      expect(document.title).toBe('DosKit - Cross-Platform DOS Emulator');
+      expect(document.title).toBe('DosKit - DOS demoscene classics in your browser');
     });
 
     it('requests the app that going forward lands on', async () => {
@@ -280,36 +283,37 @@ describe('App', () => {
     });
 
     it('adds no history entry when a deep-linked app reports in', () => {
-      window.history.replaceState({}, '', '/?app=stars');
+      window.history.replaceState({}, '', '/stars');
       render(<App />);
       const lengthBefore = window.history.length;
 
       fireEvent.click(screen.getByText('Report Requested App'));
 
-      expect(window.location.search).toBe('?app=stars');
+      expect(window.location.pathname + window.location.search).toBe('/stars');
       expect(window.history.length).toBe(lengthBefore);
     });
 
     it('keeps the forward history when an app reached by going back reports in', async () => {
-      window.history.pushState({}, '', '/?app=stars');
-      window.history.pushState({}, '', '/?app=3drotate');
+      window.history.pushState({}, '', '/stars');
+      window.history.pushState({}, '', '/3drotate');
       render(<App />);
       await traverse('back');
 
       fireEvent.click(screen.getByText('Report Requested App'));
       await traverse('forward');
 
-      expect(window.location.search).toBe('?app=3drotate');
+      expect(window.location.pathname).toBe('/3drotate');
       expect(screen.getByTestId('requested-app')).toHaveTextContent('3drotate');
     });
 
-    it('rewrites a path-style deep link to ?app= without a new history entry', () => {
-      window.history.replaceState({}, '', '/stars');
+    // Links from before each app had a page of its own, such as the blog's
+    it("rewrites an old /?app= link to the app's page without a new history entry", () => {
+      window.history.replaceState({}, '', '/?app=stars');
       const lengthBefore = window.history.length;
 
       render(<App />);
 
-      expect(window.location.pathname + window.location.search).toBe('/?app=stars');
+      expect(window.location.pathname + window.location.search).toBe('/stars');
       expect(window.history.length).toBe(lengthBefore);
       expect(requests[0]).toBe('stars');
     });
@@ -331,18 +335,18 @@ describe('App', () => {
 
       fireEvent.click(screen.getByText('Report Requested App'));
 
-      expect(window.location.search).toBe('?app=secondreality');
+      expect(window.location.pathname + window.location.search).toBe('/secondreality');
       expect(window.history.length).toBe(lengthBefore);
     });
 
-    it('rewrites a path-style entry that going back lands on', async () => {
-      window.history.replaceState({}, '', '/stars');
+    it('rewrites an old /?app= entry that going back lands on', async () => {
+      window.history.replaceState({}, '', '/?app=stars');
       window.history.pushState({}, '', '/');
       render(<App />);
 
       await traverse('back');
 
-      expect(window.location.pathname + window.location.search).toBe('/?app=stars');
+      expect(window.location.pathname + window.location.search).toBe('/stars');
       expect(screen.getByTestId('requested-app')).toHaveTextContent('stars');
     });
 
@@ -443,7 +447,7 @@ describe('App', () => {
 
       fireEvent.click(screen.getByText('Load App'));
 
-      expect(window.location.search).toBe('?app=testapp');
+      expect(window.location.pathname).toBe('/testapp');
     });
   });
 
@@ -505,6 +509,18 @@ describe('App', () => {
 
       expect(badge).not.toHaveClass('loading');
       expect(badge).toHaveClass('is-loading');
+    });
+
+    it('shows Idle while nothing runs, such as under the selector on the start page', () => {
+      render(<App />);
+
+      fireEvent.click(screen.getByText('Report Idle'));
+
+      expect(screen.getByRole('status')).toHaveTextContent(/^Idle/);
+      expect(screen.getByText('Idle').closest('.status-badge')).toHaveAttribute(
+        'title',
+        'No application is running'
+      );
     });
 
     it('shows Ready once the player is ready', () => {
@@ -682,6 +698,58 @@ describe('App', () => {
           expect(link).toHaveAttribute('rel', 'noopener noreferrer');
         }
       });
+    });
+  });
+
+  describe('About button', () => {
+    it('is there only while an app is current', () => {
+      render(<App />);
+      expect(screen.queryByRole('button', { name: 'About' })).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('Load App'));
+
+      expect(screen.getByRole('button', { name: 'About' })).toBeInTheDocument();
+    });
+
+    it('opens the About panel for the current app, and closes it', async () => {
+      render(<App />);
+      // As picking an app does: it runs, and the selector closes
+      fireEvent.click(screen.getByText('Load App'));
+      fireEvent.click(screen.getByText('Hide Selector'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'About' }));
+      const panel = screen.getByRole('dialog', { name: 'Test Application' });
+      expect(await within(panel).findByText('A test DOS application')).toBeInTheDocument();
+
+      fireEvent.click(within(panel).getByRole('button', { name: 'Close' }));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      // The focus goes back to the button that opened it
+      expect(screen.getByRole('button', { name: 'About' })).toHaveFocus();
+    });
+
+    it('leaves the focus with the page when the panel is closed with the mouse, so keys reach DOS', () => {
+      render(<App />);
+      fireEvent.click(screen.getByText('Load App'));
+      fireEvent.click(screen.getByText('Hide Selector'));
+      fireEvent.click(screen.getByRole('button', { name: 'About' }));
+
+      // A mouse click has a click count; a key's has none
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }), { detail: 1 });
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(document.activeElement).toBe(document.body);
+    });
+
+    it('closes the panel when the selector opens', () => {
+      render(<App />);
+      fireEvent.click(screen.getByText('Load App'));
+      fireEvent.click(screen.getByText('Hide Selector'));
+      fireEvent.click(screen.getByRole('button', { name: 'About' }));
+      expect(screen.getByRole('dialog', { name: 'Test Application' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Change Application' }));
+
+      expect(screen.queryByRole('dialog', { name: 'Test Application' })).not.toBeInTheDocument();
     });
   });
 

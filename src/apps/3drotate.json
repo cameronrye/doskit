@@ -1,0 +1,18 @@
+{
+  "id": "3drotate",
+  "order": 9,
+  "kind": "effect",
+  "name": "3D Rotation Demo",
+  "description": "The example program of VLA's 3D rotation tutorial",
+  "author": "Draeden of VLA",
+  "year": 1993,
+  "archiveBytes": 2991,
+  "start": {
+    "keys": ["Enter"],
+    "ready": {
+      "stdout": "Control the angular velocity"
+    },
+    "note": "F1 to F6 and the 1 and 2 keys change its spin, F7 and F8 its distance."
+  },
+  "hint": "Press any key to start it; then F1 to F6 and the 1 and 2 keys change its spin, F7 and F8 its distance."
+}

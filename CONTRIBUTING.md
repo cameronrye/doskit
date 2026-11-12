@@ -88,11 +88,17 @@ Example: `feature/add-screenshot-capture`
 
    The build starts with `tsc -b`, which type-checks the app, the tests (through `tsconfig.test.json`) and the Vite and Vitest configs. Run `npx tsc -b` for the type check alone.
 
+7. **Run the browser tests** against that build, if your change touches what a production does in the browser (see [Browser Tests](#browser-tests)):
+
+   ```bash
+   npm run test:e2e
+   ```
+
 When you commit, the pre-commit hook (Husky) runs lint-staged on the staged files. JavaScript and TypeScript files go through `eslint --fix`, `prettier --write` and the tests that import them (`vitest related --run`), in that order. Every other file goes through `prettier --write --ignore-unknown`, which formats the CSS, HTML, JSON, Markdown and YAML files that `npm run format:check` checks, and skips files Prettier has no parser for or that `.gitignore` or `.prettierignore` lists.
 
-A staged service worker, `public/sw.js`, makes the hook run every test: its tests, `scripts/service-worker.test.js` and `scripts/inject-sw-version.test.js`, read it as text instead of importing it, so `vitest.config.ts` makes it one of Vitest's force-rerun triggers. Other files that tests read from disk rather than import get no tests from the hook: the stylesheets, `index.html`, the manifest, the icons and the Open Graph image (`public/og-image.png`), `public/robots.txt`, `public/licenses/`, the archives and `README.md` in `public/demos/` (which `src/config/apps.config.test.ts` checks) and `eslint.config.js`. After changing one of them, run `npm test`; CI runs every test on every pull request.
+A staged service worker, `public/sw.js`, makes the hook run every test: its tests, `scripts/service-worker.test.js` and `scripts/inject-sw-version.test.js`, read it as text instead of importing it, so `vitest.config.ts` makes it one of Vitest's force-rerun triggers. Other files that tests read from disk rather than import get no tests from the hook: the stylesheets, `index.html`, the manifest, the icons and the Open Graph image (`public/og-image.png`), `public/robots.txt`, `public/licenses/`, the archives and `README.md` in `public/demos/` (which `src/config/apps.config.test.ts` checks), the app data and page files in `src/apps/` and the share cards in `public/cards/` (which `scripts/app-pages.test.ts` checks), the app lists in `README.md` and `public/llms-full.txt` (which `scripts/generate-app-lists.test.js` checks) and `eslint.config.js`. After changing one of them, run `npm test`; CI runs every test on every pull request.
 
-Pull requests to `main` run CI (`.github/workflows/ci.yml`): ESLint, the format check, the tests with coverage, the build and a check that its CSS works in the oldest supported browsers (`scripts/check-built-css.js`), the type check, and `npm audit`, which fails on a high or critical advisory in a production dependency.
+Pull requests to `main` run CI (`.github/workflows/ci.yml`): ESLint, the format check, the tests with coverage, the build and a check that its CSS works in the oldest supported browsers (`scripts/check-built-css.js`), the browser tests (`npm run test:e2e`, against a build of their own), the type check, and `npm audit`, which fails on a high or critical advisory in a production dependency.
 
 ### Commit Messages
 
@@ -183,6 +189,7 @@ npm run lint -- --fix
 ```
 src/
 ├── adapters/       # Emulator adapter around js-dos
+├── apps/           # One data file and one page file per DOS app
 ├── components/     # React components
 ├── config/         # Configuration files
 ├── constants/      # Shared constants
@@ -194,13 +201,13 @@ src/
 └── utils/          # Utility functions
 ```
 
-Static files, such as icons and the DOS app archives in `public/demos/`, live in `public/`. `scripts/` holds the Node scripts and the tests for code outside `src/`. [`src/dos-apps/README.md`](src/dos-apps/README.md) explains how to add a DOS app.
+Static files, such as icons, the share cards in `public/cards/` and the DOS app archives in `public/demos/`, live in `public/`. `scripts/` holds the Node scripts and the tests for code outside `src/`, and `e2e/` the browser tests. [`src/dos-apps/README.md`](src/dos-apps/README.md) explains how to add a DOS app.
 
 ## Testing Guidelines
 
 ### Test Requirements
 
-- **Coverage**: Stay at or above the thresholds in `vitest.config.ts`; `npm run test:coverage`, which CI runs, fails below them. It counts every `.ts` and `.tsx` file in `src/` but the tests (`*.test.ts`, `*.test.tsx`), `src/test/` and the type declarations (`*.d.ts`), so a source file that no test imports counts as uncovered instead of being left out
+- **Coverage**: Stay at or above the thresholds in `vitest.config.ts`; `npm run test:coverage`, which CI runs, fails below them. It counts every `.ts` and `.tsx` file in `src/` but the tests (`*.test.ts`, `*.test.tsx`), `src/test/`, the type declarations (`*.d.ts`) and `src/utils/savedFiles.ts`, which uses IndexedDB, which jsdom lacks (the browser tests cover it), so a source file that no test imports counts as uncovered instead of being left out
 - **Unit tests**: Required for all new features and bug fixes
 - **Component tests**: Required for all React components
 - **Integration tests**: Recommended for complex features
@@ -250,6 +257,20 @@ npx vitest run src/utils/urlRouting.test.ts
 ```
 
 Vitest does not type-check the tests; `npx tsc -b` does, through `tsconfig.test.json`, and so does `npm run build`.
+
+### Browser Tests
+
+`npm run test:e2e` runs the Playwright specs in `e2e/` in Chromium against the production build, so run `npm run build` first; the first time, install Chromium with `npx playwright install chromium`. `e2e/server.mjs` serves `dist/` the way GitHub Pages serves it (an app's page at `/<id>`, `404.html` with a 404 status for paths it has no file for, names in their exact case), and the service worker is blocked, so every request reaches the server.
+
+- `e2e/play.spec.ts` opens each production at its page, starts it with one click on Play, and checks that its start keys went and a new screen followed, that its picture moves, that the ones with music make sound, and that Chromium lets the sound play. Its `RUNS` table says what "it runs" means for each production; a production without an entry fails.
+- `e2e/pages.spec.ts` checks each production's page: its 200 status, title, canonical link and share card, the sitemap, and that an old `/?app=` link and a path with a trailing slash or capitals reach the page.
+- `e2e/trackers.spec.ts` saves a song in Scream Tracker 3, reloads, finds it again, downloads it from the Files panel, and brings in a module from the computer.
+
+`e2e/hook.js`, an init script, watches each emulator through js-dos's own API, without changing what the page does: its frames' fingerprints, what DOS prints, DOSBox's log, the keys DosKit sends and how loud the sound is. It logs them as console lines starting with `[e2e]`, and the specs read those lines rather than the page: Playwright's locators and `page.evaluate()` give the page user activation, as recording a trace does, and with it DosKit starts a production without its Play screen. So the specs query nothing before the click, which goes where the hook says the Play button is, and `playwright.config.ts` turns traces off. Screenshots of failed tests go to `test-results/`.
+
+CI runs the browser tests in its Browser Tests job. Locally you can run them in WebKit too, with `npx playwright test --project=webkit` once `npx playwright install webkit` has installed it, though an automated WebKit window never gets sound.
+
+`e2e/tools/` holds two scripts that use the same server and hook: `fingerprints.mjs` prints the fingerprints of the setup screens that start keys wait for, and `frames.mjs` captures the frames that share cards are drawn from. [`src/dos-apps/README.md`](src/dos-apps/README.md) says when to run each.
 
 ## Documentation
 

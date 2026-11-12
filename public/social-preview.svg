@@ -30,7 +30,7 @@
   <circle cx="220" cy="140" r="12" fill="#27c93f"/>
   
   <!-- Title bar text -->
-  <text x="260" y="150" font-family="'Courier New', monospace" font-size="20" fill="rgba(255,255,255,0.7)">DosKit - Cross-Platform DOS Emulator</text>
+  <text x="260" y="150" font-family="'Courier New', monospace" font-size="20" fill="rgba(255,255,255,0.7)">DosKit - DOS demoscene classics in your browser</text>
   
   <!-- Main content area -->
   <!-- DOS Prompt -->
@@ -40,11 +40,11 @@
   <rect x="280" y="228" width="24" height="6" fill="#00ff00" class="cursor"/>
   
   <!-- Description text -->
-  <text x="140" y="320" font-family="'Courier New', monospace" font-size="24" fill="rgba(255,255,255,0.9)">Run classic DOS applications</text>
-  <text x="140" y="360" font-family="'Courier New', monospace" font-size="24" fill="rgba(255,255,255,0.9)">directly in your browser</text>
+  <text x="140" y="320" font-family="'Courier New', monospace" font-size="24" fill="rgba(255,255,255,0.9)">DOS demoscene classics and the</text>
+  <text x="140" y="360" font-family="'Courier New', monospace" font-size="24" fill="rgba(255,255,255,0.9)">trackers behind them, in your browser</text>
   
   <!-- Features -->
-  <text x="140" y="420" font-family="'Courier New', monospace" font-size="18" fill="rgba(255,255,255,0.7)">✓ WebAssembly powered  ✓ Cross-platform  ✓ PWA support</text>
+  <text x="140" y="420" font-family="'Courier New', monospace" font-size="18" fill="rgba(255,255,255,0.7)">✓ Second Reality  ✓ Unreal  ✓ Panic  ✓ Impulse Tracker</text>
   
   <!-- Footer -->
   <text x="600" y="580" font-family="'Courier New', monospace" font-size="20" fill="rgba(255,255,255,0.6)" text-anchor="middle">doskit.net</text>

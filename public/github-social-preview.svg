@@ -30,7 +30,7 @@
   <circle cx="220" cy="140" r="12" fill="#27c93f"/>
   
   <!-- Title bar text -->
-  <text x="260" y="150" font-family="'Courier New', monospace" font-size="20" fill="rgba(255,255,255,0.7)">DosKit - Cross-Platform DOS Emulator</text>
+  <text x="260" y="150" font-family="'Courier New', monospace" font-size="20" fill="rgba(255,255,255,0.7)">DosKit - DOS demoscene classics in your browser</text>
   
   <!-- Main content area -->
   <!-- DOS Prompt -->
@@ -40,11 +40,11 @@
   <rect x="300" y="236" width="26" height="6" fill="#00ff00" class="cursor"/>
   
   <!-- Description text -->
-  <text x="140" y="340" font-family="'Courier New', monospace" font-size="26" fill="rgba(255,255,255,0.9)">Run classic DOS applications and demos</text>
-  <text x="140" y="380" font-family="'Courier New', monospace" font-size="26" fill="rgba(255,255,255,0.9)">directly in your browser with WebAssembly</text>
+  <text x="140" y="340" font-family="'Courier New', monospace" font-size="26" fill="rgba(255,255,255,0.9)">DOS demoscene classics and the trackers</text>
+  <text x="140" y="380" font-family="'Courier New', monospace" font-size="26" fill="rgba(255,255,255,0.9)">behind them, playable in your browser</text>
   
   <!-- Features -->
-  <text x="140" y="440" font-family="'Courier New', monospace" font-size="18" fill="rgba(255,255,255,0.7)">✓ WebAssembly powered  ✓ Cross-platform  ✓ PWA support  ✓ Offline capable</text>
+  <text x="140" y="440" font-family="'Courier New', monospace" font-size="18" fill="rgba(255,255,255,0.7)">✓ Second Reality  ✓ Unreal  ✓ Panic  ✓ Crystal Dream 2  ✓ Impulse Tracker</text>
   
   <!-- Footer -->
   <text x="640" y="590" font-family="'Courier New', monospace" font-size="22" fill="rgba(255,255,255,0.6)" text-anchor="middle">doskit.net • github.com/cameronrye/doskit</text>

@@ -56,6 +56,30 @@ describe('DemoSelector', () => {
       expect(screen.getByText('Impulse Tracker')).toBeInTheDocument();
     });
 
+    it("should show each archive's own size on its disk", () => {
+      render(<DemoSelector onSelect={mockOnSelect} />);
+
+      // 2,122,910 bytes, 33,424 and 1,482, where every disk used to say 1.44 MB
+      expect(within(getFloppyDiskByName('Second Reality')).getByText('2.1 MB')).toBeInTheDocument();
+      expect(
+        within(getFloppyDiskByName('StarPort BBS Intro II')).getByText('33 KB')
+      ).toBeInTheDocument();
+      expect(
+        within(getFloppyDiskByName('Starfield Effect')).getByText('1.5 KB')
+      ).toBeInTheDocument();
+      expect(screen.queryByText('1.44 MB')).not.toBeInTheDocument();
+    });
+
+    it('should warn that a production flashes once it is selected', () => {
+      render(<DemoSelector onSelect={mockOnSelect} />);
+
+      fireEvent.click(getFloppyDiskByName('Panic'));
+      expect(screen.getByText(/contains flashing lights/i)).toBeInTheDocument();
+
+      fireEvent.click(getFloppyDiskByName('Starfield Effect'));
+      expect(screen.queryByText(/contains flashing lights/i)).not.toBeInTheDocument();
+    });
+
     it('should render close button when onCancel is provided', () => {
       render(<DemoSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />);
       expect(screen.getByRole('button', { name: /Close/i })).toBeInTheDocument();
@@ -98,6 +122,8 @@ describe('DemoSelector', () => {
           id: 'my-demo',
           name: 'My Demo',
           description: 'One line for the selector',
+          kind: 'demo',
+          archiveBytes: 3,
           loadMethod: 'zip',
           dosboxConf: '',
           loader: async () => new Uint8Array(),
@@ -1047,9 +1073,9 @@ describe('DemoSelector', () => {
 
         fireEvent.keyDown(getFloppyDiskByName('Second Reality'), { key: 'ArrowRight' });
 
-        const impulseTracker = screen.getByRole('option', { name: /^Impulse Tracker by/ });
-        expect(impulseTracker).toHaveFocus();
-        expect(impulseTracker).toHaveAttribute('aria-selected', 'false');
+        const unreal = screen.getByRole('option', { name: /^Unreal by/ });
+        expect(unreal).toHaveFocus();
+        expect(unreal).toHaveAttribute('aria-selected', 'false');
         expect(signalOf(secondRealityZipUrl)?.aborted).toBe(false);
         expect(screen.getByText('Selected: Second Reality')).toBeInTheDocument();
         expect(screen.getByRole('progressbar')).toBeInTheDocument();
@@ -1065,7 +1091,7 @@ describe('DemoSelector', () => {
         fireEvent.keyDown(document.activeElement!, { key: ' ' });
 
         expect(signalOf(secondRealityZipUrl)?.aborted).toBe(true);
-        expect(screen.getByText('Selected: Impulse Tracker')).toBeInTheDocument();
+        expect(screen.getByText('Selected: Unreal')).toBeInTheDocument();
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
       });
 

@@ -1,0 +1,21 @@
+{
+  "description": "Scream Tracker 3.21 by Future Crew, the tracker the S3M module format was made for, running in your browser with its example song.",
+  "about": [
+    "Scream Tracker 3 is Future Crew's music tracker for MS-DOS; the S3M module format was made for it. This is version 3.21, from December 1994, with an example song, ARMANI.S3M.",
+    "What you save in it stays in this browser: the Files button can download it, bring in modules of your own, or start over."
+  ],
+  "credits": "Code by Psi; the manual by Edge of Electromotive Force.",
+  "released": "Version 3.21, dated 25 December 1994.",
+  "terms": "Freeware: “you can give it to your friends and distribute it in any way as long as no money is involved.” (ST3.DOC)",
+  "accuracy": [
+    "Mono: js-dos mixes the two channels into one.",
+    "It saves on Ctrl+W, which some browsers keep for closing the tab: DosKit asks before the page closes."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=13351"
+    }
+  ],
+  "imageAlt": "Scream Tracker 3's pattern editor, running in DosKit"
+}

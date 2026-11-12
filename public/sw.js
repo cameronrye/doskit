@@ -16,13 +16,16 @@ const METADATA_CACHE_NAME = `${CACHE_NAME}-metadata`;
 const JS_DOS_VERSION = 'dev';
 const EMULATOR_CACHE_NAME = `doskit-emulators-${JS_DOS_VERSION}`;
 
-// Demo archives only change when one is replaced, so deploys keep their cache too. The
-// build replaces this with a hash of the archives in dist/demos, so a deploy that changes
-// any of them starts a new cache.
-const DEMOS_HASH = 'dev';
-const DEMO_CACHE_NAME = `doskit-demos-${DEMOS_HASH}`;
-// The archives that hash covers
+// Demo archives only change when one is replaced, so deploys keep their cache too, and
+// each archive in it is kept under a version of its own: a hash of its bytes, which the
+// build puts here by its path (scripts/inject-sw-version.js). A deploy that changes one
+// archive downloads that one again and keeps the others.
+const DEMO_VERSIONS = {};
+const DEMO_CACHE_NAME = 'doskit-demos';
+// The archives DEMO_VERSIONS covers
 const DEMO_ARCHIVE = /^\/demos\/[^/]+\.zip$/;
+// The caches of workers before this one, named after a hash of all the archives
+const OLD_DEMO_CACHE = /^doskit-demos-/;
 
 // Configuration
 const CONFIG = {
@@ -31,9 +34,10 @@ const CONFIG = {
   MAX_CACHE_SIZE: 100, // Entry limit of CACHE_NAME; trimming removes runtime entries only
 };
 
-// The page of every route: GitHub Pages answers / (whatever the query) with index.html,
-// and a path it has no file for, such as /secondreality, with 404.html, a copy of it.
-// Install stores it once, under this URL, and it answers every navigation offline.
+// The page of every route offline: GitHub Pages answers / (whatever the query) with
+// index.html, a production's page such as /secondreality with its own <id>.html, built from
+// index.html, and a path it has no file for with 404.html, a copy of it. Install stores
+// index.html once, under this URL, and it answers every navigation offline.
 const APP_PAGE = '/';
 
 // Assets to cache on install. The build appends every JS and CSS file in dist/assets,
@@ -165,8 +169,52 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - delete the caches of earlier deploys, other js-dos versions and other
-// demo archives
+/** The key the demo cache keeps an archive under: its address with its version */
+function demoCacheKey(url) {
+  const key = new URL(url.pathname, self.location.origin);
+  key.searchParams.set('v', DEMO_VERSIONS[url.pathname] ?? 'dev');
+  return key.href;
+}
+
+/** The version the build gives an archive's bytes: the first 12 hex digits of their SHA-256 */
+async function demoVersionOf(bytes) {
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, 12);
+}
+
+/**
+ * Bring the demo cache to this deploy's archives: keep what an earlier worker stored in a
+ * cache named after a hash of all the archives, where its bytes are this deploy's, and drop
+ * what this deploy has a new version of, or no longer has
+ */
+async function tidyDemoCache(cacheNames) {
+  const oldCaches = cacheNames.filter((cacheName) => OLD_DEMO_CACHE.test(cacheName));
+  if (oldCaches.length === 0 && !cacheNames.includes(DEMO_CACHE_NAME)) return;
+  const cache = await caches.open(DEMO_CACHE_NAME);
+  for (const name of oldCaches) {
+    const old = await caches.open(name);
+    for (const request of await old.keys()) {
+      const url = new URL(request.url);
+      const response = DEMO_VERSIONS[url.pathname] && (await old.match(request, MATCH_OPTIONS));
+      if (!response || response.status !== 200) continue;
+      const bytes = await response.clone().arrayBuffer();
+      if ((await demoVersionOf(bytes)) === DEMO_VERSIONS[url.pathname]) {
+        await cache.put(demoCacheKey(url), response);
+      }
+    }
+  }
+  for (const request of await cache.keys()) {
+    const url = new URL(request.url);
+    if (url.searchParams.get('v') !== DEMO_VERSIONS[url.pathname]) {
+      await cache.delete(request);
+    }
+  }
+}
+
+// Activate event - delete the caches of earlier deploys and other js-dos versions, and the
+// demo archives this deploy has new versions of
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating service worker...', CACHE_NAME);
   const currentCaches = [CACHE_NAME, METADATA_CACHE_NAME, EMULATOR_CACHE_NAME, DEMO_CACHE_NAME];
@@ -174,7 +222,10 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((cacheNames) => {
+      .then(async (cacheNames) => {
+        await tidyDemoCache(cacheNames).catch((error) =>
+          console.error('[Service Worker] Error tidying the demo cache:', error)
+        );
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (cacheName.startsWith('doskit-') && !currentCaches.includes(cacheName)) {
@@ -374,10 +425,10 @@ async function cacheResponse(request, response) {
  * passes the page's abort on to the worker, the download stops and nothing is stored.
  * Chromium does not, so there the download finishes and the whole file is stored.
  */
-async function serveCacheFirst(event, cacheName) {
+async function serveCacheFirst(event, cacheName, key = event.request) {
   const { request } = event;
   const cache = await caches.open(cacheName);
-  const cachedResponse = await cache.match(request, MATCH_OPTIONS);
+  const cachedResponse = await cache.match(key, MATCH_OPTIONS);
   if (cachedResponse) {
     console.log('[Service Worker] Serving from cache (cache-first):', request.url);
     return cachedResponse;
@@ -388,7 +439,7 @@ async function serveCacheFirst(event, cacheName) {
   if (networkResponse.status === 200) {
     event.waitUntil(
       cache
-        .put(request, networkResponse.clone())
+        .put(key, networkResponse.clone())
         .catch((error) => console.error('[Service Worker] Error caching', request.url, error))
     );
   }
@@ -399,8 +450,8 @@ async function serveCacheFirst(event, cacheName) {
  * Serve a page from the network first, revalidated with the server: GitHub Pages lets
  * browsers reuse a page for 10 minutes, so the HTTP cache may still hold the previous
  * deploy's index.html, which loads bundles this deploy's cache lacks. The response is
- * passed on as it came, including the 404 status GitHub Pages gives a path-style link
- * such as /secondreality, whose 404.html is a copy of index.html.
+ * passed on as it came: a production's page, or the 404 status GitHub Pages gives a path
+ * it has no file for, such as /secondreality/, whose 404.html is a copy of index.html.
  *
  * Nothing is stored: when the network fails or times out, the page is APP_PAGE, the
  * index.html install stored along with the bundles it loads, whatever the URL. A page
@@ -466,9 +517,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for demo archives, from the cache of these archives
+  // Cache-first for demo archives, each under its version
   if (DEMO_ARCHIVE.test(url.pathname)) {
-    event.respondWith(serveCacheFirst(event, DEMO_CACHE_NAME));
+    event.respondWith(serveCacheFirst(event, DEMO_CACHE_NAME, demoCacheKey(url)));
     return;
   }
 

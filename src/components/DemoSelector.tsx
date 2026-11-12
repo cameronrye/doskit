@@ -15,6 +15,7 @@ import type { DosApp } from '../types/dos-app';
 import type { LoadProgress } from '../utils/diskLoader';
 import { getUserFriendlyError, type FriendlyError } from '../utils/errorMessages';
 import { availableApps } from '../config/apps.config';
+import { formatSize } from '../utils/formatSize';
 import './DemoSelector.css';
 
 export interface LoadedApp {
@@ -509,6 +510,7 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
                 selected={selectedApp?.id === app.id}
                 enableSlideHover={false}
                 label={floppyLabel(app)}
+                capacity={formatSize(app.archiveBytes)}
               />
             </div>
           ))}
@@ -522,6 +524,12 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
           <div className="app-summary" aria-live="polite">
             <h3>Selected: {selectedApp.name}</h3>
             <p>{selectedApp.description}</p>
+            {selectedApp.flashing && (
+              <p className="flashing-notice">
+                <span aria-hidden="true">⚠ </span>
+                Contains flashing lights, which may affect people with photosensitive epilepsy.
+              </p>
+            )}
           </div>
 
           <div className="app-actions">

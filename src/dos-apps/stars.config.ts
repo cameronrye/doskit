@@ -12,7 +12,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * Starfield Effect Demo (hosted locally)
- * A classic starfield effect demo, from VLA's "Intro To Starfields" by Draeden
+ * The example program of VLA's tutorial "Intro To Starfields" by Draeden
  *
  * Source: https://github.com/sceners/grumpys-source-pack-collection
  * License: none found (see public/demos/README.md)
@@ -57,3 +57,6 @@ export const starsDosboxConf = presets
     'STARS.EXE'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { starsDosboxConf as dosboxConf };

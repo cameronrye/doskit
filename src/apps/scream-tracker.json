@@ -1,0 +1,20 @@
+{
+  "id": "scream-tracker",
+  "order": 8,
+  "kind": "tracker",
+  "name": "Scream Tracker 3",
+  "description": "Future Crew's music tracker, where the S3M format began",
+  "author": "Future Crew",
+  "year": 1994,
+  "archiveBytes": 183556,
+  "warnBeforeLeaving": true,
+  "start": {
+    "keys": ["Space"],
+    "ready": {
+      "stdout": "Output: CARD:"
+    },
+    "note": "DosKit goes past its title screen to the pattern editor. Ctrl+L loads a song, F5 plays it."
+  },
+  "hint": "Press any key to go past the title screen; then Ctrl+L loads the example song, ARMANI.S3M, and F5 plays it.",
+  "saveFiles": true
+}

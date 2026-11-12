@@ -14,6 +14,24 @@
  * something that never runs.
  */
 
+/** The whole numbers from 0 to Max */
+export type UpTo<Max extends number, Counted extends number[] = []> = Counted['length'] extends Max
+  ? Counted[number] | Max
+  : UpTo<Max, [...Counted, Counted['length']]>;
+
+/** The [dosbox] section: the emulated machine and its memory */
+export interface MachineConfig {
+  /**
+   * `svga_s3`, the default, applies the VGA palette once a frame; `vgaonly` draws line by
+   * line, as a real VGA does, for programs that change the palette while a frame is drawn
+   * (raster bars, split-screen palettes). `vgaonly` renders through 16-bit colour, so red and
+   * blue get half the steps, and costs about 10% more CPU.
+   */
+  machine?: 'svga_s3' | 'vgaonly';
+  /** Megabytes of memory, up to 63; DOSBox's default is 16 */
+  memsize?: UpTo<63>;
+}
+
 export interface CPUConfig {
   /** The backend has no dynamic core */
   core?: 'auto' | 'normal' | 'simple';
@@ -51,11 +69,6 @@ export interface DOSConfig {
  * Tandy sound. It resets any other rate to 44100.
  */
 export type SampleRate = 8000 | 11025 | 16000 | 22050 | 32000 | 44100 | 48000 | 49716;
-
-/** The whole numbers from 0 to Max */
-export type UpTo<Max extends number, Counted extends number[] = []> = Counted['length'] extends Max
-  ? Counted[number] | Max
-  : UpTo<Max, [...Counted, Counted['length']]>;
 
 /**
  * There is no `blocksize`: the backend's mixer never reads it, always works in 2048-sample
@@ -117,6 +130,7 @@ export interface SerialConfig {
  * Provides a fluent API for building DOSBox configuration strings
  */
 export class DOSBoxConfigBuilder {
+  private machine: MachineConfig = {};
   private cpu: CPUConfig = {};
   private render: RenderConfig = {};
   private dos: DOSConfig = {};
@@ -127,6 +141,16 @@ export class DOSBoxConfigBuilder {
   private joystick: JoystickConfig = {};
   private serial: SerialConfig = {};
   private autoexec: string[] = [];
+
+  /**
+   * Set the machine: its video adapter and its memory
+   * @param config - [dosbox] options (machine, memsize)
+   * @returns This builder instance for method chaining
+   */
+  setMachine(config: MachineConfig): this {
+    this.machine = { ...this.machine, ...config };
+    return this;
+  }
 
   /**
    * Set CPU configuration
@@ -250,6 +274,10 @@ export class DOSBoxConfigBuilder {
    */
   build(): string {
     const sections: string[] = [];
+
+    if (Object.keys(this.machine).length > 0) {
+      sections.push(this.buildSection('dosbox', this.machine));
+    }
 
     if (Object.keys(this.cpu).length > 0) {
       sections.push(this.buildSection('cpu', this.cpu));

@@ -1,0 +1,18 @@
+{
+  "description": "Squid BBS Intro by cld & The Doctor, a 1,899-byte BBS advert with AdLib music, running in your browser.",
+  "about": [
+    "A 1,899-byte BBS advert with its own AdLib music player, written by cld & The Doctor in early 1994 and released with its source, commented in Portuguese."
+  ],
+  "released": "Its source is dated 31 January 1994.",
+  "terms": "Freeware: “you are free to use it as you want - but DO NOT make another small addy just changing the text and few bytes of code!” (SQUID1.ASM)",
+  "accuracy": [
+    "It runs on a plain VGA (DOSBox's vgaonly), which draws its gradient and raster bars as a real VGA does. Reds and blues then have half the shades."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=52530"
+    }
+  ],
+  "imageAlt": "Squid BBS Intro's lettering over its raster bars, running in DosKit"
+}

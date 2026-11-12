@@ -11,7 +11,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * Panic demo (hosted locally)
- * A classic demo by Future Crew (1993)
+ * Future Crew's demo, shown at The Party 1992 and released in February 1993
  *
  * Source: https://files.scene.org/view/demos/groups/future_crew/demos/panic.zip
  * License: Freeware
@@ -32,11 +32,14 @@ export const panicZipUrl = '/demos/panic.zip';
  *   which its opening runs seconds behind and some effects drop to 22-45 frames a second; at
  *   'max' it plays no sound.
  * - Sound Blaster 16 for audio
- * - Standard VGA graphics
+ * - A plain VGA (machine vgaonly): Panic changes the palette while a frame is drawn, which
+ *   DOSBox's default SVGA machine applies once a frame, tearing its chrome-letter scroller and
+ *   striping its plasma
  * - DOSBox's default 16 MB of memory, with EMS enabled
  */
 export const panicDosboxConf = presets
   .demo()
+  .setMachine({ machine: 'vgaonly' })
   .setCPU({ core: 'auto', cputype: 'auto', cycles: 30000 })
   .setSoundBlaster({
     sbtype: 'sb16',
@@ -55,11 +58,8 @@ export const panicDosboxConf = presets
     'echo   1993 - 2nd at The Party 1992',
     'echo ========================================',
     'echo.',
-    'echo A classic demo featuring:',
-    'echo - Voxel fractals',
-    'echo - Shadebobs',
-    'echo - Hard techno music by Purple Motion',
-    'echo - Dark atmosphere',
+    'echo Code by Wildfire, Psi and Trug',
+    'echo Music by Purple Motion, graphics by Pixel',
     'echo.',
     'echo Audio: Sound Blaster 16',
     'echo CPU: 30000 cycles',
@@ -73,3 +73,6 @@ export const panicDosboxConf = presets
     'PANIC.EXE'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { panicDosboxConf as dosboxConf };

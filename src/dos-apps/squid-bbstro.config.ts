@@ -32,7 +32,8 @@ export const squidBbstroZipUrl = '/demos/squid-bbstro.zip';
  * - Auto CPU core, type and cycles. 'auto' gives it 3,000 cycles/ms, at which it still draws
  *   all 70 frames a second.
  * - Sound Blaster 16, whose FM chip plays the AdLib music SQUID1.ASM writes
- * - Standard VGA graphics
+ * - A plain VGA (machine vgaonly): its gradient and raster bars change the palette line by
+ *   line, which DOSBox's default SVGA machine applies only once a frame, drawing none of them
  *
  * Features:
  * - Character smoother effect
@@ -41,6 +42,7 @@ export const squidBbstroZipUrl = '/demos/squid-bbstro.zip';
  */
 export const squidBbstroDosboxConf = presets
   .demo()
+  .setMachine({ machine: 'vgaonly' })
   .setCPU({ core: 'auto', cputype: 'auto', cycles: 'auto' })
   .setSoundBlaster({
     sbtype: 'sb16',
@@ -77,3 +79,6 @@ export const squidBbstroDosboxConf = presets
     'SQUID1.COM'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { squidBbstroDosboxConf as dosboxConf };

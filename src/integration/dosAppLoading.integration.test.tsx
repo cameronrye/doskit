@@ -8,6 +8,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import App from '../App';
 import { DosPlayer } from '../components/DosPlayer';
 import { starsDosboxConf } from '../dos-apps/stars.config';
+import { endMarkerFor, withEndMarker } from '../utils/endMarker';
 import type {
   CommandInterface,
   CommandInterfaceEvents,
@@ -403,9 +404,14 @@ describe('Status badge as players come and go', () => {
       return createMockDosInstance();
     });
     render(<App />);
+    // Nothing runs under the start page's selector; cancelled, it leaves the DOS prompt,
+    // whose start loads emulators.js
+    expect(mockDos).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(mockDos).toHaveBeenCalledTimes(1);
 
-    // The start page's selector is open over its player
+    // An app picked from the selector while emulators.js still loads
+    fireEvent.click(screen.getByRole('button', { name: 'Select Application' }));
     fireEvent.doubleClick(screen.getByRole('option', { name: /^Starfield Effect by/ }));
 
     // Once the selector has its files, the app's player replaces the start page's
@@ -429,8 +435,12 @@ describe('Status badge as players come and go', () => {
 
   it('says Loading from the moment a new player mounts until that player is ready', async () => {
     render(<App />);
-    // The start page runs the default DOS prompt
+    // Nothing runs under the start page's selector
+    expect(badge()).toHaveTextContent('Idle');
+    // Closed, it leaves the default DOS prompt
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(mockDos).toHaveBeenCalledTimes(1);
+    expect(badge()).toHaveTextContent('Loading');
     reportReady();
     expect(badge()).toHaveTextContent('Ready');
 
@@ -440,13 +450,15 @@ describe('Status badge as players come and go', () => {
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
     await waitFor(() => expect(mockDos).toHaveBeenCalledTimes(2), { timeout: 3000 });
-    // With the DOSBox config the app loads, which runs it
-    expect(mockDos.mock.lastCall?.[1]?.dosboxConf).toBe(starsDosboxConf);
+    // With the DOSBox config the app loads, which runs it, and the line that tells its end
+    expect(mockDos.mock.lastCall?.[1]?.dosboxConf).toBe(
+      withEndMarker(starsDosboxConf, endMarkerFor('Starfield Effect'))
+    );
     expect(badge()).toHaveTextContent('Loading');
     reportReady();
     expect(badge()).toHaveTextContent('Ready');
 
-    // Back to the start page, which boots the default prompt again
+    // Back to the start page: its selector opens, with nothing running under it
     await act(async () => {
       const popped = new Promise((resolve) =>
         window.addEventListener('popstate', resolve, { once: true })
@@ -454,9 +466,7 @@ describe('Status badge as players come and go', () => {
       window.history.back();
       await popped;
     });
-    expect(mockDos).toHaveBeenCalledTimes(3);
-    expect(badge()).toHaveTextContent('Loading');
-    reportReady();
-    expect(badge()).toHaveTextContent('Ready');
+    expect(mockDos).toHaveBeenCalledTimes(2);
+    expect(badge()).toHaveTextContent('Idle');
   });
 });

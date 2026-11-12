@@ -10,7 +10,7 @@
 import React from 'react';
 import type { DosOptions, CommandInterface } from '../types/js-dos';
 import { defaultDosboxConfig } from '../config/dosbox.conf';
-import { useDosEmulator } from '../hooks/useDosEmulator';
+import { useDosEmulator, type PlayerHandle } from '../hooks/useDosEmulator';
 import { DosPlayerUI } from './DosPlayerUI';
 
 // js-dos is loaded via local script and available globally
@@ -23,6 +23,8 @@ export interface DosPlayerProps {
   options?: Partial<DosOptions>;
   /** Callback when the emulator is ready */
   onReady?: (ci: CommandInterface) => void;
+  /** Callback with the ready emulator's handle: its command interface, its player and its output */
+  onHandle?: (handle: PlayerHandle) => void;
   /**
    * Callback when a ready emulator is gone: DOS exited, or unmounting stopped it. Called
    * once per onReady.
@@ -44,6 +46,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
   dosboxConf = defaultDosboxConfig,
   options = {},
   onReady,
+  onHandle,
   onExit,
   onError,
   className = '',
@@ -53,6 +56,7 @@ export const DosPlayer: React.FC<DosPlayerProps> = ({
     dosboxConf,
     options,
     onReady,
+    onHandle,
     onExit,
     onError,
   });

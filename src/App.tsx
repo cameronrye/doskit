@@ -4,10 +4,11 @@
  * Licensed under the MIT License
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DosPlayerWithApps, type PlayerStatus } from './components/DosPlayerWithApps';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { AppInfo } from './components/AppInfo';
 import { findAppById } from './config/apps.config';
 import type { DosApp } from './types/dos-app';
 import { getAppRequestFromUrl, updateUrlWithApp, updateDocumentTitle } from './utils/urlRouting';
@@ -36,8 +37,9 @@ function readUrlRoute(): UrlRoute {
 
 /**
  * Set the title for a route, and bring the URL to the form the app pushes without a new
- * history entry: /?app=<id> for an app (also for /stars or ?app=Stars), and no app
- * parameter for an unknown one. Apps reporting in once loaded then find their URL in place.
+ * history entry: /<id> for an app, its own page (also for /?app=stars, an old link, or
+ * ?app=Stars), and the start page for an unknown one. Apps reporting in once loaded then
+ * find their URL in place.
  */
 function applyUrlRoute(route: UrlRoute): void {
   if (route.app) {
@@ -71,6 +73,7 @@ function keepKeysFromDos(event: React.KeyboardEvent) {
 
 /** What the footer's DOS badge shows for each status of the player */
 const STATUS_BADGES: Record<PlayerStatus, { className: string; label: string; title: string }> = {
+  idle: { className: 'is-idle', label: 'Idle', title: 'No application is running' },
   loading: { className: 'is-loading', label: 'Loading', title: 'Loading DOS emulator' },
   ready: { className: 'ready', label: 'Ready', title: 'DOS emulator is ready' },
   error: {
@@ -90,6 +93,20 @@ function App() {
   const [currentApp, setCurrentApp] = useState(initialRoute.app);
   const [showAppSelector, setShowAppSelector] = useState(!initialRoute.app);
   const [urlError, setUrlError] = useState(initialRoute.error);
+  // The About panel, for the current app; it closes when the app changes or the selector opens
+  const [infoFor, setInfoFor] = useState<DosApp | null>(null);
+  const aboutButtonRef = useRef<HTMLButtonElement>(null);
+  const showInfo = infoFor !== null && infoFor === currentApp && !showAppSelector;
+  // Closed from the keyboard, the About button gets the focus back; with the mouse, the page
+  // keeps it, where keys go to DOS
+  const closeInfo = (fromKeyboard: boolean) => {
+    setInfoFor(null);
+    if (fromKeyboard) {
+      aboutButtonRef.current?.focus();
+    } else if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
 
   const handleNetworkStatusChange = (online: boolean) => {
     if (import.meta.env.DEV) {
@@ -205,12 +222,23 @@ function App() {
             </div>
           )}
           <div className="header-right">
+            {currentApp && (
+              <button
+                ref={aboutButtonRef}
+                className="header-about-button"
+                onClick={() => setInfoFor(currentApp)}
+              >
+                About
+              </button>
+            )}
             <button className="header-change-app-button" onClick={handleChangeAppClick}>
               {currentApp ? 'Change Application' : 'Select Application'}
             </button>
           </div>
         </div>
       </header>
+
+      {showInfo && <AppInfo app={currentApp} onClose={closeInfo} />}
 
       <main className="app-main">
         {/* A render error takes the player down with it, and no status comes from it then */}

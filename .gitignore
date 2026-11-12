@@ -21,6 +21,10 @@ dist-ssr
 coverage
 .nyc_output
 
+# Browser test output (npm run test:e2e)
+/test-results/
+/playwright-report/
+
 # Generated documentation
 docs/api
 

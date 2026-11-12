@@ -1,0 +1,16 @@
+{
+  "description": "The Starfield Effect, the example program of Draeden's 1993 starfield tutorial for VLA, running in your browser.",
+  "about": [
+    "The example program of “Intro To Starfields”, an assembly tutorial Draeden wrote for VLA in 1993, from Grumpy's source pack. A key ends it."
+  ],
+  "released": "The tutorial is dated 15 March 1993.",
+  "terms": "None found: the tutorial, its source and VLA.NFO state none. Rights holders can reach DosKit's owner below.",
+  "accuracy": ["It has no sound."],
+  "links": [
+    {
+      "label": "Grumpy's source pack",
+      "url": "https://github.com/sceners/grumpys-source-pack-collection"
+    }
+  ],
+  "imageAlt": "The Starfield Effect's stars, running in DosKit"
+}

@@ -21,7 +21,7 @@ The sceners organization (curated by Defacto2) contains more than 150 repositori
 | 3D Rotation Demo | `3drotate`     | Draeden of VLA   | 1993 | ✅ Working |
 | Starfield Effect | `stars`        | Draeden of VLA   | 1993 | ✅ Working |
 
-The IDs are the app IDs in `src/config/apps.config.ts`, and the authors and years are those of its registry. [`public/demos/README.md`](../public/demos/README.md) records where each archive comes from and what gives its year. App URLs drop the hyphens (`/?app=squidbbstro`), which is the form DosKit shows in the address bar; links with the hyphenated ID still open the app and are rewritten to that form.
+The IDs are the app IDs, which name their data files in `src/apps/`, and the authors and years are those of the data files. [`public/demos/README.md`](../public/demos/README.md) records where each archive comes from and what gives its year. Each app's page drops the hyphens (`/squidbbstro`), which is the form DosKit shows in the address bar; links with the hyphenated ID, and old `/?app=` links, still open the app and are rewritten to that form.
 
 Crystal Dream 2 was added at the same time, but it does not come from sceners, which has no repository for it: its archive is `cd2-trn.zip` from Triton's folder on scene.org, and `public/demos/README.md` records it like every other archive.
 
@@ -31,21 +31,21 @@ Crystal Dream 2 was added at the same time, but it does not come from sceners, w
 
 - **Size**: 1899 bytes (`SQUID1.COM`)
 - **Features**: Character smoother, mini AdLib player, 8x16 custom charset
-- **URL**: `https://doskit.net/?app=squidbbstro`
+- **URL**: `https://doskit.net/squidbbstro`
 - **Source**: `squid_bbs1a.zip` from scene.org's lost_found_and_more collection, byte for byte: https://files.scene.org/view/demos/compilations/lost_found_and_more/bbs/squid_bbs1a.zip. The program and its source are also in https://github.com/sceners/squid-bbstro.
 
 #### 3D Rotation Demo (1993)
 
 - **Author**: Draeden of VLA. It is the example program of VLA's tutorial "Intro To 3d Rotations", whose text is dated 02/22/93, and `3DROTATE.EXE` carries the line "Coded by Draeden of VLA".
 - **Features**: Real-time 3D object rotation in VGA mode
-- **URL**: `https://doskit.net/?app=3drotate`
+- **URL**: `https://doskit.net/3drotate`
 - **Source**: https://github.com/sceners/grumpys-source-pack-collection, a copy of Grumpy's source pack: Grumpy collected the tutorial rather than writing it
 
 #### Starfield Effect (1993)
 
 - **Author**: Draeden of VLA. It is the example program of VLA's tutorial "Intro To Starfields", whose text and source are dated 03/15/93.
 - **Features**: Classic starfield effect simulating flying through space
-- **URL**: `https://doskit.net/?app=stars`
+- **URL**: `https://doskit.net/stars`
 - **Source**: https://github.com/sceners/grumpys-source-pack-collection, the same source pack
 
 ### Not Compatible
@@ -69,16 +69,19 @@ Crystal Dream 2 was added at the same time, but it does not come from sceners, w
 - `3drotate.zip` (3.0 KB)
 - `stars.zip` (1.5 KB)
 
+**Data and Page Files** (in `src/apps/`): `<id>.json` and `<id>.page.json` for each of the three, and a share card each in `public/cards/` (`squidbbstro.png`, `3drotate.png`, `stars.png`)
+
 ### Integration Steps
 
 For each demo (the full steps, with code, are in [`src/dos-apps/README.md`](../src/dos-apps/README.md)):
 
 1. **Add the Archive** - Put the package in `public/demos/` as its source publishes it, byte for byte, wherever there is one: several authors ask for their files to be passed on unmodified, and a repacked archive loses the file dates that help establish the year. Zip loose files only when no package exists, and record where they came from in `public/demos/README.md`
 2. **Create Config** - Add config file in `src/dos-apps/`, define DOSBox configuration
-3. **Register App** - Add an entry to `availableApps` in `src/config/apps.config.ts`; the app selector lists every registered app, so its UI needs no change
-4. **Record Its Source** - Give the archive an entry in `public/demos/README.md`: where it comes from, its authors and year, and its terms
-5. **List It** - Add it to the table above, and to the other lists of the apps that the guide's step 5 names
-6. **Test** - Verify demo runs correctly, check audio/video output
+3. **Register App** - Add a data file, `src/apps/<id>.json`, with its start keys if it waits at a setup screen, and a page file, `src/apps/<id>.page.json`, with its text; the registry reads every data file, so the selector needs no change
+4. **Make Its Card** - Capture a frame of it running into `cards-src/`, and draw its share card with `npm run generate-app-cards`
+5. **Record Its Source** - Give the archive an entry in `public/demos/README.md`: where it comes from, its authors and year, and its terms
+6. **List It** - Add it to the table above, and to the other lists of the apps that the guide's "List it" step names; the lists in `README.md` and `public/llms-full.txt` are generated with `npm run generate-app-lists`
+7. **Test** - Verify demo runs correctly, check audio/video output, and give it an entry in `e2e/play.spec.ts`, which starts it from its page in a browser
 
 ## Available Repositories
 

@@ -1,6 +1,14 @@
+import { readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import {
+  findPageCollisions,
+  readApps,
+  renderAppPage,
+  renderSitemap,
+  urlIdOf,
+} from './scripts/app-pages.ts';
 
 const require = createRequire(import.meta.url);
 const versionOf = (manifest: string) => (require(manifest) as { version: string }).version;
@@ -17,8 +25,8 @@ export const versionDefines = {
 
 /**
  * GitHub Pages answers a path it has no file for with 404.html. As a copy of index.html it
- * boots the app for path-style deep links (/secondreality), which App then rewrites to
- * /?app=secondreality.
+ * boots the app for paths no page answers, such as /secondreality/ or /SecondReality, which
+ * App then rewrites to the app's own page, /secondreality.
  */
 export function githubPagesSpaFallback(): Plugin {
   return {
@@ -35,9 +43,46 @@ export function githubPagesSpaFallback(): Plugin {
   };
 }
 
+/**
+ * A page per app, <id>.html at the site's root, which GitHub Pages serves at /<id> with a 200:
+ * index.html with the app's title, description, share card, canonical URL and structured
+ * data, and its text for crawlers (scripts/app-pages.ts). And the sitemap that lists them.
+ * The build fails when an app's id would take a name the site already uses.
+ */
+export function appPages(appsDir = 'src/apps', publicDir = 'public'): Plugin {
+  return {
+    name: 'doskit:app-pages',
+    apply: 'build',
+    enforce: 'post',
+    generateBundle(_options, bundle) {
+      const index = bundle['index.html'];
+      if (index?.type !== 'asset') {
+        this.error('index.html is missing from the build, so there is no page to copy');
+      }
+      const apps = readApps(appsDir);
+      const rootNames = [
+        ...readdirSync(publicDir),
+        ...Object.keys(bundle).map((fileName) => fileName.split('/')[0] ?? fileName),
+      ];
+      const collisions = findPageCollisions(apps, rootNames);
+      if (collisions.length > 0) {
+        this.error(`App pages would take names the site uses: ${collisions.join('; ')}`);
+      }
+      for (const app of apps) {
+        this.emitFile({
+          type: 'asset',
+          fileName: `${urlIdOf(app.id)}.html`,
+          source: renderAppPage(String(index.source), app),
+        });
+      }
+      this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: renderSitemap(apps) });
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), githubPagesSpaFallback()],
+  plugins: [react(), githubPagesSpaFallback(), appPages()],
   define: versionDefines,
 
   // Custom domain deployment configuration

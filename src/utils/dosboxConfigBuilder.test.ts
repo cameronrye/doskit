@@ -64,6 +64,27 @@ describe('DOSBoxConfigBuilder', () => {
     });
   });
 
+  describe('Machine', () => {
+    it('should put the machine type and memory in a [dosbox] section, first', () => {
+      const config = createDOSBoxConfig()
+        .setCPU({ cycles: 24000 })
+        .setMachine({ machine: 'vgaonly', memsize: 63 })
+        .build();
+
+      expect(config.startsWith('[dosbox]\nmachine=vgaonly\nmemsize=63\n')).toBe(true);
+      expect(config).toContain('[cpu]\ncycles=24000\n');
+    });
+
+    it('should leave the [dosbox] section out when nothing is set', () => {
+      expect(createDOSBoxConfig().setCPU({ cycles: 24000 }).build()).not.toContain('[dosbox]');
+    });
+
+    it('should not accept a memory size the backend would reset', () => {
+      // @ts-expect-error: the backend takes up to 63 MB; DOSBox would use its default 16
+      createDOSBoxConfig().setMachine({ memsize: 64 });
+    });
+  });
+
   describe('Settings the default js-dos backend does not have', () => {
     // DOSBox drops or resets these without a warning, so the setting types refuse them.
     // The @ts-expect-error lines are checked by `tsc -b`, which fails if one compiles again.

@@ -256,6 +256,13 @@ code, Lizardking and Vogue with the music, Vogue with the graphics and Loot with
 - **More**: [pouet.net](https://www.pouet.net/prod.php?which=462),
   [Demozoo](https://demozoo.org/productions/175/)
 
+## For Rights Holders
+
+Every archive here is served as its source has it, byte for byte, and credited on its
+production's page. Three have no terms of their own: `3drotate.zip`, `stars.zip` and
+`crystal-dream-2.zip`. If you made one of these productions, or hold its rights, and want it
+credited differently or taken down, email cameron@rye.dev and it will be done.
+
 ## Adding an Archive
 
 The steps for adding an app, its archive included, are in
@@ -279,15 +286,16 @@ An archive is only downloaded when its app opens, but every archive is part of t
 each deploy, so each one adds its size to every clone and every deploy. `du -ch public/demos/*.zip`
 gives their total.
 
-Once an app has been opened, the service worker keeps its archive in a cache of its own. The build
-names that cache after a hash of every archive in `dist/demos/`, so adding, replacing or removing an
-archive starts a new, empty cache with the next deploy, and each app downloads its archive again the
-next time it opens.
+Once an app has been opened, the service worker keeps its archive in a cache of its own, under a
+version of its own: the first 12 hex digits of the SHA-256 of its bytes, which the build writes into
+the worker. A deploy that replaces or removes an archive drops only that one from the cache, and an
+app whose archive was replaced downloads it again the next time it opens; the other archives stay.
 
-To replace an archive, update its entry here too (contents, source, checksum), then open the app at
-`/?app=<id>` and check that it still starts.
+To replace an archive, update its entry here too (contents, source, checksum) and its size in the
+app's data file, `src/apps/<id>.json`, then open the app at its page, `/<id>` without hyphens, and
+check that it still starts.
 
 ---
 
-**Last Updated**: 2026-11-08
+**Last Updated**: 2026-11-11
 **Maintained By**: DosKit Project

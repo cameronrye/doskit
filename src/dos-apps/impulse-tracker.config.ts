@@ -59,3 +59,6 @@ export const impulseTrackerDosboxConf = presets
     'IT.EXE'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { impulseTrackerDosboxConf as dosboxConf };

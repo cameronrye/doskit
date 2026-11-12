@@ -1,6 +1,6 @@
 # DosKit - Comprehensive Documentation
 
-> A robust, cross-platform foundation for running DOS applications using js-dos WebAssembly technology
+> DOS demoscene classics and the trackers behind them, playable in your browser
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@
 
 ## Overview
 
-DosKit is a modern web application that enables users to run classic DOS applications and demos directly in their browser without any installation. Built with cutting-edge web technologies, it provides a seamless, cross-platform DOS emulation experience that works on desktop and mobile devices.
+DosKit runs DOS demoscene productions and the music trackers they were made with in the browser, from their original files, with nothing to install: Second Reality, Unreal, Panic and Crystal Dream 2, two BBS intros, and Impulse Tracker and Scream Tracker 3. It is a web app around js-dos, which runs DOSBox compiled to WebAssembly.
 
 The project leverages js-dos v8.3.20, a WebAssembly-based DOS emulator built on DOSBox. Combined with React 19's modern component architecture and Vite's lightning-fast build system, DosKit delivers an exceptional user experience for retro computing enthusiasts and developers.
 
@@ -32,20 +32,23 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 
 ### Core Features
 
-- **Interactive DOS Prompt**: The start page boots a fully functional DOS command prompt where users can execute DOS commands, with the application selector open over it
-- **Application Library**: Demoscene productions and music trackers, picked from a selector of floppy disks that works with the mouse or the keyboard (arrow keys, Home, End, Space, Enter, Escape; see Basic Usage under Usage)
-- **Cross-Platform Compatibility**: Works seamlessly on Windows, macOS, Linux, iOS, and Android
+- **DOS Prompt**: The start page opens the application selector with nothing running under it; closing the selector without a pick boots a DOS command prompt where users can execute DOS commands
+- **Application Library**: Demoscene productions and music trackers, picked from a selector of floppy disks that works with the mouse or the keyboard (arrow keys, Home, End, Space, Enter, Escape; see Basic Usage under Usage). It lists the demos first, each disk shows the size of its archive, and the productions that flash come with a warning
+- **A Page per Production**: Each application opens at a page of its own, such as https://doskit.net/secondreality, with its own title, description and share card; old `?app=` links still work (see Deep Linking under Usage)
+- **One Press to Play**: An application opened from its link, or after a long download, waits on a Play screen, whose click starts it with sound; otherwise one picked in the selector starts at once. DosKit presses the start keys of the seven productions that wait at a setup screen, and shows an end card when a program returns to DOS
+- **About Panel**: The header's About button shows the current production's page text: what it is, where it was shown, its credits, its authors' terms, and how it runs here compared with real hardware
+- **Tracker Files**: What Impulse Tracker and Scream Tracker 3 save is kept in the browser and comes back at their next start; their Files button downloads it, brings in modules, or starts over
+- **Platforms**: Desktop browsers on Windows, macOS and Linux, and phones and tablets on iOS and Android, where the on-screen keyboard stands in for a real one
 - **Progressive Web App (PWA)**: Can be installed as a native app, with offline support
-- **Deep Linking**: Load specific applications directly via URL parameters (e.g., `?app=secondreality`)
 - **Offline Functionality**: After the first visit the app and its DOS prompt work offline; each application works offline once it has been opened online
 - **WebAssembly Performance**: js-dos v8.3.20 runs DOSBox as WebAssembly in a worker thread and renders with WebGL
 - **Full Keyboard Support**: All standard DOS keyboard inputs including function keys and special characters
-- **Audio Support**: Sound Blaster, Gravis UltraSound and AdLib emulation with proper audio output
+- **Sound**: Sound Blaster, Gravis UltraSound and AdLib emulation, in mono: js-dos mixes the two channels into one
 - **Responsive Design**: Optimized layouts for desktop, tablet, and mobile devices
 - **Fullscreen**: The fullscreen button in the js-dos sidebar makes the player fill the browser window, over DosKit's header and footer; js-dos then narrows its sidebar to a strip on the left, which brings back the button when clicked
 - **Touch Controls**: On-screen keyboard in the js-dos sidebar; phones and tablets get DosKit's compact layout first, with js-dos's full keyboard and function-key layout behind its ⎘ key
 - **Type-Safe Development**: Full TypeScript support with comprehensive type definitions
-- **Service Worker Caching**: js-dos's player and emulator files, and the application archives, stay cached across deploys until js-dos or the archives change, and so do the bundles a deploy leaves unchanged
+- **Service Worker Caching**: js-dos's player and emulator files stay cached across deploys until js-dos changes, each application archive until that archive changes, and the bundles a deploy leaves unchanged
 
 ### PWA Features
 
@@ -80,7 +83,7 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 #### React + Vite
 - Fast Development: Hot Module Replacement (HMR) for instant feedback
 - Modern Build: Optimized production builds with code splitting
-- Developer Experience: Excellent TypeScript integration and tooling
+- Developer Experience: TypeScript throughout, with strict type checking
 - Rolldown: Vite 8 bundles with Rolldown, a Rust-based bundler that took over from Rollup in Vite; vite.config.ts configures it through build.rolldownOptions
 
 #### js-dos v8.3.20
@@ -104,7 +107,8 @@ StrictMode (main.tsx)
 └── ErrorBoundary
     └── App
         ├── OfflineIndicator (offline and back-online notices, install prompt)
-        ├── Header (current application, Change Application button)
+        ├── Header (current application, About and Change Application buttons)
+        ├── AppInfo (the About panel, a modal dialog)
         ├── ErrorBoundary
         │   └── DosPlayerWithApps
         │       ├── DemoSelector (modal dialog)
@@ -112,14 +116,19 @@ StrictMode (main.tsx)
         │       │   └── App selection UI
         │       ├── Loading overlay (Cancel)
         │       ├── Error overlay (Try Again, Choose Another Application)
+        │       ├── Play screen (Play, or Start for a tracker)
+        │       ├── Start hint (the keys to press, when DosKit's start gives up)
+        │       ├── Files button and TrackerFiles (a running tracker's files)
+        │       ├── Leave dialog (picking another application while a tracker runs)
+        │       ├── End card (Play again, Choose another, Back to DOS)
         │       └── DosPlayer (useDosEmulator hook + DosPlayerUI)
         │           └── js-dos emulator instance
-        └── Footer (Loading/Ready/Error and Online/Offline badges, Licenses link)
+        └── Footer (Idle/Loading/Ready/Error and Online/Offline badges, Licenses link)
 ```
 
 UpdateNotification is not part of this tree: src/utils/updatePrompt.ts mounts it in a React root of its own when a new service worker is waiting, or another tab has let one take over.
 
-DosPlayerWithApps reports its status to App, which shows it in the footer's badge: Loading while an application the URL asks for (a deep link, Back and Forward, or Try Again) downloads and while an emulator starts (while the selector downloads an application, the badge keeps the status of the player still running behind it), Ready once js-dos reports the emulator ready, and Error while the load error or the player's start error shows, or once the ErrorBoundary around the player has caught an error. js-dos sends no event when its own download of the emulator's files fails after it has started, so the badge stays at Loading then, while js-dos shows the failure in its own panel. Screen readers announce the badges' changes (a status region).
+DosPlayerWithApps reports its status to App, which shows it in the footer's badge: Idle while nothing runs, under the selector the start page opens (or Choose Another Application and Cancel open) and behind a Play screen; Loading while an application the URL asks for (a deep link, Back and Forward, or Try Again) downloads, while a tracker's saved files are read, and while an emulator starts (while the selector downloads an application, the badge keeps the status it had: Idle, or that of the paused player behind it), Ready once js-dos reports the emulator ready, and Error while the load error or the player's start error shows, or once the ErrorBoundary around the player has caught an error. js-dos sends no event when its own download of the emulator's files fails after it has started, so the badge stays at Loading then, while js-dos shows the failure in its own panel. Screen readers announce the badges' changes (a status region).
 
 In development, StrictMode mounts every component twice at once, so each DosPlayer starts js-dos twice in its element: useDosEmulator stops the first start's player and ignores its events, and on a fresh page the adapter holds the second start back until emulators.js, which the first one loads, has run. Production builds mount each component once.
 
@@ -128,26 +137,29 @@ In development, StrictMode mounts every component twice at once, so each DosPlay
 1. **Application Loading**: User visits site → Service worker serves the page from the network, or from its cache when offline → Loads assets
 2. **Emulator Initialization**: DosPlayer component mounts → useDosEmulator starts js-dos with the merged options (DosKit's, then the settings saved from js-dos's settings panel, then the player's own) → js-dos loads the DOSBox backend from /emulators/ → DOSBox initializes with the DOSBox configuration
 3. **User Interaction**: User types commands → js-dos processes input → DOSBox executes → Screen updates
-4. **Deep Linking**: App id read from `?app=` or the path → URL rewritten to `/?app=<id>` → DosPlayerWithApps downloads the app's ZIP archive and DOSBox configuration → Emulator starts with app, without booting the default prompt first
-5. **Selecting an App**: User picks an app in DemoSelector → its archive downloads, with its progress in percent (or in megabytes when the response gives no size), cancellable, and fails if nothing arrives for 20 seconds → DosPlayerWithApps starts a new DosPlayer with the files, also for the app already running, which starts again → the URL becomes `/?app=<id>`, in a new history entry unless it already is (as when the running app is picked again)
+4. **Opening an App's Page**: App id read from the path (`/secondreality`), or from an old `?app=` link → URL rewritten in place to `/<id>` → DosPlayerWithApps downloads the app's ZIP archive and DOSBox configuration → the Play screen waits for a click, as the page has no fresh one to start sound with → Emulator starts with the app, without booting the default prompt first
+5. **Selecting an App**: User picks an app in DemoSelector → its archive downloads, with its progress in percent (or in megabytes when the response gives no size), cancellable, and fails if nothing arrives for 20 seconds → DosPlayerWithApps starts a new DosPlayer with the files, also for the app already running, which starts again; at once while the pick's click or key press is fresh (`navigator.userActivation.isActive`), and after the Play screen otherwise → the URL becomes `/<id>`, in a new history entry unless it already is (as when the running app is picked again)
+6. **Start Keys**: For a production that waits at a setup screen, DosKit waits for that screen (the fingerprint of its frame, a line DOS prints, or a DOSBox log line followed by a screen at rest), sends its keys one at a time through `ci.sendKeyEvent()`, and checks that the screen went on (a screen not seen before, a mode change, or sound); a lone key is sent up to 3 times, and otherwise a hint says which keys to press
+7. **End**: Each app's autoexec ends with `echo <Name> has ended.`; when that line reaches the console output, DosKit leaves js-dos's fullscreen, if the player is in it, and shows the end card
 
 ### State Management
 
-- React hooks (useState, useEffect, useCallback) for component state, held in App and DosPlayerWithApps and passed down as props; there is no context or global store
+- React hooks (useState, useEffect, useCallback, useReducer) for component state, held in App and DosPlayerWithApps and passed down as props; there is no context or global store. DosPlayerWithApps keeps what the player runs in one reducer (src/components/playerSession.ts): nothing, a requested app loading or failed, a tracker's saved files being read, the Play screen, or a running session
 - Local storage for the install prompt's dismissals, and for reading the settings js-dos saves from its settings panel (`jsdos.8.*`), through src/utils/storage.ts, which never throws when storage is blocked or full
-- URL parameters for deep linking state
+- IndexedDB for the files Impulse Tracker and Scream Tracker 3 save (src/utils/savedFiles.ts)
+- The URL's path for the app it shows, `/<id>`
 
 ### Service Worker
 
 `public/sw.js` is registered in production builds only:
 
 - **Install**: precaches the app shell (/, which serves index.html, the manifest, logo and favicon), every JS and CSS bundle, including the lazily loaded app configs, and js-dos: its player (js-dos.js, js-dos.css) and the DOSBox backend (wdosbox, wlibzip and emulators.js). A bundle that an earlier deploy's cache holds under the same name is copied from there instead of downloaded, and only the js-dos files missing from the cache of their version are downloaded
-- **Pages**: network first with a 5-second timeout; when the network fails or times out, every URL gets the index.html install stored, so deep links open offline too. Pages fetched online are not stored
+- **Pages**: network first with a 5-second timeout; when the network fails or times out, every URL gets the index.html install stored, so an application's page opens offline too. Pages fetched online are not stored
 - **Bundles** (`/assets/`): cache first; a bundle's name changes with its content, so a cached copy never goes stale
 - **js-dos's files** (`/js-dos.js`, `/js-dos.css` and `/emulators/`): cache first, from a cache named after the js-dos version, which deploys keep, and never refreshed, so a page gets the player and the emulator files of the js-dos its worker installed until a worker with another js-dos version takes over, after which its next player can get that version's emulator files until it reloads; DOSBox-X is not precached and is stored on first use
-- **Application archives** (`/demos/*.zip`): cache first, from a cache named after a hash of the archives, which deploys keep while the archives stay the same; each is stored on first use
+- **Application archives** (`/demos/*.zip`): cache first, from one cache that deploys keep, each archive under a version of its own, the first 12 hex digits of the SHA-256 of its bytes (`/demos/<id>.zip?v=<version>`); each is stored on first use. Activation drops only the archives a deploy changed or removed, and keeps the unchanged ones an older worker stored in its `doskit-demos-<hash>` cache
 - **Other assets** (the manifest, the logo and icons): stale-while-revalidate, in a cache of at most 100 entries that trims the least recently used, never the precached files
-- **Updates**: a build that changes a file the site serves, or the worker, installs as a new worker, which waits until the user accepts the update prompt or every tab of the app has closed. The worker's cache version is a hash of the built site, so a build that changes neither, such as one after a change to the README alone, writes the same worker and offers no update
+- **Updates**: a build that changes a file the site serves, or the worker, installs as a new worker, which waits until the user accepts the update prompt or every tab of the app has closed. The worker's cache version is a hash of the built site, so a build that changes neither, such as one after a change to the README alone, writes the same worker and offers no update. The application pages and sitemap.xml are left out of that hash, as the worker never stores them
 
 ### Error Handling
 
@@ -155,13 +167,14 @@ In development, StrictMode mounts every component twice at once, so each DosPlay
 - **Global handler** (src/utils/globalErrorHandler.ts): reports uncaught errors and unhandled promise rejections to the error tracker, whose report is the one line logged for each (the browser still reports the error itself), and keeps known harmless ones out of the console: js-dos's failed keyboard lock calls (it asks for a lock at every start and leaves the promise unhandled), keyboard lock requests that a newer one superseded (two players starting milliseconds apart), ResizeObserver loop notices and browser extension errors
 - **Error tracking** (src/utils/errorTracking.ts): a console tracker; no remote service is set up
 - **Downloads**: the request for an application archive retries network failures and 408, 429, 500, 502, 503 and 504 responses up to three times with exponential backoff, but a network failure while the browser reports being offline fails at once, and so does one while the archive itself arrives. A download fails as a timeout when no data arrives for 20 seconds, counted from the request, from each retry, from the response and from each chunk of the archive, so one that keeps receiving data has no time limit; and a response that is not a ZIP archive is refused (Vite's dev and preview servers answer a missing archive with index.html). A download the user cancels, or a newer navigation supersedes, is not reported as an error
-- **Messages**: the selector and the error box of an application the URL asks for (a deep link, or Back and Forward) explain a failed load with the same messages (cannot connect, not available offline yet, file not found, too many requests, server unavailable, took too long, unable to load the application archive), with the technical message under a collapsed Details line; an `?app=` value that names no app opens the selector with a notice above the disks that the application was not found; the loading overlay's Cancel stops the download and does what Choose Another Application does; the error box's Try Again, which has the keyboard focus, downloads the application again, and its Choose Another Application opens the selector over the DOS prompt; and the player shows why, with a Reload Page button, when js-dos cannot start, such as when js-dos.js did not load, or emulators.js, which js-dos loads when the first player starts, failed to download or did not set up the emulator. The next player to start, such as one for an application picked in the selector, downloads emulators.js again
+- **Messages**: the selector and the error box of an application the URL asks for (a deep link, or Back and Forward) explain a failed load with the same messages (cannot connect, not available offline yet, file not found, too many requests, server unavailable, took too long, unable to load the application archive), with the technical message under a collapsed Details line; an `?app=` value that names no app opens the selector with a notice above the disks that the application was not found; the loading overlay's Cancel stops the download and does what Choose Another Application does; the error box's Try Again, which has the keyboard focus, downloads the application again, and its Choose Another Application opens the selector with nothing running under it, which boots the DOS prompt if it is closed without a pick; and the player shows why, with a Reload Page button, when js-dos cannot start, such as when js-dos.js did not load, or emulators.js, which js-dos loads when the first player starts, failed to download or did not set up the emulator. The next player to start, such as one for an application picked in the selector, downloads emulators.js again
 
 ## Project Structure
 
 ```
 doskit/
 ├── .github/workflows/         # CI, deploy and release workflows
+├── cards-src/                 # A frame of each application running, for its share card
 ├── docs/                      # Documentation
 │   ├── ARCHITECTURE.md        # Architecture overview
 │   ├── ERROR-HANDLING.md      # Error handling guide
@@ -170,7 +183,15 @@ doskit/
 │   ├── SEO-AND-METADATA.md    # SEO, social and discovery files
 │   ├── STYLE_GUIDE.md         # Code style guide
 │   └── js-dos-llm-reference.md # Comprehensive js-dos API reference
+├── e2e/                       # Browser tests (Playwright), against the production build
+│   ├── play.spec.ts           # Each production from its link, with one click on Play
+│   ├── pages.spec.ts          # The application pages, their cards, the sitemap and old links
+│   ├── trackers.spec.ts       # A tracker's files: saved, reloaded, downloaded, brought in
+│   ├── hook.js                # Watches the emulator through js-dos's API
+│   ├── server.mjs             # Serves dist/ as GitHub Pages does
+│   └── tools/                 # Measures setup screens' fingerprints, captures frames for the cards
 ├── public/                    # Static assets, copied into the build as they are
+│   ├── cards/                 # Each application's share card (npm run generate-app-cards, committed)
 │   ├── demos/                 # ZIP archives of the bundled applications
 │   ├── emulators/             # js-dos emulator files (copied by scripts/copy-js-dos.js, not committed)
 │   ├── icons/                 # PWA icons
@@ -188,7 +209,6 @@ doskit/
 │   ├── social-preview.svg     # Source of og-image.png
 │   ├── github-social.png      # GitHub social preview
 │   ├── github-social-preview.svg # Source of github-social.png
-│   ├── sitemap.xml            # SEO sitemap
 │   ├── robots.txt             # Crawler rules
 │   ├── humans.txt             # Team credits
 │   ├── llms.txt               # LLM discovery (concise), in the llms.txt proposal's format
@@ -198,28 +218,36 @@ doskit/
 │   ├── copy-js-dos.js         # Copies js-dos into public/ before dev and build
 │   ├── inject-sw-version.js   # Stamps the built service worker
 │   ├── check-built-css.js     # CI check that the built CSS works in the oldest supported browsers
+│   ├── app-pages.ts           # A page per application, and the sitemap (the build's appPages plugin)
+│   ├── generate-app-lists.js  # The application lists in README.md and this file
+│   ├── generate-app-cards.js  # Share cards from cards-src/ (run by hand)
 │   ├── generate-icons.js      # Icon generation (run by hand)
 │   ├── generate-social-images.js # Social media image generation (run by hand)
 │   └── help.js                # CLI help
 ├── src/
 │   ├── adapters/              # Emulator adapter (js-dos)
+│   ├── apps/                  # One data file per application (<id>.json) and its page text (<id>.page.json)
 │   ├── components/            # React components
+│   │   ├── AppInfo.tsx        # The About panel
 │   │   ├── DosPlayer.tsx      # Main DOS emulator component
 │   │   ├── DosPlayerUI.tsx    # Its loading, error and emulator markup
 │   │   ├── DosPlayer.css      # Component styles
-│   │   ├── DosPlayerWithApps.tsx # Wrapper that loads applications
+│   │   ├── DosPlayerWithApps.tsx # Loads applications: the Play screen, start keys, end card and tracker files
+│   │   ├── playerSession.ts   # What the player runs, as one reducer
+│   │   ├── TrackerFiles.tsx   # A tracker's Files panel
 │   │   ├── DemoSelector.tsx   # Application selector UI
 │   │   ├── ErrorBoundary.tsx  # Error handling boundary
 │   │   ├── OfflineIndicator.tsx # Network status and install prompt
 │   │   └── UpdateNotification.tsx # PWA update notifications
 │   ├── config/                # Configuration files
-│   │   ├── apps.config.ts     # Registry of the bundled applications
+│   │   ├── apps.config.ts     # Registry of the bundled applications, built from src/apps
+│   │   ├── appPages.ts        # Loads an application's page text for the About panel
 │   │   ├── dosbox.conf.ts     # DOSBox configuration of the DOS prompt
 │   │   └── jsdos.config.ts    # js-dos settings
 │   ├── constants/             # PWA and UI constants
 │   ├── dos-apps/              # One config module per application
 │   │   ├── README.md          # How to add an application
-│   │   └── <id>.config.ts     # An application's archive URL and DOSBox config
+│   │   └── <id>.config.ts     # An application's DOSBox config, exported as dosboxConf
 │   ├── hooks/                 # Custom React hooks
 │   │   └── useDosEmulator.ts  # Starts and stops js-dos
 │   ├── integration/           # Integration tests
@@ -232,7 +260,17 @@ doskit/
 │   │   ├── dosboxConfigBuilder.ts # DOSBox config builder and presets
 │   │   ├── fetchWithRetry.ts  # Retries with exponential backoff
 │   │   ├── keysAroundDos.ts   # Keeps the keys of DosKit's own controls away from DOS
-│   │   ├── urlRouting.ts      # URL parameter handling
+│   │   ├── startRecipe.ts     # Presses a production's start keys once its setup screen is up
+│   │   ├── keyQueue.ts        # Sends keys to DOS one at a time, through ci.sendKeyEvent()
+│   │   ├── dosKeys.ts         # js-dos's key codes, by the names the data files use
+│   │   ├── frameHash.ts       # A frame's fingerprint
+│   │   ├── lineFeed.ts        # What DOS prints, for every listener
+│   │   ├── endMarker.ts       # The line each application's autoexec prints when its program ends
+│   │   ├── persistQueue.ts    # Asks js-dos for a tracker's saved files, one call at a time
+│   │   ├── savedFiles.ts      # Keeps those files in IndexedDB
+│   │   ├── dosNames.ts        # DOS file names for the modules brought into a tracker
+│   │   ├── formatSize.ts      # The archive sizes on the disks
+│   │   ├── urlRouting.ts      # Reads application links, and writes each application's URL
 │   │   ├── logger.ts          # Logging utility
 │   │   ├── errorTracking.ts   # Error tracking
 │   │   ├── globalErrorHandler.ts # Global error handler
@@ -246,8 +284,9 @@ doskit/
 │   └── index.css              # Global styles
 ├── .gitignore
 ├── eslint.config.js           # ESLint configuration
-├── index.html                 # HTML entry point (the build also writes it as 404.html)
+├── index.html                 # HTML entry point (the build also writes it as 404.html, and as a page per application)
 ├── package.json               # Dependencies and scripts
+├── playwright.config.ts       # Browser tests (npm run test:e2e)
 ├── tsconfig.json              # TypeScript configuration
 ├── tsconfig.app.json          # App TypeScript config
 ├── tsconfig.node.json         # Node TypeScript config (vite and vitest configs)
@@ -291,7 +330,7 @@ npm run dev
 
 4. Open your browser and navigate to `http://localhost:5173`
 
-The DOS emulator will automatically load and present an interactive DOS prompt, with the application selector open over it!
+The application selector opens, with nothing running under it: pick an application, or close the selector for a DOS prompt.
 
 The service worker is only registered in production builds: to try offline behavior, run `npm run build` and `npm run preview`.
 
@@ -323,7 +362,7 @@ myapp.exe
 
 Customize the emulator behavior with js-dos options in `src/config/jsdos.config.ts`. DosKit's defaults: the DOSBox backend in a worker thread, WebGL rendering at a 4:3 aspect ratio, soft fullscreen, volume 0.7, autoStart with no countdown, js-dos cloud features off (`noCloud`), and emulator files from `/emulators/`.
 
-The volume, mouse sensitivity, aspect ratio, image rendering, theme and on-screen controls' scale chosen in js-dos's settings panel win over DosKit's: js-dos saves them in localStorage (`jsdos.8.*`), and DosKit passes the saved values at every start, so they last through app switches and reloads. js-dos saves DosKit's own values the same way at the first start, so a change to those defaults reaches only browsers that have not run DosKit before. The panel's Mirror controls has no option to pass, so a new player goes back to the value js-dos read when the page loaded.
+The volume, mouse sensitivity, aspect ratio, image rendering, theme and on-screen controls' scale chosen in js-dos's settings panel win over DosKit's: js-dos saves them in localStorage (`jsdos.8.*`), and DosKit passes the saved values at every start, so they last through app switches and reloads. js-dos saves DosKit's own values the same way at the first start, so a change to those defaults reaches only browsers that have not run DosKit before. The panel's Mirror controls has no option to pass, so a new player goes back to the value js-dos read when the page loaded. An application's data file can give js-dos options of its own (`jsdos`), which win over both: Impulse Tracker starts at the `AsIs` aspect, where its own mouse pointer lines up with the real one, whatever aspect ratio the panel saved.
 
 Available options:
 - `theme`: A js-dos theme, such as 'dark' (DosKit's default) or 'light'
@@ -349,56 +388,76 @@ All three label their keys as js-dos does (␛ Esc, ⌫ Backspace, ↵ Enter, �
 
 ### Basic Usage
 
-Visit https://doskit.net/ to use the emulator directly in your browser. DosKit boots to an interactive DOS prompt where you can execute DOS commands, and opens the application selector over it: pick an application to run it, or close the selector to use the prompt.
+Visit https://doskit.net/ to use the emulator directly in your browser. DosKit opens the application selector, with nothing running under it and the footer saying Idle: pick an application to run it, or close the selector for a DOS prompt, where you can execute DOS commands.
 
-In the selector, click a disk to see its details and Load Application, or double-click it to load it at once. With the keyboard, Tab reaches the disks as a single stop; the arrow keys, Home and End move between them and select them (during a download they only move the focus), Space selects the focused disk, Enter loads it, and Escape cancels a download, or else closes the selector. Choosing another disk while one downloads, with Space or a click, cancels that download, and loading another, with Enter or a double-click, replaces it. Tab and Shift+Tab stay inside the selector. Picking the application that is running starts it again.
+In the selector, click a disk to see its details and Load Application, or double-click it to load it at once. Each disk shows the size of its application's archive, and the details of the productions that flash (Second Reality, Panic and Crystal Dream 2) warn of it. Opened over a running application, from the header's Change Application, the selector pauses it, sound and all, until it closes; closed without a pick, the application goes on. With the keyboard, Tab reaches the disks as a single stop; the arrow keys, Home and End move between them and select them (during a download they only move the focus), Space selects the focused disk, Enter loads it, and Escape cancels a download, or else closes the selector. Choosing another disk while one downloads, with Space or a click, cancels that download, and loading another, with Enter or a double-click, replaces it. Tab and Shift+Tab stay inside the selector. Picking the application that is running starts it again.
 
-Keys pressed on DosKit's own controls (the selector, the header's button, the notices, the update prompt and the footer's links) stay with those controls and never reach the running program. Once the focus is on the page, such as after a pick or a click on the DOS screen, every key goes to DOS, Tab included: to use DosKit's controls again, click one. A key's release goes where its press went, whatever has the focus when the key comes up.
+Keys pressed on DosKit's own controls (the selector, the header's buttons, the notices, the update prompt and the footer's links) stay with those controls and never reach the running program. Once the focus is on the page, such as after a pick or a click on the DOS screen, every key goes to DOS, Tab included: to use DosKit's controls again, click one. A key's release goes where its press went, whatever has the focus when the key comes up, and the repeats of a key held down on one of DosKit's controls stay away from DOS once the focus has left it.
+
+### Starting a Production
+
+An application picked in the selector starts once it has downloaded, while the click or key press that picked it is fresh. One opened without a fresh click or key press, from its link, by Back or Forward, or after a longer download, waits on a Play screen: its name, author and year, its description, a warning if it flashes, and what its start will do, with a Play button (Start for the trackers). Browsers start sound only within a few seconds of a click or key press, so the click on Play starts the emulator, and its sound with it.
+
+Seven productions wait at a setup screen for a key: Second Reality, Unreal, Panic, Crystal Dream 2, Impulse Tracker, Scream Tracker 3 and the 3D Rotation Demo. DosKit sends their keys through js-dos's `ci.sendKeyEvent()`, one at a time from a queue, never `ci.simulateKeyPress()`, which stops js-dos's keyboard for the session when two calls come within 16 ms. It sends them once the setup screen is up, which it knows by the fingerprint of the frame, a line DOS prints, or a DOSBox log line followed by a screen at rest, and then checks that the screen went on: a screen not seen before, a mode change, or sound. A lone key is sent up to 3 times; when the keys still do not take, a bar over the player says which keys to press. Unreal's setup starts on No sound, and its keys pick SoundBlaster Pro at 20 kHz.
+
+Each application's autoexec ends with `echo <Name> has ended.`. When that line reaches the console output, DosKit leaves js-dos's fullscreen, if the player is in it, and shows "<Name> has ended." with Play again (the same files, in a new player), Choose another (the selector) and Back to DOS. A production that never returns to DOS shows no end card: the header's Change Application leaves it.
+
+While an application is current, the header's About button opens a panel with its page text from `src/apps/<id>.page.json`, loaded when the panel opens: what it is, where it was shown and how it placed, its credits, how it runs here compared with real hardware, its authors' terms, its pages elsewhere, and how rights holders can reach DosKit's owner.
 
 ### Bundled Applications
 
-`src/config/apps.config.ts` registers these, and each opens at its link:
+Each has a data file in `src/apps/`, and each opens at its own page:
 
-- Second Reality (Future Crew, 1993): https://doskit.net/?app=secondreality
-- Impulse Tracker (Jeffrey Lim, 1997): https://doskit.net/?app=impulsetracker
-- Starport BBS Intro II (Future Crew, 1993): https://doskit.net/?app=starportbbstro
-- Scream Tracker 3 (Future Crew, 1994): https://doskit.net/?app=screamtracker
-- Unreal (Future Crew, 1992): https://doskit.net/?app=unreal
-- Panic (Future Crew, 1993): https://doskit.net/?app=panic
-- Squid BBS Intro (cld & The Doctor, 1994): https://doskit.net/?app=squidbbstro
-- 3D Rotation Demo (Draeden of VLA, 1993): https://doskit.net/?app=3drotate
-- Starfield Effect (Draeden of VLA, 1993): https://doskit.net/?app=stars
-- Crystal Dream 2 (Triton, 1993): https://doskit.net/?app=crystaldream2
+<!-- apps:start -->
+- Second Reality (Future Crew, 1993), demo: https://doskit.net/secondreality
+- Unreal (Future Crew, 1992), demo: https://doskit.net/unreal
+- Panic (Future Crew, 1993), demo: https://doskit.net/panic
+- Crystal Dream 2 (Triton, 1993), demo: https://doskit.net/crystaldream2
+- StarPort BBS Intro II (Future Crew, 1993), intro: https://doskit.net/starportbbstro
+- Squid BBS Intro (cld & The Doctor, 1994), intro: https://doskit.net/squidbbstro
+- Impulse Tracker (Jeffrey Lim, 1997), tracker: https://doskit.net/impulsetracker
+- Scream Tracker 3 (Future Crew, 1994), tracker: https://doskit.net/screamtracker
+- 3D Rotation Demo (Draeden of VLA, 1993), effect: https://doskit.net/3drotate
+- Starfield Effect (Draeden of VLA, 1993), effect: https://doskit.net/stars
+<!-- apps:end -->
 
-While Impulse Tracker or Scream Tracker 3 runs, closing or reloading the page asks first. A song in progress lives only in the emulator's memory, as does any file saved inside an application, and is gone once another player starts or the page reloads; and on Windows, Linux and ChromeOS browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, so there Scream Tracker 3's Ctrl-W (save) would close the tab (macOS browsers use ⌘ for these, and Ctrl+W reaches DOS).
+### Tracker Files
+
+Impulse Tracker and Scream Tracker 3 keep what they save. DosKit asks js-dos for the files that differ from the tracker's archive (`ci.persist(true)`) 3 seconds after the last key that reached DOS, every 30 seconds, and when the tab is hidden or the page goes, keeps them in the browser's IndexedDB, and starts the tracker with them after its archive the next time. Where the browser cannot keep files, as in some private windows, the tracker starts without them, and its Files panel says so.
+
+The Files button at the top right of a running tracker opens "Your files": Download your files saves the ZIP as js-dos packed it, as `<id>-files.zip`; Bring in modules writes modules from the computer into `C:\` under DOS 8.3 names in capitals that differ from the names of the archive's files and the saved ones, and restarts the tracker to read them, and they are kept with its saved files from then on; Start over asks, then deletes the kept files and restarts the tracker as it came.
+
+Picking another application in the selector while a tracker runs asks "Leave <name>?" and keeps its files first; Back and Forward cannot ask. While a tracker runs, closing or reloading the page asks first: work not saved with the tracker's own save lives only in the emulator's memory, as does every file the other applications write, and is gone once another player starts or the page reloads; and on Windows, Linux and ChromeOS browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, so there Scream Tracker 3's Ctrl-W (save) would close the tab (macOS browsers use ⌘ for these, and Ctrl+W reaches DOS).
 
 ### Deep Linking
 
-DosKit supports loading specific applications directly via URL parameters:
+Each application has a page of its own, `/` and its id without hyphens. The build writes it as `<id>.html`, which GitHub Pages serves at `/<id>` with a 200, with the application's own title (`<Name> - DosKit`), description, canonical link, share card (`/cards/<id>.png`) and structured data, and its text for crawlers that run no scripts:
 
-- Load Second Reality: `https://doskit.net/?app=secondreality`
-- Load Impulse Tracker: `https://doskit.net/?app=impulsetracker`
+- Second Reality: `https://doskit.net/secondreality`
+- Impulse Tracker: `https://doskit.net/impulsetracker`
 
 Features:
-- Shareable Links: URLs automatically update when you select an app
+- Shareable Links: the URL becomes the application's page when you pick one, and a shared link shows the production's own card
 - Bookmarkable: Save direct links to your favorite DOS applications
-- Browser Navigation: Back and Forward load the application in the URL; the running one stops, sound and all, as soon as the next one starts downloading, and going back to the start URL returns to the DOS prompt with the selector open
-- Refresh-Safe: Page refreshes maintain the loaded application
+- Browser Navigation: Back and Forward load the application in the URL, which then waits on its Play screen; the running one stops, sound and all, as soon as the next one starts downloading, and going back to the start URL stops it and opens the selector with nothing running under it
+- Refresh-Safe: Page refreshes maintain the loaded application, which waits on its Play screen
 - Error Handling: an `?app=` value that names no app, an empty one included, opens the selector with a notice above the disks that the application was not found, and is removed from the address bar; the notice goes once the selector closes or an application loads. A path that names no app opens the start page
-- One URL Form: path-style links (`https://doskit.net/secondreality`) and other spellings (`?app=second-reality`) open the same app, and the address bar is rewritten to `/?app=secondreality`
-- Direct Start: a deep link downloads its application and starts it without booting the default prompt first; the Cancel button under "Loading application..." stops the download and opens the selector over the DOS prompt instead
+- One URL Form: old `?app=` links (`https://doskit.net/?app=secondreality`), other spellings (`?app=second-reality`) and `/<id>.html` open the same application, and the address bar is rewritten to `/secondreality` without a new history entry. A trailing slash or capitals (`/secondreality/`, `/SecondReality`) get GitHub Pages' 404.html, a copy of index.html, which opens the application and rewrites the URL the same way
+- Direct Start: a link downloads its application and starts it, after its Play screen, without booting the default prompt first; the Cancel button under "Loading application..." stops the download and opens the selector, with nothing running under it, instead
 
 ### Adding DOS Applications
 
-An application in the selector is three pieces, and `src/dos-apps/README.md` walks through each:
+An application in the selector is five pieces, and `src/dos-apps/README.md` walks through each:
 
 1. A ZIP archive of the program's files at `public/demos/<id>.zip`
-2. A config module, `src/dos-apps/<id>.config.ts`, with the archive's URL and the DOSBox configuration, built from a preset in `src/utils/dosboxConfigBuilder.ts`
-3. An entry in `availableApps` in `src/config/apps.config.ts`, which imports the config module lazily
+2. A config module, `src/dos-apps/<id>.config.ts`, with the DOSBox configuration, built from a preset in `src/utils/dosboxConfigBuilder.ts` and exported as `dosboxConf`; the registry imports it lazily
+3. A data file, `src/apps/<id>.json` (the fields of `AppData` in `src/types/dos-app.ts`): its place in the selector, kind, name, description, author, year and archive size, and where they apply its flashing warning, its start keys (`start`, with the signal its setup screen gives and a note for the Play screen) and the hint shown when they fail, `saveFiles` for a tracker, and js-dos options of its own. `src/config/apps.config.ts` builds the registry from these files with `import.meta.glob`
+4. A page file, `src/apps/<id>.page.json`: the text of its page and About panel (its description, about, released, credits, accuracy notes, terms, links and the share card's alt text)
+5. A share card, `public/cards/<id>.png` (the id without hyphens), drawn by `npm run generate-app-cards` from a frame in `cards-src/` and committed
 
-The guide also has the application recorded in more places: a row in the table of `public/demos/README.md`, and an entry there with what the ZIP holds, its size in bytes and MD5, and the archive's source, year, authors and terms; a line in this file's Bundled Applications list; ROADMAP.md's list of the applications and its three counts of them; and `docs/SCENERS.md`, for a program from the sceners organization.
+The guide also has the application recorded in more places: a row in the table of `public/demos/README.md`, and an entry there with what the ZIP holds, its size in bytes and MD5, and the archive's source, year, authors and terms; ROADMAP.md's list of the programs and its count of them; and `docs/SCENERS.md`, for a program from the sceners organization. The Bundled Applications list in this file, and the one in README.md, are written by `npm run generate-app-lists` from the data files, and a test fails while one is out of date.
 
-`npx vitest run src/config/apps.config.test.ts` checks every registered application: that its archive is a ZIP in `public/demos`, that its DOSBox configuration leaves out the settings the default backend ignores, and that its description and banner give no other release year than its registry entry. It also checks that every archive in `public/demos` belongs to an application and that `public/demos/README.md` records the archive's size and MD5 as they are. Only add programs you may redistribute.
+`npx vitest run src/config/apps.config.test.ts` checks every registered application: that its archive is a ZIP in `public/demos` of the size its data file gives, that its DOSBox configuration leaves out the settings the default backend ignores and ends with the autoexec, which the end marker follows, and that its description and banner give no other release year than its data file. It also checks that every archive in `public/demos` belongs to an application and that `public/demos/README.md` records the archive's size and MD5 as they are. `scripts/app-pages.test.ts` checks that each application has its page file and a 1200x630 card, and the build fails when an application's id would take a name the site already uses. Only add programs you may redistribute.
 
 ### Programmatic Control
 
@@ -466,7 +525,8 @@ Methods:
 - `fsReadFile(file: string): Promise<Uint8Array>` - Read file from DOS filesystem
 - `fsWriteFile(file: string, contents: ReadableStream<Uint8Array> | Uint8Array): Promise<void>` - Write file to DOS filesystem
 - `persist(onlyChanges?: boolean): Promise<Uint8Array | PersistedSockdrives | null>` - Pack the DOS filesystem's changes (or, with `false`, all of it) into a bundle, or null when nothing is packed. With `onlyChanges`, the default, a bundle that mounts sockdrives resolves to `{ drives: { url, persist }[] }` instead, the changes of each drive
-- `simulateKeyPress(...keyCodes: number[]): void` - Simulate key presses, in js-dos key codes rather than the browser's: Enter is 257 and Esc 256, while letters (uppercase) and digits keep their ASCII codes
+- `simulateKeyPress(...keyCodes: number[]): void` - Simulate key presses, in js-dos key codes rather than the browser's: Enter is 257 and Esc 256, while letters (uppercase) and digits keep their ASCII codes. Two calls, or one and any other key, within 16 ms stop js-dos's keyboard for the rest of the session
+- `sendKeyEvent(keyCode: number, pressed: boolean): void` - Press or release one key, in the same codes; DosKit's start keys go through it, one key at a time (src/utils/keyQueue.ts)
 - `exit(): Promise<void>` - Exit emulator
 
 ## Development
@@ -505,11 +565,20 @@ npm run test:ui
 # Run tests with coverage
 npm run test:coverage
 
+# Run the browser tests in Chromium, against the production build (run npm run build first)
+npm run test:e2e
+
 # Regenerate the PWA icons (not part of the build)
 npm run generate-icons
 
 # Regenerate social media images after editing their SVGs (not part of the build)
 npm run generate-social-images
+
+# Regenerate the share cards from cards-src/ (not part of the build)
+npm run generate-app-cards
+
+# Write the application lists in README.md and this file from the data files in src/apps
+npm run generate-app-lists
 
 # Generate API documentation (into docs/api)
 npm run docs
@@ -523,12 +592,14 @@ npm run docs:watch
 1. Start the dev server: `npm run dev`
 2. Make changes: Edit files in `src/`
 3. See changes instantly: Vite HMR updates the browser automatically
-4. Test: Interact with the DOS prompt to verify functionality
+4. Test: Run `npm test`, interact with the DOS prompt to verify functionality, and after a build run `npm run test:e2e`
 5. Build: Run `npm run build` to create production bundle
 
 ### Testing
 
-DosKit uses Vitest for unit testing, with jsdom and React Testing Library. Tests sit next to the code they cover, `src/integration/` holds integration tests that render the whole app with js-dos faked, and `scripts/*.test.js` test the build scripts, run the service worker in a sandbox, and check 404.html, robots.txt, the licenses page, the icons, index.html's metadata and the ESLint configuration. `tsc -b` type-checks the tests too (tsconfig.test.json).
+DosKit uses Vitest for unit testing, with jsdom and React Testing Library. Tests sit next to the code they cover, `src/integration/` holds integration tests that render the whole app with js-dos faked, and `scripts/*.test.{js,ts}` test the build scripts and the application pages, run the service worker in a sandbox, and check 404.html, robots.txt, the licenses page, the icons, the generated application lists, index.html's metadata and the ESLint configuration. `tsc -b` type-checks the tests too (tsconfig.test.json). Coverage leaves out src/utils/savedFiles.ts, which uses IndexedDB, which jsdom lacks.
+
+The browser tests in `e2e/` run with Playwright in Chromium against the production build, which `e2e/server.mjs` serves the way GitHub Pages does: `e2e/play.spec.ts` opens each production at its page and starts it with one click on Play, and checks that its start keys went and a new screen followed, that its picture moves, and that the ones with music make sound; `e2e/pages.spec.ts` checks each page's status, title, canonical link and card, the sitemap and old links; `e2e/trackers.spec.ts` saves a song in Scream Tracker 3, reloads, downloads it and brings in a module. `e2e/hook.js` watches the emulator through js-dos's API and logs what it sees to the console. Playwright's locators, `page.evaluate()` and a recording trace give the page user activation, after which DosKit starts a production without its Play screen, so the specs query nothing before the click and run with traces off. CI runs them in its Browser Tests job.
 
 ```bash
 # Run tests once
@@ -542,6 +613,9 @@ npm run test:ui
 
 # Generate coverage report
 npm run test:coverage
+
+# Run the browser tests (after npm run build; npx playwright install chromium once)
+npm run test:e2e
 ```
 
 ### Code Style
@@ -566,7 +640,7 @@ DosKit is configured for automatic deployment to GitHub Pages with custom domain
 3. Monitor deployment: Check the Actions tab
 4. Visit your site: `https://doskit.net/`
 
-The site automatically rebuilds and deploys on every push to `main`, once the CI jobs pass: lint, format check, type check, tests, the build with a check of its CSS against the oldest supported browsers (scripts/check-built-css.js), and an audit that fails on a high or critical advisory in a production dependency (`npm audit --omit=dev --audit-level=high`; the audit of all dependencies only reports).
+The site automatically rebuilds and deploys on every push to `main`, once the CI jobs pass: lint, format check, type check, tests, the build with a check of its CSS against the oldest supported browsers (scripts/check-built-css.js), the browser tests against a build, and an audit that fails on a high or critical advisory in a production dependency (`npm audit --omit=dev --audit-level=high`; the audit of all dependencies only reports).
 
 ### Releases
 
@@ -584,10 +658,11 @@ The build process (`npm run build`) includes:
 1. Copying the js-dos runtime from node_modules into public/ (scripts/copy-js-dos.js, run as prebuild)
 2. TypeScript type checking of the app, the config files and the tests (`tsc -b`)
 3. Vite production build with code splitting (each application's config module is a chunk of its own, and so is React), asset optimization and minification, for the oldest supported browsers (build.target in vite.config.ts); the licenses of the packages it bundles go to licenses/third-party-licenses.txt
-4. 404.html, written as a copy of index.html, so that GitHub Pages boots the app for path-style deep links such as /secondreality
-5. Service worker version injection (scripts/inject-sw-version.js): a cache version that is a hash of the built site and the worker, so it changes only when they do; the js-dos version and a hash of the application archives, which name the caches deploys keep; and the list of bundles to precache. The build fails if the worker would precache a file that is not in dist/.
+4. A page per application, `<id>.html` at the root of dist/ (scripts/app-pages.ts, through the appPages plugin in vite.config.ts): index.html with the application's own title, description, canonical URL, share card and structured data, and its text in #root for crawlers that run no scripts. GitHub Pages serves it at /<id> with a 200. The same plugin writes sitemap.xml, the start page and every application page, and fails the build when an application's id would take a name the site already uses
+5. 404.html, written as a copy of index.html, so that GitHub Pages boots the app for the paths no page answers, such as /secondreality/ or /SecondReality, which the app rewrites to /secondreality
+6. Service worker version injection (scripts/inject-sw-version.js): a cache version that is a hash of the built site, but for the application pages and the sitemap, which the worker never stores, and of the worker, so it changes only when they do; the js-dos version, which names the emulator cache deploys keep; each application archive's version, a hash of its bytes, under which the demo cache keeps it; and the list of bundles to precache. The build fails if the worker would precache a file that is not in dist/.
 
-The social media images are not part of the build: after editing their SVG sources, run `npm run generate-social-images` and commit the PNGs.
+The social media images are not part of the build: after editing their SVG sources, run `npm run generate-social-images` and commit the PNGs. Neither are the share cards: `npm run generate-app-cards` draws them from the frames in cards-src/, and they are committed too.
 
 ## Browser Compatibility
 
@@ -665,6 +740,7 @@ DosKit's fullscreen is js-dos's soft fullscreen, which makes the player fill the
 - Check console for errors
 
 #### Audio Not Playing
+- An application opened from its link waits on its Play screen: the click on Play starts it, with its sound
 - Audio automatically unmutes when ready
 - Check browser audio not muted
 - Verify volume setting in options
@@ -674,7 +750,7 @@ DosKit's fullscreen is js-dos's soft fullscreen, which makes the player fill the
 #### Application Fails to Load
 - Check internet connection: while the browser reports being online, downloads retry network failures up to three times, though not one while the archive itself arrives, and a download fails when no data arrives for 20 seconds ("The request took too long to complete"); while it reports being offline, they fail at once
 - Offline, only applications that have been opened online before can load; any other shows "This application isn't available offline yet", and opening it once online stores it
-- After a failed deep link or Back and Forward, Try Again downloads the application again (offline, for one not stored yet, it fails again at once), and Choose Another Application opens the selector over the DOS prompt
+- After a failed deep link or Back and Forward, Try Again downloads the application again (offline, for one not stored yet, it fails again at once), and Choose Another Application opens the selector, with nothing running under it
 
 ### Debug Mode
 
@@ -750,5 +826,5 @@ DOS, emulator, DOSBox, WebAssembly, WASM, js-dos, demoscene, music trackers, cro
 
 ---
 
-Last updated: 2026-11-08
+Last updated: 2026-11-11
 

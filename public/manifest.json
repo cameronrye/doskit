@@ -1,14 +1,14 @@
 {
-  "name": "DosKit - Cross-Platform DOS Emulator",
+  "name": "DosKit",
   "short_name": "DosKit",
-  "description": "A robust, cross-platform DOS emulator powered by js-dos WebAssembly technology. Run classic DOS applications and demos directly in your browser.",
+  "description": "DOS demoscene classics and the trackers behind them, playable in your browser. Second Reality, Unreal, Panic and Crystal Dream 2, and Impulse Tracker and Scream Tracker 3, run from their original files.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "theme_color": "#667eea",
   "background_color": "#1a1a1a",
-  "categories": ["entertainment", "utilities"],
+  "categories": ["entertainment", "music"],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",

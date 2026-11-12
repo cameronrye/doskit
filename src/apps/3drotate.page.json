@@ -1,0 +1,16 @@
+{
+  "description": "The 3D Rotation Demo, the example program of Draeden's 1993 tutorial on 3D rotations for VLA, running in your browser.",
+  "about": [
+    "The example program of “Intro To 3d Rotations”, an assembly tutorial Draeden wrote for VLA in 1993, from Grumpy's source pack. F1 to F6 and the 1 and 2 keys change its spin, F7 and F8 its distance."
+  ],
+  "released": "The tutorial is dated 22 February 1993.",
+  "terms": "None found: the tutorial, its source and VLA.NFO state none. Rights holders can reach DosKit's owner below.",
+  "accuracy": ["It has no sound."],
+  "links": [
+    {
+      "label": "Grumpy's source pack",
+      "url": "https://github.com/sceners/grumpys-source-pack-collection"
+    }
+  ],
+  "imageAlt": "The 3D Rotation Demo's red cube of dots, running in DosKit"
+}

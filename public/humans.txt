@@ -13,7 +13,7 @@
 # THANKS
 
     js-dos by caiiiycuk
-    For the amazing WebAssembly DOS emulator
+    For the WebAssembly DOS emulator DosKit runs on
     GitHub: github.com/caiiiycuk/js-dos
 
     DOSBox Team
@@ -21,7 +21,7 @@
     Website: dosbox.com
 
     React Team
-    For the excellent UI framework
+    For the UI framework
     Website: react.dev
 
     Vite Team

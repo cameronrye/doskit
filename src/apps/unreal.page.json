@@ -1,0 +1,21 @@
+{
+  "description": "Unreal by Future Crew, the winner of the PC demo competition at Assembly '92, running from its original files in your browser.",
+  "about": [
+    "Unreal is Future Crew's demo for MS-DOS, released in August 1992 after it won the PC demo competition at Assembly '92.",
+    "This is the 1992 release, for the Sound Blaster and Sound Blaster Pro. Version 1.1, for the Gravis UltraSound, followed in December 1993."
+  ],
+  "released": "Assembly '92: first in the PC demo competition. Released on 6 August 1992.",
+  "terms": "Its readme gives only the copyright. Future Crew's information files make all their demos freeware: “you can copy and distribute them freely as long as you make no modifications to them.”",
+  "accuracy": [
+    "Its setup starts on No sound: DosKit picks SoundBlaster Pro at 20 kHz.",
+    "Its first nine minutes follow a capture made on a real 386DX-40; its last section ends about 50 seconds sooner.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=1274"
+    }
+  ],
+  "imageAlt": "Unreal's title, running in DosKit"
+}

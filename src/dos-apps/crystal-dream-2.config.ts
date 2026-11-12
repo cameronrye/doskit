@@ -11,7 +11,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
  * Crystal Dream 2 by Triton (hosted locally)
- * A legendary 1993 demo that won 1st place at The Computer Crossroads 1993
+ * Triton's demo that won the PC demo competition at The Computer Crossroads 1993
  *
  * Source: https://files.scene.org/get/demos/groups/triton/cd2-trn.zip
  * License: none found (see public/demos/README.md)
@@ -36,7 +36,8 @@ export const crystalDream2ZipUrl = '/demos/crystal-dream-2.zip';
  *   at a fixed 30000 cycles the demo stops with "System overloaded!"
  * - Gravis UltraSound, the setup's first choice: without one, DOSBox sets no ULTRASND and
  *   that choice ends at the DOS prompt
- * - Sound Blaster 16 for the setup's second choice
+ * - Sound Blaster 16 for the setup's second choice, which does not work here: it asks for a
+ *   mixing rate and then crashes. DosKit starts the demo on Ultrasound.
  * - Standard VGA graphics
  * - DOSBox's default 16 MB of memory
  *
@@ -98,3 +99,6 @@ export const crystalDream2DosboxConf = presets
     'CD2.EXE'
   )
   .build();
+
+/** The config under the name the registry reads */
+export { crystalDream2DosboxConf as dosboxConf };

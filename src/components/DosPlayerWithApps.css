@@ -15,8 +15,11 @@
  *   999    js-dos.css's modals and on-screen controls, should js-dos show them, and the
  *          player in js-dos's soft fullscreen, fixed over the whole page (DosPlayer.css):
  *          it then holds js-dos's own layers, its toasts included
- *   1000   the loading and error overlays over the whole player (here)
- *   1100   the selector's backdrop (here), 1101 the selector (DemoSelector.css)
+ *   1000   the loading and error overlays, the Play screen, the start hint, the end card, a
+ *          tracker's Files button and the leave question, over the whole player (here). The
+ *          end card leaves js-dos's fullscreen first, if the player is in it.
+ *   1100   the selector's backdrop (here), 1101 the selector (DemoSelector.css); the About
+ *          and Files panels take the same two layers (AppInfo.css), and none shows with another
  *   9999   the install prompt (OfflineIndicator.css)
  *   10000  the offline and back-online notices (OfflineIndicator.css), and the update
  *          prompt (UpdateNotification.css), whose root comes later in the page
@@ -201,4 +204,185 @@
 .dos-player-instance {
   flex: 1;
   min-height: 0;
+}
+
+/*
+ * Play screen, over the player's area, with nothing running under it. Named doskit- like the
+ * other new layers: js-dos.css styles .play-button, among others, for the whole page.
+ */
+.doskit-poster {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: radial-gradient(ellipse at center, #1f2233 0%, #0b0c10 70%);
+  overflow-y: auto;
+}
+
+.doskit-poster-box {
+  max-width: 34rem;
+  text-align: center;
+  color: #e8e8e8;
+}
+
+.doskit-poster-box h2 {
+  margin: 0 0 0.25rem;
+  font-size: clamp(1.75rem, 5vw, 2.75rem);
+  letter-spacing: 0.02em;
+}
+
+.doskit-poster-box p {
+  margin: 0.5rem 0;
+  line-height: 1.45;
+}
+
+/* #b8bcc8 on the poster's ground: 8.3:1 at its lightest */
+.doskit-poster-release {
+  color: #b8bcc8;
+  font-size: 1.05rem;
+}
+
+/* Amber, as in the selector: 9.8:1 or more on the poster's ground */
+.doskit-flash-warning {
+  color: #ffc078;
+}
+
+.doskit-poster-note {
+  color: #c9ccd6;
+  font-size: 0.95rem;
+}
+
+.doskit-play-button {
+  margin-top: 1.25rem;
+  padding: 0.85rem 2.75rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  border: 2px solid #ffffff;
+  border-radius: 0.6rem;
+  /* White on #3b5bdb: 5.7:1 */
+  background: #3b5bdb;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.doskit-play-button:hover {
+  background: #364fc7;
+}
+
+.doskit-play-button:focus-visible {
+  outline: 3px solid #ffc078;
+  outline-offset: 3px;
+}
+
+/* The keys to press once DosKit's start has given up: a bar over the top of the player */
+.doskit-start-hint {
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: calc(100% - 2rem);
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  border: 1px solid #ffc078;
+  border-radius: 0.5rem;
+  background: rgba(20, 20, 24, 0.94);
+  color: #f1f3f5;
+}
+
+.doskit-start-hint p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.doskit-start-hint button {
+  flex: none;
+  min-width: 2rem;
+  min-height: 2rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* End card, once the program has returned to DOS */
+.doskit-end-card {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(8, 9, 12, 0.88);
+  color: #f1f3f5;
+  text-align: center;
+}
+
+.doskit-end-card h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+}
+
+.doskit-end-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.doskit-end-actions button {
+  padding: 0.6rem 1.25rem;
+  font-size: 1rem;
+  border: 1px solid #ffffff;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* White on #3b5bdb: 5.7:1 */
+.doskit-end-actions button:first-child {
+  background: #3b5bdb;
+}
+
+.doskit-end-actions button:focus-visible,
+.doskit-start-hint button:focus-visible {
+  outline: 3px solid #ffc078;
+  outline-offset: 2px;
+}
+
+/* A running tracker's Files button, at the top right of the player, clear of js-dos's
+   sidebar on the left */
+.doskit-files-open {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  z-index: 1000;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 0.4rem;
+  /* White on this tint over black: 18:1 */
+  background: rgba(20, 20, 26, 0.85);
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.doskit-files-open:hover {
+  background: rgba(40, 40, 52, 0.95);
+}
+
+.doskit-files-open:focus-visible {
+  outline: 3px solid #ffc078;
+  outline-offset: 2px;
 }

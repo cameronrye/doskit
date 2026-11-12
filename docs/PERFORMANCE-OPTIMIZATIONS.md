@@ -29,7 +29,7 @@ cputype=auto
 cycles=25000
 ```
 
-**What it does:** Emulates a fixed number of instructions per millisecond (`cycles`) on DOSBox's simple core. This is the default DOS prompt's configuration (`src/config/dosbox.conf.ts`); the `musicTracker()` and `demo()` presets in `src/utils/dosboxConfigBuilder.ts` use the same core with 18000 and 30000 cycles. Each app's config in `src/dos-apps/` can override them: the two trackers keep fixed cycles on the simple core, Impulse Tracker the preset's 18000 and Scream Tracker 3 12000. Second Reality runs `cycles=max` on the simple core, and Crystal Dream 2 `cycles=max` on `core=auto`. StarPort BBS Intro II, Unreal, Panic and the 3D rotation demo run a fixed 30000 on `core=auto`, and only the Squid intro and the starfield keep `cycles=auto`, which holds a program in real mode at 3,000 cycles a millisecond.
+**What it does:** Emulates a fixed number of instructions per millisecond (`cycles`) on DOSBox's simple core. This is the default DOS prompt's configuration (`src/config/dosbox.conf.ts`); the `musicTracker()` and `demo()` presets in `src/utils/dosboxConfigBuilder.ts` use the same core with 18000 and 30000 cycles. Each app's config in `src/dos-apps/` can override them: the two trackers keep fixed cycles on the simple core, Impulse Tracker the preset's 18000 and Scream Tracker 3 12000. Second Reality runs a fixed 24000 on the simple core, about a 486DX2-66, and Crystal Dream 2 `cycles=max` on `core=auto`. StarPort BBS Intro II, Unreal, Panic and the 3D rotation demo run a fixed 30000 on `core=auto`, and only the Squid intro and the starfield keep `cycles=auto`, which holds a program in real mode at 3,000 cycles a millisecond.
 
 **No dynamic core:** js-dos's default backend (`dosbox`, `wdosbox.wasm`), which every app runs on, only has the `auto`, `normal` and `simple` cores. DOSBox resets a value it does not accept to the setting's default without a warning, and this backend's default core is `simple`, so the `core=dynamic` these configs used to ask for always ran the simple core: nothing was ever recompiled. `core=auto` cannot switch to a dynamic core either.
 
@@ -39,7 +39,7 @@ cycles=25000
 
 **Fixed, `max` or `auto`?**
 
-A fixed number runs the program at that speed throughout. `max` gives it as many cycles as the device can run, and `auto` gives a program 3,000 cycles a millisecond until it switches the CPU to protected mode, and `max` from then on. Which one an app needs depends on the program, not on a general rule: Second Reality and Crystal Dream 2 run at `max`, while Panic plays no sound there, and at `auto` Unreal's and Panic's effects fall seconds behind their music. [`src/dos-apps/README.md`](../src/dos-apps/README.md) says how to choose for a new app.
+A fixed number runs the program at that speed throughout. `max` gives it as many cycles as the device can run, and `auto` gives a program 3,000 cycles a millisecond until it switches the CPU to protected mode, and `max` from then on. Which one an app needs depends on the program, not on a general rule: Crystal Dream 2 runs at `max`, while Panic plays no sound there and Second Reality showed the wrong palette for about 12 seconds near 1:30 in most runs, so it runs at a fixed 24000; and at `auto` Unreal's and Panic's effects fall seconds behind their music. [`src/dos-apps/README.md`](../src/dos-apps/README.md) says how to choose for a new app.
 
 ---
 
@@ -217,7 +217,7 @@ workerThread: true;
 
 The built `index.html` also gets `<link rel="modulepreload">` tags from Vite, for the app's own chunks: the React vendor chunk and the Rolldown runtime (see section 8).
 
-Chrome warns in the console that the module "was preloaded using link preload but not used within a few seconds" when no player starts that soon after the page loads, such as a deep link whose archive is still downloading, or a load that failed. A player that starts later still uses the preloaded response; the file is not downloaded twice.
+Chrome warns in the console that the module "was preloaded using link preload but not used within a few seconds" when no player starts that soon after the page loads: on the start page, where nothing runs until an app is picked or the selector closes, on a Play screen waiting for its click, or while a deep link's archive is still downloading or after a load that failed. A player that starts later still uses the preloaded response; the file is not downloaded twice.
 
 Safari (WebKit) does not answer `emulators.js`'s request from the preload, and logs that the file was preloaded but not used on every page load, even when a player starts at once. A first visit in WebKit downloads the 1.46 MB file twice, both under `vite preview`, which sends `Cache-Control: no-cache`, and from a server that sends GitHub Pages' caching headers (`max-age=600` and an ETag), where Chromium downloads it once. Once the service worker is installed, it answers both requests from its emulator cache (section 7). The preload stays for Chromium's sake, where the first player gets the module sooner.
 
@@ -235,17 +235,17 @@ Safari (WebKit) does not answer `emulators.js`'s request from the preload, and l
 
 **Implementation:** `public/sw.js`, which `scripts/inject-sw-version.js` completes at build time
 
-**What it does:** Keeps the app, js-dos and the demo archives in caches of their own, each named so that it lasts as long as its contents:
+**What it does:** Keeps the app, js-dos and the demo archives in caches of their own, each named, or for the demo archives each entry keyed, so that it lasts as long as its contents:
 
-| Cache                               | Holds                                                                                                                                                | Filled                                                                           | Replaced when                           |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------- |
-| `doskit-<build>`                    | `/` (the app's `index.html`), `manifest.json`, `logo.svg`, `favicon.svg` and every JS and CSS bundle; other files the app fetches, but no pages      | On install, copying the bundles an earlier deploy's cache holds, then at runtime | A deploy changes the site or the worker |
-| `doskit-emulators-<js-dos version>` | The js-dos player (`js-dos.js`, `js-dos.css`) and the default backend: `wdosbox.wasm`, `wdosbox.js`, `wlibzip.wasm`, `wlibzip.js` and `emulators.js` | On install, downloading only what it lacks                                       | js-dos changes                          |
-| `doskit-demos-<hash>`               | Demo archives (`/demos/<id>.zip`), under a hash of every archive in the build                                                                        | The first time each app loads                                                    | An archive is added, removed or changed |
+| Cache                               | Holds                                                                                                                                                | Filled                                                                           | Replaced when                                        |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `doskit-<build>`                    | `/` (the app's `index.html`), `manifest.json`, `logo.svg`, `favicon.svg` and every JS and CSS bundle; other files the app fetches, but no pages      | On install, copying the bundles an earlier deploy's cache holds, then at runtime | A deploy changes the site or the worker              |
+| `doskit-emulators-<js-dos version>` | The js-dos player (`js-dos.js`, `js-dos.css`) and the default backend: `wdosbox.wasm`, `wdosbox.js`, `wlibzip.wasm`, `wlibzip.js` and `emulators.js` | On install, downloading only what it lacks                                       | js-dos changes                                       |
+| `doskit-demos`                      | Demo archives (`/demos/<id>.zip`), each under a version of its own, a hash of its bytes (`?v=` and its first 12 hex digits)                          | The first time each app loads                                                    | Never; an archive goes when it changes or is removed |
 
 Each request is answered by one strategy:
 
-- **Pages** (navigations): network first, revalidated with the server (`cache: 'no-cache'`), with a 5-second timeout. A page is passed on as it came, including the 404 GitHub Pages answers a path-style link with (its `404.html` is a copy of `index.html`), and never stored. When the network fails or times out, the `index.html` install stored answers whatever the URL, so the app opens at any URL.
+- **Pages** (navigations): network first, revalidated with the server (`cache: 'no-cache'`), with a 5-second timeout. A page is passed on as it came, including the 404 GitHub Pages answers a path it has no file for with, such as `/SecondReality` (its `404.html` is a copy of `index.html`), and never stored; an app's page, `/<id>`, comes with a 200. When the network fails or times out, the `index.html` install stored answers whatever the URL, so the app opens at any URL.
 - **js-dos's files** (`/js-dos.js`, `/js-dos.css` and `/emulators/`) and **demo archives** (`/demos/*.zip`): cache first, each from its own cache. A miss fetches the file revalidated with the server, so an HTTP cache copy from an earlier deploy cannot slip in, and stores it once the whole file has arrived, so a cancelled download never leaves part of one behind. Chromium does not pass the page's cancel on to the worker, so there the download finishes and is stored anyway. js-dos's files are never refreshed: every load gets the player and the emulator files of the js-dos version its worker installed, until an update takes over with its own.
 - **Bundles** (`/assets/`) and **other WebAssembly**: cache first, from any of the worker's caches. A bundle's name changes with its content, so a cached copy never goes stale. A miss is fetched from the network and stored in the build's cache.
 - **Everything else** from the site, such as the manifest, icons and images: stale-while-revalidate, answered from the cache and refreshed in the background.
@@ -256,15 +256,15 @@ Details that keep the caches right:
 - Install revalidates the files whose names never change (`cache: 'no-cache'`), so a worker installed within the 10 minutes GitHub Pages lets browsers reuse a file cannot store the previous deploy's `index.html`. A hashed name always means the same content, so install first copies each bundle an earlier deploy's cache holds under the same name, and downloads only the rest, from the HTTP cache where it has them. That seldom helps across deploys: GitHub Pages gives every file a new ETag on each deploy, so once the 10 minutes are up, a bundle is downloaded again in full.
 - The build lists every JS and CSS file in `dist/assets` for install, the lazily imported chunks too (section 8), so an app opened offline finds its config; source maps are left out. The build fails when the worker would precache a file that is not in `dist/`, because a single 404 stops `cache.addAll()` and the worker would never install.
 - The build's cache is trimmed to 100 entries by removing the runtime entries used least recently (their last use is recorded in `doskit-<build>-metadata`); what install stored is never removed. The emulator and demo caches are not trimmed.
-- The build names the deploy's cache after a hash of the site it made: every file in `dist/` but `sw.js`, and the worker with what is injected into it. A deploy that changes neither the site nor the worker, such as one that only changes Markdown files outside `public/`, so writes the same `sw.js`, and browsers install no new worker and offer no update. The docs in `public/`, such as `llms-full.txt`, are part of the site, and so are the source maps, which hold the TypeScript the bundles are built from, comments included.
-- Activating a new worker deletes every other `doskit-*` cache: earlier deploys, other js-dos versions and replaced demo archives. An updated worker waits until the user picks Update Now in the update prompt, or until every tab of the app has closed; a reload alone does not let it take over.
+- The build names the deploy's cache after a hash of the site it made: every file in `dist/` but `sw.js` and the files the worker never stores, the app pages and `404.html` at the site's root and `sitemap.xml`; and the worker with what is injected into it. A deploy that changes neither the site nor the worker, such as one that only changes Markdown files outside `public/`, or only the app pages or the sitemap, so writes the same `sw.js`, and browsers install no new worker and offer no update. The docs in `public/`, such as `llms-full.txt`, are part of the site, and so are the source maps, which hold the TypeScript the bundles are built from, comments included.
+- Activating a new worker deletes every other `doskit-*` cache: earlier deploys and other js-dos versions. In the demo cache it deletes the archives the deploy changed or removed, and first copies into it, from the `doskit-demos-<hash>` caches of workers from before each archive had a version of its own, the archives whose bytes are unchanged. An updated worker waits until the user picks Update Now in the update prompt, or until every tab of the app has closed; a reload alone does not let it take over.
 - Lookups ignore `Vary`. Chrome sends `Origin` with `index.html`'s crossorigin requests (its module scripts, its stylesheet and the wasm preload) while install's requests carry none, so on a host that answers `Vary: Origin`, such as `vite preview`, every precached bundle would miss. GitHub Pages only sends `Vary: Accept-Encoding`.
 - DOSBox-X is not precached: js-dos offers its backend picker only before a run, which `autoStart` skips, so users cannot switch to it. If anything requests it, it is cached on first use like any emulator file.
 
 **Benefits:**
 
 - Repeat visits only wait on the network for the page itself
-- A deploy downloads only the bundles whose names it changed: one that keeps js-dos does not download its player or emulator files again, and one that keeps every demo archive does not download them again. One that changes nothing the site serves installs no worker at all.
+- A deploy downloads only the bundles whose names it changed: one that keeps js-dos does not download its player or emulator files again, and one that changes a demo archive downloads only that archive again, the next time its app opens. One that changes nothing the site serves installs no worker at all.
 - The app opens offline at any URL, and an app plays offline once its archive is cached
 
 ---
@@ -294,7 +294,7 @@ export default defineConfig({
 **What it does:**
 
 - React and React DOM, with the scheduler they import, get a chunk of their own, `react-vendor-<hash>.js`. Its name follows its content: React itself, the file name of the Rolldown runtime chunk it imports, and the short names Rolldown gives its exports. A release that leaves these alone need not download it again: the service worker's install copies it from the previous release's cache (section 7).
-- `src/config/apps.config.ts` loads each app's config module (`src/dos-apps/<id>.config.ts`) with `import()`, so each is a small chunk of its own, downloaded when the app loads or when the selector preloads it after a 150 ms hover. The DOSBox config builder is a chunk they share.
+- `src/config/apps.config.ts` loads each app's config module (`src/dos-apps/<id>.config.ts`) through `import.meta.glob`, which Vite turns into an `import()` of each, so each is a small chunk of its own, downloaded when the app loads or when the selector preloads it after a 150 ms hover. The DOSBox config builder is a chunk they share. Each app's page text, `src/apps/<id>.page.json`, is a chunk of its own too, which the About panel imports when it opens.
 - The archive loader (`src/utils/diskLoader.ts`) is imported statically by `apps.config.ts`, so it is part of the entry chunk, like the default DOS prompt's config. Before its archive starts downloading, an app needs two chunks, its own config and the DOSBox config builder's, which Vite fetches in parallel; the builder's comes once per page.
 - The service worker precaches every chunk (section 7), so an app can still load its config offline.
 
@@ -432,7 +432,7 @@ To validate these optimizations:
 
 6. **Check Caching and Offline Use**
    - Run a production build (`npm run build`, then `npm run preview`); the service worker is not registered on the dev server
-   - In DevTools > Application > Cache Storage, look for the `doskit-`, `doskit-emulators-` and `doskit-demos-` caches
+   - In DevTools > Application > Cache Storage, look for the `doskit-`, `doskit-emulators-` and `doskit-demos` caches
    - Go offline, reload, and open an app you have played before
 
 ---

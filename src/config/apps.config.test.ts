@@ -11,6 +11,7 @@ import {
   getUrlFriendlyId,
 } from './apps.config';
 import { loadZipArchive } from '../utils/diskLoader';
+import { endMarkerFor, withEndMarker } from '../utils/endMarker';
 import type { DosApp } from '../types/dos-app';
 
 vi.mock('../utils/diskLoader', () => ({
@@ -133,6 +134,24 @@ describe('availableApps', () => {
       expect(conf).not.toMatch(/^echo .*(\d+ ?KB|stereo)/im);
     });
 
+    it('should record the size of its archive, which its disk shows', () => {
+      const archive = readFileSync(new URL(`${app.id}.zip`, DEMOS));
+
+      expect(app.archiveBytes).toBe(archive.byteLength);
+    });
+
+    it('should end its config with the autoexec, which the end marker follows', async () => {
+      const conf = await dosboxConfOf(app);
+
+      expect(() => withEndMarker(conf, endMarkerFor(app.name))).not.toThrow();
+      expect(withEndMarker(conf, endMarkerFor(app.name))).toMatch(/ has ended\.\n$/);
+    });
+
+    it('should describe itself without superlatives', () => {
+      // Facts read better than praise, and the selector's line has room for one
+      expect(app.description).not.toMatch(/legendary|groundbreaking|classic|iconic|ultimate/i);
+    });
+
     it('should name no other year for its release in its description or banner', async () => {
       // A year in the description, or a banner's "by Triton (1993)" or "1993 - ...", is the
       // release year; a party's year in the banner ("The Party 1992") is not
@@ -155,6 +174,58 @@ describe('availableApps', () => {
 
     expect(new Set(ids).size).toBe(ids.length);
     expect(new Set(ids.map(getUrlFriendlyId)).size).toBe(ids.length);
+  });
+
+  it('should list the four demos first, then the intros, the trackers and the effects', () => {
+    expect(availableApps.map((app) => [app.id, app.kind])).toEqual([
+      ['second-reality', 'demo'],
+      ['unreal', 'demo'],
+      ['panic', 'demo'],
+      ['crystal-dream-2', 'demo'],
+      ['starport-bbstro', 'intro'],
+      ['squid-bbstro', 'intro'],
+      ['impulse-tracker', 'tracker'],
+      ['scream-tracker', 'tracker'],
+      ['3drotate', 'effect'],
+      ['stars', 'effect'],
+    ]);
+  });
+
+  it('should start each production that waits at a setup screen with its own keys', () => {
+    // Starport, Squid and the starfield start by themselves
+    const started = availableApps.filter((app) => app.start).map((app) => app.id);
+
+    expect(started).toEqual([
+      'second-reality',
+      'unreal',
+      'panic',
+      'crystal-dream-2',
+      'impulse-tracker',
+      'scream-tracker',
+      '3drotate',
+    ]);
+  });
+
+  it("should start Unreal on SoundBlaster Pro at 20 kHz, not its setup's No sound", () => {
+    const keys = findAppById('unreal')?.start?.steps.map((step) => step.keys);
+
+    // Right, Right, Down, Down, Enter, as js-dos's key codes
+    expect(keys).toEqual([[262], [262], [264], [264], [257]]);
+  });
+
+  it('should tell the visitor what each start does, and which keys to press when it cannot', () => {
+    for (const app of availableApps.filter((each) => each.start)) {
+      expect(app.startNote, app.id).toMatch(/\.$/);
+      expect(app.hint, app.id).toMatch(/\b(press|Press)\b/);
+    }
+  });
+
+  it('should warn of flashing lights in the productions that flash', () => {
+    // Measured frame by frame against WCAG 2.3.1's three flashes a second: Panic for 79 s
+    // of 247, Second Reality's techno part, and Crystal Dream 2's opening and 20 s more
+    const flashing = availableApps.filter((app) => app.flashing).map((app) => app.id);
+
+    expect(flashing).toEqual(['second-reality', 'panic', 'crystal-dream-2']);
   });
 
   it('should ask before the page closes only while a tracker runs', () => {
@@ -186,6 +257,23 @@ describe('availableApps', () => {
     const conf = await findAppById('crystal-dream-2')?.loadDosboxConf?.();
 
     expect(conf).toMatch(/^cycles=max$/m);
+  });
+
+  it.each(['panic', 'squid-bbstro'])('should draw %s on a plain VGA', async (id) => {
+    // Both change the palette while a frame is drawn. DOSBox's default SVGA machine applies
+    // palette changes once a frame, which tears Panic's scroller and plasma and leaves Squid
+    // without its raster bars; vgaonly draws line by line, as a real VGA does.
+    const conf = await findAppById(id)?.loadDosboxConf?.();
+
+    expect(conf).toMatch(/^\[dosbox\]\nmachine=vgaonly$/m);
+  });
+
+  it('should run Second Reality at about the speed of a 486DX2-66', async () => {
+    // At 'max' it showed the default VGA palette for about 12 s near 1:30 in most runs; at a
+    // fixed 24000 it never did, and its timeline stays within about 1% of a real 486DX2-66
+    const conf = await findAppById('second-reality')?.loadDosboxConf?.();
+
+    expect(conf).toMatch(/^cycles=24000$/m);
   });
 
   it.each(['starport-bbstro', 'unreal', 'panic', '3drotate'])(

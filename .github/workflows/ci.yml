@@ -95,6 +95,43 @@ jobs:
           include-hidden-files: true
           retention-days: 7
 
+  e2e:
+    name: Browser Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      # The browser of the @playwright/test version in package-lock.json, with its system libraries
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      # Every production, opened from its link and started with one click: its start keys,
+      # its picture and its sound, in Chromium against the production build
+      - name: Run browser tests
+        run: npm run test:e2e
+
+      - name: Upload screenshots of failed tests
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-results
+          path: test-results/
+          retention-days: 7
+
   type-check:
     name: Type Check
     runs-on: ubuntu-latest

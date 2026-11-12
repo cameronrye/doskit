@@ -109,7 +109,8 @@
 }
 
 /* The dark tint keeps the white text at 5:1 or more anywhere on the gradient */
-.header-change-app-button {
+.header-change-app-button,
+.header-about-button {
   padding: 0.5rem 1rem;
   background: rgba(0, 0, 0, 0.2);
   color: white;
@@ -123,7 +124,8 @@
   backdrop-filter: blur(10px);
 }
 
-.header-change-app-button:hover {
+.header-change-app-button:hover,
+.header-about-button:hover {
   background: rgba(0, 0, 0, 0.3);
   border-color: rgba(255, 255, 255, 0.6);
   transform: translateY(-1px);
@@ -222,6 +224,17 @@
 }
 
 .status-badge.is-error .status-dot {
+  animation: none;
+}
+
+/* While nothing runs: grey and still. 5.9:1 on the badge's tint over the footer */
+.status-badge.is-idle {
+  background-color: rgba(189, 189, 189, 0.15);
+  color: #cfcfcf;
+  border: 1px solid #8a8a8a;
+}
+
+.status-badge.is-idle .status-dot {
   animation: none;
 }
 
@@ -363,6 +376,10 @@
     max-width: 300px;
   }
 
+  .header-about-button {
+    flex: none;
+  }
+
   .app-footer {
     flex-direction: column;
     gap: 0.5rem;
@@ -463,7 +480,8 @@
     display: none;
   }
 
-  .header-change-app-button {
+  .header-change-app-button,
+  .header-about-button {
     width: auto;
     padding: 0.3rem 0.75rem;
     font-size: 0.85rem;

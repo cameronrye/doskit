@@ -420,3 +420,9 @@
     --color-error: #d32f2f;
   }
 }
+
+/* Amber on the selector's dark background: 10:1 */
+.app-summary p.flashing-notice {
+  margin-top: 0.375rem;
+  color: #ffc078;
+}

@@ -1,0 +1,21 @@
+{
+  "description": "Panic by Future Crew, second in the PC demo competition at The Party 1992, running from its original files in your browser.",
+  "about": [
+    "Panic is Future Crew's demo for MS-DOS, shown at The Party 1992 in Aars, Denmark, and released on 4 February 1993, once it had been debugged."
+  ],
+  "credits": "Code by Wildfire, with the music player and fractals by Psi and the greetings scroller by Trug. Music by Purple Motion, graphics by Pixel, 3D objects by Abyss.",
+  "released": "The Party 1992: second in the PC demo competition. Released on 4 February 1993.",
+  "terms": "Freeware: “you can spread and copy this as much as you want ... but only in its complete original condition.” (PANIC.NFO)",
+  "accuracy": [
+    "It runs on a plain VGA (DOSBox's vgaonly), which draws its scroller and plasma as a real VGA does, line by line. Reds and blues then have half the shades.",
+    "Its fractal part runs two and a half to three times faster than on real machines.",
+    "Mono, where the original pans its music hard left and right."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=479"
+    }
+  ],
+  "imageAlt": "Panic's logo, running in DosKit"
+}

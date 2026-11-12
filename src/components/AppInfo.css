@@ -1,0 +1,165 @@
+/**
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ *
+ * The About panel, over the page at the selector's layers (DosPlayerWithApps.css lists the
+ * stacking order): the two never show together. Classes named doskit-, as js-dos.css styles
+ * many common names for the whole page.
+ */
+
+.doskit-info-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.doskit-info {
+  position: fixed;
+  z-index: 1101;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(42rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem 1.5rem;
+  border: 1px solid #3a3a46;
+  border-radius: 0.75rem;
+  background: #16161c;
+  color: #e6e6ea;
+  line-height: 1.5;
+}
+
+.doskit-info-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.doskit-info h2 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.doskit-info h3 {
+  margin: 1.1rem 0 0.25rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  /* 9.1:1 on the panel */
+  color: #b4b8c8;
+}
+
+.doskit-info p,
+.doskit-info ul {
+  margin: 0.4rem 0;
+}
+
+.doskit-info ul {
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.doskit-info ul.doskit-info-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  padding-left: 0;
+  list-style: none;
+}
+
+/* 9.5:1 on the panel */
+.doskit-info-release {
+  color: #b8bcc8;
+}
+
+/* Amber, as on the Play screen: 11:1 */
+.doskit-info-warning {
+  color: #ffc078;
+}
+
+/* 7.9:1 on the panel */
+.doskit-info a {
+  color: #91a7ff;
+}
+
+.doskit-info-close {
+  flex: none;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  border: 1px solid #4a4a58;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.doskit-info-close:focus-visible,
+.doskit-info a:focus-visible {
+  outline: 3px solid #ffc078;
+  outline-offset: 2px;
+}
+
+/* The Files panel's actions */
+.doskit-files-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.doskit-files-actions p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.doskit-files-button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 1px solid #5c5c6e;
+  border-radius: 0.45rem;
+  background: #24242e;
+  color: #f1f3f5;
+  font: inherit;
+  cursor: pointer;
+}
+
+.doskit-files-button:hover {
+  background: #2e2e3a;
+}
+
+/* White on #c92a2a: 5.5:1 */
+.doskit-files-danger {
+  border-color: #c92a2a;
+  background: #c92a2a;
+  color: #ffffff;
+}
+
+.doskit-files-button:focus-visible,
+.doskit-files-input:focus-visible + .doskit-files-button {
+  outline: 3px solid #ffc078;
+  outline-offset: 2px;
+}
+
+/* The file input stays focusable and labelled, drawn as its label's button */
+.doskit-files-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.doskit-files-note {
+  font-size: 0.9rem;
+  color: #b8bcc8;
+}
+
+/* Amber, as for warnings: 11:1 on the panel */
+.doskit-files-notice {
+  color: #ffc078;
+}
