@@ -6,6 +6,17 @@ release-please writes each release's entry from the conventional commits merged 
 before it (see [CONTRIBUTING.md](CONTRIBUTING.md#release-process)), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1](https://github.com/cameronrye/doskit/compare/v1.3.0...v1.3.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* give the focus back to Update Now when the page behind takes it from there ([1aca491](https://github.com/cameronrye/doskit/commit/1aca49142bcb9c79f112b8a46fc4ad992f0dbe20))
+* keep phone taps' saves, read the Start over question out, hold the update prompt's focus ([7f2fe86](https://github.com/cameronrye/doskit/commit/7f2fe868c78d47d25dcb182270dab887db72c771))
+* keep the focus in the update prompt when a Play button mounts behind it ([d5aefdf](https://github.com/cameronrye/doskit/commit/d5aefdfc76da7dc0f457243b4e34faf131be0845))
+* keep what a tracker saves a few seconds after a tap, as from a phone's keyboard ([c60bfde](https://github.com/cameronrye/doskit/commit/c60bfde75c53aed1a784f2c4003a5c1b61b4c698))
+* read the Start over question out with its answers ([36e9025](https://github.com/cameronrye/doskit/commit/36e9025833d98b9e83c1bded31e8ed3ff250df6e))
+
 ## [1.3.0](https://github.com/cameronrye/doskit/compare/v1.2.0...v1.3.0) (2026-11-12)
 
 
