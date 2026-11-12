@@ -4,8 +4,9 @@
 //
 //   npm run build && node e2e/tools/fingerprints.mjs [id...]
 //
-// It opens each production in Chromium, lets it reach its setup screen with no key pressed,
-// and prints the screens it rested on longest, with how long and from when.
+// It opens each production in Chromium, clicks Play, keeps DosKit's start keys from reaching
+// DOS so the production stays at its setup screen, and prints the screens it rested on
+// longest, with how long and from when.
 import { readFileSync, readdirSync } from 'node:fs';
 import { chromium } from '@playwright/test';
 import { startServer } from '../server.mjs';
@@ -22,8 +23,19 @@ try {
   for (const app of apps) {
     const context = await browser.newContext({ serviceWorkers: 'block' });
     await context.addInitScript({ path: 'e2e/hook.js' });
+    // DosKit's start keys would take the production past the screen to measure
+    await context.addInitScript(() => {
+      globalThis.__e2eBlockKeys = true;
+    });
     const page = await context.newPage();
+    let button = null;
+    page.on('console', (message) => {
+      if (message.text().includes('"play-button"')) button = JSON.parse(message.text().slice(6));
+    });
     await page.goto(`${site.url}/${app.id.replaceAll('-', '')}`);
+    // The Play screen: the click starts the emulator, as a visitor's would
+    while (!button) await page.waitForTimeout(100);
+    await page.mouse.click(button.x, button.y);
     // Crystal Dream 2 shows its menu after about 8.5 s
     await page.waitForTimeout(16_000);
     // Run in the page, where globalThis is its window

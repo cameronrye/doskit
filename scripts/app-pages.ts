@@ -215,8 +215,8 @@ export function renderAppPage(indexHtml: string, app: AppForPage): string {
 }
 
 /**
- * sitemap.xml: the home page and every app page, by its canonical URL. No dates: a date
- * set by the build would change the site, and prompt every visitor to update, at every deploy.
+ * sitemap.xml: the home page and every app page, by its canonical URL. No dates: lastmod
+ * is optional, and a date the build set would claim a change at every deploy.
  */
 export function renderSitemap(apps: Pick<AppForPage, 'id'>[]): string {
   const urls = [`${SITE}/`, ...apps.map((app) => `${SITE}/${urlIdOf(app.id)}`)];

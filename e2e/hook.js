@@ -52,8 +52,11 @@
     start.readyAt = performance.now();
     say('ci-ready', { index: start.index });
     // The keys DosKit's start sends, which never pass through the page's key events
+    // e2e/tools/fingerprints.mjs sets __e2eBlockKeys, to keep a production at the setup
+    // screen it measures
     const sendKeyEvent = ci.sendKeyEvent.bind(ci);
     ci.sendKeyEvent = (code, pressed) => {
+      if (globalThis.__e2eBlockKeys) return undefined;
       if (pressed)
         say('key', { index: start.index, code, t: Math.round(performance.now() - start.t0) });
       return sendKeyEvent(code, pressed);

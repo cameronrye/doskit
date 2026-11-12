@@ -15,9 +15,11 @@
  *   999    js-dos.css's modals and on-screen controls, should js-dos show them, and the
  *          player in js-dos's soft fullscreen, fixed over the whole page (DosPlayer.css):
  *          it then holds js-dos's own layers, its toasts included
- *   1000   the loading and error overlays, the Play screen, the start hint and the end card,
- *          over the whole player (here). The end card leaves js-dos's fullscreen first.
- *   1100   the selector's backdrop (here), 1101 the selector (DemoSelector.css)
+ *   1000   the loading and error overlays, the Play screen, the start hint, the end card, a
+ *          tracker's Files button and the leave question, over the whole player (here). The
+ *          end card leaves js-dos's fullscreen first, if the player is in it.
+ *   1100   the selector's backdrop (here), 1101 the selector (DemoSelector.css); the About
+ *          and Files panels take the same two layers (AppInfo.css), and none shows with another
  *   9999   the install prompt (OfflineIndicator.css)
  *   10000  the offline and back-online notices (OfflineIndicator.css), and the update
  *          prompt (UpdateNotification.css), whose root comes later in the page

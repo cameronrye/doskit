@@ -34,9 +34,10 @@ const CONFIG = {
   MAX_CACHE_SIZE: 100, // Entry limit of CACHE_NAME; trimming removes runtime entries only
 };
 
-// The page of every route: GitHub Pages answers / (whatever the query) with index.html,
-// and a path it has no file for, such as /secondreality, with 404.html, a copy of it.
-// Install stores it once, under this URL, and it answers every navigation offline.
+// The page of every route offline: GitHub Pages answers / (whatever the query) with
+// index.html, a production's page such as /secondreality with its own <id>.html, built from
+// index.html, and a path it has no file for with 404.html, a copy of it. Install stores
+// index.html once, under this URL, and it answers every navigation offline.
 const APP_PAGE = '/';
 
 // Assets to cache on install. The build appends every JS and CSS file in dist/assets,
@@ -449,8 +450,8 @@ async function serveCacheFirst(event, cacheName, key = event.request) {
  * Serve a page from the network first, revalidated with the server: GitHub Pages lets
  * browsers reuse a page for 10 minutes, so the HTTP cache may still hold the previous
  * deploy's index.html, which loads bundles this deploy's cache lacks. The response is
- * passed on as it came, including the 404 status GitHub Pages gives a path-style link
- * such as /secondreality, whose 404.html is a copy of index.html.
+ * passed on as it came: a production's page, or the 404 status GitHub Pages gives a path
+ * it has no file for, such as /secondreality/, whose 404.html is a copy of index.html.
  *
  * Nothing is stored: when the network fails or times out, the page is APP_PAGE, the
  * index.html install stored along with the bundles it loads, whatever the URL. A page
