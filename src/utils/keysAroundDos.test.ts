@@ -74,6 +74,37 @@ describe('keysAroundDos', () => {
     expect(reachedDos).toEqual(['keydown KeyA', 'keyup KeyA']);
   });
 
+  // Enter held on a disk: the selector closes as the app starts, the focus falls to the
+  // page, and the key goes on repeating there. DOS never had it go down, and its release
+  // stays with the controls, so a repeat that got through would leave it down in DOS.
+  it('stops the repeats of a key held down from a control once the focus has left it', () => {
+    press(control, 'Enter');
+    press(document.body, 'Enter', { repeat: true });
+    press(document.body, 'Enter', { repeat: true });
+    release(document.body, 'Enter');
+
+    expect(reachedDos).toEqual([]);
+  });
+
+  it('lets the repeats of a key held on a control reach that control', () => {
+    const seenByControl: boolean[] = [];
+    control.addEventListener('keydown', (event) => seenByControl.push(event.repeat));
+    press(control, 'ArrowRight');
+    press(control, 'ArrowRight', { repeat: true });
+    release(control, 'ArrowRight');
+
+    expect(seenByControl).toEqual([false, true]);
+    expect(reachedDos).toEqual([]);
+  });
+
+  it('gives DOS the repeats of a key held down in DOS', () => {
+    press(document.body, 'KeyA');
+    press(document.body, 'KeyA', { repeat: true });
+    release(document.body, 'KeyA');
+
+    expect(reachedDos).toEqual(['keydown KeyA', 'keydown KeyA', 'keyup KeyA']);
+  });
+
   // Its release may never come, such as after Ctrl+Tab to another tab
   it('forgets a key pressed on the controls once it is pressed in DOS', () => {
     press(control, 'ControlLeft');
