@@ -19,6 +19,7 @@ import { runStartRecipe, type RecipeEmulator, type RecipeState } from '../utils/
 import { createPersistQueue } from '../utils/persistQueue';
 import { getSavedFiles, putSavedFiles, removeSavedFiles } from '../utils/savedFiles';
 import { dosNameFor, zipEntryNames } from '../utils/dosNames';
+import { zipFiles } from '../utils/zipFiles';
 import { TrackerFiles } from './TrackerFiles';
 import { fnv1a } from '../utils/frameHash';
 import {
@@ -325,8 +326,7 @@ export function DosPlayerWithApps({
   const handleImport = async (chosen: File[]) => {
     if (!session?.app || !session.files) return;
     const saved = (await keepFilesNow()) ?? session.saved ?? null;
-    // Names of their own: js-dos writes loose files before it unpacks the archive and the
-    // saved files, whose files of the same name would replace them
+    // Names of their own: the files of a later bundle replace those of the same name before
     const taken = new Set([
       ...zipEntryNames(session.files),
       ...(saved ? zipEntryNames(saved) : []),
@@ -429,12 +429,15 @@ export function DosPlayerWithApps({
       if (document.visibilityState === 'hidden') saveQuietly();
     };
     const every = setInterval(saveQuietly, 30_000);
+    // Modules just brought in are only in this session until a save packs them
+    const soon = session.imports?.length ? setTimeout(saveQuietly, 1_000) : undefined;
     window.addEventListener('keydown', onKey);
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', saveQuietly);
     saveFilesRef.current = saveNow;
     return () => {
       clearTimeout(afterKeys);
+      clearTimeout(soon);
       clearInterval(every);
       window.removeEventListener('keydown', onKey);
       document.removeEventListener('visibilitychange', onHide);
@@ -610,11 +613,13 @@ export function DosPlayerWithApps({
             session.app && session.files
               ? {
                   // The archive, then what the app saved before, whose files replace the
-                  // archive's; loose files of the visitor's own are written before both
+                  // archive's, then the visitor's own files, packed as a bundle of their own:
+                  // ci.persist() packs a later bundle's files with the program's saves, but
+                  // never loose start files. Their names clash with none of the others'.
                   initFs: [
                     session.files,
                     ...(session.saved ? [session.saved] : []),
-                    ...(session.imports ?? []),
+                    ...(session.imports?.length ? [zipFiles(session.imports)] : []),
                   ],
                   ...session.app.jsdos,
                 }

@@ -531,7 +531,7 @@ Impulse Tracker and Scream Tracker 3 keep what you save in them with their own s
 The **Files** button at the top right of a running tracker opens **Your files**:
 
 - **Download your files (.zip)** saves the ZIP js-dos packed, as `<id>-files.zip`, such as `scream-tracker-files.zip`
-- **Bring in modules…** writes modules from your computer into `C:\`, under DOS 8.3 names in capitals other than those of the archive's files and the saved ones, and restarts the tracker to read them: save your song first
+- **Bring in modules…** writes modules from your computer into `C:\`, under DOS 8.3 names in capitals other than those of the archive's files and the saved ones, and restarts the tracker to read them: save your song first. They are kept with the tracker's saved files from then on
 - **Start over** asks first, then deletes the kept files and restarts the tracker as it came
 
 Picking another app in the selector while a tracker runs asks first ("Leave Scream Tracker 3?"), and keeps its files before it leaves; Back and Forward cannot ask. The page still asks before it is closed or reloaded while a tracker runs. Work not saved with the tracker's own save is gone once its player stops, and so is every file the other apps write.

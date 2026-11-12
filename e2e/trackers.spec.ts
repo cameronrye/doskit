@@ -91,4 +91,10 @@ test("a module of the visitor's own appears in the tracker under a DOS name", as
 
   // The tracker restarts with it
   await expect.poll(() => rootFiles(page), { timeout: 30_000 }).toContain('MYCOOLSO.S3M');
+
+  // and DosKit keeps it, with no key pressed since: it is there after a reload
+  await page.waitForTimeout(2500);
+  await page.reload();
+  await startScreamTracker(page);
+  expect(await rootFiles(page)).toContain('MYCOOLSO.S3M');
 });

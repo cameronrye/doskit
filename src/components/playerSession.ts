@@ -20,7 +20,7 @@ export interface Session {
   dosboxConf?: string;
   /** The files the app saved before, as a bundle that follows its archive */
   saved?: Uint8Array;
-  /** Files of the visitor's own, brought in through the Files panel */
+  /** Files of the visitor's own, brought in through the Files panel, under DOS names */
   imports?: InitFileEntry[];
 }
 

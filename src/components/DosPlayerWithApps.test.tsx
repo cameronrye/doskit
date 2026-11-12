@@ -10,6 +10,7 @@ import type { DosApp } from '../types/dos-app';
 import type { DosOptions } from '../types/js-dos';
 import type { LoadedApp } from './DemoSelector';
 import { getSavedFiles, putSavedFiles, removeSavedFiles } from '../utils/savedFiles';
+import { zipEntryNames } from '../utils/dosNames';
 
 // Type definitions for test mocks
 interface DemoSelectorProps {
@@ -780,10 +781,31 @@ describe('DosPlayerWithApps', () => {
       fireEvent.change(screen.getByLabelText(/bring in modules/i), { target: { files: [song] } });
 
       await waitFor(() => expect(boots).toHaveLength(2));
-      expect(startFs[1]).toEqual([
-        mockLoadedApp.files,
-        { path: 'MYSONG.IT', contents: new Uint8Array([7, 7]) },
-      ]);
+      // After the archive, as a bundle of their own
+      const [archive, bundle] = startFs[1] as [Uint8Array, Uint8Array];
+      expect(archive).toEqual(mockLoadedApp.files);
+      expect(zipEntryNames(bundle)).toEqual(['MYSONG.IT']);
+    });
+
+    it('keeps the modules brought in soon after the restart, without waiting for keys', async () => {
+      await runTracker();
+      fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+      fireEvent.change(screen.getByLabelText(/bring in modules/i), {
+        target: { files: [new File([new Uint8Array([7])], 'song.it')] },
+      });
+      await waitFor(() => expect(boots).toHaveLength(2));
+      vi.mocked(putSavedFiles).mockClear();
+      // What js-dos packs once the restarted tracker runs: the module, with what was saved
+      persisted.next = new Uint8Array([8, 8]);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+
+      await waitFor(
+        () => expect(putSavedFiles).toHaveBeenCalledWith('tracker', new Uint8Array([8, 8])),
+        {
+          timeout: 2_500,
+        }
+      );
     });
 
     it('deletes the kept files and restarts the tracker as it came, on Start over', async () => {
