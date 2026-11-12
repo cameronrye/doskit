@@ -54,6 +54,7 @@ function createMockPlayer() {
 function createMockCommandInterface() {
   let exitConsumer: (() => void) | undefined;
   const stdoutConsumers: ((message: string) => void)[] = [];
+  const frameConsumers: ((rgb: Uint8Array | null, rgba: Uint8Array | null) => void)[] = [];
   const unmute = vi.fn<CommandInterface['unmute']>();
   // Only what DosPlayer calls; the rest of the interface is left out
   const events: Partial<CommandInterfaceEvents> = {
@@ -62,6 +63,9 @@ function createMockCommandInterface() {
     }),
     onStdout: vi.fn((consumer: (message: string) => void) => {
       stdoutConsumers.push(consumer);
+    }),
+    onFrame: vi.fn((consumer: (rgb: Uint8Array | null, rgba: Uint8Array | null) => void) => {
+      frameConsumers.push(consumer);
     }),
   };
   const ci: Partial<CommandInterface> = {
@@ -73,6 +77,8 @@ function createMockCommandInterface() {
     unmute,
     exit: () => exitConsumer?.(),
     print: (message: string) => stdoutConsumers.forEach((consumer) => consumer(message)),
+    draw: (rgb: Uint8Array | null, rgba: Uint8Array | null = null) =>
+      frameConsumers.forEach((consumer) => consumer(rgb, rgba)),
   };
 }
 
@@ -405,6 +411,29 @@ describe('DosPlayer', () => {
       print('C:\\>');
 
       expect(heard).toEqual(['Starting Stars...', 'Stars has ended.']);
+    });
+
+    it('keeps the last frame js-dos drew for a listener that comes later', async () => {
+      // js-dos sends a frame only when the picture changes: a still screen sends one
+      const onHandle = vi.fn();
+      const { ci, draw } = createMockCommandInterface();
+      render(<DosPlayer onHandle={onHandle} />);
+      emit('ci-ready', ci);
+      const setup = new Uint8Array([1, 2, 3]);
+      draw(setup);
+      draw(null);
+      await waitFor(() => expect(onHandle).toHaveBeenCalled());
+      const { frames } = onHandle.mock.calls[0]![0];
+
+      expect(frames.latest()).toBe(setup);
+      const seen: Uint8Array[] = [];
+      const stop = frames.subscribe((frame: Uint8Array) => seen.push(frame));
+      const rgba = new Uint8Array([4, 5, 6, 7]);
+      draw(null, rgba);
+      stop();
+      draw(new Uint8Array([8]));
+
+      expect(seen).toEqual([rgba]);
     });
 
     it('should unmute audio when Command Interface is ready', () => {

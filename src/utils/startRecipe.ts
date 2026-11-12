@@ -42,7 +42,13 @@ export interface StartRecipe {
 export interface RecipeEmulator {
   stdout: LineFeed;
   messages: LineFeed;
-  onFrame(listener: (rgb: Uint8Array | null, rgba: Uint8Array | null) => void): void;
+  /**
+   * The last frame js-dos drew, kept from the emulator's start: js-dos sends a frame only
+   * when the picture changes, so a still setup screen drawn before the recipe began sends none
+   */
+  latestFrame(): Uint8Array | null;
+  /** Listen for frames; returns a function that stops listening */
+  onFrame(listener: (frame: Uint8Array) => void): () => void;
   onSoundPush(listener: (samples: Float32Array) => void): void;
   width(): number;
   height(): number;
@@ -79,7 +85,7 @@ export async function runStartRecipe(
   {
     signal,
     timeoutMs = 45_000,
-    verifyMs = 4_000,
+    verifyMs = 6_000,
     pollMs = 100,
     onState,
     sleep = defaultSleep,
@@ -88,10 +94,9 @@ export async function runStartRecipe(
 ): Promise<RecipeResult> {
   const { ready } = recipe;
   let active = true;
-  let latest: Uint8Array | null = null;
-  // js-dos offers no way to stop listening for frames: the listener goes quiet instead
-  emulator.onFrame((rgb, rgba) => {
-    if (active) latest = rgb ?? rgba;
+  let latest = emulator.latestFrame();
+  const stopFrames = emulator.onFrame((frame) => {
+    latest = frame;
   });
   // Whether sound has been heard since the keys went: a program that starts its music on a
   // screen seen before, such as Second Reality's black opening, has taken them too. The AC
@@ -208,6 +213,7 @@ export async function runStartRecipe(
     return 'fallback';
   } finally {
     active = false;
+    stopFrames();
     stopStdout();
     stopMessages();
   }

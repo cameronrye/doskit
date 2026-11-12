@@ -111,7 +111,7 @@ The live demo is automatically deployed from the `main` branch using GitHub Acti
 
 ## PWA Features
 
-DosKit is a fully-featured **Progressive Web App** that can be installed on your device and works offline!
+DosKit is a **Progressive Web App**: it can be installed on your device, and works offline.
 
 ### Key PWA Features
 
@@ -180,7 +180,7 @@ DOSBox-X is not precached: DosKit starts js-dos without its backend picker, so e
 
 - **Fast Development**: Hot Module Replacement (HMR) for instant feedback
 - **Modern Build**: Optimized production builds with code splitting: React gets a chunk of its own, and each app's configuration is a separate chunk that the page imports only when it needs it
-- **Developer Experience**: Excellent TypeScript integration and tooling
+- **Developer Experience**: TypeScript throughout, with strict type checking
 - **Rolldown**: Vite 8 bundles with Rolldown, a Rust-based bundler that took over from Rollup in Vite. `vite.config.ts` configures it through `build.rolldownOptions`.
 
 #### js-dos

@@ -17,16 +17,21 @@ function fakeEmulator() {
   const due: { at: number; run: () => void }[] = [];
   const stdout = createLineFeed();
   const messages = createLineFeed();
-  const frameListeners: ((rgb: Uint8Array | null, rgba: Uint8Array | null) => void)[] = [];
+  const frameListeners: ((frame: Uint8Array) => void)[] = [];
   const soundListeners: ((samples: Float32Array) => void)[] = [];
   let size: [number, number] = [640, 400];
   const keys: string[] = [];
   let onKey: (code: number, pressed: boolean) => void = () => {};
 
+  let lastFrame: Uint8Array | null = null;
   const emulator: RecipeEmulator = {
     stdout,
     messages,
-    onFrame: (listener) => frameListeners.push(listener),
+    latestFrame: () => lastFrame,
+    onFrame: (listener) => {
+      frameListeners.push(listener);
+      return () => frameListeners.splice(frameListeners.indexOf(listener), 1);
+    },
     onSoundPush: (listener) => soundListeners.push(listener),
     width: () => size[0],
     height: () => size[1],
@@ -39,7 +44,8 @@ function fakeEmulator() {
   const show = (bytes: number[], width = 640, height = 400) => {
     size = [width, height];
     const frame = new Uint8Array(bytes);
-    frameListeners.forEach((listener) => listener(frame, null));
+    lastFrame = frame;
+    frameListeners.forEach((listener) => listener(frame));
   };
   /** Push samples: a sine wave of this amplitude, or silence */
   const play = (amplitude: number) => {
@@ -86,6 +92,19 @@ const enterAtSetup: StartRecipe = {
 };
 
 describe('runStartRecipe', () => {
+  it('finds a setup screen drawn before it began, which js-dos sends no frame for again', async () => {
+    // js-dos sends a frame only when the picture changes: a still setup screen drawn before
+    // the recipe starts sends nothing more
+    const fake = fakeEmulator();
+    fake.show(SETUP);
+    fake.reactTo((_code, pressed) => pressed && fake.show(DEMO, 320, 200));
+
+    const result = await runStartRecipe(fake.emulator, enterAtSetup, fake.options);
+
+    expect(result).toBe('started');
+    expect(fake.presses()).toEqual(['0 257 down']);
+  });
+
   it('waits for the DOS line its signal names before the first key', async () => {
     const fake = fakeEmulator();
     fake.at(1500, () => fake.stdout.push('Control the angular velocity by hitting F1-F6'));

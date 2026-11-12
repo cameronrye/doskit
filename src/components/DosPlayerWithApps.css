@@ -239,13 +239,13 @@
   line-height: 1.45;
 }
 
-/* #b8bcc8 on the poster's darkest ground: 9.6:1 */
+/* #b8bcc8 on the poster's ground: 8.3:1 at its lightest */
 .doskit-poster-release {
   color: #b8bcc8;
   font-size: 1.05rem;
 }
 
-/* Amber, as in the selector: 10:1 */
+/* Amber, as in the selector: 9.8:1 or more on the poster's ground */
 .doskit-flash-warning {
   color: #ffc078;
 }
@@ -262,7 +262,7 @@
   font-weight: 700;
   border: 2px solid #ffffff;
   border-radius: 0.6rem;
-  /* White on #3b5bdb: 6.1:1 */
+  /* White on #3b5bdb: 5.7:1 */
   background: #3b5bdb;
   color: #ffffff;
   cursor: pointer;
@@ -350,7 +350,7 @@
   cursor: pointer;
 }
 
-/* White on #3b5bdb: 6.1:1 */
+/* White on #3b5bdb: 5.7:1 */
 .doskit-end-actions button:first-child {
   background: #3b5bdb;
 }
@@ -371,7 +371,7 @@
   padding: 0.35rem 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 0.4rem;
-  /* White on this tint over black: 14:1 */
+  /* White on this tint over black: 18:1 */
   background: rgba(20, 20, 26, 0.85);
   color: #ffffff;
   font-weight: 600;

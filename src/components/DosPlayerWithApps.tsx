@@ -19,7 +19,6 @@ import { runStartRecipe, type RecipeEmulator, type RecipeState } from '../utils/
 import { createPersistQueue } from '../utils/persistQueue';
 import { getSavedFiles, putSavedFiles, removeSavedFiles } from '../utils/savedFiles';
 import { dosNameFor, zipEntryNames } from '../utils/dosNames';
-import { zipFiles } from '../utils/zipFiles';
 import { TrackerFiles } from './TrackerFiles';
 import { fnv1a } from '../utils/frameHash';
 import {
@@ -72,7 +71,8 @@ function recipeEmulatorOf(handle: PlayerHandle): RecipeEmulator {
   return {
     stdout: handle.stdout,
     messages: handle.messages,
-    onFrame: (listener) => handle.ci.events().onFrame(listener),
+    latestFrame: () => handle.frames.latest(),
+    onFrame: (listener) => handle.frames.subscribe(listener),
     onSoundPush: (listener) => handle.ci.events().onSoundPush(listener),
     width: () => handle.ci.width(),
     height: () => handle.ci.height(),
@@ -173,7 +173,10 @@ export function DosPlayerWithApps({
           app: loadingApp,
           files,
           dosboxConf: conf,
-          play: hasFreshActivation(),
+          // A production that flashes waits on the Play screen, which warns of it: a click
+          // elsewhere during the load is no press of Play. Picked in the selector, its
+          // warning was in the selector's details.
+          play: hasFreshActivation() && !loadingApp.flashing,
         });
         reportAppRunning(loadingApp);
       },
@@ -238,9 +241,12 @@ export function DosPlayerWithApps({
     if (!handle || !startRecipe || !session) return;
     const sessionId = session.id;
     const controller = new AbortController();
-    void runStartRecipe(recipeEmulatorOf(handle), startRecipe, {
+    runStartRecipe(recipeEmulatorOf(handle), startRecipe, {
       signal: controller.signal,
       onState: (current) => setRecipe({ sessionId, state: current }),
+    }).catch((err: unknown) => {
+      console.warn('[DosPlayerWithApps] The start keys could not be sent:', err);
+      setRecipe({ sessionId, state: 'fallback' });
     });
     return () => controller.abort();
   }, [handle, startRecipe, session]);
@@ -351,13 +357,21 @@ export function DosPlayerWithApps({
     for (const file of chosen) {
       const path = dosNameFor(file.name, taken);
       taken.add(path);
-      imports.push({ path, contents: await readBytes(file) });
+      try {
+        imports.push({ path, contents: await readBytes(file) });
+      } catch (err) {
+        console.warn('[DosPlayerWithApps] A file could not be read:', err);
+        setFilesNotice(`${file.name} could not be read, so nothing was brought in.`);
+        return;
+      }
     }
     setFilesOpenFor(null);
     dispatch({ type: 'restarted', saved, imports });
   };
   const handleReset = async () => {
     if (!sessionApp) return;
+    // A save still running would write the files back after they are deleted
+    await keepFilesNow();
     await removeSavedFiles(sessionApp.id).catch((err: unknown) => {
       console.warn('[DosPlayerWithApps] Saved files could not be deleted:', err);
     });
@@ -390,17 +404,26 @@ export function DosPlayerWithApps({
     if (!preparingSession?.app) return;
     const sessionId = preparingSession.id;
     let current = true;
-    getSavedFiles(preparingSession.app.id).then(
-      (found) => {
-        if (current) dispatch({ type: 'prepared', sessionId, saved: found?.bytes ?? null });
-      },
-      (err: unknown) => {
-        console.warn('[DosPlayerWithApps] Saved files could not be read:', err);
-        if (!current) return;
-        setFilesKept(false);
-        dispatch({ type: 'prepared', sessionId, saved: null });
-      }
-    );
+    // A browser whose storage never answers starts the tracker without its files
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    Promise.race([
+      getSavedFiles(preparingSession.app.id),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('IndexedDB did not answer in 3 s')), 3_000);
+      }),
+    ])
+      .then(
+        (found) => {
+          if (current) dispatch({ type: 'prepared', sessionId, saved: found?.bytes ?? null });
+        },
+        (err: unknown) => {
+          console.warn('[DosPlayerWithApps] Saved files could not be read:', err);
+          if (!current) return;
+          setFilesKept(false);
+          dispatch({ type: 'prepared', sessionId, saved: null });
+        }
+      )
+      .finally(() => clearTimeout(timer));
     return () => {
       current = false;
     };
@@ -435,10 +458,12 @@ export function DosPlayerWithApps({
       }
       return bytes;
     };
+    // A save that js-dos is slow to answer, or one asked for while the selector pauses the
+    // emulator, says nothing about the browser's storage: only a failed write does
     const saveQuietly = () => {
+      if (pausedHandleRef.current === handle) return;
       saveNow().catch((err: unknown) => {
-        console.warn('[DosPlayerWithApps] Files could not be kept:', err);
-        setFilesKept(false);
+        console.warn('[DosPlayerWithApps] Files could not be packed:', err);
       });
     };
     let afterKeys: ReturnType<typeof setTimeout> | undefined;
@@ -652,7 +677,7 @@ export function DosPlayerWithApps({
                   // never loose start files, so the modules are kept too.
                   initFs: [
                     session.files,
-                    ...(session.imports?.length ? [zipFiles(session.imports)] : []),
+                    ...(session.importsZip ? [session.importsZip] : []),
                     ...(session.saved ? [session.saved] : []),
                   ],
                   ...session.app.jsdos,

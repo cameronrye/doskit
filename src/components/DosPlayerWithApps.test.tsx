@@ -64,8 +64,8 @@ const stops = vi.hoisted(() => [] as string[]);
 const startFs = vi.hoisted(() => [] as unknown[]);
 const startOptions = vi.hoisted(() => [] as unknown[]);
 
-/** What the fake ci.persist() answers: the bundle of files a program saved */
-const persisted = vi.hoisted(() => ({ next: null as Uint8Array | null, calls: 0 }));
+/** What the fake ci.persist() answers: the bundle of files a program saved, or never */
+const persisted = vi.hoisted(() => ({ next: null as Uint8Array | null, calls: 0, hang: false }));
 
 /**
  * The handle of each emulator that got ready, in order: its player's pause calls, and a way
@@ -140,6 +140,7 @@ vi.mock('./DosPlayer', async () => {
               entry.keys.push(`${code} ${pressed ? 'down' : 'up'}`),
             persist: async () => {
               persisted.calls += 1;
+              if (persisted.hang) return new Promise(() => {});
               return persisted.next;
             },
           },
@@ -154,6 +155,7 @@ vi.mock('./DosPlayer', async () => {
             },
           },
           messages: { subscribe: () => () => {} },
+          frames: { latest: () => null, subscribe: () => () => {} },
         });
       };
       return (
@@ -270,6 +272,7 @@ describe('DosPlayerWithApps', () => {
     startOptions.length = 0;
     persisted.next = null;
     persisted.calls = 0;
+    persisted.hang = false;
     // Store mock app and loaded app in window for the mock selector to use
     (window as WindowWithMockApp).__mockApp = mockApp;
     (window as WindowWithMockApp).__mockLoadedApp = mockLoadedApp;
@@ -995,6 +998,93 @@ describe('DosPlayerWithApps', () => {
       expect(screen.getByRole('dialog', { name: 'Leave Tracker?' })).toHaveTextContent(
         /can't keep files/i
       );
+    });
+  });
+
+  describe('Rulings on what the review set aside', () => {
+    const tracker: DosApp = {
+      ...mockApp,
+      id: 'tracker',
+      name: 'Tracker',
+      kind: 'tracker',
+      saveFiles: true,
+    };
+    const runTracker = async () => {
+      (window as WindowWithMockApp).__mockLoadedApp = { ...mockLoadedApp, app: tracker };
+      const result = render(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      await waitFor(() => expect(boots).toHaveLength(1));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      return result;
+    };
+
+    it('shows a flashing production opened from a link its Play screen, even after a click elsewhere', async () => {
+      // A click on About or Change Application while the link loads is no press of Play,
+      // and the warning would never show
+      const panic = deferredApp('panic');
+      Object.assign(panic.app, { flashing: true });
+      render(<DosPlayerWithApps requestedApp={panic.app} />);
+
+      await panic.finish();
+
+      expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
+      expect(boots).toEqual([]);
+    });
+
+    it("doesn't say the browser can't keep files when js-dos is only slow to pack them", async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+      try {
+        (window as WindowWithMockApp).__mockLoadedApp = { ...mockLoadedApp, app: tracker };
+        render(<DosPlayerWithApps showSelector={true} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+        persisted.hang = true;
+
+        fireEvent.keyDown(document.body, { key: 'Enter' });
+        // The save after the keys, and the 10 s js-dos gets to answer it
+        await act(() => vi.advanceTimersByTimeAsync(14_000));
+        persisted.hang = false;
+        fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+
+        expect(screen.queryByText(/can't keep files/i)).not.toBeInTheDocument();
+      } finally {
+        persisted.hang = false;
+        vi.useRealTimers();
+      }
+    });
+
+    it('starts a tracker without its saved files when the browser does not answer for them', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      try {
+        vi.mocked(getSavedFiles).mockReturnValueOnce(new Promise(() => {}));
+        (window as WindowWithMockApp).__mockLoadedApp = { ...mockLoadedApp, app: tracker };
+        render(<DosPlayerWithApps showSelector={true} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+        await act(() => vi.advanceTimersByTimeAsync(5_000));
+
+        expect(startFs[0]).toEqual([mockLoadedApp.files]);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("says which file it couldn't bring in", async () => {
+      await runTracker();
+      fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+      vi.spyOn(FileReader.prototype, 'readAsArrayBuffer').mockImplementation(function (
+        this: FileReader
+      ) {
+        setTimeout(() => this.onerror?.(new ProgressEvent('error') as ProgressEvent<FileReader>));
+      });
+
+      fireEvent.change(screen.getByLabelText(/bring in modules/i), {
+        target: { files: [new File([new Uint8Array([1])], 'broken.it')] },
+      });
+
+      expect(await screen.findByText(/broken\.it could not be read/i)).toBeInTheDocument();
+      expect(boots).toHaveLength(1);
     });
   });
 

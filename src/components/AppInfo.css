@@ -50,7 +50,7 @@
   font-size: 0.85rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  /* 8.9:1 on the panel */
+  /* 9.1:1 on the panel */
   color: #b4b8c8;
 }
 
@@ -72,17 +72,17 @@
   list-style: none;
 }
 
-/* 9.3:1 on the panel */
+/* 9.5:1 on the panel */
 .doskit-info-release {
   color: #b8bcc8;
 }
 
-/* Amber, as on the Play screen: 10:1 */
+/* Amber, as on the Play screen: 11:1 */
 .doskit-info-warning {
   color: #ffc078;
 }
 
-/* 8.4:1 on the panel */
+/* 7.9:1 on the panel */
 .doskit-info a {
   color: #91a7ff;
 }
@@ -133,10 +133,11 @@
   background: #2e2e3a;
 }
 
-/* White on #c92a2a: 5.4:1 */
+/* White on #c92a2a: 5.5:1 */
 .doskit-files-danger {
   border-color: #c92a2a;
   background: #c92a2a;
+  color: #ffffff;
 }
 
 .doskit-files-button:focus-visible,
@@ -158,7 +159,7 @@
   color: #b8bcc8;
 }
 
-/* Amber, as for warnings: 10:1 on the panel */
+/* Amber, as for warnings: 11:1 on the panel */
 .doskit-files-notice {
   color: #ffc078;
 }

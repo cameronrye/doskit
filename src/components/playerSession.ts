@@ -9,6 +9,7 @@
 
 import type { DosApp } from '../types/dos-app';
 import type { InitFileEntry } from '../types/js-dos';
+import { zipFiles } from '../utils/zipFiles';
 import type { FriendlyError } from '../utils/errorMessages';
 
 /** What the emulator runs: an app with its files, or the default DOS prompt */
@@ -22,6 +23,8 @@ export interface Session {
   saved?: Uint8Array;
   /** Files of the visitor's own, brought in through the Files panel, under DOS names */
   imports?: InitFileEntry[];
+  /** The same files as one bundle, which the player starts with: made once per restart */
+  importsZip?: Uint8Array;
 }
 
 /** A requested app that failed to load: what the error overlay says, and the app to retry */
@@ -257,6 +260,7 @@ export function playerReducer(state: PlayerState, action: PlayerAction): PlayerS
           id: newSession(null).id,
           saved: action.saved ?? undefined,
           imports: action.imports,
+          importsZip: action.imports.length > 0 ? zipFiles(action.imports) : undefined,
         }),
         endedSessionId: null,
       };

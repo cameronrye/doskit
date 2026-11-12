@@ -137,3 +137,21 @@ for (const app of apps) {
     }
   });
 }
+
+test('Enter on the focused Play button starts a production with sound too', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', "An automated WebKit window's sound stays interrupted");
+  const seen = watch(page);
+  await page.goto('/panic');
+  await expect.poll(() => seen.playButton, { timeout: 30_000 }).not.toBeNull();
+
+  // The Play button has the focus: a real key press, with no query of the page first
+  await page.keyboard.press('Enter');
+
+  await expect
+    .poll(() => seen.loudness.some(({ ac }) => ac > 0.003), { timeout: 30_000 })
+    .toBe(true);
+  expect(seen.audioStates).toContain('running');
+});

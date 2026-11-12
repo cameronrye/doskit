@@ -24,6 +24,39 @@ export interface PlayerHandle {
   stdout: LineFeed;
   /** DOSBox's log lines, as "<type> <text>", from the emulator's ready on */
   messages: LineFeed;
+  /** The frames js-dos draws: the last one, kept from the emulator's ready on, and new ones */
+  frames: FrameFeed;
+}
+
+/**
+ * js-dos's frames, from one subscription made as the emulator gets ready. js-dos sends a frame
+ * only when the picture changes, so a listener that came later would never see a still screen
+ * drawn before it: the last frame is kept for it.
+ */
+export interface FrameFeed {
+  latest(): Uint8Array | null;
+  /** Listen for new frames; returns a function that stops listening */
+  subscribe(listener: (frame: Uint8Array) => void): () => void;
+}
+
+function createFrameFeed() {
+  let latest: Uint8Array | null = null;
+  const listeners = new Set<(frame: Uint8Array) => void>();
+  return {
+    push(frame: Uint8Array) {
+      latest = frame;
+      for (const listener of [...listeners]) listener(frame);
+    },
+    feed: {
+      latest: () => latest,
+      subscribe(listener: (frame: Uint8Array) => void) {
+        listeners.add(listener);
+        return () => {
+          listeners.delete(listener);
+        };
+      },
+    } satisfies FrameFeed,
+  };
 }
 
 /**
@@ -95,7 +128,11 @@ export const useDosEmulator = ({
   // The two halves of the handle, which arrive by two paths: the command interface in
   // js-dos's ci-ready event, the player as the awaited return of the adapter's start
   const playerRef = useRef<DosProps | null>(null);
-  const feedsRef = useRef<{ stdout: WritableLineFeed; messages: WritableLineFeed } | null>(null);
+  const feedsRef = useRef<{
+    stdout: WritableLineFeed;
+    messages: WritableLineFeed;
+    frames: FrameFeed;
+  } | null>(null);
   const handedOutRef = useRef(false);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -121,7 +158,13 @@ export const useDosEmulator = ({
     const feeds = feedsRef.current;
     if (handedOutRef.current || !ci || !player || !feeds) return;
     handedOutRef.current = true;
-    onHandleRef.current?.({ ci, player, stdout: feeds.stdout, messages: feeds.messages });
+    onHandleRef.current?.({
+      ci,
+      player,
+      stdout: feeds.stdout,
+      messages: feeds.messages,
+      frames: feeds.frames,
+    });
   }, []);
 
   // Event handler for js-dos events (stable reference)
@@ -149,12 +192,23 @@ export const useDosEmulator = ({
             const ci = ciRef.current;
             // The only subscriptions to js-dos's streams: the first consumer of each gets its
             // backlog, and none can stop listening
-            const feeds = { stdout: createLineFeed(), messages: createLineFeed() };
+            const frames = createFrameFeed();
+            const feeds = {
+              stdout: createLineFeed(),
+              messages: createLineFeed(),
+              frames: frames.feed,
+            };
             feedsRef.current = feeds;
             const events = ci.events();
             events.onStdout((message: string) => feeds.stdout.push(String(message)));
             if (typeof events.onMessage === 'function') {
               events.onMessage((type, ...args) => feeds.messages.push([type, ...args].join(' ')));
+            }
+            if (typeof events.onFrame === 'function') {
+              events.onFrame((rgb, rgba) => {
+                const frame = rgb ?? rgba;
+                if (frame) frames.push(frame);
+              });
             }
             ci.events().onExit(() => {
               // Once unmounting has stopped the player, cleanup has reported its exit

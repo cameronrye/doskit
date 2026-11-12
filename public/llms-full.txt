@@ -83,7 +83,7 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 #### React + Vite
 - Fast Development: Hot Module Replacement (HMR) for instant feedback
 - Modern Build: Optimized production builds with code splitting
-- Developer Experience: Excellent TypeScript integration and tooling
+- Developer Experience: TypeScript throughout, with strict type checking
 - Rolldown: Vite 8 bundles with Rolldown, a Rust-based bundler that took over from Rollup in Vite; vite.config.ts configures it through build.rolldownOptions
 
 #### js-dos v8.3.20
