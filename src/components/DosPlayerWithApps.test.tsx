@@ -850,6 +850,154 @@ describe('DosPlayerWithApps', () => {
     });
   });
 
+  describe('Fixes from review', () => {
+    const tracker: DosApp = {
+      ...mockApp,
+      id: 'tracker',
+      name: 'Tracker',
+      kind: 'tracker',
+      saveFiles: true,
+      dosboxConf: '[autoexec]\nTRACKER.EXE\n',
+    };
+    const runTracker = async () => {
+      (window as WindowWithMockApp).__mockLoadedApp = {
+        app: tracker,
+        files: mockLoadedApp.files,
+        dosboxConf: tracker.dosboxConf,
+      };
+      const result = render(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      await waitFor(() => expect(boots).toHaveLength(1));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      return result;
+    };
+
+    it('plays a tracker again with what it saved since it started, and keeps that first', async () => {
+      vi.mocked(getSavedFiles).mockResolvedValueOnce({ bytes: new Uint8Array([9, 9]), savedAt: 1 });
+      await runTracker();
+      persisted.next = new Uint8Array([9, 9, 5]);
+      act(() => handles[0]?.print('Tracker has ended.'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Play again' }));
+
+      await waitFor(() => expect(boots).toHaveLength(2));
+      expect(startFs[1]).toEqual([mockLoadedApp.files, new Uint8Array([9, 9, 5])]);
+      expect(putSavedFiles).toHaveBeenCalledWith('tracker', new Uint8Array([9, 9, 5]));
+    });
+
+    it('starts with the saved files last, so they win over modules brought in earlier', async () => {
+      await runTracker();
+      fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+      fireEvent.change(screen.getByLabelText(/bring in modules/i), {
+        target: { files: [new File([new Uint8Array([1])], 'song.it')] },
+      });
+      await waitFor(() => expect(boots).toHaveLength(2));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      // The tracker saved an edited SONG.IT, which js-dos packs with the saved files
+      persisted.next = new Uint8Array([2, 2]);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+      fireEvent.change(screen.getByLabelText(/bring in modules/i), {
+        target: { files: [new File([new Uint8Array([3])], 'other.it')] },
+      });
+
+      await waitFor(() => expect(boots).toHaveLength(3));
+      const [archive, imports, saved] = startFs[2] as Uint8Array[];
+      expect(archive).toEqual(mockLoadedApp.files);
+      expect(zipEntryNames(imports!)).toEqual(['SONG.IT', 'OTHER.IT']);
+      expect(saved).toEqual(new Uint8Array([2, 2]));
+    });
+
+    it('lets a production go on that got ready under the open selector, once it closes', () => {
+      const { rerender } = render(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      // The selector opens again while the picked app is still starting
+      rerender(<DosPlayerWithApps showSelector={false} />);
+      rerender(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(handles[0]?.paused).toEqual([true, false]);
+    });
+
+    it('forgets the Leave question when Back or Forward ends the tracker it asked about', async () => {
+      const stars = deferredApp('stars');
+      const { rerender } = await runTracker();
+      (window as WindowWithMockApp).__mockLoadedApp = {
+        ...mockLoadedApp,
+        app: { ...mockApp, id: 'other', name: 'Other' },
+      };
+      rerender(<DosPlayerWithApps showSelector={false} />);
+      rerender(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      expect(screen.getByRole('dialog', { name: 'Leave Tracker?' })).toBeInTheDocument();
+
+      rerender(<DosPlayerWithApps showSelector={false} requestedApp={stars.app} />);
+      await stars.finish();
+
+      // Neither over the app Back or Forward brought, nor again later
+      expect(screen.queryByRole('dialog', { name: /^Leave/ })).not.toBeInTheDocument();
+    });
+
+    it('downloads what js-dos packed even when the browser cannot keep it', async () => {
+      vi.mocked(putSavedFiles).mockRejectedValue(new Error('QuotaExceededError'));
+      const objectUrls: Blob[] = [];
+      vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
+        objectUrls.push(blob as Blob);
+        return 'blob:files';
+      });
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+      try {
+        await runTracker();
+        persisted.next = new Uint8Array([5, 5]);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+        fireEvent.click(screen.getByRole('button', { name: /download/i }));
+
+        await waitFor(() => expect(objectUrls).toHaveLength(1));
+        expect(screen.queryByText(/nothing to download/i)).not.toBeInTheDocument();
+      } finally {
+        vi.mocked(putSavedFiles).mockResolvedValue(undefined);
+      }
+    });
+
+    it('restarts with what js-dos packed on an import even when the browser cannot keep it', async () => {
+      vi.mocked(putSavedFiles).mockRejectedValue(new Error('QuotaExceededError'));
+      try {
+        await runTracker();
+        persisted.next = new Uint8Array([5, 5]);
+        fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+
+        fireEvent.change(screen.getByLabelText(/bring in modules/i), {
+          target: { files: [new File([new Uint8Array([1])], 'song.it')] },
+        });
+
+        await waitFor(() => expect(boots).toHaveLength(2));
+        expect((startFs[1] as Uint8Array[]).at(-1)).toEqual(new Uint8Array([5, 5]));
+      } finally {
+        vi.mocked(putSavedFiles).mockResolvedValue(undefined);
+      }
+    });
+
+    it("says on Leave that this browser can't keep the tracker's files, when it can't", async () => {
+      vi.mocked(getSavedFiles).mockRejectedValueOnce(new Error('IndexedDB is not available'));
+      const { rerender } = await runTracker();
+      (window as WindowWithMockApp).__mockLoadedApp = {
+        ...mockLoadedApp,
+        app: { ...mockApp, id: 'other', name: 'Other' },
+      };
+      rerender(<DosPlayerWithApps showSelector={false} />);
+      rerender(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+
+      expect(screen.getByRole('dialog', { name: 'Leave Tracker?' })).toHaveTextContent(
+        /can't keep files/i
+      );
+    });
+  });
+
   describe("A program's end", () => {
     const loadedWithAutoexec: LoadedApp = {
       ...mockLoadedApp,

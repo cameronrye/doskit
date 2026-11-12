@@ -97,9 +97,15 @@ function App() {
   const [infoFor, setInfoFor] = useState<DosApp | null>(null);
   const aboutButtonRef = useRef<HTMLButtonElement>(null);
   const showInfo = infoFor !== null && infoFor === currentApp && !showAppSelector;
-  const closeInfo = () => {
+  // Closed from the keyboard, the About button gets the focus back; with the mouse, the page
+  // keeps it, where keys go to DOS
+  const closeInfo = (fromKeyboard: boolean) => {
     setInfoFor(null);
-    aboutButtonRef.current?.focus();
+    if (fromKeyboard) {
+      aboutButtonRef.current?.focus();
+    } else if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
   };
 
   const handleNetworkStatusChange = (online: boolean) => {

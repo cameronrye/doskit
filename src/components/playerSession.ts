@@ -74,8 +74,11 @@ export type PlayerAction =
   | { type: 'prepared'; sessionId: number; saved: Uint8Array | null }
   /** Play on the Play screen */
   | { type: 'played' }
-  /** Play again, once the program has returned to DOS: the same files, a new player */
-  | { type: 'replayed' }
+  /**
+   * Play again, once the program has returned to DOS: the same files, a new player, and for
+   * a tracker the files it saved this session, which it packed just before
+   */
+  | { type: 'replayed'; saved?: Uint8Array | null }
   /** Back to DOS: the end card goes, the DOS prompt stays */
   | { type: 'endDismissed' }
   /**
@@ -234,7 +237,11 @@ export function playerReducer(state: PlayerState, action: PlayerAction): PlayerS
       if (!session || state.endedSessionId !== session.id) return state;
       return {
         ...state,
-        phase: running({ ...session, id: newSession(null).id }),
+        phase: running({
+          ...session,
+          id: newSession(null).id,
+          saved: action.saved ?? session.saved,
+        }),
         endedSessionId: null,
       };
 

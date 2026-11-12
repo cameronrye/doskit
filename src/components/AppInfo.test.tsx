@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { AppInfo } from './AppInfo';
 import { findAppById } from '../config/apps.config';
 import type { DosApp } from '../types/dos-app';
@@ -77,6 +78,28 @@ describe('AppInfo', () => {
 
     fireEvent.keyDown(close, { key: 'Tab', shiftKey: true });
     expect(lastLink).toHaveFocus();
+  });
+
+  it('keeps the focus in the panel after a click on its text, so Escape still closes it', async () => {
+    const onClose = vi.fn();
+    render(<AppInfo app={panic} onClose={onClose} />);
+    const text = await screen.findByText(/shown at The Party 1992/);
+
+    await userEvent.click(text);
+    await userEvent.keyboard('{Escape}');
+
+    expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement);
+    expect(onClose).toHaveBeenCalledWith(true);
+  });
+
+  it('says whether it was closed from the keyboard or with the mouse', () => {
+    const onClose = vi.fn();
+    render(<AppInfo app={panic} onClose={onClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }), { detail: 1 });
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }), { detail: 0 });
+
+    expect(onClose.mock.calls).toEqual([[false], [true]]);
   });
 
   it("holds what its caller adds, such as a tracker's files", () => {

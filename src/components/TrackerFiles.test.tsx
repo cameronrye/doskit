@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { TrackerFiles } from './TrackerFiles';
 
 const props = {
@@ -61,6 +62,25 @@ describe('TrackerFiles', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start over' }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete them and restart' }));
     expect(onReset).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the keyboard focus on the question as Start over turns into it, and back', async () => {
+    render(<TrackerFiles {...props} />);
+
+    screen.getByRole('button', { name: 'Start over' }).focus();
+    await userEvent.keyboard('{Enter}');
+    expect(screen.getByRole('button', { name: 'Keep them' })).toHaveFocus();
+
+    await userEvent.keyboard('{Enter}');
+    expect(screen.getByRole('button', { name: 'Start over' })).toHaveFocus();
+  });
+
+  it('keeps the focus in the panel after a click on its text', async () => {
+    render(<TrackerFiles {...props} />);
+
+    await userEvent.click(screen.getByText(/save in Impulse Tracker/i));
+
+    expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement);
   });
 
   it('closes on Escape', () => {

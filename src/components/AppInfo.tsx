@@ -14,7 +14,8 @@ import './AppInfo.css';
 
 interface AppInfoProps {
   app: DosApp;
-  onClose: () => void;
+  /** Called with whether the panel was closed from the keyboard, which gives its opener the focus back */
+  onClose: (fromKeyboard: boolean) => void;
   /** More to show, such as a tracker's files, before the terms */
   children?: ReactNode;
 }
@@ -64,7 +65,7 @@ export function AppInfo({ app, onClose, children }: AppInfoProps) {
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Escape') {
       event.preventDefault();
-      onClose();
+      onClose(true);
       return;
     }
     if (event.key !== 'Tab') return;
@@ -83,18 +84,26 @@ export function AppInfo({ app, onClose, children }: AppInfoProps) {
 
   return (
     <>
-      <div className="doskit-info-backdrop" onClick={onClose} />
+      <div className="doskit-info-backdrop" onClick={() => onClose(false)} />
+      {/* tabIndex -1: a click on the panel's text keeps the focus in it, where Escape works,
+          rather than on the page, where keys go to DOS */}
       <div
         ref={panelRef}
         className="doskit-info"
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
+        tabIndex={-1}
         onKeyDown={handleKeyDown}
       >
         <div className="doskit-info-header">
           <h2 id={headingId}>{app.name}</h2>
-          <button ref={closeRef} className="doskit-info-close" aria-label="Close" onClick={onClose}>
+          <button
+            ref={closeRef}
+            className="doskit-info-close"
+            aria-label="Close"
+            onClick={(event) => onClose(event.detail === 0)}
+          >
             ✕
           </button>
         </div>

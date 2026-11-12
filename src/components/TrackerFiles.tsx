@@ -21,7 +21,8 @@ interface TrackerFilesProps {
   onDownload: () => void;
   onImport: (files: File[]) => void;
   onReset: () => void;
-  onClose: () => void;
+  /** Called with whether the panel was closed from the keyboard */
+  onClose: (fromKeyboard: boolean) => void;
 }
 
 /** "21:05", in the visitor's own clock */
@@ -44,30 +45,51 @@ export function TrackerFiles({
   const headingId = useId();
   const inputId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const startOverRef = useRef<HTMLButtonElement>(null);
+  const keepRef = useRef<HTMLButtonElement>(null);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  const askedRef = useRef(false);
 
   useEffect(() => {
     closeRef.current?.focus();
   }, []);
 
+  // Start over turns into its question and back, and the button that had the focus goes:
+  // the focus moves to the button that takes its place, not to the page, where keys go to DOS
+  useEffect(() => {
+    if (confirmingReset) {
+      askedRef.current = true;
+      keepRef.current?.focus();
+    } else if (askedRef.current) {
+      startOverRef.current?.focus();
+    }
+  }, [confirmingReset]);
+
   return (
     <>
-      <div className="doskit-info-backdrop" onClick={onClose} />
+      <div className="doskit-info-backdrop" onClick={() => onClose(false)} />
+      {/* tabIndex -1: a click on the panel's text keeps the focus in it, where Escape works */}
       <div
         className="doskit-info"
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
+        tabIndex={-1}
         onKeyDown={(event) => {
           if (event.key === 'Escape') {
             event.preventDefault();
-            onClose();
+            onClose(true);
           }
         }}
       >
         <div className="doskit-info-header">
           <h2 id={headingId}>Your files</h2>
-          <button ref={closeRef} className="doskit-info-close" aria-label="Close" onClick={onClose}>
+          <button
+            ref={closeRef}
+            className="doskit-info-close"
+            aria-label="Close"
+            onClick={(event) => onClose(event.detail === 0)}
+          >
             ✕
           </button>
         </div>
@@ -115,12 +137,20 @@ export function TrackerFiles({
               <button className="doskit-files-button doskit-files-danger" onClick={onReset}>
                 Delete them and restart
               </button>
-              <button className="doskit-files-button" onClick={() => setConfirmingReset(false)}>
+              <button
+                ref={keepRef}
+                className="doskit-files-button"
+                onClick={() => setConfirmingReset(false)}
+              >
                 Keep them
               </button>
             </div>
           ) : (
-            <button className="doskit-files-button" onClick={() => setConfirmingReset(true)}>
+            <button
+              ref={startOverRef}
+              className="doskit-files-button"
+              onClick={() => setConfirmingReset(true)}
+            >
               Start over
             </button>
           )}

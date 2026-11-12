@@ -193,15 +193,18 @@ export function DosPlayerWithApps({
   // Nobody watches the running app while the selector covers it: pause it there, sound and
   // all, and let it go on once the selector closes. Through the player: js-dos undoes
   // ci.pause() when the tab is hidden and shown again.
-  const pausedRef = useRef(false);
+  const pausedHandleRef = useRef<PlayerHandle | null>(null);
   useEffect(() => {
-    if (!handle || pausedRef.current === showAppSelector) return;
-    pausedRef.current = showAppSelector;
-    handle.player.setPaused(showAppSelector);
+    if (!handle) return;
+    const paused = pausedHandleRef.current === handle;
+    if (showAppSelector && !paused) {
+      handle.player.setPaused(true);
+      pausedHandleRef.current = handle;
+    } else if (!showAppSelector && paused) {
+      handle.player.setPaused(false);
+      pausedHandleRef.current = null;
+    }
   }, [handle, showAppSelector]);
-  useEffect(() => {
-    pausedRef.current = false;
-  }, [handle]);
 
   // An app's autoexec prints its end marker once its program returns to DOS
   const sessionApp = session?.app ?? null;
@@ -263,11 +266,16 @@ export function DosPlayerWithApps({
 
   // A pick that would end a running tracker waits for the visitor to say so: unsaved work in
   // it would be lost, and its saved files are kept first
-  const [pendingPick, setPendingPick] = useState<LoadedApp | null>(null);
+  const [pendingPick, setPendingPick] = useState<{ sessionId: number; pick: LoadedApp } | null>(
+    null
+  );
+  // Back or Forward can end the tracker the question is about: it goes with that session
+  const leaveAsked =
+    pendingPick !== null && session !== null && pendingPick.sessionId === session.id;
   const trackerRuns = sessionApp?.saveFiles === true && status === 'ready';
   const handleSelectApp = (loadedApp: LoadedApp) => {
-    if (trackerRuns) {
-      setPendingPick(loadedApp);
+    if (trackerRuns && session) {
+      setPendingPick({ sessionId: session.id, pick: loadedApp });
       dispatch({ type: 'selectorCancelled' });
     } else {
       runPick(loadedApp);
@@ -275,15 +283,22 @@ export function DosPlayerWithApps({
     onSelectorVisibilityChange?.(false);
   };
   const handleLeave = async () => {
-    const pick = pendingPick;
+    const pending = leaveAsked ? pendingPick : null;
     setPendingPick(null);
-    if (!pick) return;
+    if (!pending) return;
     await keepFilesNow();
-    runPick(pick);
+    runPick(pending.pick);
+  };
+
+  // Play again: for a tracker, with the files it saved this session, packed first
+  const handlePlayAgain = async () => {
+    const saved = sessionApp?.saveFiles ? await keepFilesNow() : null;
+    dispatch({ type: 'replayed', saved });
   };
 
   // The Files panel of a running tracker
   const [filesOpenFor, setFilesOpenFor] = useState<number | null>(null);
+  const filesButtonRef = useRef<HTMLButtonElement>(null);
   const [filesNotice, setFilesNotice] = useState<string | null>(null);
   const filesOpen = session !== null && filesOpenFor === session.id;
   /** Keep the tracker's files now, giving up after 3 s; the bundle, if any */
@@ -402,14 +417,21 @@ export function DosPlayerWithApps({
     const sessionId = session.id;
     const queue = createPersistQueue((onlyChanges) => handle.ci.persist(onlyChanges));
     let lastWritten = session.saved ? fnv1a(session.saved) : null;
+    // What js-dos packed, whether or not the browser could keep it: Download, Bring in
+    // modules and Play again start from these bytes
     const saveNow = async (): Promise<Uint8Array | null> => {
       const bytes = await queue.save();
       if (!bytes) return null;
       const written = fnv1a(bytes);
       if (written !== lastWritten) {
-        await putSavedFiles(appId, bytes);
-        lastWritten = written;
-        setFilesSavedAt({ sessionId, at: Date.now() });
+        try {
+          await putSavedFiles(appId, bytes);
+          lastWritten = written;
+          setFilesSavedAt({ sessionId, at: Date.now() });
+        } catch (err) {
+          console.warn('[DosPlayerWithApps] Files could not be kept:', err);
+          setFilesKept(false);
+        }
       }
       return bytes;
     };
@@ -550,6 +572,7 @@ export function DosPlayerWithApps({
           on reaching DOS. */}
       {session?.app?.saveFiles && status === 'ready' && (
         <button
+          ref={filesButtonRef}
           className="doskit-files-open"
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => {
@@ -569,17 +592,27 @@ export function DosPlayerWithApps({
           onDownload={() => void handleDownload()}
           onImport={(chosen) => void handleImport(chosen)}
           onReset={() => void handleReset()}
-          onClose={() => setFilesOpenFor(null)}
+          onClose={(fromKeyboard) => {
+            setFilesOpenFor(null);
+            // From the keyboard, back to the Files button; with the mouse, to the page,
+            // where keys go to DOS
+            if (fromKeyboard) {
+              filesButtonRef.current?.focus();
+            } else if (document.activeElement instanceof HTMLElement) {
+              document.activeElement.blur();
+            }
+          }}
         />
       )}
 
       {/* Leaving a running tracker: its saved files are kept, unsaved work is lost */}
-      {pendingPick && sessionApp && (
+      {leaveAsked && sessionApp && (
         <div className="doskit-end-card" role="dialog" aria-labelledby="doskit-leave-title">
           <h2 id="doskit-leave-title">Leave {sessionApp.name}?</h2>
           <p>
-            What you saved in it stays in this browser. Work you haven't saved with its own save is
-            lost.
+            {filesKept
+              ? "What you saved in it stays in this browser. Work you haven't saved with its own save is lost."
+              : "This browser can't keep files, so what you saved in it is lost when you leave: download it first with the Files button."}
           </p>
           <div className="doskit-end-actions">
             <button autoFocus onClick={() => void handleLeave()}>
@@ -595,7 +628,7 @@ export function DosPlayerWithApps({
         <div className="doskit-end-card" role="dialog" aria-labelledby="doskit-end-title">
           <h2 id="doskit-end-title">{endMarker}</h2>
           <div className="doskit-end-actions">
-            <button autoFocus onClick={() => dispatch({ type: 'replayed' })}>
+            <button autoFocus onClick={() => void handlePlayAgain()}>
               Play again
             </button>
             <button onClick={handleOpenSelector}>Choose another</button>
@@ -612,14 +645,15 @@ export function DosPlayerWithApps({
           options={
             session.app && session.files
               ? {
-                  // The archive, then what the app saved before, whose files replace the
-                  // archive's, then the visitor's own files, packed as a bundle of their own:
-                  // ci.persist() packs a later bundle's files with the program's saves, but
-                  // never loose start files. Their names clash with none of the others'.
+                  // The archive, then the visitor's own files packed as a bundle, then what the
+                  // app saved, whose files replace those of the same name before them: a
+                  // module brought in and since saved with edits comes back edited. js-dos packs
+                  // every file of the bundles after the first one with the program's saves, but
+                  // never loose start files, so the modules are kept too.
                   initFs: [
                     session.files,
-                    ...(session.saved ? [session.saved] : []),
                     ...(session.imports?.length ? [zipFiles(session.imports)] : []),
+                    ...(session.saved ? [session.saved] : []),
                   ],
                   ...session.app.jsdos,
                 }

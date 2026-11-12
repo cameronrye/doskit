@@ -727,6 +727,19 @@ describe('App', () => {
       expect(screen.getByRole('button', { name: 'About' })).toHaveFocus();
     });
 
+    it('leaves the focus with the page when the panel is closed with the mouse, so keys reach DOS', () => {
+      render(<App />);
+      fireEvent.click(screen.getByText('Load App'));
+      fireEvent.click(screen.getByText('Hide Selector'));
+      fireEvent.click(screen.getByRole('button', { name: 'About' }));
+
+      // A mouse click has a click count; a key's has none
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }), { detail: 1 });
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(document.activeElement).toBe(document.body);
+    });
+
     it('closes the panel when the selector opens', () => {
       render(<App />);
       fireEvent.click(screen.getByText('Load App'));
