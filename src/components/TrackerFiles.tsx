@@ -44,6 +44,7 @@ export function TrackerFiles({
 }: TrackerFilesProps) {
   const headingId = useId();
   const inputId = useId();
+  const questionId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
   const startOverRef = useRef<HTMLButtonElement>(null);
   const keepRef = useRef<HTMLButtonElement>(null);
@@ -133,13 +134,20 @@ export function TrackerFiles({
           <h3>Start over</h3>
           {confirmingReset ? (
             <div className="doskit-files-actions">
-              <p>Delete the files kept for {appName} and restart it as it came?</p>
-              <button className="doskit-files-button doskit-files-danger" onClick={onReset}>
+              {/* Each answer is described by the question, which a screen reader then reads
+                  with whichever answer has the focus */}
+              <p id={questionId}>Delete the files kept for {appName} and restart it as it came?</p>
+              <button
+                className="doskit-files-button doskit-files-danger"
+                aria-describedby={questionId}
+                onClick={onReset}
+              >
                 Delete them and restart
               </button>
               <button
                 ref={keepRef}
                 className="doskit-files-button"
+                aria-describedby={questionId}
                 onClick={() => setConfirmingReset(false)}
               >
                 Keep them

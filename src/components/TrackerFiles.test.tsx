@@ -64,6 +64,20 @@ describe('TrackerFiles', () => {
     expect(onReset).toHaveBeenCalledOnce();
   });
 
+  // The focus lands on an answer as the question appears, so a screen reader reads the
+  // question with that answer, and with the other one
+  it('describes both answers by the Start over question', () => {
+    render(<TrackerFiles {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start over' }));
+
+    const question = 'Delete the files kept for Impulse Tracker and restart it as it came?';
+    expect(screen.getByRole('button', { name: 'Keep them' })).toHaveAccessibleDescription(question);
+    expect(
+      screen.getByRole('button', { name: 'Delete them and restart' })
+    ).toHaveAccessibleDescription(question);
+  });
+
   it('keeps the keyboard focus on the question as Start over turns into it, and back', async () => {
     render(<TrackerFiles {...props} />);
 
