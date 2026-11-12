@@ -41,6 +41,11 @@ const STATIC_ASSETS_LIST = /(const STATIC_ASSETS = \[[^\]]+)(];)/;
 const PRECACHE_LISTS = /const (?:STATIC|EMULATOR)_ASSETS = \[([^\]]*)\]/g;
 // JavaScript and CSS, without their source maps (*.js.map)
 const BUNDLE_FILE = /\.(?:js|css)$/;
+// What the worker never stores: it answers a navigation from the network, and offline with
+// index.html alone (servePage), so an app's page at the root of the site, and the sitemap
+// that lists those pages, reach visitors without a new worker. index.html stays in the hash:
+// install stores it, and it names the bundles, which every page shares.
+const NEVER_STORED = /^(?:(?!index\.html$)[^/]+\.html|sitemap\.xml)$/;
 
 /**
  * The worker's CACHE_VERSION: a short hash of every file in dist/ but sw.js, by path and
@@ -58,7 +63,7 @@ export function hashSite(dir, serviceWorker, injected) {
   const files = readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile())
     .map((entry) => relative(dir, join(entry.parentPath, entry.name)).split(sep).join('/'))
-    .filter((file) => file !== 'sw.js')
+    .filter((file) => file !== 'sw.js' && !NEVER_STORED.test(file))
     .sort();
   for (const file of files) {
     const bytes = readFileSync(join(dir, file));

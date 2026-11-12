@@ -373,6 +373,27 @@ describe('the build step', () => {
     expect(cacheVersionOf(after.serviceWorker)).not.toBe(cacheVersionOf(before.serviceWorker));
   });
 
+  // The worker never stores a page but index.html: it answers navigations from the network,
+  // and offline with index.html. A page's text reaches visitors without a new worker, and
+  // without the update prompt a new version brings.
+  it.each([
+    ["an app's page", { 'secondreality.html': '<title>Second Reality - DosKit</title>' }],
+    ['the sitemap', { 'sitemap.xml': '<urlset>2</urlset>' }],
+  ])("keeps the caches' version when %s changes", (_, dist) => {
+    const before = build(createProject());
+    const after = build(createProject(dist));
+
+    expect(after.status).toBe(0);
+    expect(cacheVersionOf(after.serviceWorker)).toBe(cacheVersionOf(before.serviceWorker));
+  });
+
+  it('gives the caches a new version when index.html changes, which install stores', () => {
+    const before = build(createProject());
+    const after = build(createProject({ 'index.html': '<title>Changed</title>' }));
+
+    expect(cacheVersionOf(after.serviceWorker)).not.toBe(cacheVersionOf(before.serviceWorker));
+  });
+
   it('stamps the version of the js-dos it copied, from node_modules/js-dos', () => {
     const result = build(createProject());
 
