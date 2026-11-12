@@ -36,8 +36,9 @@ function readUrlRoute(): UrlRoute {
 
 /**
  * Set the title for a route, and bring the URL to the form the app pushes without a new
- * history entry: /?app=<id> for an app (also for /stars or ?app=Stars), and no app
- * parameter for an unknown one. Apps reporting in once loaded then find their URL in place.
+ * history entry: /<id> for an app, its own page (also for /?app=stars, an old link, or
+ * ?app=Stars), and the start page for an unknown one. Apps reporting in once loaded then
+ * find their URL in place.
  */
 function applyUrlRoute(route: UrlRoute): void {
   if (route.app) {

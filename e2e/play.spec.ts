@@ -95,7 +95,7 @@ for (const app of apps) {
   test(`${app.name} plays from its link with one press`, async ({ page, browserName }) => {
     expect(runs, `RUNS has no entry for ${app.id}`).toBeDefined();
     const seen = watch(page);
-    await page.goto(`/?app=${app.id.replaceAll('-', '')}`);
+    await page.goto(`/${app.id.replaceAll('-', '')}`);
 
     // The Play screen, with nothing running behind it
     await expect.poll(() => seen.playButton, { timeout: 30_000 }).not.toBeNull();

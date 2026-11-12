@@ -20,6 +20,8 @@ describe('urlRouting', () => {
     it.each([
       ['/?app=secondreality', 'second-reality'],
       ['/?app=Second-Reality', 'second-reality'],
+      // The file GitHub Pages serves at /secondreality
+      ['/secondreality.html', 'second-reality'],
       ['/secondreality', 'second-reality'],
       ['/3drotate/', '3drotate'],
     ])('reads the app %s asks for', (url, appId) => {
@@ -100,20 +102,20 @@ describe('urlRouting', () => {
       window.history.replaceState({}, '', '/');
     });
 
-    it('pushes one history entry when switching to a different app', () => {
-      window.history.replaceState({}, '', '/?app=impulsetracker');
+    it("pushes one history entry when switching to a different app, at the app's page", () => {
+      window.history.replaceState({}, '', '/impulsetracker');
       const lengthBefore = window.history.length;
 
       updateUrlWithApp('second-reality');
 
-      expect(window.location.search).toBe('?app=secondreality');
+      expect(window.location.pathname + window.location.search).toBe('/secondreality');
       expect(window.history.length).toBe(lengthBefore + 1);
     });
 
     it('does not push a duplicate entry when the URL already shows the app', () => {
       // Happens after a deep link or back/forward: the app finishes loading
       // asynchronously and reports itself while the URL already matches.
-      window.history.replaceState({}, '', '/?app=secondreality');
+      window.history.replaceState({}, '', '/secondreality');
       const lengthBefore = window.history.length;
 
       updateUrlWithApp('second-reality');
@@ -139,24 +141,24 @@ describe('urlRouting', () => {
       expect(window.history.length).toBe(lengthBefore);
     });
 
-    it('rewrites a path-style link to /?app= in place', () => {
-      window.history.replaceState({}, '', '/secondreality');
+    // Links from before each app had a page of its own, such as the blog's
+    it("rewrites an old /?app= link to the app's page in place", () => {
+      window.history.replaceState({}, '', '/?app=secondreality');
       const lengthBefore = window.history.length;
 
       updateUrlWithApp('second-reality', true);
 
-      expect(window.location.pathname).toBe('/');
-      expect(window.location.search).toBe('?app=secondreality');
+      expect(window.location.pathname + window.location.search).toBe('/secondreality');
       expect(window.history.length).toBe(lengthBefore);
     });
 
     it('keeps other parameters and the hash when rewriting', () => {
-      window.history.replaceState({}, '', '/stars?ref=sceners#top');
+      window.history.replaceState({}, '', '/?ref=sceners&app=stars#top');
 
       updateUrlWithApp('stars', true);
 
       expect(window.location.pathname + window.location.search + window.location.hash).toBe(
-        '/?ref=sceners&app=stars#top'
+        '/stars?ref=sceners#top'
       );
     });
 
@@ -165,7 +167,23 @@ describe('urlRouting', () => {
 
       updateUrlWithApp('stars');
 
-      expect(window.location.pathname + window.location.search).toBe('/?app=stars');
+      expect(window.location.pathname + window.location.search).toBe('/stars');
+    });
+
+    it("points the page's canonical link at the app's page, and the start page's at /", () => {
+      const link = document.createElement('link');
+      link.rel = 'canonical';
+      link.href = 'https://doskit.net/secondreality';
+      document.head.append(link);
+      try {
+        updateUrlWithApp('stars');
+        expect(link.href).toBe('https://doskit.net/stars');
+
+        updateUrlWithApp(null);
+        expect(link.href).toBe('https://doskit.net/');
+      } finally {
+        link.remove();
+      }
     });
   });
 

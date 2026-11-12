@@ -283,36 +283,37 @@ describe('App', () => {
     });
 
     it('adds no history entry when a deep-linked app reports in', () => {
-      window.history.replaceState({}, '', '/?app=stars');
+      window.history.replaceState({}, '', '/stars');
       render(<App />);
       const lengthBefore = window.history.length;
 
       fireEvent.click(screen.getByText('Report Requested App'));
 
-      expect(window.location.search).toBe('?app=stars');
+      expect(window.location.pathname + window.location.search).toBe('/stars');
       expect(window.history.length).toBe(lengthBefore);
     });
 
     it('keeps the forward history when an app reached by going back reports in', async () => {
-      window.history.pushState({}, '', '/?app=stars');
-      window.history.pushState({}, '', '/?app=3drotate');
+      window.history.pushState({}, '', '/stars');
+      window.history.pushState({}, '', '/3drotate');
       render(<App />);
       await traverse('back');
 
       fireEvent.click(screen.getByText('Report Requested App'));
       await traverse('forward');
 
-      expect(window.location.search).toBe('?app=3drotate');
+      expect(window.location.pathname).toBe('/3drotate');
       expect(screen.getByTestId('requested-app')).toHaveTextContent('3drotate');
     });
 
-    it('rewrites a path-style deep link to ?app= without a new history entry', () => {
-      window.history.replaceState({}, '', '/stars');
+    // Links from before each app had a page of its own, such as the blog's
+    it("rewrites an old /?app= link to the app's page without a new history entry", () => {
+      window.history.replaceState({}, '', '/?app=stars');
       const lengthBefore = window.history.length;
 
       render(<App />);
 
-      expect(window.location.pathname + window.location.search).toBe('/?app=stars');
+      expect(window.location.pathname + window.location.search).toBe('/stars');
       expect(window.history.length).toBe(lengthBefore);
       expect(requests[0]).toBe('stars');
     });
@@ -334,18 +335,18 @@ describe('App', () => {
 
       fireEvent.click(screen.getByText('Report Requested App'));
 
-      expect(window.location.search).toBe('?app=secondreality');
+      expect(window.location.pathname + window.location.search).toBe('/secondreality');
       expect(window.history.length).toBe(lengthBefore);
     });
 
-    it('rewrites a path-style entry that going back lands on', async () => {
-      window.history.replaceState({}, '', '/stars');
+    it('rewrites an old /?app= entry that going back lands on', async () => {
+      window.history.replaceState({}, '', '/?app=stars');
       window.history.pushState({}, '', '/');
       render(<App />);
 
       await traverse('back');
 
-      expect(window.location.pathname + window.location.search).toBe('/?app=stars');
+      expect(window.location.pathname + window.location.search).toBe('/stars');
       expect(screen.getByTestId('requested-app')).toHaveTextContent('stars');
     });
 
@@ -446,7 +447,7 @@ describe('App', () => {
 
       fireEvent.click(screen.getByText('Load App'));
 
-      expect(window.location.search).toBe('?app=testapp');
+      expect(window.location.pathname).toBe('/testapp');
     });
   });
 

@@ -45,7 +45,8 @@ export function getAppRequestFromUrl(): AppRequest {
   }
 
   const firstSegment = window.location.pathname.split('/').find((segment) => segment.length > 0);
-  const fromPath = firstSegment ? sanitizeInput(firstSegment) : null;
+  // /secondreality.html is the file GitHub Pages serves at /secondreality
+  const fromPath = firstSegment ? sanitizeInput(firstSegment.replace(/\.html$/, '')) : null;
   return {
     appId: fromPath ? normalizeAppId(fromPath) : null,
     unknownApp: false,
@@ -100,23 +101,28 @@ export function getUrlFriendlyId(appId: string): string {
   return INTERNAL_TO_URL_MAPPING[appId] || getUrlFriendlyIdFromConfig(appId);
 }
 
+/** The site's address, which canonical links name */
+const SITE = 'https://doskit.net';
+
 /**
- * Update the browser URL with the specified app ID
- * Uses query parameter approach: /?app=secondreality, the one form of an app URL, so
- * replacing also rewrites path-style links (/secondreality) and other spellings
- * @param appId - The internal app ID, or null to remove the app parameter
+ * Update the browser URL with the specified app ID: an app's URL is its page, /<id> without
+ * hyphens, which the build writes as <id>.html and GitHub Pages serves with a 200, and the
+ * start page is /. Replacing also rewrites old /?app= links and other spellings in place.
+ * The page's canonical link follows.
+ * @param appId - The internal app ID, or null for the start page
  * @param replace - If true, replaces the current history entry instead of adding a new one
  */
 export function updateUrlWithApp(appId: string | null, replace: boolean = false): void {
   const url = new URL(window.location.href);
-  // The start page's path either way: a path-style link (/stars) names an app too, and
-  // would run it on a reload
-  url.pathname = '/';
+  url.pathname = appId ? `/${getUrlFriendlyId(appId)}` : '/';
+  // No ?app= stays, which would decide over the path on a reload
+  url.searchParams.delete('app');
 
-  if (appId) {
-    url.searchParams.set('app', getUrlFriendlyId(appId));
-  } else {
-    url.searchParams.delete('app');
+  // Each page names its own URL as canonical, and picking another app changes the URL
+  // without loading that app's page
+  const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (canonical) {
+    canonical.href = `${SITE}${url.pathname}`;
   }
 
   // Apps report themselves after loading asynchronously (deep links, back/forward),

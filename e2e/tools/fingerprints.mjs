@@ -23,7 +23,7 @@ try {
     const context = await browser.newContext({ serviceWorkers: 'block' });
     await context.addInitScript({ path: 'e2e/hook.js' });
     const page = await context.newPage();
-    await page.goto(`${site.url}/?app=${app.id.replaceAll('-', '')}`);
+    await page.goto(`${site.url}/${app.id.replaceAll('-', '')}`);
     // Crystal Dream 2 shows its menu after about 8.5 s
     await page.waitForTimeout(16_000);
     // Run in the page, where globalThis is its window
