@@ -2,12 +2,12 @@
 
 > DosKit: DOS demoscene classics and the trackers behind them, playable in your browser. A progressive web app built with React 19, TypeScript and Vite 8 around js-dos 8.3.20, which runs DOSBox as WebAssembly in a worker thread. It is live at https://doskit.net/, and its source is at https://github.com/cameronrye/doskit.
 
-The start page boots a DOS prompt and opens an application selector over it. DosKit comes with demoscene productions and music trackers, among them Second Reality, Crystal Dream 2, Impulse Tracker and Scream Tracker 3, and each opens at a link of its own, such as https://doskit.net/?app=secondreality.
+The start page opens an application selector, and closing it without a pick boots a DOS prompt. DosKit comes with demoscene productions and music trackers, among them Second Reality, Crystal Dream 2, Impulse Tracker and Scream Tracker 3, and each has a page of its own, such as https://doskit.net/secondreality.
 
 - **Offline**: Installable; after the first visit the DOS prompt works offline, and each application does once it has been opened online
 - **Input and sound**: The keyboard, Sound Blaster, Gravis UltraSound and AdLib sound, and the on-screen keyboard in the js-dos sidebar, which phones and tablets open on a compact layout of DosKit's
 - **Browsers**: WebAssembly and `structuredClone()`, which js-dos's player calls once a second: Chrome and Edge 98+, Firefox 94+ and Safari 15.4+, on iOS 15.4+ too
-- **Code**: The components are in `src/components/`, the application registry and the DOSBox and js-dos settings in `src/config/`, each application's config module in `src/dos-apps/` and its archive in `public/demos/`. Run `npm install`, then `npm run dev`, `npm run build` or `npm test`
+- **Code**: The components are in `src/components/`, the application registry and the DOSBox and js-dos settings in `src/config/`, each application's data and page text in `src/apps/`, its config module in `src/dos-apps/` and its archive in `public/demos/`. Run `npm install`, then `npm run dev`, `npm run build` or `npm test`
 - **License**: MIT, copyright (c) 2025 Cameron Rye (cameron@rye.dev), for DosKit's own code. The js-dos player and the DOSBox and DOSBox-X emulators the site serves are under the GPL-2.0, and libzip, built into the emulators, under the BSD-3-Clause license: https://doskit.net/licenses/ gives each license, with links to the source code of the versions served, and the notices of the packages bundled in them
 
 ## Docs
@@ -15,7 +15,7 @@ The start page boots a DOS prompt and opens an application selector over it. Dos
 - [Full documentation](https://doskit.net/llms-full.txt): Features, architecture, configuration, every bundled application with its link, development and troubleshooting, in one file
 - [README](https://raw.githubusercontent.com/cameronrye/doskit/main/README.md): Setup, configuration, deep links, browser support and troubleshooting
 - [Architecture](https://raw.githubusercontent.com/cameronrye/doskit/main/docs/ARCHITECTURE.md): Components, data flow, the service worker, the design patterns and how js-dos is updated
-- [Adding an application](https://raw.githubusercontent.com/cameronrye/doskit/main/src/dos-apps/README.md): The archive, config module and registry entry each application needs
+- [Adding an application](https://raw.githubusercontent.com/cameronrye/doskit/main/src/dos-apps/README.md): The archive, config module, data and page files each application needs
 - [Application archives](https://raw.githubusercontent.com/cameronrye/doskit/main/public/demos/README.md): Where each bundled program comes from, and the terms its authors gave it
 
 ## Optional
