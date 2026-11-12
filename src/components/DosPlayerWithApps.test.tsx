@@ -853,9 +853,23 @@ describe('DosPlayerWithApps', () => {
     });
 
     it("leaves js-dos's fullscreen, where the card would be hidden", () => {
-      runToTheEnd();
+      (window as WindowWithMockApp).__mockLoadedApp = loadedWithAutoexec;
+      render(<DosPlayerWithApps showSelector={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Select App' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      // js-dos's soft fullscreen: a class on the player's element
+      screen.getByTestId('dos-player-mock').classList.add('jsdos-fullscreen-workaround');
+
+      act(() => handles[0]?.print('Test App has ended.'));
 
       expect(handles[0]?.fullScreen).toEqual([false]);
+    });
+
+    it('leaves the fullscreen alone when the player is not in it', () => {
+      // js-dos would then call document.exitFullscreen(), which throws outside fullscreen
+      runToTheEnd();
+
+      expect(handles[0]?.fullScreen).toEqual([]);
     });
 
     it('plays it again from the files it has, on Play again', () => {

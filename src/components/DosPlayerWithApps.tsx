@@ -118,6 +118,7 @@ export function DosPlayerWithApps({
   const error = state.phase.kind === 'error' ? state.phase.error : null;
   const showAppSelector = state.selectorOpen;
   const tryAgainRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   // The running session's emulator, once js-dos has handed it out
   const [handed, setHanded] = useState<{ sessionId: number; handle: PlayerHandle } | null>(null);
   const handle = handed && handed.sessionId === session?.id ? handed.handle : null;
@@ -214,8 +215,11 @@ export function DosPlayerWithApps({
     const sessionId = session.id;
     return handle.stdout.subscribe((line) => {
       if (!line.includes(endMarker)) return;
-      // The end card shows in the page; js-dos's fullscreen player would cover it
-      handle.player.setFullScreen(false);
+      // The end card shows in the page, which js-dos's fullscreen player would cover. Only
+      // when it is in fullscreen: otherwise js-dos calls document.exitFullscreen(), which
+      // throws outside fullscreen.
+      const softFullscreen = containerRef.current?.querySelector('.jsdos-fullscreen-workaround');
+      if (softFullscreen || document.fullscreenElement) handle.player.setFullScreen(false);
       dispatch({ type: 'ended', sessionId });
     });
   }, [handle, endMarker, session]);
@@ -446,7 +450,7 @@ export function DosPlayerWithApps({
   }, [onSelectorVisibilityChange]);
 
   return (
-    <div className={`dos-player-with-apps ${className || ''}`}>
+    <div ref={containerRef} className={`dos-player-with-apps ${className || ''}`}>
       {/* Application Selector Modal */}
       {showAppSelector && (
         <>
