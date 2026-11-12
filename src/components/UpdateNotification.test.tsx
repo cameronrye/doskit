@@ -248,6 +248,18 @@ describe('UpdateNotification', () => {
       await user.click(later());
       expect(behind).toHaveFocus();
     });
+
+    // Enter then answers the button the visitor chose, not Later
+    it('gives the focus back to Update Now when the page behind takes it from there', async () => {
+      const user = userEvent.setup();
+      renderOverPage();
+      await user.tab();
+      expect(updateNow()).toHaveFocus();
+
+      act(() => screen.getByRole('button', { name: 'Change Application' }).focus());
+
+      expect(updateNow()).toHaveFocus();
+    });
   });
 
   describe('once another tab has updated', () => {

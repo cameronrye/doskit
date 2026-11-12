@@ -71,7 +71,9 @@ export function UpdateNotification({
         return;
       }
       previous = event.target;
-      laterButton.current?.focus();
+      // Back to the button that lost it, Update Now included, or else to Later
+      const lost = event.relatedTarget;
+      (lost instanceof HTMLElement && prompt.contains(lost) ? lost : laterButton.current)?.focus();
     };
     document.addEventListener('focusin', keepFocus);
     return () => {
