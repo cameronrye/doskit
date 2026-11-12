@@ -66,6 +66,7 @@ function recipeEmulatorOf(handle: PlayerHandle): RecipeEmulator {
     stdout: handle.stdout,
     messages: handle.messages,
     onFrame: (listener) => handle.ci.events().onFrame(listener),
+    onSoundPush: (listener) => handle.ci.events().onSoundPush(listener),
     width: () => handle.ci.width(),
     height: () => handle.ci.height(),
     sendKeyEvent: (keyCode, pressed) => handle.ci.sendKeyEvent(keyCode, pressed),

@@ -32,10 +32,32 @@
     };
   }
 
+  // Where DosKit's Play button is, once it shows. A test clicks there with real mouse input,
+  // without querying the page first: Playwright's locators, like page.evaluate(), give the
+  // page user activation, after which DosKit starts a production without its Play screen.
+  new MutationObserver(() => {
+    const button = document.querySelector('.doskit-play-button');
+    if (!button || button.dataset.e2eReported) return;
+    button.dataset.e2eReported = 'yes';
+    const box = button.getBoundingClientRect();
+    say('play-button', {
+      x: Math.round(box.x + box.width / 2),
+      y: Math.round(box.y + box.height / 2),
+      name: button.textContent,
+    });
+  }).observe(document, { childList: true, subtree: true });
+
   const attach = (start, ci) => {
     start.ci = ci;
     start.readyAt = performance.now();
     say('ci-ready', { index: start.index });
+    // The keys DosKit's start sends, which never pass through the page's key events
+    const sendKeyEvent = ci.sendKeyEvent.bind(ci);
+    ci.sendKeyEvent = (code, pressed) => {
+      if (pressed)
+        say('key', { index: start.index, code, t: Math.round(performance.now() - start.t0) });
+      return sendKeyEvent(code, pressed);
+    };
     const events = ci.events();
     let latest = null;
     events.onFrame((rgb, rgba) => {
@@ -57,6 +79,13 @@
       const n = samples.length || 1;
       const ac = Math.sqrt(Math.max(0, squares / n - (sum / n) ** 2));
       const second = Math.floor((performance.now() - start.t0) / 1000);
+      if (start.loudness[second] === undefined && second > 0) {
+        say('loudness', {
+          index: start.index,
+          second: second - 1,
+          ac: start.loudness[second - 1] || 0,
+        });
+      }
       start.loudness[second] = Math.max(start.loudness[second] || 0, ac);
     });
     start.timer = setInterval(() => {
@@ -94,8 +123,10 @@
         return real(element, {
           ...options,
           onEvent: (event, arg) => {
-            if (event === 'ci-ready') attach(start, arg);
+            // DosKit first: js-dos hands the console output so far only to the first
+            // subscriber, and DosKit must get the lines its start recipes wait for
             if (onEvent) onEvent(event, arg);
+            if (event === 'ci-ready') attach(start, arg);
           },
         });
       };

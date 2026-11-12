@@ -114,7 +114,7 @@ vi.mock('./DosPlayer', async () => {
         handles.push(entry);
         onHandle?.({
           ci: {
-            events: () => ({ onFrame: () => {} }),
+            events: () => ({ onFrame: () => {}, onSoundPush: () => {} }),
             width: () => 640,
             height: () => 400,
             sendKeyEvent: (code: number, pressed: boolean) =>

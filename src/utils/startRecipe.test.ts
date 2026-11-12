@@ -18,6 +18,7 @@ function fakeEmulator() {
   const stdout = createLineFeed();
   const messages = createLineFeed();
   const frameListeners: ((rgb: Uint8Array | null, rgba: Uint8Array | null) => void)[] = [];
+  const soundListeners: ((samples: Float32Array) => void)[] = [];
   let size: [number, number] = [640, 400];
   const keys: string[] = [];
   let onKey: (code: number, pressed: boolean) => void = () => {};
@@ -26,6 +27,7 @@ function fakeEmulator() {
     stdout,
     messages,
     onFrame: (listener) => frameListeners.push(listener),
+    onSoundPush: (listener) => soundListeners.push(listener),
     width: () => size[0],
     height: () => size[1],
     sendKeyEvent: (code, pressed) => {
@@ -38,6 +40,11 @@ function fakeEmulator() {
     size = [width, height];
     const frame = new Uint8Array(bytes);
     frameListeners.forEach((listener) => listener(frame, null));
+  };
+  /** Push samples: a sine wave of this amplitude, or silence */
+  const play = (amplitude: number) => {
+    const samples = Float32Array.from({ length: 512 }, (_, i) => amplitude * Math.sin(i / 4));
+    soundListeners.forEach((listener) => listener(samples));
   };
   const at = (time: number, run: () => void) => due.push({ at: time, run });
   const sleep = async (ms: number) => {
@@ -55,6 +62,7 @@ function fakeEmulator() {
     stdout,
     messages,
     show,
+    play,
     at,
     keys,
     /** The keys pressed, with when */
@@ -167,6 +175,25 @@ describe('runStartRecipe', () => {
 
     expect(result).toBe('started');
     expect(fake.presses()).toHaveLength(2);
+  });
+
+  it('takes music that starts after the key for the program going on, on a screen it saw', async () => {
+    // Second Reality: after Enter, 17 s of black text mode with its music playing, and
+    // black was on screen while it loaded too
+    const fake = fakeEmulator();
+    const BLACK = [0, 0, 0];
+    fake.at(0, () => fake.show(BLACK));
+    fake.at(1000, () => fake.show(SETUP));
+    fake.reactTo((_code, pressed) => {
+      if (!pressed) return;
+      fake.show(BLACK);
+      fake.at(1700, () => fake.play(0.2));
+    });
+
+    const result = await runStartRecipe(fake.emulator, enterAtSetup, fake.options);
+
+    expect(result).toBe('started');
+    expect(fake.presses()).toHaveLength(1);
   });
 
   it('gives up after three tries, for the visitor to press the key', async () => {

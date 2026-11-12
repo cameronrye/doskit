@@ -43,6 +43,7 @@ export interface RecipeEmulator {
   stdout: LineFeed;
   messages: LineFeed;
   onFrame(listener: (rgb: Uint8Array | null, rgba: Uint8Array | null) => void): void;
+  onSoundPush(listener: (samples: Float32Array) => void): void;
   width(): number;
   height(): number;
   sendKeyEvent(keyCode: number, pressed: boolean): void;
@@ -69,6 +70,9 @@ const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(r
 /** How often a recipe of one key is sent before the visitor is asked to press it */
 const SINGLE_KEY_TRIES = 3;
 
+/** The AC level above which samples are sound */
+const AUDIBLE = 0.003;
+
 export async function runStartRecipe(
   emulator: RecipeEmulator,
   recipe: StartRecipe,
@@ -88,6 +92,25 @@ export async function runStartRecipe(
   // js-dos offers no way to stop listening for frames: the listener goes quiet instead
   emulator.onFrame((rgb, rgba) => {
     if (active) latest = rgb ?? rgba;
+  });
+  // Whether sound has been heard since the keys went: a program that starts its music on a
+  // screen seen before, such as Second Reality's black opening, has taken them too. The AC
+  // level, as a constant offset is no sound: js-dos pushes zeros while a program waits, and
+  // Scream Tracker idles at a constant -0.153.
+  let keysSent = false;
+  let heardSinceKeys = false;
+  emulator.onSoundPush((samples) => {
+    if (!active || !keysSent || heardSinceKeys || samples.length === 0) return;
+    let sum = 0;
+    let squares = 0;
+    for (let i = 0; i < samples.length; i++) {
+      sum += samples[i]!;
+      squares += samples[i]! * samples[i]!;
+    }
+    const mean = sum / samples.length;
+    if (Math.sqrt(Math.max(0, squares / samples.length - mean * mean)) > AUDIBLE) {
+      heardSinceKeys = true;
+    }
   });
   let printed = false;
   let messageAt: number | null = null;
@@ -148,6 +171,7 @@ export async function runStartRecipe(
     const send = async (): Promise<boolean> => {
       // js-dos drops a press of a key it believes is down
       await queue.release(keys);
+      keysSent = true;
       for (const [i, step] of recipe.steps.entries()) {
         if (i > 0) await sleep(recipe.gapMs);
         if (signal?.aborted) return false;
@@ -163,6 +187,7 @@ export async function runStartRecipe(
         const hash = look();
         if (emulator.width() !== size[0] || emulator.height() !== size[1]) return true;
         if (hash !== null && !seen.has(hash)) return true;
+        if (heardSinceKeys) return true;
       }
       return false;
     };

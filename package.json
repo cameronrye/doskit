@@ -43,6 +43,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test --project=chromium",
     "generate-icons": "node scripts/generate-icons.js",
     "generate-social-images": "node scripts/generate-social-images.js",
     "docs": "typedoc",
