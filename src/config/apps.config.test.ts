@@ -11,6 +11,7 @@ import {
   getUrlFriendlyId,
 } from './apps.config';
 import { loadZipArchive } from '../utils/diskLoader';
+import { endMarkerFor, withEndMarker } from '../utils/endMarker';
 import type { DosApp } from '../types/dos-app';
 
 vi.mock('../utils/diskLoader', () => ({
@@ -137,6 +138,13 @@ describe('availableApps', () => {
       const archive = readFileSync(new URL(`${app.id}.zip`, DEMOS));
 
       expect(app.archiveBytes).toBe(archive.byteLength);
+    });
+
+    it('should end its config with the autoexec, which the end marker follows', async () => {
+      const conf = await dosboxConfOf(app);
+
+      expect(() => withEndMarker(conf, endMarkerFor(app.name))).not.toThrow();
+      expect(withEndMarker(conf, endMarkerFor(app.name))).toMatch(/ has ended\.\n$/);
     });
 
     it('should describe itself without superlatives', () => {
