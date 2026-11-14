@@ -6,6 +6,15 @@ release-please writes each release's entry from the conventional commits merged 
 before it (see [CONTRIBUTING.md](CONTRIBUTING.md#release-process)), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0](https://github.com/cameronrye/doskit/compare/v1.3.1...v1.4.0) (2026-11-14)
+
+
+### Features
+
+* add the vetted shelves, Unreal 1.1 and VLA's own packages ([44795be](https://github.com/cameronrye/doskit/commit/44795be89f9fdf52bb0907c586b5b558c3fc2874))
+* give each new production a share card of its own ([a788e07](https://github.com/cameronrye/doskit/commit/a788e07a29ecfed65fdf05f646c425468403689b))
+* let apps name digit keys, warn of what they show, and bring in their own files ([be98514](https://github.com/cameronrye/doskit/commit/be985142f3b9ff77211050d5481ab17795cbc1d6))
+
 ## [1.3.1](https://github.com/cameronrye/doskit/compare/v1.3.0...v1.3.1) (2026-11-12)
 
 
