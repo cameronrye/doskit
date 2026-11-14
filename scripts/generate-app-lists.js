@@ -24,7 +24,14 @@ export function readAppData(dir) {
 }
 
 const pageOf = (app) => `https://doskit.net/${app.id.replace(/-/g, '')}`;
-const KINDS = { demo: 'Demo', intro: 'Intro', tracker: 'Tracker', effect: 'Effect' };
+const KINDS = {
+  demo: 'Demo',
+  intro: 'Intro',
+  musicdisk: 'Musicdisk',
+  diskmag: 'Diskmag',
+  tracker: 'Tracker',
+  effect: 'Effect',
+};
 
 /** A Markdown table: production, by, year, what it is, and its page */
 function readmeList(apps) {

@@ -32,6 +32,17 @@ describe('TrackerFiles', () => {
     expect(screen.getByText(/save in Impulse Tracker/i)).toBeInTheDocument();
   });
 
+  it('offers the module formats Impulse Tracker and Scream Tracker 3 load, unless a tracker names its own', () => {
+    const { rerender } = render(<TrackerFiles {...props} />);
+    expect(screen.getByLabelText('Bring in modules')).toHaveAttribute(
+      'accept',
+      expect.stringContaining('.it,.s3m,.xm,.mod')
+    );
+
+    rerender(<TrackerFiles {...props} appName="EdLib" accept={['.edl']} />);
+    expect(screen.getByLabelText('Bring in modules')).toHaveAttribute('accept', '.edl');
+  });
+
   it('says so where the browser cannot keep files', () => {
     render(<TrackerFiles {...props} kept={false} />);
 

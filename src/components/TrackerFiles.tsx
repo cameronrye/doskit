@@ -12,6 +12,8 @@ import './AppInfo.css';
 
 interface TrackerFilesProps {
   appName: string;
+  /** The file name extensions it brings in, such as ".edl"; left out, the module formats */
+  accept?: readonly string[];
   /** When DosKit last kept the tracker's files, or null before it has */
   savedAt: number | null;
   /** Whether this browser can keep files at all */
@@ -30,10 +32,11 @@ const timeOf = (at: number) =>
   new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
 /** The module formats Impulse Tracker and Scream Tracker 3 load */
-const MODULES = '.it,.s3m,.xm,.mod,.stm,.669,.mtm,.ult,.wav,.smp';
+const MODULES = ['.it', '.s3m', '.xm', '.mod', '.stm', '.669', '.mtm', '.ult', '.wav', '.smp'];
 
 export function TrackerFiles({
   appName,
+  accept = MODULES,
   savedAt,
   kept,
   notice = null,
@@ -112,7 +115,7 @@ export function TrackerFiles({
             className="doskit-files-input"
             type="file"
             multiple
-            accept={MODULES}
+            accept={accept.join(',')}
             aria-label="Bring in modules"
             onChange={(event) => {
               const files = Array.from(event.target.files ?? []);

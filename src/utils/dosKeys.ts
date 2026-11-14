@@ -4,7 +4,7 @@
  * Licensed under the MIT License
  *
  * js-dos's key codes, which are GLFW's: printable keys by their ASCII code (letters as
- * capitals), the others from 256 up. ci.sendKeyEvent() takes these.
+ * capitals, digits as "0" to "9"), the others from 256 up. ci.sendKeyEvent() takes these.
  */
 
 const letters = Object.fromEntries(
@@ -39,8 +39,14 @@ const letters = Object.fromEntries(
   number
 >;
 
+/** The digits above the letters, which setups such as blind's and MONOTONE's ask for */
+const digits = Object.fromEntries(
+  Array.from({ length: 10 }, (_, i) => [String(i), 48 + i])
+) as Record<'0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9', number>;
+
 export const dosKey = {
   ...letters,
+  ...digits,
   Space: 32,
   Escape: 256,
   Enter: 257,

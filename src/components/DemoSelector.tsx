@@ -530,6 +530,12 @@ export function DemoSelector({ onSelect, onCancel, notice }: DemoSelectorProps) 
                 Contains flashing lights, which may affect people with photosensitive epilepsy.
               </p>
             )}
+            {selectedApp.contentNote && (
+              <p className="content-notice">
+                <span aria-hidden="true">⚠ </span>
+                {selectedApp.contentNote}
+              </p>
+            )}
           </div>
 
           <div className="app-actions">

@@ -42,6 +42,13 @@ describe('AppInfo', () => {
     expect(await screen.findByText(/contains flashing lights/i)).toBeInTheDocument();
   });
 
+  it('says what else a production shows, where its data notes it', async () => {
+    const noted: DosApp = { ...panic, contentNote: 'Contains nudity: its end picture.' };
+    render(<AppInfo app={noted} onClose={() => {}} />);
+
+    expect(await screen.findByText('Contains nudity: its end picture.')).toBeInTheDocument();
+  });
+
   it('tells rights holders how to reach the owner', async () => {
     render(<AppInfo app={panic} onClose={() => {}} />);
 

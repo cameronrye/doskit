@@ -32,6 +32,20 @@ export function dosNameFor(name: string, taken: ReadonlySet<string>): string {
 }
 
 /**
+ * Where a file brought into a folder of C: goes, such as SONGS/TUNE.EDL: a DOS name of its
+ * own among the names already in that folder (paths as ZIP archives give them, in capitals).
+ * Without a folder, the file goes to C:\ itself.
+ */
+export function dosPathFor(name: string, folder: string | undefined, taken: ReadonlySet<string>) {
+  if (!folder) return dosNameFor(name, taken);
+  const prefix = `${folder.toUpperCase()}/`;
+  const inFolder = new Set(
+    [...taken].filter((path) => path.startsWith(prefix)).map((path) => path.slice(prefix.length))
+  );
+  return `${prefix}${dosNameFor(name, inFolder)}`;
+}
+
+/**
  * The names of the entries in a ZIP archive, in capitals, as DOS sees them; none for bytes
  * that are no ZIP archive. Read from its central directory, as the end record points to it.
  */

@@ -101,6 +101,13 @@ describe('renderAppPage', () => {
     expect(page).not.toContain('<div id="root"></div>');
   });
 
+  it('says what else it shows, where its data notes it, for crawlers too', () => {
+    const noted = renderAppPage(INDEX, { ...APP, contentNote: 'Contains nudity & more.' });
+
+    expect(noted).toContain('<p>Contains nudity &amp; more.</p>');
+    expect(page).not.toContain('Contains nudity');
+  });
+
   it("fails the build when index.html lacks a tag it rewrites, rather than keep the home page's", () => {
     expect(() => renderAppPage(INDEX.replace(/<meta property="og:url"[^>]*>/, ''), APP)).toThrow(
       /og:url/
