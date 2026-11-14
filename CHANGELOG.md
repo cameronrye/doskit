@@ -11,7 +11,6 @@ before it (see [CONTRIBUTING.md](CONTRIBUTING.md#release-process)), and this pro
 
 ### Features
 
-* add the vetted shelves, Unreal 1.1 and VLA's own packages ([5d78755](https://github.com/cameronrye/doskit/commit/5d78755f99382c46d45a9a628720c45c3af405dd))
 * add the vetted shelves, Unreal 1.1 and VLA's own packages ([44795be](https://github.com/cameronrye/doskit/commit/44795be89f9fdf52bb0907c586b5b558c3fc2874))
 * give each new production a share card of its own ([a788e07](https://github.com/cameronrye/doskit/commit/a788e07a29ecfed65fdf05f646c425468403689b))
 * let apps name digit keys, warn of what they show, and bring in their own files ([be98514](https://github.com/cameronrye/doskit/commit/be985142f3b9ff77211050d5481ab17795cbc1d6))
