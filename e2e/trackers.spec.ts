@@ -17,6 +17,12 @@ test.beforeEach(async ({ context }) => {
 
 /** Open Scream Tracker 3 at its page and start it, as a visitor would */
 async function startScreamTracker(page: Page) {
+  // Its start key, Space, takes it past the title screen to the pattern editor
+  await startTracker(page, '/screamtracker');
+}
+
+/** Open a tracker at its page, start it, and wait for its start keys to go */
+async function startTracker(page: Page, path: string) {
   let button: { x: number; y: number } | null = null;
   let keys = 0;
   page.on('console', (message) => {
@@ -24,27 +30,31 @@ async function startScreamTracker(page: Page) {
     if (text.includes('"play-button"')) button = JSON.parse(text.slice(6));
     if (text.includes('"event":"key"')) keys += 1;
   });
-  await page.goto('/screamtracker');
+  await page.goto(path);
   await expect.poll(() => button, { timeout: 30_000 }).not.toBeNull();
   await page.mouse.click(button!.x, button!.y);
-  // Its start key, Space, takes it past the title screen to the pattern editor
   await expect.poll(() => keys, { timeout: 30_000 }).toBeGreaterThan(0);
   await page.waitForTimeout(1500);
 }
 
-/** The names of the files at the root of the running emulator's C: drive */
-async function rootFiles(page: Page): Promise<string[]> {
-  return page.evaluate(async () => {
+/** The names of the files at the root of the running emulator's C: drive, or in a folder of it */
+async function rootFiles(page: Page, folder?: string): Promise<string[]> {
+  return page.evaluate(async (folder) => {
     const e2e = (globalThis as { __e2e?: { starts: { ci?: { fsTree(): Promise<unknown> } }[] } })
       .__e2e;
     // A restarted emulator has no command interface until it is ready
     const ci = e2e?.starts.at(-1)?.ci;
     if (!ci) return [];
-    const tree = (await ci.fsTree()) as {
-      nodes: { name: string; nodes: unknown }[] | null;
-    };
-    return (tree.nodes ?? []).filter((node) => node.nodes === null).map((node) => node.name);
-  });
+    interface Node {
+      name: string;
+      nodes: Node[] | null;
+    }
+    const tree = (await ci.fsTree()) as Node;
+    const dir = folder
+      ? tree.nodes?.find((node) => node.name.toUpperCase() === folder && node.nodes)
+      : tree;
+    return (dir?.nodes ?? []).filter((node) => node.nodes === null).map((node) => node.name);
+  }, folder);
 }
 
 test('a song saved in Scream Tracker 3 is there again after a reload', async ({ page }) => {
@@ -97,4 +107,21 @@ test("a module of the visitor's own appears in the tracker under a DOS name", as
   await page.reload();
   await startScreamTracker(page);
   expect(await rootFiles(page)).toContain('MYCOOLSO.S3M');
+});
+
+test('a song brought into EdLib goes to SONGS, the only folder it reads them from', async ({
+  page,
+}) => {
+  // Its start key, Escape, closes its About box
+  await startTracker(page, '/edlib');
+  await page.getByRole('button', { name: 'Files' }).click();
+
+  await page.getByLabel(/bring in modules/i).setInputFiles({
+    name: 'my tune.edl',
+    mimeType: 'application/octet-stream',
+    buffer: Buffer.from('EdLib song bytes'),
+  });
+
+  await expect.poll(() => rootFiles(page, 'SONGS'), { timeout: 30_000 }).toContain('MYTUNE.EDL');
+  expect(await rootFiles(page)).not.toContain('MYTUNE.EDL');
 });

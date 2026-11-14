@@ -1,0 +1,26 @@
+{
+  "description": "Heartquake by Iguana, third in the PC demo competition at Assembly '94, running from its original files in your browser.",
+  "about": [
+    "Heartquake is the Madrid group Iguana's demo for MS-DOS, third of the PC demos at Assembly '94, held in August 1994 in Helsinki. This is the release that followed the party, whose NFO is dated 23 August 1994, as BlasterSound, Iguana's home BBS, had it.",
+    "HEARTQ.NFO says Space skips a part, and that its 3D landscape takes the arrow keys, Page Up, Page Down, D and A."
+  ],
+  "released": "Assembly '94: third in the PC demo competition. Its NFO is dated 23 August 1994.",
+  "credits": "Code by JCAB, Jare, ARM and COI; music by Noisy Man and COI, with Ryan Cramer as a guest; graphics by Kronos, COI, Nefron and Raúl Ortega, a guest. PMODE by Tran.",
+  "terms": "HEARTQ.NFO: “The package can be distributed freely without modification. No money can be charged for it, other than standard fees for access to a BBS, or the cost of the material the demonstration is recorded on.” It also bars using it to add value to a commercial product, and selling it other than in a collection of shareware.",
+  "accuracy": [
+    "DosKit takes Run the demo in its setup, which has found the Gravis UltraSound.",
+    "Its timeline follows a capture made on a real DX4-100 within about a second, except that its screen melt takes 2.5 seconds instead of 4.4: the 24,000 dots part then comes about 3 seconds early, until the explosion, which keeps time with the music.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=364"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/6787/"
+    }
+  ],
+  "imageAlt": "Iguana's logo on Heartquake's blue plasma clouds, running in DosKit"
+}

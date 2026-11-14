@@ -1,0 +1,27 @@
+{
+  "description": "Machines of Madness by Dubius, the winner of the PC demo competition at Assembly '96, running from its original files in your browser.",
+  "about": [
+    "Machines of Madness is Dubius's demo for MS-DOS, which won the PC demo competition at Assembly '96, held from 16 to 18 August 1996 at the Helsinki Fair Centre in Pasila.",
+    "It picks the Gravis UltraSound by itself and runs for about seven minutes, in 320x200 with a 640x480 title picture. Escape returns to DOS. This is the party version: a later “SB Fix”, machifix.zip, patches it, and is not needed with the Gravis UltraSound."
+  ],
+  "released": "Assembly '96: first in the PC demo competition.",
+  "credits": "Code, vector engine and music player by Tremor, music by Nitro, graphics and fonts by Tonic, 3D modelling by Tremor, Nitro and Sol (MACHINES.NFO). The demo's own credits add Lazur of Pulse to the graphics. PMODE/W by Tran and Daredevil.",
+  "terms": "Not freeware, in its authors' words: “This material is not freeware. You are allowed to copy it without restrictions for non-commercial use.” It also forbids charging for it or changing it. (MACHINES.NFO)",
+  "accuracy": [
+    "Its Sound Blaster mode stops here with “EMS Error!”: it plays through the Gravis UltraSound, which it picks by itself.",
+    "It runs at the most cycles the device gives: at a fixed 30000 it played with about half its frames when it was vetted.",
+    "Its last three minutes or so, and its return to DOS, have not been watched here yet.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=312"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/9822/"
+    }
+  ],
+  "imageAlt": "Machines of Madness's rocky pool and credits, running in DosKit"
+}

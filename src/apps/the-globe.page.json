@@ -1,0 +1,27 @@
+{
+  "description": "The Globe by Jare of VangeliSTeam, a globe of dots after an Atari ST demo by Axel of XXX International, running from its original files in your browser.",
+  "about": [
+    "The Globe is an intro for MS-DOS that Jare of VangeliSTeam, in Madrid, coded in May 1993 and released with its source: 18 figures of dots that turn and change in a loop of about three minutes. The idea is Axel's, of XXX International: GLOBE.NFO says it is copied from his Globe demo for the Atari ST, and asks that anyone who uses the idea credit him.",
+    "Any key hands the globe to the keyboard. Plus and Minus then go through the figures, the arrow keys stretch and shrink it, F1 to F10 change its speeds, gaps and rotation, and Backspace resets it. Escape shows its greetings and returns to DOS."
+  ],
+  "released": "Coded on 29 May 1993 (GLOBE.TXT); its sources are dated 29 to 31 May 1993.",
+  "credits": "Code by Jare; the idea, and the Atari ST original, by Axel of XXX International.",
+  "terms": "“Do anything you want with this source, but NEVER say it's yours. ... If you use it please DO credit me. If you use the idea then DO must credit Axel.” (GLOBE.NFO) Iguana's list of its releases makes it public domain (RELEASES.TXT, in Heartquake's archive).",
+  "accuracy": [
+    "DosKit sends it no keys: the first key would stop its cycle of figures.",
+    "It has no sound.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=73200"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/182009/"
+    }
+  ],
+  "imageAlt": "The Globe's dots, running in DosKit",
+  "authorType": "Person"
+}

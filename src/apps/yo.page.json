@@ -1,0 +1,27 @@
+{
+  "description": "YO! by Future Crew, the group's second PC demo, in VGA text mode with David Whittaker's game tunes on the PC speaker, running from its original files in your browser.",
+  "about": [
+    "YO! is Future Crew's second PC demo: scrollers, a waving YO! logo, a bouncing ball and a starfield, all in an 80x50 text mode, with music on the PC speaker.",
+    "Its tunes are David Whittaker's game music, as Psi's scroller says; pouet.net's commenters name the Xenon 2 theme and Speedball among them.",
+    "Its year is disputed. The program says “by The Future Crew in 1990”, a scroller says “IT'S APRIL THE 1ST”, and YO.EXE is dated 16 October 1990. Future Crew's own release lists date it 24 February 1989, PANIC.NFO lists it under 1989, and the history in their information file puts it in 1989, with Slideshow I alone in 1990.",
+    "Keys 1 to 6 switch tunes, 0 stops the music, and Escape ends it."
+  ],
+  "released": "Not shown at a party. The program says 1990, and YO.EXE is dated 16 October 1990; Future Crew's release lists give 2-24-89.",
+  "credits": "Code by Psi, graphics by Hal, as its member list has them; the list also gives Hal and JPM the “Muzaxs”. The tunes are David Whittaker's. Psi, Hal and JPM write the scrollers.",
+  "terms": "Its archive has no text of its own but scene.org's notice. Future Crew's information files make all their demos freeware: “you can copy and distribute them freely as long as you make no modifications to them.” Its scroller asks: “So please spread this demo...” Its tunes are David Whittaker's, which Future Crew's terms do not cover.",
+  "accuracy": [
+    "Its music plays on the emulated PC speaker.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=2999"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/68764/"
+    }
+  ],
+  "imageAlt": "YO!'s text-mode logo and scrollers, running in DosKit"
+}

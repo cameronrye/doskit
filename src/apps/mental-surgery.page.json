@@ -1,0 +1,26 @@
+{
+  "description": "Mental Surgery by Future Crew, their demo of July 1991 with four-channel Sound Blaster music, running from its original files in your browser.",
+  "about": [
+    "Mental Surgery is Future Crew's demo for MS-DOS of July 1991: a large scroller across the top of the screen, a 3D starfield, a text writer and music scopes, with four-channel music on the Sound Blaster. Future Crew's history calls it the last of their demos that worked on a 286.",
+    "This is its second version, which MENTAL.EXE says fixes Sound Blasters at an IRQ other than 7 and adds an option for VGA cards whose smooth scrolling is nonstandard. Its music plays through Psi's Scream Tracker Music Interface Kit (STMIK), which Future Crew released with the demo's source.",
+    "It runs until Escape, which shows its end page; one pass of its scroller takes about 15 minutes."
+  ],
+  "released": "Not shown at a party. Future Crew's release lists give 7-02-91; this second version, MENTAL.EXE, is dated 14 July 1991.",
+  "credits": "Code by Psi, who also drew the logos; graphics by Dr. Venkman, who drew the fonts; music by Lord Soth (Purple Motion, as Demozoo has it); texts and BBS by Ice.",
+  "terms": "Its archive has no text of its own but scene.org's notice. Future Crew's information files make all their demos freeware: “you can copy and distribute them freely as long as you make no modifications to them.”",
+  "accuracy": [
+    "DosKit answers its five setup questions: a machine of 12 MHz or faster, no trouble with smooth scrolling, and a Sound Blaster at 220h, IRQ 7.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=1280"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/68757/"
+    }
+  ],
+  "imageAlt": "Mental Surgery's logo over its starfield, running in DosKit"
+}

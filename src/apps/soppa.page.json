@@ -1,0 +1,27 @@
+{
+  "description": "SOPPA! by Future Crew, a 64K intro for Assembly '94 that failed the party's pre-selection, running from its original files in your browser.",
+  "about": [
+    "SOPPA! is Future Crew's 64K intro for the PC 64K intro competition at Assembly '94, held from 5 to 7 August 1994 in Helsinki. It failed the competition's pre-selection and was not shown.",
+    "Its program is 65,535 bytes. It opens on about 10 seconds of black while its music starts, runs for about two minutes and returns to DOS.",
+    "This is the party's copy, with Future Crew's information files of July 1994."
+  ],
+  "released": "Assembly '94: entered in the PC 64K intro competition, it failed the pre-selection and was not shown. SOPPA.EXE is dated 6 August 1994.",
+  "credits": "Code by Psi, music by Purple Motion (“Kermavaahto (aka. Soppaaa)”), graphics by Marvel, as Demozoo credits them.",
+  "terms": "Future Crew's information file in its archive makes all their demos freeware: “you can copy and distribute them freely as long as you make no modifications to them.” (FCINFO16.TXT)",
+  "accuracy": [
+    "It plays through the Gravis UltraSound DosKit gives it. On the Sound Blaster 16 alone, its pauses stretch it from about 128 to about 150 seconds.",
+    "Its timeline is within about a second of a 128-second capture whose hardware is not stated.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=1284"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/99540/"
+    }
+  ],
+  "imageAlt": "SOPPA!'s title picture, a bowl of soup, running in DosKit"
+}

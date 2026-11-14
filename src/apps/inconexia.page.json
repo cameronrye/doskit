@@ -1,0 +1,27 @@
+{
+  "description": "Inconexia by Iguana, the Madrid demo a VGA bug kept out of the PC demo competition at Assembly '93, running from its original files in your browser.",
+  "about": [
+    "Inconexia is a trackmo for MS-DOS by Iguana and VangeliSTeam, from Madrid. It was made for the PC demo competition at Assembly '93, held from 30 July to 1 August 1993 in Kerava, Finland, but was not shown: a bug in its VGA mode setting failed on the competition machine. Iguana fixed it and released the demo on 13 August 1993.",
+    "This is the update of October 1993, which added the Gravis UltraSound and the Pro Audio Spectrum. Any key skips a part, and a key during the closing credits returns to DOS."
+  ],
+  "released": "Assembly '93: entered in the PC demo competition, but not shown. Released on 13 August 1993, and updated in October 1993.",
+  "credits": "Code by JCAB (the DemoVT music system, the title, the mirrorball, the starfield and the fire credits), Jare (the setup, the balls, the spiral and the scroller) and ARM (the museum). Graphics by COI; fonts and ideas by ReD Devil. The main tune is by DJ of Batman Group, as Iguana wrote in 1995 (PUMP.NFO): INCONEXI.NFO credits it to 303 Acid Factory, who had sent it to them. Music for the museum by COI, for the fire credits by Thryxxon.",
+  "terms": "“It can be distributed in any way you wish.” (its setup screen) Iguana's list of its releases also makes it public domain (RELEASES.TXT, in Heartquake's archive). Its main tune is not Iguana's to grant: by Iguana's own account, it belongs to DJ of Batman Group, and reached them through someone else.",
+  "accuracy": [
+    "It runs on a Sound Blaster Pro 2: on a Sound Blaster 16 its music stops and its museum part waits for ever, and with a Gravis UltraSound its first part hangs.",
+    "Its setup's own choice, which DosKit takes, is Plain SoundBlaster at 16000 Hz, in mono.",
+    "It runs on a plain VGA (DOSBox's vgaonly), on which its greetings scroller is drawn as it should be. Reds and blues then have half the shades.",
+    "It runs for about ten minutes, by an estimate: it has not yet been watched whole in one run, nor compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=830"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/101535/"
+    }
+  ],
+  "imageAlt": "Iguana's logo among colored balls in Inconexia, running in DosKit"
+}

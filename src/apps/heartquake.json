@@ -1,0 +1,18 @@
+{
+  "id": "heartquake",
+  "order": 8,
+  "kind": "demo",
+  "name": "Heartquake",
+  "description": "Iguana's demo, third at Assembly '94",
+  "author": "Iguana",
+  "year": 1994,
+  "archiveBytes": 1837005,
+  "start": {
+    "keys": ["Enter"],
+    "ready": {
+      "stdout": "Use HEARTQ /? to see the help"
+    },
+    "note": "DosKit picks Run the demo in its setup, which has found the Gravis UltraSound."
+  },
+  "hint": "Heartquake waits at its setup: press Enter to run the demo with the Gravis UltraSound."
+}

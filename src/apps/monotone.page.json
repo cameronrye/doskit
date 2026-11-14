@@ -1,0 +1,31 @@
+{
+  "description": "MONOTONE 0.3.9 by Trixter of Hornet, a music tracker for the PC speaker, running in your browser with its example songs.",
+  "about": [
+    "MONOTONE is a music tracker for the PC speaker and other simple sound devices by Trixter of Hornet, who wrote it on an IBM PC/XT with CGA. It can also play its songs through an AdLib or the three-voice chip of the Tandy 1000 and IBM PCjr.",
+    "It dates from 2008, when an alpha of it came second in the wild competition at Blockparty 2008. This is version 0.3.9, still an alpha, built on 8 July 2017. It comes with its Pascal source and four example songs, among them PRELUDE.MON, a Bach prelude from yesso.",
+    "What you save in it stays in this browser: the Files button can download it, bring in MON songs of your own, or start over."
+  ],
+  "released": "Version 0.3.9, built on 8 July 2017. An alpha from 2008 placed second in the wild competition at Blockparty 2008.",
+  "credits": "Code by Trixter, with changes by Scali in alpha 0.38, its Ctrl+W disk writer among them. Title ANSI by Spinsane of ACiD. Example songs by yesso and virt; virt's RICKROLL.MON is a cover of Rick Astley's “Never Gonna Give You Up”.",
+  "terms": "The ZIP states none. MONOTONE's repository, github.com/MobyGamer/MONOTONE, whose 0.3.9 release is this ZIP byte for byte, is under the Unlicense: “This is free and unencumbered software released into the public domain.” (LICENSE) It covers MONOTONE itself, not the music its example songs cover.",
+  "accuracy": [
+    "DosKit picks the generic color display, the PC speaker and four tracks in its setup, and goes past its title screen.",
+    "Until F2 shows the pattern editor, a song plays behind its still help screen.",
+    "Its Ctrl+Shift+P, which plays a song from the beginning, opens a private window in Firefox on Windows and Linux. Ctrl+P, which plays from the cursor's place in the order list, has not been tried here.",
+    "Its disk writer is on Ctrl+W, which some browsers keep for closing the tab: DosKit asks before the page closes.",
+    "Where its text overlaps on screen, that is MONOTONE's own: it is an alpha.",
+    "It has not been compared with real hardware yet."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=50396"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/85800/"
+    }
+  ],
+  "imageAlt": "MONOTONE's pattern editor, running in DosKit",
+  "authorType": "Person"
+}

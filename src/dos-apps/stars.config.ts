@@ -4,8 +4,7 @@
  * Licensed under the MIT License
  *
  * Starfield Effect Configuration
- * Configuration for running Draeden of VLA's starfield demo (1993), from Grumpy's source
- * pack collection
+ * Configuration for running Draeden of VLA's starfield demo (1993), from its tutorial's package
  */
 
 import { presets } from '../utils/dosboxConfigBuilder';
@@ -14,7 +13,7 @@ import { presets } from '../utils/dosboxConfigBuilder';
  * Starfield Effect Demo (hosted locally)
  * The example program of VLA's tutorial "Intro To Starfields" by Draeden
  *
- * Source: https://github.com/sceners/grumpys-source-pack-collection
+ * Source: https://files.scene.org/view/mirrors/hornet/code/effects/stars/stars.zip, the tutorial's package with its source
  * License: none found (see public/demos/README.md)
  */
 export const starsZipUrl = '/demos/stars.zip';
@@ -42,7 +41,7 @@ export const starsDosboxConf = presets
     'echo ========================================',
     'echo   Starfield Effect Demo',
     'echo   by Draeden of VLA (1993)',
-    "echo   From Grumpy's Source Pack Collection",
+    "echo   From VLA's tutorial package",
     'echo ========================================',
     'echo.',
     'echo CPU: Auto Cycles',

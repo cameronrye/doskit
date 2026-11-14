@@ -1,0 +1,19 @@
+{
+  "id": "inconexia",
+  "order": 10,
+  "kind": "demo",
+  "name": "Inconexia",
+  "description": "Iguana's demo, which a VGA bug kept out of Assembly '93",
+  "author": "Iguana",
+  "year": 1993,
+  "archiveBytes": 479845,
+  "flashing": true,
+  "start": {
+    "keys": ["Enter"],
+    "ready": {
+      "frames": [476243581]
+    },
+    "note": "DosKit starts it from its setup with the setup's own choice, Plain SoundBlaster at 16000 Hz."
+  },
+  "hint": "Inconexia waits at its setup: press Enter to start it with Plain SoundBlaster at 16000 Hz. Escape there quits to DOS."
+}

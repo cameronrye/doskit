@@ -24,6 +24,53 @@ const MOMENTS = {
   'scream-tracker': [4],
   '3drotate': [3, 6],
   stars: [3, 6],
+  'mental-surgery': [15, 30, 60],
+  verses: [35, 80],
+  holistic: [30, 60, 90],
+  heartquake: [15, 45, 90],
+  // Its end picture, from about 190 s, shows two nude figures
+  timeless: [45, 125],
+  inconexia: [70, 100],
+  pump: [28, 76, 106],
+  // Not from 30 to 65 s or 130 to 170 s, where its pin-up is nude: 95 s is the wasp
+  'stars-nooon': [90, 95, 100],
+  'dx-project': [30, 60, 90],
+  'untitled-dust': [10, 20, 60],
+  dope: [20, 60, 90],
+  solstice: [15, 45, 90],
+  contrast: [15, 30],
+  'slideshow-1': [6, 10],
+  'machines-of-madness': [5, 30, 60],
+  boost: [15, 45, 90],
+  gr8: [5, 12, 25],
+  yo: [5, 15, 30],
+  fishtro: [10, 25, 60],
+  'starport-bbstro-1': [5, 15, 40],
+  'the-party-92-invite': [10, 20, 45],
+  'assembly-93-invite': [8, 20],
+  'bussimatkaintro-93': [5, 10],
+  // Not 18 to 20 s, as it enters its main screen in a strip 68 pixels wide
+  'assembly-94-preinvite': [30, 45],
+  // Black for its first 12.5 s
+  'assembly-94-invite': [20, 60, 90],
+  soppa: [15, 33, 60],
+  animate: [12, 27],
+  drift: [20, 60],
+  blind: [20, 50, 90],
+  helium: [21, 40],
+  'the-globe': [26, 70],
+  'blastersound-2': [36, 90],
+  kukoo2: [8, 25, 40],
+  'journey-1': [8, 15],
+  'journey-2': [8, 15],
+  'chaotic-mind': [8, 15],
+  'worldcharts-1': [5, 10],
+  'composer-669': [5, 10],
+  edlib: [6, 10],
+  monotone: [3, 6, 10],
+  'adlib-tracker-2': [20, 25],
+  'fire-demo': [5, 30, 60],
+  iris: [10, 30],
 };
 
 const apps = readdirSync('src/apps')
@@ -32,7 +79,8 @@ const apps = readdirSync('src/apps')
   .filter((app) => ids.length === 0 || ids.includes(app.id));
 
 mkdirSync(outDir, { recursive: true });
-const site = await startServer({ port: 4464 });
+// PORT lets two of these run at once
+const site = await startServer({ port: Number(process.env.PORT ?? 4464) });
 const browser = await chromium.launch();
 try {
   for (const app of apps) {

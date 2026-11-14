@@ -1,0 +1,11 @@
+{
+  "id": "timeless",
+  "order": 9,
+  "kind": "demo",
+  "name": "Timeless",
+  "description": "Tran's one-man demo, in 32-bit protected-mode assembly",
+  "author": "Tran",
+  "year": 1994,
+  "archiveBytes": 156741,
+  "contentNote": "Contains nudity: its end picture shows two nude female figures, in grayscale."
+}

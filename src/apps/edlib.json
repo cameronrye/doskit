@@ -1,0 +1,24 @@
+{
+  "id": "edlib",
+  "order": 47,
+  "kind": "tracker",
+  "name": "EdLib",
+  "description": "Jens-Christian Huus's AdLib music editor, version 1.05a, with 27 example songs",
+  "author": "Jens-Christian Huus",
+  "year": 1994,
+  "archiveBytes": 124525,
+  "warnBeforeLeaving": true,
+  "start": {
+    "keys": ["Escape"],
+    "ready": {
+      "frames": [1155236736]
+    },
+    "note": "DosKit closes its About box. Ctrl+F3 lists the songs, Enter loads one, F3 plays it."
+  },
+  "hint": "EdLib opens with an About box: press Escape to close it; then Ctrl+F3 lists the example songs, Enter loads one and F3 plays it.",
+  "saveFiles": true,
+  "modules": {
+    "accept": [".edl"],
+    "folder": "SONGS"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "description": "Solstice by Valhalla, the winner of the PC demo competition at Wired 1995, running from its original files in your browser.",
+  "about": [
+    "Solstice is the demo for MS-DOS by Valhalla, a British group, which won the PC demo competition at Wired 1995, held from 3 to 5 November 1995 in Mons, Belgium. Valhalla released it after the party, on 15 November 1995 by its readme and on the 14th by its FILE_ID.DIZ.",
+    "Besides its 320x200 parts it has hi-colour parts in 640x400, which build their colours from rows of pure red, green and blue. It returns to DOS by itself after about three and a half minutes."
+  ],
+  "released": "Wired 1995: first in the PC demo competition, with 590 points. Released on 15 November 1995.",
+  "credits": "Code by Sandman, music by Big Jim. Backdrops, texture maps, objects and the Valhalla and Presents pictures by Sandman, the starfish and the bar scene by Dambuster, the Solstice picture by Vision FX. Design and ideas by Sandman, Big Jim, Hollywood, Dambuster and Vision FX. MIDAS Sound System by Guru and Alfred, PMODE/W by Tran and Daredevil (README.TXT).",
+  "terms": "Public domain, in its authors' words: “you can freely give the COMPLETE version of this demo to any of your friends etc. as long as no charge is made.” Commercial use, CD-ROMs included, needs their consent first. (README.TXT)",
+  "accuracy": [
+    "DosKit presses Enter at each of its sound setup's three screens, for the Gravis UltraSound at port 240h, in 16-bit stereo.",
+    "Its hi-colour parts show rows of red, green and blue as stripes on a flat screen, where a CRT of the time blended them. DosKit runs it without rgbfix, the switch its readme gives against “banding” in those parts, at some cost in frame rate.",
+    "Not yet compared with a capture made on real hardware.",
+    "Mono: js-dos mixes the Gravis UltraSound's two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=106"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/8039/"
+    }
+  ],
+  "imageAlt": "Solstice's texture-mapped starfish, running in DosKit"
+}

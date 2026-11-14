@@ -1,0 +1,32 @@
+{
+  "description": "Adlib Tracker II G3 2.3.58 by subz3ro, a music tracker for the OPL3 FM chip, running in your browser with 501 songs and 486 instruments and banks.",
+  "about": [
+    "Adlib Tracker II is a music tracker for the OPL3, the FM chip of the later Sound Blaster cards and their compatibles, by subz3ro of Altair, first released in 2000. Besides its own formats, it loads the songs of ten other trackers, among them HSC-Tracker, Reality AdLib Tracker and Scream Tracker 3.",
+    "This is the DOS version, G3 2.3.58, first released on 28 December 2024 and rebuilt on 2 June 2026, with its command-line player, its manual, 501 songs in its MODULES folder, most of them in folders named after their composers, and 486 instruments and banks in INSTR.",
+    "It starts by itself after about 16 seconds, 14 of them on a still DOS screen. F3 opens its file browser, Enter loads a song and F5 plays it. The browser does not list every song: the folders BEN, BRENDAN and NULA, in MODULES, hold songs that load.",
+    "What you save in it stays in this browser: the Files button can download it, bring in songs and instruments of your own in its own formats (A2M, A2T, A2P, A2I, A2F, A2B and A2W), which go to its AT2 folder, or start over."
+  ],
+  "released": "Version 2.3.58, first released on 28 December 2024 and rebuilt on 2 June 2026 (REVISION.TXT).",
+  "credits": "Code by subz3ro; MPU-401 MIDI support by ijsf and further ideas by Malfunction, as Demozoo credits them. Songs by many FM musicians, among them encore, Nula and Phandral; some are covers of commercial music, such as Nula's of a Super Mario Bros. tune and encore's of Kraftwerk's “Computer World”. Its timer unit is Inquisition's, and its DPMI host, CWSDPMI, is by Charles W. Sandmann.",
+  "terms": "The ZIP states none. Its source, which DosKit keeps at /sources/at2_sourcecode_06-02-2026.zip, is under the GNU General Public License, version 3 or later, whose text is on DosKit's licenses page: “AT2 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.” (the headers of its source files) Its author's FAQ: “it can be freely used, shared, spread, whatever - as much as you like”. Its timer unit, by Inquisition, is “FREE FOR ANY NON COMMERCIAL USAGE.” (ISS_TIM.PAS, in the source) CWSDPMI r5, the DPMI host it ships unmodified, is by Charles W. Sandmann, and you have the right to its source code: it is csdpmi5s.zip on DJ Delorie's site, https://www.delorie.com/pub/djgpp/current/v2misc/csdpmi5s.zip. No license here covers the commercial music some of its songs cover.",
+  "accuracy": [
+    "It runs with 32 MB of memory: with DOSBox's default 16 MB it stops with “Insufficient extended memory!”",
+    "Its file browser does not list its AMD, CFF, DFM, FMK and HSC songs, 121 of the 501, although its file masks include those formats. The songs in MODULES\\BEN, BRENDAN and NULA load.",
+    "Its keys repeat very fast, and keys pressed while it loads a song are lost.",
+    "Browsers keep F11 and F12, and on Windows and Linux Ctrl+T, Ctrl+N and Ctrl+W, for themselves: DosKit asks before the page closes.",
+    "Its screen saver starts after 5 minutes without a key.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=63439"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/112287/"
+    }
+  ],
+  "imageAlt": "Adlib Tracker II's pattern editor, running in DosKit",
+  "authorType": "Person"
+}

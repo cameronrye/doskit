@@ -2,7 +2,7 @@
 
 > DosKit: DOS demoscene classics and the trackers behind them, playable in your browser. A progressive web app built with React 19, TypeScript and Vite 8 around js-dos 8.3.20, which runs DOSBox as WebAssembly in a worker thread. It is live at https://doskit.net/, and its source is at https://github.com/cameronrye/doskit.
 
-The start page opens an application selector, and closing it without a pick boots a DOS prompt. DosKit comes with demoscene productions and music trackers, among them Second Reality, Crystal Dream 2, Impulse Tracker and Scream Tracker 3, and each has a page of its own, such as https://doskit.net/secondreality.
+The start page opens an application selector, and closing it without a pick boots a DOS prompt. DosKit comes with fifty-two demoscene productions and music trackers, among them Second Reality, Crystal Dream 2, Impulse Tracker and Scream Tracker 3, and each has a page of its own, such as https://doskit.net/secondreality.
 
 - **Offline**: Installable; after the first visit the DOS prompt works offline, and each application does once it has been opened online
 - **Input and sound**: The keyboard, Sound Blaster, Gravis UltraSound and AdLib sound, and the on-screen keyboard in the js-dos sidebar, which phones and tablets open on a compact layout of DosKit's

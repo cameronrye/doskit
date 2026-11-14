@@ -1,0 +1,10 @@
+{
+  "id": "fire-demo",
+  "order": 52,
+  "kind": "effect",
+  "name": "Fire Demo",
+  "description": "Jare's fire effect, with its source, to Jester's module Elysium",
+  "author": "VangeliSTeam",
+  "year": 1993,
+  "archiveBytes": 146527
+}

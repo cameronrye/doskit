@@ -1,0 +1,26 @@
+{
+  "description": "Holistic by Cascada VR Section, second in the PC demo competition at Assembly '94, running from its original files in your browser.",
+  "about": [
+    "Holistic is Cascada VR Section's demo for MS-DOS, second of the PC demos at Assembly '94, held in August 1994 in Helsinki. Its NFO says it was put together in less than a week, from code and tools the group had written for its virtual reality project, and that everything in it is calculated in real time.",
+    "This is the release that followed the party: its files are dated 9 September 1994, and its NFO gives its second place, with 726 points.",
+    "Its music is Zodiak's “Shelter”. The module says “This song is 100% (c) 1994 Fikonknecke” and thanks Basehead “for some samples that I ripped from him”."
+  ],
+  "released": "Assembly '94: second in the PC demo competition, with 726 points. Its files are dated 9 September 1994.",
+  "credits": "Code by Hellraiser and Robban, graphics by Mirage, music and sound effects by Zodiak.",
+  "terms": "HOLISTIC.NFO: “This demo is freeware, please distribute it to all your fellow computerusers as long as you keep the archive as it was when you got it and delete any irrelevant BBS-ads. No part of Holistic may be tampered with or removed without a written permission from the authors.” The NFO asks for BBS adverts to be deleted, but every known copy of the archive carries one, LOINEN.COM. DosKit serves scene.org's copy unmodified, advert included.",
+  "accuracy": [
+    "DosKit picks Sound Blaster 16 in its setup and gives it no Gravis UltraSound, which its NFO recommends: with one, its music hung at a random point here.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=7982"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/6786/"
+    }
+  ],
+  "imageAlt": "Holistic's 3D head, running in DosKit"
+}

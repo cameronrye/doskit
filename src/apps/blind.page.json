@@ -1,0 +1,26 @@
+{
+  "description": "blind by Eufrosyne, the winner of the PC 64K intro competition at Assembly '96, in its final version, running from its original files in your browser.",
+  "about": [
+    "blind is Eufrosyne's 64K intro for MS-DOS, which won the PC 64K intro competition at Assembly '96, held from 16 to 18 August 1996 in Helsinki. This is its final version, released on 5 January 1997.",
+    "Escape quits and Space fast-forwards; BLIND.NFO says other keys do nothing and “no hidden parts exist.” It returns to DOS by itself after about two and a half minutes."
+  ],
+  "released": "Assembly '96: first in the PC 64K intro competition. The final version was released on 5 January 1997.",
+  "credits": "Code by Suckho, graphics and music by Duke. Music player MXMPlay by Cubic Team, PMODE by Tran.",
+  "terms": "BLIND.NFO: “you can spread this intro freely. you can add this intro on any CD-ROM, but please inform us. you must not modify anything in this intro or any files you got with it.”",
+  "accuracy": [
+    "DosKit picks the Gravis UltraSound at port 240h in its setup. BLIND.NFO says its music is not the same on a Sound Blaster.",
+    "Its timeline follows a 2007 capture on scene.org within about 0.2 seconds.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=556"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/18162/"
+    }
+  ],
+  "imageAlt": "blind by Eufrosyne, running in DosKit"
+}

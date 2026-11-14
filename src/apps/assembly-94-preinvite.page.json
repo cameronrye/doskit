@@ -1,0 +1,27 @@
+{
+  "description": "The Assembly '94 Pre-Invitation Intro by Future Crew and Sonic PC, the organizers' first invitation to Assembly '94 in Helsinki, running from its original files in your browser.",
+  "about": [
+    "The Assembly '94 Pre-Invitation Intro is the organizers' first invitation to Assembly '94, held from 5 to 7 August 1994 in Helsinki, released on 8 April 1994. Future Crew made it with Sonic PC, who did the code.",
+    "Its text file gives the party's preliminary information and promises another invitation intro, which followed in July: the Assembly '94 Invitation Dentro.",
+    "It plays in a loop, about three and a half minutes a pass, until Escape, which shows a contact screen and returns to DOS."
+  ],
+  "released": "Released on 8 April 1994, as the organizers' first invitation to Assembly '94 (5 to 7 August 1994, Helsinki).",
+  "credits": "Code by Mik of Sonic PC. Design and graphics by Marvel, the Assembly '94 logo by Pixel, music by Purple Motion and texts by GORE, of Future Crew.",
+  "terms": "Freeware: “This demo is freeware. It can be freely distributed without modifications. No money can be charged for it.” (README.1ST)",
+  "accuracy": [
+    "DosKit gives it a Gravis UltraSound and no Sound Blaster, and picks GUS autodetection in its sound card menu.",
+    "Mono: js-dos mixes the two channels into one.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=3002"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/99948/"
+    }
+  ],
+  "imageAlt": "A screen of the Assembly '94 Pre-Invitation Intro, running in DosKit"
+}

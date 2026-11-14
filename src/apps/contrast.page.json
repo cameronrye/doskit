@@ -1,0 +1,33 @@
+{
+  "description": "Contrast by TFL-TDV, second in the PC demo competition at Wired '94, running from its original files in your browser.",
+  "about": [
+    "Contrast is the first demo of TFL-TDV, The FLamoots and The Dark Vision of Brussels, shown at Wired '94 in Mons, Belgium, on 31 October 1994, where it placed second. This is the fixed release that followed in November 1994.",
+    "Space skips to the next part and Escape ends the demo; + and - on the numeric keypad show how much of each frame the CPU takes, and in its Wolfenstein part F10 and F11 set low and high detail. It ends on a Pleasure Access BBS screen of its own, which waits for Space or Escape before it returns to DOS.",
+    "In 2022 Type One published its source under an MIT license. DosKit runs the 1994 release."
+  ],
+  "released": "Wired '94: second in the PC demo competition, with 172 points. Shown on 31 October 1994; the fixed release is dated November 1994.",
+  "credits": "Code by Type One (the VGA framework and most parts), Morflame (the Wolfenstein part), Bismarck (the shadelines and the Star Wars scroller), Sam (the setup and the sprites), Gopi (the dots morph) and Karma (the eyes effect); graphics by Zoltan, Fred, Type One and Youvi; music by Fred; the end ANSI by Green Kawa. Taken from others: its opening image of Gaston Lagaffe, Franquin's character, ripped from an Atari ST demo; the Cacodemon sprite from id Software's Doom; a scan of the cartoonist Frédéric Jannin; dance samples from D0MM & Animal Mine's “Primal Urge”; the eyes, a scan from the Deluxe Paint IIe pack; and a font of unknown origin. Music played by MIDAS Sound System, by Petteri Kangaslampi and Jarno Paananen.",
+  "terms": "MIT License, from Type One's repository of its source, github.com/type-one/t1-1994-contrast (2022), which links this archive: “Copyright (c) 1994-2022 Laurent Lardinois aka Type One / TFL-TDV” and “Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required. 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software. 3. The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.” It cannot cover what the demo took from others. Contrast uses MIDAS Sound System, and may freely be used and distributed under the terms of Section 3 of the MIDAS Sound System license: “Programs using MIDAS Sound System may always be freely distributed if no fee is charged for the distribution and may freely be used by anyone.”",
+  "accuracy": [
+    "It runs on a plain VGA (DOSBox's vgaonly), which draws the raster gradient of its end screen as a real VGA does. Reds and blues then have half the shades.",
+    "MIDAS finds the Gravis UltraSound, which DosKit gives it.",
+    "Its effects that alternate frames 70 times a second shimmer on a 60 Hz screen.",
+    "Not yet compared with a capture made on real hardware.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=1446"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/27285/"
+    },
+    {
+      "label": "Source on GitHub",
+      "url": "https://github.com/type-one/t1-1994-contrast"
+    }
+  ],
+  "imageAlt": "Contrast's title, running in DosKit"
+}

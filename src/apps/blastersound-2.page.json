@@ -1,0 +1,26 @@
+{
+  "description": "BlasterSound BBS Intro #2 by Iguana, an advert for their home BBS in which snow slowly fills the screen, running from its original files in your browser.",
+  "about": [
+    "The second intro Iguana wrote for BlasterSound, their home BBS in Granada, in February 1994, released with its source: snow falls on its text, 2,000 flakes at a time, to AdLib music, and slowly fills the screen. Its idea, BLASTER2.NFO says, comes from one of the first routines Jare and JCAB wrote, on the ZX Spectrum.",
+    "Any key ends it: it then prints the BBS's advert and returns to DOS."
+  ],
+  "released": "BLASTER2.NFO: “Written by Iguana in 1994.” The files in its two ARJ archives are dated 13 February 1994.",
+  "credits": "Design and text by Jare; the snowfall and the music player by JCAB; the tune by COI; the font by an artist the NFO calls unknown.",
+  "terms": "“Full source code is included, so you can learn a little. If you like it and/or use the concept, please credit us.” (BLASTER2.NFO) Iguana's list of its releases makes it public domain (RELEASES.TXT, in Heartquake's archive).",
+  "accuracy": [
+    "Its AdLib music plays through the FM chip of the emulated Sound Blaster 16. The General MIDI copy it also sends is silent here.",
+    "DosKit sends it no keys: any key ends it.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=12650"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/158349/"
+    }
+  ],
+  "imageAlt": "BlasterSound BBS Intro #2's falling snow, running in DosKit"
+}

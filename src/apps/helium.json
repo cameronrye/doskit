@@ -1,0 +1,13 @@
+{
+  "id": "helium",
+  "order": 36,
+  "kind": "intro",
+  "name": "Helium",
+  "description": "viznut's 4K intro, first at Assembly '97, with AdLib music",
+  "author": "viznut",
+  "year": 1997,
+  "archiveBytes": 4545,
+  "jsdos": {
+    "renderAspect": "AsIs"
+  }
+}

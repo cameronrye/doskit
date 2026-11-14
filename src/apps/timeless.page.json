@@ -1,0 +1,27 @@
+{
+  "description": "Timeless by Tran, a demo he made alone in 32-bit protected-mode assembly, running from its original files in your browser.",
+  "about": [
+    "Timeless is a demo for MS-DOS by Tran (Thomas Pytel), from February 1994. He made all of it, its design, code, graphics and music, in 32-bit protected-mode assembly under PMODE 2.4, the DOS extender he wrote; only the low-level Sound Blaster driver is another's, Dave's (White Shadow).",
+    "Here it plays once through, then shows its end picture, of two nude female figures in grayscale, and returns to DOS, after about three and a half minutes in all. Escape ends it at any time."
+  ],
+  "released": "TIMELESS.DOC calls it “a demo in Feb 1994”; its program is dated 26 February 1994.",
+  "credits": "Design, code, graphics and music by Tran; the low-level Sound Blaster driver by Dave (White Shadow).",
+  "terms": "“You may distribute and use this demo in any manner you wish, as long as all the original files, unmodified, are included with it.” (TIMELESS.DOC)",
+  "accuracy": [
+    "DosKit starts it with two of its own switches: /S343, for the Gravis UltraSound at port 240 and IRQ 5, which skips its sound card menu, and /L1, which plays it once and then shows its end screen. Without /L it loops until Escape.",
+    "Its end screen fades and holds at half speed in some runs, so it returns to DOS after about 201 or about 214 seconds.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=2878"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/22177/"
+    }
+  ],
+  "imageAlt": "Fish and flowers over Timeless's red, mirrored blobs, running in DosKit",
+  "authorType": "Person"
+}

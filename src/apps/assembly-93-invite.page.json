@@ -1,0 +1,28 @@
+{
+  "description": "The Assembly '93 Invitation Intro by Future Crew, their invitation to Assembly '93 in Kerava, Finland, running from its original files in your browser.",
+  "about": [
+    "The Assembly '93 Invitation Intro is Future Crew's invitation to Assembly '93, held from 30 July to 1 August 1993 at the Nikkarin yläaste school in Kerava, Finland. It was released on 15 June 1993.",
+    "Its readme says it was made “to tell you about Assembly'93 in a more peaceful and designed way”, not to show effects: pages of text over one background, in 640x480 with 16 colors, to an eight-channel Scream Tracker 3 module by Purple Motion. The background reads “ASSEMBY '93”, misspelled in the original.",
+    "It runs for about ten minutes. Its last page asks for Escape, which shows Future Crew's contact screen and returns to DOS; until then it waits.",
+    "The archive is Future Crew's package as released: with the intro come the party's information files and three scanned maps of the way to the party place."
+  ],
+  "released": "Released on 15 June 1993, as the invitation to Assembly '93 (30 July to 1 August 1993, Kerava, Finland).",
+  "credits": "Code by Trug, with the music player by Psi. Music by Purple Motion (“World of plastic”, as Demozoo names it), graphics by Marvel, texts and maps by Gore and Jake.",
+  "terms": "Its own files state none. Future Crew's information files, which list it among their releases, make all their demos freeware: “you can copy and distribute them freely as long as you make no modifications to them.”",
+  "accuracy": [
+    "DosKit gives it a Gravis UltraSound, which it finds by itself; without one it would ask for a mixing rate.",
+    "Its pages keep pace with a capture published by AssemblyTV to within 5 seconds.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=1281"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/99947/"
+    }
+  ],
+  "imageAlt": "The Assembly '93 Invitation Intro's car over the Future Crew logo, running in DosKit"
+}

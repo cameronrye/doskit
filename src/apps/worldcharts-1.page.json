@@ -1,0 +1,28 @@
+{
+  "description": "Worldcharts #1, Future Crew's diskmag of PC demo scene charts and articles, running from its original files in your browser.",
+  "about": [
+    "Worldcharts is Future Crew's diskmag for MS-DOS: an editorial, articles and reviews, and its readers' top tens of demos, groups, coders, musicians, graphics artists and games. Its first issue came out in 1993, with news of Assembly '93, held that summer.",
+    "There was no second issue: Future Crew's information file of December 1993 says it “wasn't as good a success as we wanted it to be”, and that there was no reason to send in votes or articles any more. Its voting form, VOTING.FRM, and its end screen still ask for votes.",
+    "F1 to F4 change the music. Its Exit button, or Escape on the main menu, shows an end screen and returns to DOS."
+  ],
+  "released": "Its FILE_ID.DIZ: “Released May 26th, 1993”, the date its files carry. Future Crew's release lists give 26 June 1993.",
+  "credits": "Edited by GORE, code by Psi, graphics by Pixel, music by Purple Motion and C.C. Catch; articles and reviews by members of Future Crew and outside writers (as Demozoo credits them).",
+  "terms": "The archive states no terms. Future Crew's information files list Worldcharts #1 among their releases, and the one of December 1994 makes all their “demos and programs” freeware: “you can copy and distribute them freely as long as you make no modifications to them.”",
+  "accuracy": [
+    "It runs on a plain VGA (DOSBox's vgaonly): on DOSBox's default SVGA machine, half its 16 colors came out lime green.",
+    "It finds the Gravis UltraSound by itself and plays its music through it.",
+    "Its keys were tried in DosKit's js-dos build; clicking its buttons has not been tried.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=2997"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/99551/"
+    }
+  ],
+  "imageAlt": "Worldcharts #1's main menu, running in DosKit"
+}

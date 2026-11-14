@@ -1,0 +1,18 @@
+{
+  "id": "blind",
+  "order": 35,
+  "kind": "intro",
+  "name": "blind",
+  "description": "Eufrosyne's 64K intro, first at Assembly '96, in its final version",
+  "author": "Eufrosyne",
+  "year": 1997,
+  "archiveBytes": 66414,
+  "start": {
+    "keys": ["1", "4", "2"],
+    "ready": {
+      "stdout": "3. no sound"
+    },
+    "note": "DosKit picks the Gravis UltraSound at port 240h in its setup, and to play the intro once."
+  },
+  "hint": "blind waits at its setup: press 1 for the Gravis UltraSound, 4 for port 240h, then 2 to play it once."
+}

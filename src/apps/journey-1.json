@@ -1,0 +1,18 @@
+{
+  "id": "journey-1",
+  "order": 40,
+  "kind": "musicdisk",
+  "name": "Journey 1",
+  "description": "Future Crew's musicdisk of seven songs by Purple Motion, the first of two parts",
+  "author": "Future Crew",
+  "year": 1993,
+  "archiveBytes": 839556,
+  "start": {
+    "keys": ["Enter"],
+    "ready": {
+      "frames": [3767943100]
+    },
+    "note": "DosKit plays the first song in its menu, Aquaphobia. Up, Down and Enter pick another, Escape switches between the menu and the playing screen, and F10 returns to DOS."
+  },
+  "hint": "Journey 1 waits at its menu: press Enter to play the highlighted song. Up, Down and Enter pick another, Escape switches screens, and F10 returns to DOS."
+}

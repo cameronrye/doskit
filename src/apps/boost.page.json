@@ -1,0 +1,28 @@
+{
+  "description": "Boost by Doomsday, the winner of the PC demo competition at Assembly '97, running from its original files in your browser.",
+  "about": [
+    "Boost is Doomsday's demo for MS-DOS, which won the PC demo competition at Assembly '97, held from 8 to 10 August 1997 at the Helsinki Fair Centre. Its NFO calls it a sequel to Vivid Experiment, Doomsday's demo for Assembly '96. This is its final version, from September 1997.",
+    "It draws in 320x200 with thousands of colors, picks the Gravis UltraSound by itself and plays for about four and three-quarter minutes. Escape returns to DOS.",
+    "It shows Finlandia vodka and Lego branding."
+  ],
+  "released": "Assembly '97: first in the PC demo competition. This final version followed in September 1997.",
+  "credits": "2D code by Doom, 3D and other code by MRI, music by Illusion and Swallow, art and scenes by Damaq, Dice and Wode, 3D objects by Axid of Gasp Inc.; the female, vase and Lego-man objects “were taken from the almighty internet” (BOOST.NFO). MIDAS Sound System by Sahara Surfers, PMODE/W by T Pytel and C Scheffold.",
+  "terms": "Free to copy and pass on at no charge: “this demo may freely be copied and distributed if no money is charged for it.” In plain English, its NFO goes on, “you are not allowed to make money on BOOST without the written permission from the Doomsday crew.” (BOOST.NFO)",
+  "accuracy": [
+    "It runs at the most cycles the device gives, so how smoothly it plays depends on the device: on a heavily loaded machine one part nearly froze for 7 seconds.",
+    "It plays through the Gravis UltraSound, which MIDAS picks by itself.",
+    "Its last part, with the Lego man, and its return to DOS have not been watched here yet.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=6485"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/715/"
+    }
+  ],
+  "imageAlt": "Boost's title over a tunnel of lights, running in DosKit"
+}

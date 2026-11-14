@@ -1,0 +1,19 @@
+{
+  "id": "fishtro",
+  "order": 25,
+  "kind": "intro",
+  "name": "Fishtro",
+  "description": "Future Crew's invitation intro for Assembly '92",
+  "author": "Future Crew",
+  "year": 1992,
+  "archiveBytes": 225135,
+  "contentNote": "Contains nudity: its exit picture shows the party's mascot, Melvin, drawn bare-breasted.",
+  "start": {
+    "keys": ["Enter"],
+    "ready": {
+      "stdout": "Press ESC to change the configuration"
+    },
+    "note": "DosKit takes its setup's defaults, a 486 and a Sound Blaster at 220h, IRQ 7. It shows a notice of this version's first distributor for about 3 seconds before the intro."
+  },
+  "hint": "Fishtro waits at its setup: press Enter to start it with its defaults, a 486 and a Sound Blaster."
+}

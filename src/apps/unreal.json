@@ -3,17 +3,16 @@
   "order": 2,
   "kind": "demo",
   "name": "Unreal",
-  "description": "Future Crew's demo, first at Assembly '92",
+  "description": "Future Crew's demo, first at Assembly '92, in its version 1.1",
   "author": "Future Crew",
-  "year": 1992,
-  "archiveBytes": 1314736,
+  "year": 1993,
+  "archiveBytes": 1337312,
   "start": {
-    "keys": ["Right", "Right", "Down", "Down", "Enter"],
-    "gapMs": 100,
+    "keys": ["Enter"],
     "ready": {
-      "frames": [2896014827]
+      "frames": [1118081498]
     },
-    "note": "Its sound setup starts on No sound: DosKit picks SoundBlaster Pro at 20 kHz."
+    "note": "Its sound setup starts on Gravis Ultrasound 44Khz: DosKit takes it."
   },
-  "hint": "Unreal waits at its sound setup, which starts on No sound: press Right, Right, Down, Down, then Enter for SoundBlaster Pro at 20 kHz."
+  "hint": "Unreal waits at its sound setup: press Enter for the Gravis Ultrasound at 44 kHz."
 }

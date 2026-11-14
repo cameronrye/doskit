@@ -1,6 +1,6 @@
 {
   "id": "squid-bbstro",
-  "order": 6,
+  "order": 22,
   "kind": "intro",
   "name": "Squid BBS Intro",
   "description": "A BBS intro in 1899 bytes, with AdLib music",

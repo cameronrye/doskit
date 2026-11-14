@@ -1,0 +1,27 @@
+{
+  "description": "Journey 2, the second part of Future Crew's musicdisk of Purple Motion's songs, released at The Party 1993, running from its original files in your browser.",
+  "about": [
+    "Journey is Purple Motion's musicdisk for Future Crew, released in two parts at The Party 1993 in Herning, Denmark, with Future Crew's MusicDiskPlayer, which plays MOD, STM and S3M modules on the Gravis UltraSound or a Sound Blaster.",
+    "This second part has seven songs from 1993: Shadowrun, which won at Aggressive '93, a party in Kerava, Finland, Satellite One, Cool City, Day of the Lollipop, Minimum Velocity, Soul-O-Matic and Starshine, third in the PC multichannel music competition at Assembly '93.",
+    "Up and Down move through its menu, and Enter plays a song, which loops until another is picked. Escape switches between the menu and the playing screen while the music goes on, and F10 returns to DOS."
+  ],
+  "released": "The Party 1993, in no competition. Released on 28 December 1993.",
+  "credits": "Music by Purple Motion. The MusicDiskPlayer by Future Crew, with its code by Psi (as Demozoo credits it). Cool City's sample names say a couple of its samples were “loaned” from Outzider of Darkzone, from Debut.",
+  "terms": "Freeware: “All our demos, except the ones which we have created for different companies, are freeware. This means that you can copy and distribute them freely as long as you make no modifications to them.” (FCINFO12.TXT) Of the player, MDP.DOC says: “You can freely use the MusicDiskPlayer to publish your own musics.”",
+  "accuracy": [
+    "DosKit gives it a Gravis UltraSound, which its player looks for first.",
+    "Its menu is 512x480 and its playing screen 640x480: DosKit's 4:3 view stretches the menu 25% wider.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=6515"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/248711/"
+    }
+  ],
+  "imageAlt": "Journey 2's song menu, under its title, running in DosKit"
+}

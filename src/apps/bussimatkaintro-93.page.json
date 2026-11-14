@@ -1,0 +1,27 @@
+{
+  "description": "Bussimatkaintro 93 by Future Crew, a Finnish invitation to the bus trip from Finland to The Party 1993 in Denmark, running from its original files in your browser.",
+  "about": [
+    "Bussimatkaintro 93 is Future Crew's invitation, in Finnish, to the bus trip from Finland to The Party 1993, held from 27 to 29 December 1993 in Herning, Denmark. Future Crew organized the trip with The Movement and Accession, whom the intro names with them.",
+    "In English, its text offers a bus trip from Helsinki via Turku, Stockholm, Gothenburg and Frederikshavn to Herning and back, from 26 to 30 December 1993, for 500 marks.",
+    "It has five pages of text: Down shows the next one and Up the one before. Escape returns to DOS; it never ends by itself."
+  ],
+  "released": "Released in November 1993: INTRO.EXE is dated 7 November 1993, and Future Crew's release lists give 9 November 1993.",
+  "credits": "Future Crew, as their release lists, pouet.net and Demozoo have it. Its credits page puns in Finnish: graphics by “ihme” (“marvel”), music by “purppura liike” (“purple motion”).",
+  "terms": "Its own files state none. Future Crew's information files, which list it among their releases, make all their demos freeware: “you can copy and distribute them freely as long as you make no modifications to them.”",
+  "accuracy": [
+    "It finds the Gravis UltraSound DosKit gives it; without one it plays through the Sound Blaster.",
+    "Mono: js-dos mixes the two channels into one.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=9192"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/280067/"
+    }
+  ],
+  "imageAlt": "A page of Bussimatkaintro 93's Finnish text, running in DosKit"
+}

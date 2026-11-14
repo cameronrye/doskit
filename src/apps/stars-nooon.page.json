@@ -1,0 +1,30 @@
+{
+  "description": "Stars: Wonders of the World by NoooN, the winner of the PC demo competition at Assembly '95, running from its original files in your browser.",
+  "about": [
+    "Stars: Wonders of the World is NoooN's demo for MS-DOS, which won the PC demo competition at Assembly '95, held from 10 to 13 August 1995 in Helsinki. Its NFO says NoooN made it in five days.",
+    "This is its final release, of September 1995, which added the Sound Blaster and Sound Blaster 16 to the party version's Gravis UltraSound.",
+    "It takes no keys: Space and Escape neither skip nor stop it."
+  ],
+  "released": "Assembly '95: first in the PC demo competition, with 3,646 points. The final release followed in September 1995.",
+  "credits": "System and special effects by Karl, 3D motion by Barti, script and graphics by Ra, music by Groo; sound code by LCA, and PMODE by Tran (STARS.NFO).",
+  "terms": "None found: STARS.NFO only asks the boards that carry NoooN's releases to “allow to any user to download all our productions for free”. Rights holders can reach DosKit's owner below.",
+  "accuracy": [
+    "It takes no keys, so it can be neither skipped nor stopped: picking another app leaves it.",
+    "DosKit gives it the Gravis UltraSound its NFO recommends.",
+    "Its parts come within about 0.3 to 0.7 seconds of a capture made on a Pentium 120 with a Gravis UltraSound while the device keeps up; on a busy one it can fall about 2 seconds behind where it loads a part.",
+    "The BARTi and KARL name cards change places from run to run, which seems to be the demo's own doing.",
+    "Its last two minutes, and whether it returns to DOS, have not been seen in DosKit.",
+    "Mono: js-dos mixes the Gravis UltraSound's two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=301"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/648/"
+    }
+  ],
+  "imageAlt": "Stars: Wonders of the World's wasp, running in DosKit"
+}

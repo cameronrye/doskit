@@ -1,0 +1,18 @@
+{
+  "id": "chaotic-mind",
+  "order": 42,
+  "kind": "musicdisk",
+  "name": "Chaotic Mind",
+  "description": "Future Crew's musicdisk of eight songs by Skaven",
+  "author": "Future Crew",
+  "year": 1994,
+  "archiveBytes": 1421567,
+  "start": {
+    "keys": ["Enter"],
+    "ready": {
+      "frames": [573231961]
+    },
+    "note": "DosKit plays the first song in its menu, Amazonas. Up, Down and Enter pick another, Escape switches between the menu and the playing screen, and F10 returns to DOS."
+  },
+  "hint": "Chaotic Mind waits at its menu: press Enter to play the highlighted song. Up, Down and Enter pick another, Escape switches screens, and F10 returns to DOS."
+}

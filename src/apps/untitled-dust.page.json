@@ -1,0 +1,28 @@
+{
+  "description": "Untitled by Dust, the winner of the PC demo competition at The Party 1993, in its bugfixed release, running from its original files in your browser.",
+  "about": [
+    "Untitled is the demo for MS-DOS by Dust, of Troisdorf in Germany, which won the PC demo competition at The Party 1993, held from 27 to 29 December 1993 in Herning, Denmark. Dust had to pre-release it for the competition, and that version ran only with a Gravis UltraSound.",
+    "This is the bugfixed release of the end of January 1994, which adds the Sound Blaster Pro and Sound Blaster and fixes its graphics.",
+    "DosKit starts it with /NS, the switch its NFO gives for running it in a loop at exhibitions: it skips the setup screen and begins with the dungeon."
+  ],
+  "released": "The Party 1993: first in the PC demo competition. The bugfixed release followed at the end of January 1994.",
+  "credits": "Code by Stone; graphics by Tyrone, Vioon and Den; music by B-Man. Vioon made the dungeon and Den the tube, and B-Man and Stone animated the halfpipe (UNTITLED.NFO).",
+  "terms": "Freeware: “You are allowed to copy and distribute it as long as no changes are made to it. You may NOT SELL it or charge anything for copying it.” (UNTITLED.NFO)",
+  "accuracy": [
+    "DosKit starts it with /NS, which skips its setup: there, Enter only takes while the demo's own mouse pointer rests on “start”, and DosKit does not capture the mouse.",
+    "It plays through the Gravis UltraSound.",
+    "Not yet compared with a capture made on real hardware. Its last minute or so, a landscape, the credits and its return to DOS, has not been seen in DosKit.",
+    "Mono: js-dos mixes the Gravis UltraSound's two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=64"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/6123/"
+    }
+  ],
+  "imageAlt": "Untitled's dungeon, running in DosKit"
+}

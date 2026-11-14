@@ -1,0 +1,27 @@
+{
+  "description": "Verses by Electromotive Force, the winner of the PC demo competition at Assembly '94, in its Revision II, running from its original files in your browser.",
+  "about": [
+    "Verses is Electromotive Force's demo for MS-DOS, which won the PC demo competition at Assembly '94, held from 5 to 7 August 1994 in Helsinki. It came out on 17 August 1994, for the Gravis UltraSound only.",
+    "This is Revision II, released on 26 April 1995. VERSES.NFO says it no longer hangs on machines as fast as a Pentium 90, adds the Sound Blaster and Sound Blaster Pro, plays on a GUS with 256 KB rather than 512, and adds a volume control and a “no questions asked” mode, which DosKit starts it in.",
+    "Escape quits; - and + on the keypad turn the music down and up."
+  ],
+  "released": "Assembly '94: first in the PC demo competition. Released on 17 August 1994; Revision II on 26 April 1995.",
+  "credits": "Code by Saracen, The Grim Reaper, Devastator and Saint. Music, “Double Trouble”, by Whalebone, who also drew the ripple picture and the end logo. Graphics by Saracen, including the “Bill Gates” writer, and The Grim Reaper; the “verses” logo by Shaman & Kerberos; gouraud objects by Vortex. PMODE by Tran.",
+  "terms": "VERSES.NFO: “This demo is freeware. It can be freely distributed as long as the files or the contents of the archive are not modified in any way. No money can be charged for this demo. We grant exclusive rights for CD-ROM distribution of this demo to the organizers of Assembly'94, and demand a 3.2% royalty from the net revenue, as stated in the ASM94_2.TXT info file.” ASM-94_2.TXT, the party's information file, sets that royalty for the Assembly '94 CD-ROM.",
+  "accuracy": [
+    "DosKit starts it in its “no questions asked” mode, which finds the Gravis UltraSound and skips the setup's questions.",
+    "By its fourth minute its parts run up to about 7 seconds behind a capture made on a Pentium 120.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=67"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/6785/"
+    }
+  ],
+  "imageAlt": "Two purple faces in Verses's 640x480 part, running in DosKit"
+}

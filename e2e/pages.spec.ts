@@ -14,13 +14,22 @@ const apps: { id: string; name: string; order: number }[] = readdirSync('src/app
 
 const urlIdOf = (id: string) => id.replaceAll('-', '');
 
+/** Text as scripts/app-pages.ts writes it into a page: "Assembly '94" as "Assembly &#39;94" */
+const escapeHtml = (text: string) =>
+  text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+
 for (const app of apps) {
   test(`${app.name} has a page of its own, with its own share card`, async ({ request }) => {
     const page = await request.get(`/${urlIdOf(app.id)}`, { maxRedirects: 0 });
 
     expect(page.status()).toBe(200);
     const html = await page.text();
-    expect(html).toContain(`<title>${app.name} - DosKit</title>`);
+    expect(html).toContain(`<title>${escapeHtml(app.name)} - DosKit</title>`);
     expect(html).toContain(`<link rel="canonical" href="https://doskit.net/${urlIdOf(app.id)}" />`);
     const card = html.match(
       /<meta property="og:image" content="https:\/\/doskit\.net([^"]+)"/

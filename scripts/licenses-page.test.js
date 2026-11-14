@@ -28,6 +28,16 @@ describe('the licenses page', () => {
     );
   });
 
+  it("links the GPL-3.0's text and the source of Adlib Tracker II, which the site serves", () => {
+    // GPL-3.0 section 6(d): the source beside the binaries, for as long as they are served
+    expect(urls).toContain('/licenses/gpl-3.0.txt');
+    expect(readFileSync(join(LICENSES_DIR, 'gpl-3.0.txt'), 'utf8')).toMatch(
+      /^\s*GNU GENERAL PUBLIC LICENSE\s+Version 3, 29 June 2007\n/
+    );
+    expect(urls).toContain('/sources/at2_sourcecode_06-02-2026.zip');
+    expect(existsSync(join(PUBLIC_DIR, 'demos', 'adlib-tracker-2.zip'))).toBe(true);
+  });
+
   it('links the licenses of the bundled packages, which the build writes next to it', () => {
     expect(licenseFile).toBeTypeOf('string');
     expect(posix.dirname(licenseFile)).toBe('licenses');
