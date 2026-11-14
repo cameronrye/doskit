@@ -1,0 +1,18 @@
+{
+  "id": "slideshow-1",
+  "order": 18,
+  "kind": "demo",
+  "name": "Slideshow I",
+  "description": "Future Crew's slideshow of nine VGA pictures, with four-channel Sound Blaster music",
+  "author": "Future Crew",
+  "year": 1990,
+  "archiveBytes": 344681,
+  "start": {
+    "keys": ["9"],
+    "ready": {
+      "stdout": "9 - Sound Blaster with 12Mhz or faster AT."
+    },
+    "note": "DosKit picks the Sound Blaster in its sound menu. Press Space once a picture has faded in for the next one."
+  },
+  "hint": "Slideshow I waits at its sound menu: press 9 for the Sound Blaster. Then press Space once a picture has faded in for the next one."
+}

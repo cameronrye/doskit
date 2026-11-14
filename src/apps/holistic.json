@@ -1,0 +1,18 @@
+{
+  "id": "holistic",
+  "order": 7,
+  "kind": "demo",
+  "name": "Holistic",
+  "description": "Cascada VR Section's demo, second at Assembly '94",
+  "author": "Cascada VR Section",
+  "year": 1994,
+  "archiveBytes": 1067064,
+  "start": {
+    "keys": ["Right", "Right", "Right", "Right", "Enter"],
+    "ready": {
+      "frames": [1757433617]
+    },
+    "note": "DosKit picks Sound Blaster 16 in its setup. The demo then loads its data for a while before it starts."
+  },
+  "hint": "Holistic waits at its setup: press Right four times for Sound Blaster 16, then Enter."
+}

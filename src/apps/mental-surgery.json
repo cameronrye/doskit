@@ -1,0 +1,18 @@
+{
+  "id": "mental-surgery",
+  "order": 5,
+  "kind": "demo",
+  "name": "Mental Surgery",
+  "description": "Future Crew's demo of 1991, their last to run on a 286",
+  "author": "Future Crew",
+  "year": 1991,
+  "archiveBytes": 100085,
+  "start": {
+    "keys": ["Y", "N", "Y", "Enter", "Enter"],
+    "ready": {
+      "stdout": "STMIK02"
+    },
+    "note": "DosKit answers its five setup questions: a machine of 12 MHz or faster, no trouble with smooth scrolling, and a Sound Blaster at 220h, IRQ 7."
+  },
+  "hint": "Mental Surgery asks five questions before it starts: press Y, N and Y, then Enter twice, for a Sound Blaster at 220h, IRQ 7."
+}

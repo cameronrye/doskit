@@ -1,0 +1,18 @@
+{
+  "id": "assembly-94-preinvite",
+  "order": 30,
+  "kind": "intro",
+  "name": "Assembly '94 Pre-Invitation Intro",
+  "description": "Future Crew and Sonic PC's pre-invitation intro to Assembly '94",
+  "author": "Future Crew and Sonic PC",
+  "year": 1994,
+  "archiveBytes": 221410,
+  "start": {
+    "keys": ["Enter"],
+    "ready": {
+      "stdout": "Select soundboard"
+    },
+    "note": "DosKit picks GUS autodetection in its sound card menu. It loops until Escape."
+  },
+  "hint": "The Assembly '94 Pre-Invitation Intro waits at its sound card menu: press Enter for GUS autodetection."
+}

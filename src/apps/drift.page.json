@@ -1,0 +1,26 @@
+{
+  "description": "Drift by Wild Light, the winner of the PC 64K intro competition at Assembly '95, running from its original files in your browser.",
+  "about": [
+    "Drift is Wild Light's 64K intro for MS-DOS, which won the PC 64K intro competition at Assembly '95, held from 10 to 13 August 1995 in Helsinki.",
+    "It returns to DOS by itself after about 3 minutes 40 seconds."
+  ],
+  "released": "Assembly '95: first in the PC 64K intro competition.",
+  "credits": "Code by Asmu and Vulture, music by Nobody, graphics by Odd Monk and Preacher (as Demozoo credits them). PMODE by Tran.",
+  "terms": "Not freeware, by its authors' word: “This material is not freeware. You are allowed to copy it without restrictions for non-commercial use.” (DRIFT.TXT) It also bars any charge for it without the authors' written license, any commercial use, and changes.",
+  "accuracy": [
+    "DosKit picks the Gravis Ultrasound in its setup. Its Sound Blaster Pro choice did not work on the emulated Sound Blaster 16.",
+    "Not yet compared with a capture made on real hardware.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=2184"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/7378/"
+    }
+  ],
+  "imageAlt": "Drift's red landscape, running in DosKit"
+}

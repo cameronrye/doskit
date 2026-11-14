@@ -119,6 +119,12 @@ export function AppInfo({ app, onClose, children }: AppInfoProps) {
             Contains flashing lights, which may affect people with photosensitive epilepsy.
           </p>
         )}
+        {app.contentNote && (
+          <p className="doskit-info-warning">
+            <span aria-hidden="true">⚠ </span>
+            {app.contentNote}
+          </p>
+        )}
 
         {text?.released && (
           <section>

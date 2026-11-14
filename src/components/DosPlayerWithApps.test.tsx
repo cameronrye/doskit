@@ -596,6 +596,27 @@ describe('DosPlayerWithApps', () => {
       expect(screen.getByRole('button', { name: 'Play' })).toHaveFocus();
     });
 
+    it('says what else a production shows before it plays', async () => {
+      setActivation(false);
+      const timeless = deferredApp('timeless');
+      Object.assign(timeless.app, { contentNote: 'Contains nudity: its end picture.' });
+      render(<DosPlayerWithApps requestedApp={timeless.app} />);
+      await timeless.finish();
+
+      expect(screen.getByText('Contains nudity: its end picture.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Play' })).toHaveFocus();
+    });
+
+    it("names a diskmag's button Read", async () => {
+      setActivation(false);
+      const diskmag = deferredApp('diskmag');
+      Object.assign(diskmag.app, { kind: 'diskmag' });
+      render(<DosPlayerWithApps requestedApp={diskmag.app} />);
+      await diskmag.finish();
+
+      expect(screen.getByRole('button', { name: 'Read' })).toBeInTheDocument();
+    });
+
     it("names a tracker's button Start", async () => {
       setActivation(false);
       const tracker = deferredApp('tracker');
@@ -1074,6 +1095,18 @@ describe('DosPlayerWithApps', () => {
       render(<DosPlayerWithApps requestedApp={panic.app} />);
 
       await panic.finish();
+
+      expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
+      expect(boots).toEqual([]);
+    });
+
+    it('shows a production with a content note opened from a link its Play screen, even after a click elsewhere', async () => {
+      // Its note would never show if a click on About while the link loads started it
+      const timeless = deferredApp('timeless');
+      Object.assign(timeless.app, { contentNote: 'Contains nudity: its end picture.' });
+      render(<DosPlayerWithApps requestedApp={timeless.app} />);
+
+      await timeless.finish();
 
       expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
       expect(boots).toEqual([]);

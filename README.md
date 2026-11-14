@@ -6,7 +6,7 @@
 
 DOS demoscene classics and the trackers behind them, playable in your browser.
 
-[doskit.net](https://doskit.net) runs Future Crew's Second Reality, Unreal and Panic, Triton's Crystal Dream 2, two BBS intros, and the Impulse Tracker and Scream Tracker 3 music trackers, from their original 1990s files, in DOSBox compiled to WebAssembly by [js-dos](https://js-dos.com). There is nothing to install, and a production opened once plays offline too.
+[doskit.net](https://doskit.net) runs fifty-two MS-DOS productions from their original files, in DOSBox compiled to WebAssembly by [js-dos](https://js-dos.com): Future Crew's Second Reality, Unreal and Panic, Assembly's winners from 1992 to 1997, intros, musicdisks, a diskmag, and six music trackers, Impulse Tracker and Scream Tracker 3 among them. There is nothing to install, and a production opened once plays offline too.
 
 ![Second Reality's landscape and credits, running in DosKit](docs/images/doskit-second-reality.png)
 
@@ -19,15 +19,58 @@ Each production starts with one press, from its own page, and each page's About 
 | Production | By | Year | What it is | Page |
 | --- | --- | --- | --- | --- |
 | Second Reality | Future Crew | 1993 | Demo: Future Crew's demo, first at Assembly '93 | [doskit.net/secondreality](https://doskit.net/secondreality) |
-| Unreal | Future Crew | 1992 | Demo: Future Crew's demo, first at Assembly '92 | [doskit.net/unreal](https://doskit.net/unreal) |
+| Unreal | Future Crew | 1993 | Demo: Future Crew's demo, first at Assembly '92, in its version 1.1 | [doskit.net/unreal](https://doskit.net/unreal) |
 | Panic | Future Crew | 1993 | Demo: Future Crew's demo, second at The Party '92 | [doskit.net/panic](https://doskit.net/panic) |
 | Crystal Dream 2 | Triton | 1993 | Demo: Triton's demo, first at The Computer Crossroads 1993 | [doskit.net/crystaldream2](https://doskit.net/crystaldream2) |
+| Mental Surgery | Future Crew | 1991 | Demo: Future Crew's demo of 1991, their last to run on a 286 | [doskit.net/mentalsurgery](https://doskit.net/mentalsurgery) |
+| Verses | Electromotive Force | 1995 | Demo: Electromotive Force's demo, first at Assembly '94, in its Revision II | [doskit.net/verses](https://doskit.net/verses) |
+| Holistic | Cascada VR Section | 1994 | Demo: Cascada VR Section's demo, second at Assembly '94 | [doskit.net/holistic](https://doskit.net/holistic) |
+| Heartquake | Iguana | 1994 | Demo: Iguana's demo, third at Assembly '94 | [doskit.net/heartquake](https://doskit.net/heartquake) |
+| Timeless | Tran | 1994 | Demo: Tran's one-man demo, in 32-bit protected-mode assembly | [doskit.net/timeless](https://doskit.net/timeless) |
+| Inconexia | Iguana | 1993 | Demo: Iguana's demo, which a VGA bug kept out of Assembly '93 | [doskit.net/inconexia](https://doskit.net/inconexia) |
+| Pump | Iguana | 1995 | Demo: Iguana's demo, first at Euskal Party 1995 | [doskit.net/pump](https://doskit.net/pump) |
+| Stars: Wonders of the World | NoooN | 1995 | Demo: NoooN's demo, first at Assembly '95 | [doskit.net/starsnooon](https://doskit.net/starsnooon) |
+| DX Project | Realtech | 1995 | Demo: Realtech's demo in 640x480, third at Assembly '95 | [doskit.net/dxproject](https://doskit.net/dxproject) |
+| Untitled | Dust | 1994 | Demo: Dust's demo, first at The Party '93, in its bugfixed release | [doskit.net/untitleddust](https://doskit.net/untitleddust) |
+| Dope | Complex | 1995 | Demo: Complex's demo, first at The Gathering '95 | [doskit.net/dope](https://doskit.net/dope) |
+| Solstice | Valhalla | 1995 | Demo: Valhalla's demo, first at Wired '95 | [doskit.net/solstice](https://doskit.net/solstice) |
+| Contrast | TFL-TDV | 1994 | Demo: TFL-TDV's demo, second at Wired '94 | [doskit.net/contrast](https://doskit.net/contrast) |
+| Slideshow I | Future Crew | 1990 | Demo: Future Crew's slideshow of nine VGA pictures, with four-channel Sound Blaster music | [doskit.net/slideshow1](https://doskit.net/slideshow1) |
+| Machines of Madness | Dubius | 1996 | Demo: Dubius's demo, first at Assembly '96 | [doskit.net/machinesofmadness](https://doskit.net/machinesofmadness) |
+| Boost | Doomsday | 1997 | Demo: Doomsday's demo, first at Assembly '97 | [doskit.net/boost](https://doskit.net/boost) |
 | StarPort BBS Intro II | Future Crew | 1993 | Intro: A BBS intro in 1993 bytes, by Future Crew | [doskit.net/starportbbstro](https://doskit.net/starportbbstro) |
 | Squid BBS Intro | cld & The Doctor | 1994 | Intro: A BBS intro in 1899 bytes, with AdLib music | [doskit.net/squidbbstro](https://doskit.net/squidbbstro) |
+| GR8 | Future Crew | 1990 | Intro: Future Crew's first PC demo, an EGA sine scroller with no sound | [doskit.net/gr8](https://doskit.net/gr8) |
+| YO! | Future Crew | 1990 | Intro: Future Crew's second PC demo, in text mode, with game tunes on the PC speaker | [doskit.net/yo](https://doskit.net/yo) |
+| Fishtro | Future Crew | 1992 | Intro: Future Crew's invitation intro for Assembly '92 | [doskit.net/fishtro](https://doskit.net/fishtro) |
+| StarPort BBS Intro | Future Crew | 1992 | Intro: Future Crew's first intro for StarPort, their home BBS, with AdLib music | [doskit.net/starportbbstro1](https://doskit.net/starportbbstro1) |
+| The Party '92 Invitation | Future Crew | 1992 | Intro: Future Crew's invitation intro for The Party '92 | [doskit.net/theparty92invite](https://doskit.net/theparty92invite) |
+| Assembly '93 Invitation Intro | Future Crew | 1993 | Intro: Future Crew's invitation intro to Assembly '93 | [doskit.net/assembly93invite](https://doskit.net/assembly93invite) |
+| Bussimatkaintro 93 | Future Crew | 1993 | Intro: Future Crew's Finnish invitation to a bus trip to The Party '93 | [doskit.net/bussimatkaintro93](https://doskit.net/bussimatkaintro93) |
+| Assembly '94 Pre-Invitation Intro | Future Crew and Sonic PC | 1994 | Intro: Future Crew and Sonic PC's pre-invitation intro to Assembly '94 | [doskit.net/assembly94preinvite](https://doskit.net/assembly94preinvite) |
+| Assembly '94 Invitation Dentro | Future Crew and Sonic PC | 1994 | Intro: Future Crew and Sonic PC's second invitation to Assembly '94, with a Space Invaders game | [doskit.net/assembly94invite](https://doskit.net/assembly94invite) |
+| SOPPA! | Future Crew | 1994 | Intro: Future Crew's 64K intro for Assembly '94, which failed its pre-selection | [doskit.net/soppa](https://doskit.net/soppa) |
+| Animate | Schwartz | 1995 | Intro: Schwartz's 4K intro, first at Assembly '95 | [doskit.net/animate](https://doskit.net/animate) |
+| Drift | Wild Light | 1995 | Intro: Wild Light's 64K intro, first at Assembly '95 | [doskit.net/drift](https://doskit.net/drift) |
+| blind | Eufrosyne | 1997 | Intro: Eufrosyne's 64K intro, first at Assembly '96, in its final version | [doskit.net/blind](https://doskit.net/blind) |
+| Helium | viznut | 1997 | Intro: viznut's 4K intro, first at Assembly '97, with AdLib music | [doskit.net/helium](https://doskit.net/helium) |
+| The Globe | Jare of VangeliSTeam | 1993 | Intro: Jare's PC version of Axel's Atari ST globe of dots, with its source | [doskit.net/theglobe](https://doskit.net/theglobe) |
+| BlasterSound BBS Intro #2 | Iguana | 1994 | Intro: Iguana's snowfall advert for their home BBS, with AdLib music | [doskit.net/blastersound2](https://doskit.net/blastersound2) |
+| Kukoo2 | Type One of The FLamoots | 1994 | Intro: Type One's intro for the Pleasure Access BBS, with AdLib music | [doskit.net/kukoo2](https://doskit.net/kukoo2) |
+| Journey 1 | Future Crew | 1993 | Musicdisk: Future Crew's musicdisk of seven songs by Purple Motion, the first of two parts | [doskit.net/journey1](https://doskit.net/journey1) |
+| Journey 2 | Future Crew | 1993 | Musicdisk: Future Crew's musicdisk of seven songs by Purple Motion, the second of two parts | [doskit.net/journey2](https://doskit.net/journey2) |
+| Chaotic Mind | Future Crew | 1994 | Musicdisk: Future Crew's musicdisk of eight songs by Skaven | [doskit.net/chaoticmind](https://doskit.net/chaoticmind) |
+| Worldcharts #1 | Future Crew | 1993 | Diskmag: Future Crew's diskmag of PC demo scene charts and articles, its only issue | [doskit.net/worldcharts1](https://doskit.net/worldcharts1) |
 | Impulse Tracker | Jeffrey Lim | 1997 | Tracker: Jeffrey Lim's music tracker, version 2.14 | [doskit.net/impulsetracker](https://doskit.net/impulsetracker) |
 | Scream Tracker 3 | Future Crew | 1994 | Tracker: Future Crew's music tracker, where the S3M format began | [doskit.net/screamtracker](https://doskit.net/screamtracker) |
+| Composer 669 | Tran | 1992 | Tracker: Tran's eight-channel music tracker, where the 669 format began | [doskit.net/composer669](https://doskit.net/composer669) |
+| EdLib | Jens-Christian Huus | 1994 | Tracker: Jens-Christian Huus's AdLib music editor, version 1.05a, with 27 example songs | [doskit.net/edlib](https://doskit.net/edlib) |
+| MONOTONE | Trixter of Hornet | 2017 | Tracker: Trixter's music tracker for the PC speaker, version 0.3.9, an alpha | [doskit.net/monotone](https://doskit.net/monotone) |
+| Adlib Tracker II | subz3ro of Altair | 2026 | Tracker: subz3ro's music tracker for OPL3 FM, version G3 2.3.58, with 501 songs | [doskit.net/adlibtracker2](https://doskit.net/adlibtracker2) |
 | 3D Rotation Demo | Draeden of VLA | 1993 | Effect: The example program of VLA's 3D rotation tutorial | [doskit.net/3drotate](https://doskit.net/3drotate) |
 | Starfield Effect | Draeden of VLA | 1993 | Effect: The example program of VLA's starfield tutorial | [doskit.net/stars](https://doskit.net/stars) |
+| Fire Demo | VangeliSTeam | 1993 | Effect: Jare's fire effect, with its source, to Jester's module Elysium | [doskit.net/firedemo](https://doskit.net/firedemo) |
+| Iris | Jare of VangeliSTeam | 1993 | Effect: Jare's plasma effect, in 2,716 bytes with its source | [doskit.net/iris](https://doskit.net/iris) |
 <!-- apps:end -->
 <!-- prettier-ignore-end -->
 
@@ -39,11 +82,11 @@ Each production starts with one press, from its own page, and each page's About 
 ## Features
 
 - **DOS Prompt**: The start page opens the app selector with nothing running under it; closing the selector without a pick boots a DOS command prompt
-- **App Library**: Demos such as Second Reality, Unreal, Panic and Crystal Dream 2, and the Impulse Tracker and Scream Tracker 3 music trackers, picked from a floppy-disk selector that lists the demos first, shows each archive's size on its disk, and warns of the productions that flash
+- **App Library**: Demos such as Second Reality, Unreal, Panic and Crystal Dream 2, intros, musicdisks, a diskmag, and music trackers such as Impulse Tracker and Scream Tracker 3, picked from a floppy-disk selector that lists the demos first, shows each archive's size on its disk, and warns of the productions that flash or show nudity
 - **A Page per Production**: Each production has a page of its own, such as `/secondreality`, with its own title, description and share card; old `/?app=` links still open it (see [Deep Linking](#deep-linking))
-- **One Press to Play**: A production opened from its link, or after a long download, waits on a Play screen, whose click starts it with sound; otherwise one picked in the selector starts at once. DosKit presses the start keys of the seven that wait at a setup screen, and shows an end card when a program returns to DOS (see [Starting a Production](#starting-a-production))
+- **One Press to Play**: A production opened from its link, or after a long download, waits on a Play screen, whose click starts it with sound; otherwise one picked in the selector starts at once. DosKit presses the start keys of the twenty-six that wait at a setup screen, and shows an end card when a program returns to DOS (see [Starting a Production](#starting-a-production))
 - **About Panel**: The header's **About** button says who made the current production, where it was shown, its authors' terms and how it runs here compared with real hardware
-- **Tracker Files**: What Impulse Tracker and Scream Tracker 3 save is kept in the browser for the next visit, and their **Files** button downloads it, brings in modules or starts over (see [Tracker Files](#tracker-files))
+- **Tracker Files**: What the trackers save is kept in the browser for the next visit, and their **Files** button downloads it, brings in modules or songs, or starts over (see [Tracker Files](#tracker-files))
 - **Cross-Platform**: Works on Windows, macOS, Linux, iOS, and Android
 - **Progressive Web App (PWA)**: Install as a native app with offline support
 - **Offline Functionality**: After the first visit, the DOS prompt works offline, and so does every app opened online after that
@@ -506,7 +549,7 @@ npm run dev
 
 This opens DosKit's start page: the app selector, with nothing running under it until you pick an app or close the selector for a DOS prompt.
 
-On the start page, the app selector opens with nothing running under it, and closing it without a pick boots a DOS prompt. The disks list the demos first, and each shows the size of its app's archive. Click an app to see its details and **Load Application** below the disks, or double-click it to load it at once; the details of the productions that flash (Second Reality, Panic and Crystal Dream 2) warn of it. Picking the app that is running starts it again, such as a demo that has ended at the DOS prompt. The header's **Change Application** (or **Select Application**) button opens the selector again. Over a running app, the selector pauses it, sound and all, until it closes: closed without a pick, the app goes on.
+On the start page, the app selector opens with nothing running under it, and closing it without a pick boots a DOS prompt. The disks list the demos first, and each shows the size of its app's archive. Click an app to see its details and **Load Application** below the disks, or double-click it to load it at once; the details of the productions that flash, such as Second Reality and Panic, warn of it, and those of the productions that show nudity, such as Timeless, say so. Picking the app that is running starts it again, such as a demo that has ended at the DOS prompt. The header's **Change Application** (or **Select Application**) button opens the selector again. Over a running app, the selector pauses it, sound and all, until it closes: closed without a pick, the app goes on.
 
 While an app is current, the header's **About** button opens a panel with its page text, which loads when the panel opens: what the production is, where it was shown and how it placed, its credits, how it runs here compared with real hardware, its authors' terms, its pages elsewhere, and how rights holders can reach DosKit's owner. Escape, **✕** or a click beside the panel closes it.
 
@@ -518,20 +561,20 @@ The footer shows whether DOS is **Idle** (nothing runs, as under the selector th
 
 ### Starting a Production
 
-A production picked in the selector starts once it has downloaded, while the click or key press that picked it is fresh. One opened without a fresh click or key press, from its link, by Back or Forward, or after a longer download, waits on a Play screen instead: its name, author and year, its description, a warning if it flashes, and what its start will do, with a **Play** button (**Start** for the trackers) that has the keyboard focus. Browsers let a page start sound only within a few seconds of a click or key press, so the click on Play starts the emulator, and its sound with it.
+A production picked in the selector starts once it has downloaded, while the click or key press that picked it is fresh. One opened without a fresh click or key press, from its link, by Back or Forward, or after a longer download, waits on a Play screen instead: its name, author and year, its description, a warning if it flashes or shows nudity, and what its start will do, with a **Play** button (**Start** for the trackers, **Read** for the diskmag) that has the keyboard focus. Browsers let a page start sound only within a few seconds of a click or key press, so the click on Play starts the emulator, and its sound with it.
 
-Seven productions wait at a setup screen for a key: Second Reality, Unreal, Panic, Crystal Dream 2, the two trackers and the 3D Rotation Demo. DosKit presses their keys once that screen is up, and checks that the screen went on. Unreal's sound setup starts on No sound, so its keys pick SoundBlaster Pro at 20 kHz, and Crystal Dream 2's pick Ultrasound, as its SoundBlaster choice does not work here. If DosKit cannot send the keys, or they do not take, a bar at the top of the player says which keys to press; **✕** closes it.
+Twenty-six productions wait at a setup screen for a key, such as Second Reality, Panic and Crystal Dream 2 for their sound card, and most of the trackers. DosKit presses their keys once that screen is up, and checks that the screen went on. Crystal Dream 2's pick Ultrasound, as its SoundBlaster choice does not work here, and Holistic's step its setup to the Sound Blaster 16. Others start by themselves, from switches on their command line where they have them, as Verses and Timeless do. If DosKit cannot send the keys, or they do not take, a bar at the top of the player says which keys to press; **✕** closes it.
 
 When a program returns to DOS, DosKit leaves js-dos's fullscreen, if the player is in it, and shows a card that says so, such as "Panic has ended.", with **Play again**, which starts the same files in a new player, **Choose another**, which opens the selector, and **Back to DOS**, which leaves you at the DOS prompt the program returned to. A production that never returns to DOS shows no end card: the header's **Change Application** leaves it.
 
 ### Tracker Files
 
-Impulse Tracker and Scream Tracker 3 keep what you save in them with their own save. DosKit asks js-dos for the files that differ from the tracker's archive 3 seconds after the last key or tap, every 30 seconds, and when the tab is hidden or the page goes, and keeps them in the browser's IndexedDB. The tracker's next start in that browser gets them back after its archive. Where the browser cannot keep files, as in some private windows, the tracker starts without them, and its Files panel says so.
+The six trackers keep what you save in them with their own save. DosKit asks js-dos for the files that differ from the tracker's archive 3 seconds after the last key or tap, every 30 seconds, and when the tab is hidden or the page goes, and keeps them in the browser's IndexedDB. The tracker's next start in that browser gets them back after its archive. Where the browser cannot keep files, as in some private windows, the tracker starts without them, and its Files panel says so.
 
 The **Files** button at the top right of a running tracker opens **Your files**:
 
 - **Download your files (.zip)** saves the ZIP js-dos packed, as `<id>-files.zip`, such as `scream-tracker-files.zip`
-- **Bring in modules…** writes modules from your computer into `C:\`, under DOS 8.3 names in capitals other than those of the archive's files and the saved ones, and restarts the tracker to read them: save your song first. They are kept with the tracker's saved files from then on
+- **Bring in modules…** writes modules from your computer into `C:\`, or the folder the tracker reads them from, such as EdLib's `C:\SONGS`, under DOS 8.3 names in capitals other than those of the archive's files and the saved ones, and restarts the tracker to read them: save your song first. Each tracker takes its own formats, such as `.669` for Composer 669 and `.mon` for MONOTONE. They are kept with the tracker's saved files from then on
 - **Start over** asks first, then deletes the kept files and restarts the tracker as it came
 
 Picking another app in the selector while a tracker runs asks first ("Leave Scream Tracker 3?"), and keeps its files before it leaves; Back and Forward cannot ask. The page still asks before it is closed or reloaded while a tracker runs. Work not saved with the tracker's own save is gone once its player stops, and so is every file the other apps write.
@@ -695,7 +738,7 @@ Fullscreen is the button in the js-dos sidebar, which makes the player fill the 
 - **Older browsers** (before Chrome or Edge 98, Firefox 94, Opera 84 or Safari 15.4): the build does not target them, and js-dos's player calls `structuredClone()`, which they lack, once a second, so each call ends in an error
 - **Keyboard only**: while the page itself has the focus, as after picking an app, closing the selector the start page opened with, or clicking the DOS screen, js-dos sends every key to DOS, Tab included, so the keyboard alone cannot leave the DOS program for DosKit's controls: only a click or a tap on one of them can (see [Basic Usage](#basic-usage))
 - **Browser shortcuts**: on Windows and Linux, browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, so DOS programs never get them: Ctrl+W closes the tab, Ctrl+N opens a window and Ctrl+T a tab. js-dos asks the browser for Ctrl+W and Escape through the Keyboard Lock API, which browsers grant only in their own fullscreen, and DosKit's fullscreen button fills the window instead. Scream Tracker 3 saves on Ctrl-W, so while it or Impulse Tracker runs, the browser asks before the page is closed or reloaded
-- **Saved files**: DosKit keeps only what Impulse Tracker and Scream Tracker 3 save, and only in the browser they ran in (see [Tracker Files](#tracker-files)). What the other apps write, and work not saved in a tracker, live in the emulator's memory only, and are gone once the app is left or started again, or the page reloads or closes. Back and Forward leave a tracker without asking first
+- **Saved files**: DosKit keeps only what the trackers save, and only in the browser they ran in (see [Tracker Files](#tracker-files)). What the other apps write, and work not saved in a tracker, live in the emulator's memory only, and are gone once the app is left or started again, or the page reloads or closes. Back and Forward leave a tracker without asking first
 - **On-screen keyboard on phones**: js-dos draws it inside the player, under the DOS screen, and it does not scroll, so on a short player the bottom rows of a layout are cut off. Upright, a phone the size of an iPhone 13 loses the function-key layout's keypad, all four of its rows while an app runs (at the DOS prompt, whose header is shorter, the last three, one of them partly), and held sideways, the compact layout's bottom row, its ← ↓ → keys. The fullscreen button in the js-dos sidebar gives the player the whole window, where every layout fits on such a phone either way up
 - **js-dos's own keyboard layouts**, which desktop browsers and iPads in Safari get (see [Mobile Configuration](#mobile-configuration)): their `\` and `/` keys press nothing, and their `` ` `` key presses keypad 0
 - **Safari** does not use `index.html`'s preload of `wdosbox.wasm`, the DOSBox backend: on a first visit it downloads the 1.46 MB file twice, and on every page load it logs that the preload went unused. From the 17th player started in one page, DOS prompts included, it also logs "There are too many active WebGL contexts on this page, the oldest context will be lost." and "loseContext: context already lost" at each app switch. DosKit releases each stopped player's WebGL context, but Safari counts a released context until it is garbage-collected, and js-dos keeps every stopped player in memory (see below); a reload starts the count again
@@ -884,7 +927,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ### Third-Party Licenses
 
-The site serves js-dos and its emulators, which come with licenses of their own. The footer's **Licenses** link opens [/licenses/](https://doskit.net/licenses/) (`public/licenses/`), which gives each of these licenses, with the text of the GPL-2.0, and links the source of the exact versions the site serves; the build adds the licenses of the npm packages bundled into the app's scripts, as `third-party-licenses.txt`. Offline, the link opens DosKit's start page instead: the service worker does not store the licenses page.
+The site serves js-dos and its emulators, which come with licenses of their own. The footer's **Licenses** link opens [/licenses/](https://doskit.net/licenses/) (`public/licenses/`), which gives each of these licenses, with the text of the GPL-2.0, and links the source of the exact versions the site serves. It also gives the notices of the productions under open licenses: Adlib Tracker II, under the GPL-3.0, whose text it has and whose source the site serves at `/sources/`, with CWSDPMI's; Animate, Kukoo2 and Contrast, under MIT licenses; MONOTONE, under the Unlicense; Helium's CC0; and the license of the Fire Demo's music; the build adds the licenses of the npm packages bundled into the app's scripts, as `third-party-licenses.txt`. Offline, the link opens DosKit's start page instead: the service worker does not store the licenses page.
 
 - **js-dos**: GPL-2.0 License - https://github.com/caiiiycuk/js-dos
 - **DOSBox** and **DOSBox-X**, compiled to WebAssembly in js-dos's emulators package (GPL-2.0): GPL, version 2 or later
@@ -895,7 +938,7 @@ The site serves js-dos and its emulators, which come with licenses of their own.
 
 ### For Rights Holders
 
-DosKit serves each production unmodified, from the archive its authors or the scene's archives released, and credits it on its page. Three archives carry no terms of their own: the 3D Rotation Demo and the Starfield Effect, from VLA's tutorials, and Crystal Dream 2 by Triton. If you made one of these productions, or hold its rights, and want it credited differently or taken down, email **cameron@rye.dev** and it will be done, no questions asked.
+DosKit serves each production unmodified, from the archive its authors or the scene's archives released, and credits it on its page. Five archives carry no terms of their own: the 3D Rotation Demo and the Starfield Effect, from VLA's tutorials, Crystal Dream 2 by Triton, Stars: Wonders of the World by NoooN and Dope by Complex. If you made one of these productions, or hold its rights, and want it credited differently or taken down, email **cameron@rye.dev** and it will be done, no questions asked.
 
 ## Contributing
 

@@ -1,0 +1,27 @@
+{
+  "description": "Dope by Complex, the winner of the PC demo competition at The Gathering 1995, running from its original files in your browser.",
+  "about": [
+    "Dope is Complex's demo for MS-DOS, which won the PC demo competition at The Gathering 1995, held from 11 to 15 April 1995 in Stavanger, Norway. This is its final release, dated 15 April 1995.",
+    "Its readme calls it “a bit” unfinished: it was to end with a scroller, for which there was no time to draw graphics, so the readme gives the credits instead."
+  ],
+  "released": "The Gathering 1995: first in the PC demo competition. The final release is dated 15 April 1995.",
+  "credits": "Code by jmagic; graphics and music by jugi; boxes sketched by jugi and pixelled by reward, the Media Labs logo by reward; 3D objects by jugi and M. Hakulinen, the cat's “found from some cdrom...”; music replay routine by phantom of Sonic PC, its GUS unit reworked by jmagic (DOPE.TXT).",
+  "terms": "None found: DOPE.TXT and FILE_ID.DIZ state none, and neither does Complex's site. Rights holders can reach DosKit's owner below.",
+  "accuracy": [
+    "It runs at the device's maximum speed: at a fixed 30,000 cycles its later parts fall seconds behind a capture made on a Pentium III with a Gravis UltraSound, and at maximum cycles they keep pace within a few seconds, on a fast enough device.",
+    "It plays only through the Gravis UltraSound, which DosKit gives it.",
+    "Its end has not been seen in DosKit, and only its first four minutes have been checked for flashing.",
+    "Mono: js-dos mixes the Gravis UltraSound's two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=37"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/57/"
+    }
+  ],
+  "imageAlt": "Dope's blue metallic tubes, running in DosKit"
+}

@@ -59,14 +59,12 @@ describe('DemoSelector', () => {
     it("should show each archive's own size on its disk", () => {
       render(<DemoSelector onSelect={mockOnSelect} />);
 
-      // 2,122,910 bytes, 33,424 and 1,482, where every disk used to say 1.44 MB
+      // 2,122,910 bytes, 33,424 and 4,545, where every disk used to say 1.44 MB
       expect(within(getFloppyDiskByName('Second Reality')).getByText('2.1 MB')).toBeInTheDocument();
       expect(
         within(getFloppyDiskByName('StarPort BBS Intro II')).getByText('33 KB')
       ).toBeInTheDocument();
-      expect(
-        within(getFloppyDiskByName('Starfield Effect')).getByText('1.5 KB')
-      ).toBeInTheDocument();
+      expect(within(getFloppyDiskByName('Helium')).getByText('4.5 KB')).toBeInTheDocument();
       expect(screen.queryByText('1.44 MB')).not.toBeInTheDocument();
     });
 

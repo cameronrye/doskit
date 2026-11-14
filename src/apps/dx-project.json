@@ -1,0 +1,18 @@
+{
+  "id": "dx-project",
+  "order": 13,
+  "kind": "demo",
+  "name": "DX Project",
+  "description": "Realtech's demo in 640x480, third at Assembly '95",
+  "author": "Realtech",
+  "year": 1995,
+  "archiveBytes": 2427260,
+  "start": {
+    "keys": ["Down", "Down", "Down", "Down", "Down", "Enter"],
+    "ready": {
+      "frames": [3448862884]
+    },
+    "note": "DosKit picks START DEMO in its menu, five lines down, though the menu never shows which line is picked."
+  },
+  "hint": "DX Project waits at its menu: press Down five times, then Enter, for START DEMO."
+}

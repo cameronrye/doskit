@@ -1,0 +1,27 @@
+{
+  "description": "GR8 by Future Crew, the group's first PC demo, an EGA sine scroller with no sound, running from its original files in your browser.",
+  "about": [
+    "GR8 is Future Crew's first PC demo: a sine scroller in EGA graphics, with no sound. Its scroll text, which SS, HAL and JPM take turns writing, calls it “THE FIRST OFFICIAL PC-DEMO”.",
+    "Its year is disputed. GR8.EXE is dated 5 January 1990, and the scroll text greets everyone at “ISO-SYÖTE AT THE TURN OF THE DECADE”. Future Crew's own release lists date it 12 July 1989, PANIC.NFO lists it under 1989, and the history in their information file puts it under 1988.",
+    "+ and - set the speed of the scroll text, and Escape ends it."
+  ],
+  "released": "Not shown at a party. GR8.EXE is dated 5 January 1990; Future Crew's release lists give 7-12-89.",
+  "credits": "Code by SS (Psi), “THE ONE WHO CAN PROGRAM”. The scroll text calls HAL “THE GRAPHIC CREATOR”; Demozoo credits Jpm with the graphics.",
+  "terms": "Its archive has no text of its own. Future Crew's information files make all their demos freeware: “you can copy and distribute them freely as long as you make no modifications to them.” Their release list includes GR8.",
+  "accuracy": [
+    "It has no sound.",
+    "Its scroll text keeps its pace by its own timer, not by the speed of the emulated CPU.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=2998"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/99537/"
+    }
+  ],
+  "imageAlt": "GR8's sine scroller, running in DosKit"
+}

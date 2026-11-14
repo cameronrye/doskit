@@ -4,34 +4,35 @@
  * Licensed under the MIT License
  *
  * Unreal Configuration
- * Configuration for running the Unreal demo by Future Crew (1992)
+ * Configuration for running the Unreal demo by Future Crew, version 1.1 (1993)
  */
 
 import { presets } from '../utils/dosboxConfigBuilder';
 
 /**
- * Unreal demo (hosted locally)
- * Future Crew's demo that won the PC demo competition at Assembly '92
+ * Unreal demo, version 1.1 (hosted locally)
+ * Future Crew's demo that won the PC demo competition at Assembly '92, in the version of
+ * December 1993 for the Gravis UltraSound
  *
- * Source: https://archive.org/details/unreal_zip
- * License: Freeware
- * Released at Assembly 1992 (1st place)
+ * Source: https://files.scene.org/view/demos/groups/future_crew/demos/unreal11.zip
+ * License: Freeware (README.1ST)
  */
 export const unrealZipUrl = '/demos/unreal.zip';
 
 /**
  * DOSBox configuration optimized for Unreal
  *
- * Unreal requirements (README.NOW):
- * - A 386 or a 486, "preferably the latter"
+ * Unreal requirements (README.1ST):
+ * - "a 80386 processor and 600 000 bytes of free conventional memory"
  * - VGA graphics
- * - 600,000 bytes of memory
- * - For sound, a Sound Blaster, Sound Blaster Pro or Soundmaster II; it also runs without one
+ * - For sound, the Gravis UltraSound, which version 1.1 added, or a Sound Blaster; it also
+ *   runs without one
  *
  * This configuration uses:
  * - Auto CPU core and type, at a fixed 30000 cycles. 'auto' would give it 3,000 cycles/ms, at
  *   which its text scroller falls a phrase behind within a minute.
- * - Sound Blaster 16 for audio
+ * - Gravis UltraSound at 240h, IRQ 5, DMA 3, which its setup preselects ("Gravis Ultrasound
+ *   44Khz"), and a Sound Blaster 16
  * - Standard VGA graphics
  * - DOSBox's default 16 MB of memory
  */
@@ -46,18 +47,26 @@ export const unrealDosboxConf = presets
     hdma: 5,
     oplmode: 'auto',
   })
+  .setGUS({
+    gus: true,
+    gusbase: 240,
+    gusirq: 5,
+    gusdma: 3,
+    ultradir: 'C:\\ULTRASND',
+  })
   .setJoystick({ joysticktype: 'none' })
   .addAutoexec(
     '@echo off',
     'echo.',
     'echo ========================================',
-    'echo   Unreal by Future Crew',
-    'echo   1992 - Assembly 1992 Winner',
+    'echo   Unreal 1.1',
+    'echo   by Future Crew (1993)',
     'echo ========================================',
     'echo.',
+    "echo 1st Place at Assembly '92",
     'echo Music by Purple Motion',
     'echo.',
-    'echo Audio: Sound Blaster 16',
+    'echo Audio: Gravis UltraSound + Sound Blaster 16',
     'echo CPU: 30000 cycles',
     'echo.',
     'echo Mounting C: drive...',

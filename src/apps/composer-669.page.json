@@ -1,0 +1,29 @@
+{
+  "description": "Composer 669 1.3 by Tran of Renaissance, the eight-channel DOS tracker the 669 module format was made for, running in your browser.",
+  "about": [
+    "Composer 669 is a music tracker for MS-DOS by Tran (Tomasz Pytel) of Renaissance, a New York group: it mixes eight channels of samples on a Sound Blaster, in stereo on a Sound Blaster Pro, and saves its songs as .669 files. This is version 1.3, from December 1992, which Renaissance released as freeware.",
+    "It comes with no song. Bring in a .669 with the Files button; then F11 lists the songs, Enter loads one, F5 plays it and Alt+F5 follows it through its patterns. F12 saves the song, and Alt+X, then Y, quits to DOS.",
+    "What you save in it stays in this browser: the Files button can download it, bring in modules of your own, or start over."
+  ],
+  "released": "Version 1.3, dated 4 December 1992.",
+  "credits": "Code by Tran of Renaissance.",
+  "terms": "Freeware: “we are forced to release Composer 669 as freeware” and “use it as you wish, no strings attached.” (FREEWARE.TXT)",
+  "accuracy": [
+    "It runs on a Sound Blaster Pro 2, without EMS, XMS or UMB: with the extended memory DOSBox gives it by default it stops at once, and on a Sound Blaster 16 it plays almost silently.",
+    "Mono: js-dos mixes the two channels into one.",
+    "Its arrow keys arrive as the keypad's, which change the instrument and the volume.",
+    "Browsers and systems may keep F11 and F12, which list and save its songs, for themselves: DosKit's on-screen keyboard has both. On Windows, Alt+F4 and Ctrl+F4, which edit and clear its song message, close the window or the tab: DosKit asks before the page closes."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=63357"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/111803/"
+    }
+  ],
+  "imageAlt": "Composer 669's pattern editor, running in DosKit",
+  "authorType": "Person"
+}

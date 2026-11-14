@@ -1,0 +1,18 @@
+{
+  "id": "solstice",
+  "order": 16,
+  "kind": "demo",
+  "name": "Solstice",
+  "description": "Valhalla's demo, first at Wired '95",
+  "author": "Valhalla",
+  "year": 1995,
+  "archiveBytes": 1696076,
+  "start": {
+    "keys": ["Enter", "Enter", "Enter"],
+    "ready": {
+      "frames": [1313454887]
+    },
+    "note": "DosKit presses Enter at each of its sound setup's three screens, for the Gravis UltraSound at port 240h, in 16-bit stereo."
+  },
+  "hint": "Solstice waits at its sound setup: press Enter three times for the Gravis UltraSound at port 240h, in 16-bit stereo."
+}

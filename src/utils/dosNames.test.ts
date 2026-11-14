@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { dosNameFor, zipEntryNames } from './dosNames';
+import { dosNameFor, dosPathFor, zipEntryNames } from './dosNames';
 
 describe('dosNameFor', () => {
   it.each([
@@ -23,6 +23,20 @@ describe('dosNameFor', () => {
 
     expect(dosNameFor('chris31b.it', taken)).toBe('CHRIS3~1.IT');
     expect(dosNameFor('song.it', taken)).toBe('SONG~2.IT');
+  });
+});
+
+describe('dosPathFor', () => {
+  it('puts a file in C:\\ itself when the tracker names no folder', () => {
+    expect(dosPathFor('song.it', undefined, new Set(['SONG.IT']))).toBe('SONG~1.IT');
+  });
+
+  it("gives a file a name of its own among the folder's, as EdLib reads its songs from SONGS", () => {
+    // A song of the same name at C:\ or in another folder takes nothing from SONGS
+    const taken = new Set(['SONGS/TUNE.EDL', 'TUNE2.EDL', 'OTHER/TUNE2.EDL']);
+
+    expect(dosPathFor('tune.edl', 'songs', taken)).toBe('SONGS/TUNE~1.EDL');
+    expect(dosPathFor('tune2.edl', 'SONGS', taken)).toBe('SONGS/TUNE2.EDL');
   });
 });
 

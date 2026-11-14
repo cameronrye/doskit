@@ -1,0 +1,25 @@
+{
+  "description": "Slideshow I by Future Crew, nine VGA pictures shown to four-channel Sound Blaster music, running from its original 1990 files in your browser.",
+  "about": [
+    "Slideshow I is Future Crew's slideshow for MS-DOS, from 1990: nine pictures in 256 colors, shown one at a time to four channels of sampled music played through the Sound Blaster. Future Crew's own history calls it their only demo release of 1990.",
+    "Press Space once a picture has faded in for the next one: keys pressed while a picture changes are lost. After the ninth it starts again from the first, and Escape returns to DOS."
+  ],
+  "released": "Released on 23 July 1990, by Future Crew's release list; its files are dated 26 to 28 June 1990.",
+  "credits": "Code by Psi, music by BIG, graphics by Hal and Jpm (as Demozoo credits them). One picture is, by its own caption, Hal's PC version of an Amiga picture by DeathStar.",
+  "terms": "Its readme states no terms. Future Crew's information files, which list Slideshow I among their releases, make all their demos freeware: “you can copy and distribute them freely as long as you make no modifications to them.”",
+  "accuracy": [
+    "Its sound menu waits for a key: DosKit picks 9, the Sound Blaster on a 12 MHz or faster AT.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=2996"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/99950/"
+    }
+  ],
+  "imageAlt": "One of Slideshow I's pictures, running in DosKit"
+}

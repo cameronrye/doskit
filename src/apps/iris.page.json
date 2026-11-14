@@ -1,0 +1,28 @@
+{
+  "description": "Iris by Jare of VangeliSTeam, a plasma effect in 2,716 bytes with its source, running from its original files in your browser.",
+  "about": [
+    "Iris is a plasma effect for MS-DOS that Jare of VangeliSTeam, in Madrid, coded in May 1993 and released with its source. Its NFO dedicates it to The Raven, whose plasma Jare took apart to see how it was done. It has no sound.",
+    "Any key ends it: it then shows its credits and returns to DOS."
+  ],
+  "released": "Coded on 12 May 1993 (IRIS.NFO); Iguana's list of its releases dates it May 1993.",
+  "credits": "Code by Jare.",
+  "terms": "Public domain, by Iguana's list of its releases: “All these productions ... are public domain and can be distributed freely, as long as no fee is charged” (RELEASES.TXT, in Heartquake's archive).",
+  "accuracy": [
+    "It runs from its BIG folder, which holds the release of May 1993. The IRIS.EXE beside that folder is a later build by an unknown hand, which prints “Cool message goes here” in place of the credits.",
+    "When it ends, DosKit's closing line scrolls its credits up by one line.",
+    "It has no sound.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=65027"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/171260/"
+    }
+  ],
+  "imageAlt": "Iris's plasma, running in DosKit",
+  "authorType": "Person"
+}

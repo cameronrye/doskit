@@ -44,6 +44,8 @@ export interface AppForPage {
   year?: number;
   kind: string;
   flashing?: boolean;
+  /** What else it shows that a visitor may want to know, such as nudity */
+  contentNote?: string;
   page: AppPageText;
 }
 
@@ -162,6 +164,7 @@ export function appStaticText(app: AppForPage): string {
           '        <p>Contains flashing lights, which may affect people with photosensitive epilepsy.</p>',
         ]
       : []),
+    ...(app.contentNote ? [`        <p>${escapeHtml(app.contentNote)}</p>`] : []),
     `        <p><a href="/">DosKit: DOS demoscene classics and the trackers behind them</a></p>`,
     '      </article>',
     '    </div>',

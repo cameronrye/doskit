@@ -1,0 +1,29 @@
+{
+  "description": "EdLib 1.05a by Jens-Christian Huus of Vibrants, an editor for AdLib FM music, running in your browser with its 27 example songs.",
+  "about": [
+    "EdLib is an editor for AdLib FM music by Jens-Christian Huus (JCH) of Vibrants, written mostly in 1992 and 1993 and used in games such as LollyPop. Where a tracker plays rows of patterns, each of its nine voices plays a list of sequences of its own, each of which can be transposed, as in the editor JCH made for the Commodore 64.",
+    "This is version 1.05a, its first public release, from December 1994, with 27 example songs in its SONGS folder, in JCH's own copy with the documents he revised in 2007.",
+    "What you save in it stays in this browser: the Files button can download it, bring in EDL songs of your own, which go to SONGS, the one folder EdLib reads, or start over."
+  ],
+  "released": "Version 1.05a, its first public release, dated 20 December 1994.",
+  "credits": "Code by JCH. Example songs by Drax, Jo, Metal, Msk, JCH and Vibrants.",
+  "terms": "JCH's 2007 documentation: “All files in the archive should be distributed in their original form - it is forbidden to modify anything. The player may not be used commercially in any way without permission from the author.” (EDLIB.TXT) His 1994 documentation, EDLIB.DOC, which this copy does not have, also said “All files in this archive is freeware”; the 2007 revision leaves that out.",
+  "accuracy": [
+    "DosKit closes its About box with Escape. Its FM music plays through the Sound Blaster 16's FM chip, as EDLIB.TXT says any Sound Blaster can.",
+    "Its only way back to DOS is Ctrl+Break: DosKit has no key name for Break, so it cannot send it.",
+    "It uses DOSBox's own text font, not the character set it comes with in USE\\DOS\\THE_EGA.CPI, which its documentation suggests loading in DOS.",
+    "It has not been compared with real hardware yet."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=13357"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/76631/"
+    }
+  ],
+  "imageAlt": "EdLib's editor, running in DosKit",
+  "authorType": "Person"
+}

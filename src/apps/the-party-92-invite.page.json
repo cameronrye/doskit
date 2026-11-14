@@ -1,0 +1,25 @@
+{
+  "description": "The Party '92 Invitation by Future Crew, the PC invitation intro to The Party 1992 in Aars, Denmark, running from its original files in your browser.",
+  "about": [
+    "Future Crew's invitation intro for the PC side of The Party 1992, held from 27 to 29 December 1992 at the MesseCenteret in Aars, Denmark. The party's organizers asked Future Crew to run its PC demo competition and to make the PC invitation; Future Crew's Panic came second there.",
+    "It finds the Sound Blaster by itself and runs for about 6 minutes. Escape ends it with a “the end...” logo and an information screen. THEPARTY.TXT, with it, gives the party's details."
+  ],
+  "released": "Future Crew's release lists date it 2 October 1992; its files are dated 1 November 1992.",
+  "credits": "Idea and texts by GORE, code by Psi and Wildfire, graphics by Pixel and Marvel, music by Skaven.",
+  "terms": "Its archive gives no terms, but THEPARTY.TXT, by GORE, “is intended to be spread on the PC demo scene”. Future Crew's information files make all their demos freeware: “you can copy and distribute them freely as long as you make no modifications to them.”",
+  "accuracy": [
+    "It finds the emulated Sound Blaster 16 by itself.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=4074"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/99949/"
+    }
+  ],
+  "imageAlt": "The Party '92 Invitation's opening, running in DosKit"
+}

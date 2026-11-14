@@ -1,0 +1,19 @@
+{
+  "id": "pump",
+  "order": 11,
+  "kind": "demo",
+  "name": "Pump",
+  "description": "Iguana's demo, first at Euskal Party 1995",
+  "author": "Iguana",
+  "year": 1995,
+  "archiveBytes": 559092,
+  "flashing": true,
+  "start": {
+    "keys": ["Enter"],
+    "ready": {
+      "frames": [677580526]
+    },
+    "note": "DosKit picks Run the demo in its setup, which has found the Gravis UltraSound."
+  },
+  "hint": "Pump waits at its setup: press Enter to run the demo with the Gravis UltraSound."
+}

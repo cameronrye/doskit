@@ -1,0 +1,18 @@
+{
+  "id": "drift",
+  "order": 34,
+  "kind": "intro",
+  "name": "Drift",
+  "description": "Wild Light's 64K intro, first at Assembly '95",
+  "author": "Wild Light",
+  "year": 1995,
+  "archiveBytes": 72338,
+  "start": {
+    "keys": ["Enter", "Down", "Down", "Down", "Enter", "Down", "Down", "Enter"],
+    "ready": {
+      "frames": [2145475191]
+    },
+    "note": "DosKit picks the Gravis Ultrasound at port 240h and IRQ 5 in its setup."
+  },
+  "hint": "Drift waits at its setup: press Enter, Down, Down, Down, Enter, Down, Down, then Enter for the Gravis Ultrasound at port 240h and IRQ 5."
+}

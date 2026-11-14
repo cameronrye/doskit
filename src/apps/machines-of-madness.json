@@ -1,0 +1,10 @@
+{
+  "id": "machines-of-madness",
+  "order": 19,
+  "kind": "demo",
+  "name": "Machines of Madness",
+  "description": "Dubius's demo, first at Assembly '96",
+  "author": "Dubius",
+  "year": 1996,
+  "archiveBytes": 3895410
+}

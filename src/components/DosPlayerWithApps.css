@@ -246,7 +246,8 @@
 }
 
 /* Amber, as in the selector: 9.8:1 or more on the poster's ground */
-.doskit-flash-warning {
+.doskit-flash-warning,
+.doskit-content-warning {
   color: #ffc078;
 }
 

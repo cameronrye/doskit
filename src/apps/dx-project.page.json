@@ -1,0 +1,28 @@
+{
+  "description": "DX Project by Realtech, third in the PC demo competition at Assembly '95, a demo in 640x480, running from its original files in your browser.",
+  "about": [
+    "DX Project is Realtech's demo for MS-DOS, third in the PC demo competition at Assembly '95, held from 10 to 13 August 1995 in Helsinki. It runs in 640x480 with 256 colours, through VESA; its NFO calls it the first SVGA demo seen in a demo competition.",
+    "This is its official release, version 1.01, dated 14 August 1995."
+  ],
+  "released": "Assembly '95: third in the PC demo competition, with 1,204 points. Version 1.01 is dated 14 August 1995.",
+  "credits": "Code and design by Execom, graphics by Guen, 3D objects by Toalnkor, textures by Kyle of Mentasm, music by Mindfuck of Mentasm as a guest; effects and module replay by Otto Chrons, PMODE by Tran (its end credits).",
+  "terms": "Freeware: “This demo is freeware. Distribute It Like Crazy on BBS, Internet and CDROM ! No money can be charged for it.” (DX.NFO)",
+  "accuracy": [
+    "Its menu never shows which line is picked: DosKit presses Down five times, then Enter, for START DEMO.",
+    "It runs in 640x480 through VESA, on DOSBox's S3 card.",
+    "Its galleon scene draws only 4 to 5 frames a second at DosKit's 30,000 cycles; faster settings have not been tried.",
+    "Not yet compared with a capture made on real hardware, and its end has not been seen in DosKit.",
+    "Mono: js-dos mixes the two channels into one, which loses its Dolby Surround too."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=955"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/7365/"
+    }
+  ],
+  "imageAlt": "DX Project's two linked rings over a brown swirl, in 640x480, running in DosKit"
+}

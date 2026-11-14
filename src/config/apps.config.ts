@@ -63,8 +63,10 @@ function appFromData(data: AppData): DosApp {
     loadMethod: 'zip',
     dosboxConf: '', // Loaded dynamically
     ...(data.flashing ? { flashing: true } : {}),
+    ...(data.contentNote ? { contentNote: data.contentNote } : {}),
     ...(data.warnBeforeLeaving ? { warnBeforeLeaving: true } : {}),
     ...(data.saveFiles ? { saveFiles: true } : {}),
+    ...(data.modules ? { modules: data.modules } : {}),
     ...(data.jsdos ? { jsdos: data.jsdos } : {}),
     ...(data.start
       ? { start: startRecipeOf(data.id, data.start), startNote: data.start.note }

@@ -69,7 +69,7 @@ with `setCPU({ cycles })`:
   a real one, its timeline matches to about 1%.
 - `'max'` gives the program as many cycles as the device can run. Crystal Dream 2 runs at it (at
   30000 it stops with "System overloaded!"), but not every program copes with it: Panic plays no
-  sound at `'max'`, and Second Reality showed the default VGA palette for about 12 seconds near
+  sound at `'max'`, and Second Reality showed the default VGA palette for 12 to 15 seconds near
   1:30 in most runs.
 - `'auto'` runs a program at 3,000 cycles per millisecond until it switches the CPU to protected
   mode, and at `'max'` from then on, until it exits. A program that stays in real mode, as most
@@ -125,16 +125,20 @@ when the app loads, or when the selector preloads it on hover: each one is a sma
 (in production builds the service worker still stores every chunk when it installs, so that the
 app can start offline). `AppData` in `src/types/dos-app.ts` gives every field:
 
-- `order` is its place in the selector, which lists the demos first, then the intros, the trackers
-  and the effects.
-- `kind` is `demo`, `intro`, `tracker` or `effect`. The generated app lists name it, the Play
-  screen's button says Start for a tracker and Play for the others, and a tracker's page calls it
-  a MultimediaApplication in its structured data.
+- `order` is its place in the selector, which lists the demos first, then the intros, the
+  musicdisks, the diskmags, the trackers and the effects.
+- `kind` is `demo`, `intro`, `musicdisk`, `diskmag`, `tracker` or `effect`. The generated app
+  lists name it, the Play screen's button says Start for a tracker, Read for a diskmag and Play
+  for the others, and a tracker's page calls it a MultimediaApplication in its structured data.
 - `description` is one line of facts for the selector: no "legendary" or "classic".
 - `archiveBytes` is the archive's size in bytes, which its disk shows; a test checks it.
 - `flashing: true` for a production that flashes more than three times a second over a large
   part of the picture, the limit of WCAG 2.3.1: the selector, the Play screen, the About panel and
   its page warn of it.
+- `contentNote` for a production that shows something else a visitor may want to know of before
+  it starts, such as nudity: one sentence that starts with "Contains", as Timeless's "Contains
+  nudity: …". The selector, the Play screen, the About panel and its page show it beside the
+  flashing warning, and a production with one waits on its Play screen, as a flashing one does.
 
 `author` and `year` are the release's, from the archive's own files where they say; the header
 shows them as "Some Group (1994)", or whichever of the two the app has, and the selector names
@@ -150,6 +154,10 @@ program people make things in, such as a tracker:
   hidden or the page goes, keeps them in the browser's IndexedDB, and starts the app with them
   after its archive the next time. The app gets the Files button, which downloads them, brings in
   modules, or starts over, and picking another app in the selector asks before it leaves.
+- `modules` says what the Files button brings in, and where: EdLib's
+  `{ "accept": [".edl"], "folder": "SONGS" }` takes its songs into `C:\SONGS`, the only folder it
+  reads them from. Left out, it takes the module formats Impulse Tracker and Scream Tracker 3
+  load, into `C:\`.
 - `warnBeforeLeaving: true` makes the page ask before it is closed or reloaded while the app runs.
   On Windows, Linux and ChromeOS, browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, so a DOS
   program's Ctrl-W would close the tab at once (macOS browsers use ⌘ for these, and Ctrl+W reaches
@@ -176,12 +184,12 @@ keys from its data file, and DosKit presses them once that screen is up:
 "hint": "My Demo waits at its setup: press Enter to start it with the Gravis UltraSound."
 ```
 
-- `keys` has one step per key, by its name in `src/utils/dosKeys.ts`: the letters, `Space`,
-  `Enter`, `Escape`, `Tab`, `Backspace`, `Up`, `Down`, `Left`, `Right`, `PageUp`, `PageDown`,
-  `Home`, `End`, `F1` to `F10`, `LeftShift`, `LeftCtrl` and `LeftAlt`. Keys held together are
-  joined by `+`, as in `"LeftCtrl+L"`. The registry throws for a name it does not know.
+- `keys` has one step per key, by its name in `src/utils/dosKeys.ts`: the letters, the digits `0`
+  to `9` above them, `Space`, `Enter`, `Escape`, `Tab`, `Backspace`, `Up`, `Down`, `Left`,
+  `Right`, `PageUp`, `PageDown`, `Home`, `End`, `F1` to `F10`, `LeftShift`, `LeftCtrl` and
+  `LeftAlt`. Keys held together are joined by `+`, as in `"LeftCtrl+L"`. The registry throws for
+  a name it does not know.
 - `gapMs` is the wait between one key's release and the next one's press, 250 ms when left out.
-  Unreal's five keys take 100.
 - `ready` says that the setup screen is up and takes keys: keys sent earlier are lost, as Second
   Reality, Crystal Dream 2 and Impulse Tracker drop every key that comes before they read the
   keyboard. It is one of:
@@ -195,14 +203,16 @@ keys from its data file, and DosKit presses them once that screen is up:
 - `note` is what the start does, for the Play screen: what it picks, and what comes first. It ends
   with a period.
 - `hint` is what to press, which a bar over the player shows when DosKit cannot send the keys or
-  they do not take. It says "press".
+  they do not take. It says "press". It shows only for an app with `start`: the keys of a
+  production that starts by itself, such as those that page through Bussimatkaintro 93 or change
+  GR8's scroll speed, go in its page's text instead.
 
 DosKit waits up to 45 seconds for the signal, sends the keys through `ci.sendKeyEvent()`, one at a
-time (`src/utils/keyQueue.ts`), and then checks for 4 seconds that the screen went on: a screen not
+time (`src/utils/keyQueue.ts`), and then checks for 6 seconds that the screen went on: a screen not
 seen while it waited, a change of mode, or sound. It sends a start of one key up to 3 times, and
 one of several keys only once, since a second Right would move a menu's choice again
-(`src/utils/startRecipe.ts`). Unreal's setup starts on No sound, so its keys, Right, Right, Down,
-Down and Enter, pick SoundBlaster Pro at 20 kHz.
+(`src/utils/startRecipe.ts`). Holistic's keys, Right four times and Enter, step its setup to the
+Sound Blaster 16 at 220h, DMA 5, IRQ 7, and start the demo.
 
 A fingerprint is the FNV-1a hash of every byte of the frame js-dos hands out
 (`src/utils/frameHash.ts`), which only a real emulator gives. Measure it on a fresh build: give the

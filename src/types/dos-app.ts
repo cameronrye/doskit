@@ -11,7 +11,18 @@ import type { ReadySignal, StartRecipe } from '../utils/startRecipe';
 import type { DosOptions } from './js-dos';
 
 /** What a production is, which decides where the selector lists it */
-export type AppKind = 'demo' | 'intro' | 'tracker' | 'effect';
+export type AppKind = 'demo' | 'intro' | 'musicdisk' | 'diskmag' | 'tracker' | 'effect';
+
+/**
+ * The files a tracker's Files panel brings in, and where: Impulse Tracker and Scream Tracker 3
+ * read modules from C:\, EdLib its songs from C:\SONGS
+ */
+export interface ModuleImport {
+  /** The file name extensions it takes, such as ".edl" */
+  accept: string[];
+  /** The folder of C: they go to, such as "SONGS"; left out, C:\ itself */
+  folder?: string;
+}
 
 /**
  * What an app's data file, src/apps/<id>.json, holds: the facts the registry, the selector and
@@ -20,7 +31,10 @@ export type AppKind = 'demo' | 'intro' | 'tracker' | 'effect';
 export interface AppData {
   /** Its id, also the name of its archive in public/demos and of its config in src/dos-apps */
   id: string;
-  /** Its place in the selector: the four demos first, then the intros, trackers and effects */
+  /**
+   * Its place in the selector: the demos first, then the intros, musicdisks, diskmags,
+   * trackers and effects
+   */
   order: number;
   kind: AppKind;
   name: string;
@@ -33,10 +47,14 @@ export interface AppData {
   archiveBytes: number;
   /** Whether it flashes more than three times a second over a large part of the picture */
   flashing?: boolean;
+  /** See DosApp.contentNote */
+  contentNote?: string;
   /** See DosApp.warnBeforeLeaving */
   warnBeforeLeaving?: boolean;
   /** See DosApp.saveFiles */
   saveFiles?: boolean;
+  /** See DosApp.modules */
+  modules?: ModuleImport;
   /** See DosApp.jsdos */
   jsdos?: Partial<DosOptions>;
   /** The keys that start it at its setup screen, for a production that waits at one */
@@ -89,7 +107,7 @@ export interface DosApp {
   author?: string;
   /** Year of release */
   year?: number;
-  /** What it is: a demo, an intro, a tracker or an effect */
+  /** What it is: a demo, an intro, a musicdisk, a diskmag, a tracker or an effect */
   kind: AppKind;
   /** The size of the archive it downloads, in bytes */
   archiveBytes: number;
@@ -98,6 +116,12 @@ export interface DosApp {
    * limit of WCAG 2.3.1: the selector and the Play screen warn of it
    */
   flashing?: boolean;
+  /**
+   * What else it shows that a visitor may want to know before it starts, such as nudity: one
+   * sentence, starting "Contains", which the selector, the Play screen, the About panel and
+   * its page show beside the flashing warning
+   */
+  contentNote?: string;
   /** The keys DosKit sends to get past its setup screen, once that screen is up */
   start?: StartRecipe;
   /** What that start does, for the Play screen */
@@ -109,6 +133,8 @@ export interface DosApp {
    * its archive at its next start, and can be downloaded, replaced or reset
    */
   saveFiles?: boolean;
+  /** What its Files panel brings in, and where; left out, the module formats in C:\ */
+  modules?: ModuleImport;
   /**
    * js-dos options of its own, over DosKit's and the visitor's: Impulse Tracker draws its
    * own mouse pointer, which lines up with the real one only at the AsIs aspect

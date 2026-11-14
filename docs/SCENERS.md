@@ -39,14 +39,14 @@ Crystal Dream 2 was added at the same time, but it does not come from sceners, w
 - **Author**: Draeden of VLA. It is the example program of VLA's tutorial "Intro To 3d Rotations", whose text is dated 02/22/93, and `3DROTATE.EXE` carries the line "Coded by Draeden of VLA".
 - **Features**: Real-time 3D object rotation in VGA mode
 - **URL**: `https://doskit.net/3drotate`
-- **Source**: https://github.com/sceners/grumpys-source-pack-collection, a copy of Grumpy's source pack: Grumpy collected the tutorial rather than writing it
+- **Source**: the tutorial's own package, `rotate3d.zip` in scene.org's mirror of Hornet's archive (https://files.scene.org/view/mirrors/hornet/code/effects/3d/rotate3d.zip), with the tutorial and its source. Its program is byte for byte the one in https://github.com/sceners/grumpys-source-pack-collection, a copy of Grumpy's source pack (Grumpy collected the tutorial rather than writing it), which DosKit zipped on its own before.
 
 #### Starfield Effect (1993)
 
 - **Author**: Draeden of VLA. It is the example program of VLA's tutorial "Intro To Starfields", whose text and source are dated 03/15/93.
 - **Features**: Classic starfield effect simulating flying through space
 - **URL**: `https://doskit.net/stars`
-- **Source**: https://github.com/sceners/grumpys-source-pack-collection, the same source pack
+- **Source**: the tutorial's own package, `stars.zip` in scene.org's mirror of Hornet's archive (https://files.scene.org/view/mirrors/hornet/code/effects/stars/stars.zip). Its program is byte for byte the one in the same source pack.
 
 ### Not Compatible
 
@@ -66,8 +66,8 @@ Crystal Dream 2 was added at the same time, but it does not come from sceners, w
 **Demo Bundles** (in `public/demos/`):
 
 - `squid-bbstro.zip` (21 KB)
-- `3drotate.zip` (3.0 KB)
-- `stars.zip` (1.5 KB)
+- `3drotate.zip` (36 KB)
+- `stars.zip` (11 KB)
 
 **Data and Page Files** (in `src/apps/`): `<id>.json` and `<id>.page.json` for each of the three, and a share card each in `public/cards/` (`squidbbstro.png`, `3drotate.png`, `stars.png`)
 

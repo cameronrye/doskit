@@ -1,0 +1,10 @@
+{
+  "id": "the-globe",
+  "order": 37,
+  "kind": "intro",
+  "name": "The Globe",
+  "description": "Jare's PC version of Axel's Atari ST globe of dots, with its source",
+  "author": "Jare of VangeliSTeam",
+  "year": 1993,
+  "archiveBytes": 22074
+}

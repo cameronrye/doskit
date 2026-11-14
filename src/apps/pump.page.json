@@ -1,0 +1,27 @@
+{
+  "description": "Pump by Iguana, the winner of the PC demo competition at Euskal Party 1995, running from its original files in your browser.",
+  "about": [
+    "Pump is Iguana's demo for MS-DOS, which won the PC demo competition at Euskal Party 1995, held from 12 to 15 October 1995 in Tolosa, in the Basque Country. Most of its low-level code was written before the party; the demo itself was designed, composed, coded and synchronized there, over 5 hours and then 28 more.",
+    "This is its release version, of 25 October 1995. It runs for a little over two minutes and returns to DOS by itself."
+  ],
+  "released": "Euskal Party 1995: first in the PC demo competition, with 715 points. The release version is dated 25 October 1995.",
+  "credits": "Code by Jare, Yann and Captain Bit; music by Noisy Man; graphics by Kronos and COI, 3D models by Iñaki. The DemoVT music system by JCAB; the PMODE/W extender by Tran and Daredevil.",
+  "terms": "“This software can be freely distributed by anybody in unmodified form.” (PUMP.NFO)",
+  "accuracy": [
+    "DosKit picks Run the demo in its setup, which has found the Gravis UltraSound. Its Sound Blaster choice has not been tried here.",
+    "DosKit sets WINDIR, as its README says to under Windows: without it, the demo runs at less than half its speed here.",
+    "Part by part, it keeps within 2 seconds of a real 486DX2-66 with a Gravis UltraSound.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=831"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/27843/"
+    }
+  ],
+  "imageAlt": "Iguana's logo in Pump, running in DosKit"
+}

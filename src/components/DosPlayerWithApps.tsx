@@ -10,7 +10,7 @@
 import { useState, useCallback, useEffect, useEffectEvent, useReducer, useRef } from 'react';
 import { DosPlayer } from './DosPlayer';
 import { DemoSelector, type LoadedApp } from './DemoSelector';
-import type { DosApp } from '../types/dos-app';
+import type { AppKind, DosApp } from '../types/dos-app';
 import type { CommandInterface } from '../types/js-dos';
 import type { PlayerHandle } from '../hooks/useDosEmulator';
 import { getUserFriendlyError } from '../utils/errorMessages';
@@ -18,7 +18,7 @@ import { endMarkerFor, withEndMarker } from '../utils/endMarker';
 import { runStartRecipe, type RecipeEmulator, type RecipeState } from '../utils/startRecipe';
 import { createPersistQueue } from '../utils/persistQueue';
 import { getSavedFiles, putSavedFiles, removeSavedFiles } from '../utils/savedFiles';
-import { dosNameFor, zipEntryNames } from '../utils/dosNames';
+import { dosPathFor, zipEntryNames } from '../utils/dosNames';
 import { TrackerFiles } from './TrackerFiles';
 import { fnv1a } from '../utils/frameHash';
 import {
@@ -94,6 +94,13 @@ function readBytes(file: Blob): Promise<Uint8Array> {
 /** "Author · year", or whichever of the two an app gives */
 function releaseOf({ author, year }: DosApp): string {
   return [author, year].filter(Boolean).join(' · ');
+}
+
+/** What the Play screen's button says: a tracker is started, a diskmag read, the rest played */
+function playLabelOf(kind: AppKind): string {
+  if (kind === 'tracker') return 'Start';
+  if (kind === 'diskmag') return 'Read';
+  return 'Play';
 }
 
 export function DosPlayerWithApps({
@@ -173,10 +180,10 @@ export function DosPlayerWithApps({
           app: loadingApp,
           files,
           dosboxConf: conf,
-          // A production that flashes waits on the Play screen, which warns of it: a click
-          // elsewhere during the load is no press of Play. Picked in the selector, its
-          // warning was in the selector's details.
-          play: hasFreshActivation() && !loadingApp.flashing,
+          // A production that flashes, or has a content note, waits on the Play screen,
+          // which warns of it: a click elsewhere during the load is no press of Play. Picked
+          // in the selector, its warning was in the selector's details.
+          play: hasFreshActivation() && !loadingApp.flashing && !loadingApp.contentNote,
         });
         reportAppRunning(loadingApp);
       },
@@ -355,7 +362,7 @@ export function DosPlayerWithApps({
     ]);
     const imports = [...(session.imports ?? [])];
     for (const file of chosen) {
-      const path = dosNameFor(file.name, taken);
+      const path = dosPathFor(file.name, session.app.modules?.folder, taken);
       taken.add(path);
       try {
         imports.push({ path, contents: await readBytes(file) });
@@ -569,6 +576,12 @@ export function DosPlayerWithApps({
                 Contains flashing lights, which may affect people with photosensitive epilepsy.
               </p>
             )}
+            {posterSession.app.contentNote && (
+              <p className="doskit-content-warning">
+                <span aria-hidden="true">⚠ </span>
+                {posterSession.app.contentNote}
+              </p>
+            )}
             {posterSession.app.startNote && (
               <p className="doskit-poster-note">{posterSession.app.startNote}</p>
             )}
@@ -577,7 +590,7 @@ export function DosPlayerWithApps({
               autoFocus
               onClick={() => dispatch({ type: 'played' })}
             >
-              {posterSession.app.kind === 'tracker' ? 'Start' : 'Play'}
+              {playLabelOf(posterSession.app.kind)}
             </button>
           </div>
         </div>
@@ -616,6 +629,7 @@ export function DosPlayerWithApps({
       {filesOpen && session?.app && (
         <TrackerFiles
           appName={session.app.name}
+          accept={session.app.modules?.accept}
           savedAt={filesSavedAt?.sessionId === session.id ? filesSavedAt.at : null}
           kept={filesKept}
           notice={filesNotice}

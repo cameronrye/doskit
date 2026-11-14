@@ -1,0 +1,10 @@
+{
+  "id": "gr8",
+  "order": 23,
+  "kind": "intro",
+  "name": "GR8",
+  "description": "Future Crew's first PC demo, an EGA sine scroller with no sound",
+  "author": "Future Crew",
+  "year": 1990,
+  "archiveBytes": 31109
+}

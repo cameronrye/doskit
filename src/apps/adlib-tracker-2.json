@@ -1,0 +1,16 @@
+{
+  "id": "adlib-tracker-2",
+  "order": 49,
+  "kind": "tracker",
+  "name": "Adlib Tracker II",
+  "description": "subz3ro's music tracker for OPL3 FM, version G3 2.3.58, with 501 songs",
+  "author": "subz3ro of Altair",
+  "year": 2026,
+  "archiveBytes": 2235916,
+  "warnBeforeLeaving": true,
+  "saveFiles": true,
+  "modules": {
+    "accept": [".a2m", ".a2t", ".a2p", ".a2i", ".a2f", ".a2b", ".a2w"],
+    "folder": "AT2"
+  }
+}

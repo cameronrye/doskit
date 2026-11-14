@@ -1,0 +1,23 @@
+{
+  "id": "composer-669",
+  "order": 46,
+  "kind": "tracker",
+  "name": "Composer 669",
+  "description": "Tran's eight-channel music tracker, where the 669 format began",
+  "author": "Tran",
+  "year": 1992,
+  "archiveBytes": 51599,
+  "warnBeforeLeaving": true,
+  "start": {
+    "keys": ["Enter"],
+    "ready": {
+      "stdout": "Press any key to go on"
+    },
+    "note": "DosKit goes past its opening reminder to the editor. It has no song of its own: bring in a .669 with the Files button, then F11 loads it and F5 plays it."
+  },
+  "hint": "Press any key to go on to the editor; then F11 lists the .669 songs brought in with the Files button, Enter loads one and F5 plays it.",
+  "saveFiles": true,
+  "modules": {
+    "accept": [".669"]
+  }
+}

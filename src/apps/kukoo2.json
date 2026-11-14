@@ -1,0 +1,19 @@
+{
+  "id": "kukoo2",
+  "order": 39,
+  "kind": "intro",
+  "name": "Kukoo2",
+  "description": "Type One's intro for the Pleasure Access BBS, with AdLib music",
+  "author": "Type One of The FLamoots",
+  "year": 1994,
+  "archiveBytes": 29395,
+  "contentNote": "Contains nudity in its archive only: PA.BBS, a text-art BBS banner that is mostly a picture of a nude woman, which the intro never shows.",
+  "start": {
+    "keys": ["Space"],
+    "ready": {
+      "frames": [3835576239]
+    },
+    "note": "Its CGA pre-intro plays first, with the Belgian anthem on the PC speaker; once it rests, the Space DosKit presses takes it on to its VGA part."
+  },
+  "hint": "Kukoo2 waits at the end of its pre-intro: press Space for its VGA part."
+}

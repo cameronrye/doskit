@@ -1,0 +1,28 @@
+{
+  "description": "Journey 1, the first part of Future Crew's musicdisk of Purple Motion's songs, released at The Party 1993, running from its original files in your browser.",
+  "about": [
+    "Journey is Purple Motion's musicdisk for Future Crew, released in two parts at The Party 1993 in Herning, Denmark, with Future Crew's MusicDiskPlayer, which plays MOD, STM and S3M modules on the Gravis UltraSound or a Sound Blaster.",
+    "This first part has seven songs, written from 1991 to 1993: Aquaphobia, Exploration, Global Motion, Inspiration, Purple Sky II, A Touch of Spring and Turbulence.",
+    "Up and Down move through its menu, and Enter plays a song, which loops until another is picked. Escape switches between the menu and the playing screen while the music goes on, and F10 returns to DOS."
+  ],
+  "released": "The Party 1993, in no competition. Released on 28 December 1993.",
+  "credits": "Music by Purple Motion. The MusicDiskPlayer by Future Crew, with its code by Psi (as Demozoo credits it). Exploration's sample names say a couple of its samples were “loaned” from Rubicon.",
+  "terms": "Freeware: “All our demos, except the ones which we have created for different companies, are freeware. This means that you can copy and distribute them freely as long as you make no modifications to them.” (FCINFO12.TXT) Of the player, MDP.DOC says: “You can freely use the MusicDiskPlayer to publish your own musics.”",
+  "accuracy": [
+    "DosKit gives it a Gravis UltraSound, which its player looks for first.",
+    "Its menu is 512x480 and its playing screen 640x480: DosKit's 4:3 view stretches the menu 25% wider.",
+    "A Touch of Spring plays quieter than the other songs on the Gravis UltraSound: its module's master volume affects only the Sound Blaster.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=6514"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/99942/"
+    }
+  ],
+  "imageAlt": "Journey 1's song menu, under its title, running in DosKit"
+}

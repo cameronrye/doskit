@@ -1,0 +1,28 @@
+{
+  "description": "The Assembly '94 Invitation Dentro by Future Crew and Sonic PC, the organizers' second invitation to Assembly '94 in Helsinki, with a small Space Invaders game, running from its original files in your browser.",
+  "about": [
+    "The Assembly '94 Invitation Dentro is the organizers' second invitation to Assembly '94, held from 5 to 7 August 1994 in Helsinki's Ice Hockey Hall, released on 3 July 1994. Future Crew made it with Sonic PC, who did the code.",
+    "It includes a small playable Space Invaders game: the arrow keys move the ship.",
+    "It never ends by itself: its second part, with the game, loops until Escape, which returns to DOS."
+  ],
+  "released": "Released on 3 July 1994, as the organizers' second invitation to Assembly '94 (5 to 7 August 1994, Helsinki).",
+  "credits": "Code by Mik of Sonic PC. Design and graphics by Marvel, music by Skaven, the music player by Psi and texts by GORE, of Future Crew.",
+  "terms": "Freeware: “This demo is freeware. It can be freely distributed without modifications. No money can be charged for it.” (README.1ST)",
+  "accuracy": [
+    "DosKit starts it with -c2, the Gravis UltraSound, and -q, its quick mode, which “runs thru both parts automatically”.",
+    "Its screen stays black for about 12 seconds at first while its music plays, which its readme says is normal.",
+    "Its -a switch would only empty the game's box, so DosKit runs it with the game.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=1282"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/99586/"
+    }
+  ],
+  "imageAlt": "A screen of the Assembly '94 Invitation Dentro, running in DosKit"
+}

@@ -1,0 +1,26 @@
+{
+  "description": "Fishtro, Future Crew's invitation intro for Assembly '92, running from its original files in your browser.",
+  "about": [
+    "Fishtro is Future Crew's invitation intro for Assembly '92, held from 24 to 26 July 1992 in Kauniainen, Finland, and organized by Rebels and Complex; Future Crew sent the PC invitations. It is a two-part intro with fish, a text writer with the party's news, and music played with Scream Tracker 3.0's 7-voice player; its setup says the show lasts about 12 minutes.",
+    "Future Crew made it in about two weeks and took it to MEGA-Leif, an Atari ST and PC party in Uppsala, Sweden, where it was entered in the PC demo competition. Bugs held its release back until a week after that party.",
+    "This build, dated 21 October 1992, opens with a notice that it “was originally distributed through Razor Europe”. Escape ends it with a drawing of Melvin, the party's mascot, and an information screen."
+  ],
+  "released": "MEGA-Leif 1992: entered in the PC demo competition, placing unknown. Future Crew's release lists date it 8 April 1992.",
+  "credits": "Code by Psi, music by Purple Motion, graphics by Pixel, Marvel and Skaven (the fishes), text by Gore, as Demozoo credits them. The intro thanks Marvel of Eclipse for the Assembly logo.",
+  "terms": "Its party text says “FEEL FREE TO SPREAD THIS FILE!” Future Crew's information files make all their demos freeware: “you can copy and distribute them freely as long as you make no modifications to them.”",
+  "accuracy": [
+    "DosKit takes its setup's defaults: a 486 and a Sound Blaster at 220h, IRQ 7.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=1283"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/6425/"
+    }
+  ],
+  "imageAlt": "Fishtro's Future Crew logo over the seabed, running in DosKit"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "contrast",
+  "order": 17,
+  "kind": "demo",
+  "name": "Contrast",
+  "description": "TFL-TDV's demo, second at Wired '94",
+  "author": "TFL-TDV",
+  "year": 1994,
+  "archiveBytes": 923163,
+  "flashing": true,
+  "contentNote": "Contains nudity in its archive only: PA.BBS, a text-art BBS banner that is mostly a picture of a nude woman, which the demo never shows."
+}

@@ -1,14 +1,14 @@
 {
-  "description": "Unreal by Future Crew, the winner of the PC demo competition at Assembly '92, running from its original files in your browser.",
+  "description": "Unreal 1.1 by Future Crew, the winner of the PC demo competition at Assembly '92, in the version for the Gravis UltraSound, running from its original files in your browser.",
   "about": [
     "Unreal is Future Crew's demo for MS-DOS, released in August 1992 after it won the PC demo competition at Assembly '92.",
-    "This is the 1992 release, for the Sound Blaster and Sound Blaster Pro. Version 1.1, for the Gravis UltraSound, followed in December 1993."
+    "This is version 1.1, released at The Party 1993 in December 1993: it fixes a crash of version 1.0 on machines with high memory at B000 to B7FF, and adds the Gravis UltraSound. Its double scroller's dialogue is three short lines in place of 1.0's long one, which makes it about 82 seconds shorter."
   ],
-  "released": "Assembly '92: first in the PC demo competition. Released on 6 August 1992.",
-  "terms": "Its readme gives only the copyright. Future Crew's information files make all their demos freeware: “you can copy and distribute them freely as long as you make no modifications to them.”",
+  "released": "Assembly '92: first in the PC demo competition. Version 1.0 was released in August 1992, version 1.1 at The Party 1993.",
+  "terms": "README.1ST: “This demo is freeware. It can be freely distributed without modifications. No money can be charged for it.”",
   "accuracy": [
-    "Its setup starts on No sound: DosKit picks SoundBlaster Pro at 20 kHz.",
-    "Its first nine minutes follow a capture made on a real 386DX-40; its last section ends about 50 seconds sooner.",
+    "Its setup starts on Gravis Ultrasound 44Khz, which DosKit takes.",
+    "Not yet compared with a capture of version 1.1 on real hardware. Version 1.0, which DosKit ran before, followed a capture made on a real 386DX-40 for its first nine minutes.",
     "Mono: js-dos mixes the two channels into one."
   ],
   "links": [

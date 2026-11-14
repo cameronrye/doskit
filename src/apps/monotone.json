@@ -1,0 +1,24 @@
+{
+  "id": "monotone",
+  "order": 48,
+  "kind": "tracker",
+  "name": "MONOTONE",
+  "description": "Trixter's music tracker for the PC speaker, version 0.3.9, an alpha",
+  "author": "Trixter of Hornet",
+  "year": 2017,
+  "archiveBytes": 189791,
+  "warnBeforeLeaving": true,
+  "start": {
+    "keys": ["1", "0", "4", "Enter", "Space"],
+    "gapMs": 250,
+    "ready": {
+      "stdout": "1. Color: Generic"
+    },
+    "note": "DosKit picks the generic color display, the PC speaker and four tracks in its setup, then goes past its title screen. Ctrl+L loads a song, Ctrl+P plays it, F2 shows the pattern editor."
+  },
+  "hint": "MONOTONE asks three questions as it starts: press 1 for the generic color display, 0 for the PC speaker, 4 and Enter for four tracks, then any key at its title screen. Ctrl+L loads a song, such as PRELUDE.MON, and Ctrl+P plays it.",
+  "saveFiles": true,
+  "modules": {
+    "accept": [".mon"]
+  }
+}

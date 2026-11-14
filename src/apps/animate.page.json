@@ -1,0 +1,28 @@
+{
+  "description": "Animate by Schwartz, a 4,034-byte intro that won the PC 4K intro competition at Assembly '95, running from its original files in your browser.",
+  "about": [
+    "Animate is Schwartz's 4K intro for MS-DOS, which won the PC 4K intro competition at Assembly '95, held from 10 to 13 August 1995 in Helsinki. Butterflies fly over a green field; then a metallic vase turns in front of a gray background, stops and reveals two faces, and the intro's name zooms out.",
+    "It has no sound. It ends by itself after about 48 seconds; Escape ends it at once.",
+    "In 2020 Schwartz published it with its source code at github.com/mtreinik/animate, under the MIT License."
+  ],
+  "released": "Assembly '95: first of 15 in the PC 4K intro competition, with 2,100 points.",
+  "credits": "Everything by Schwartz.",
+  "terms": "MIT License, from its sole author since 2020: “Copyright (c) 2020 Mikko Reinikainen. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.” (LICENSE, github.com/mtreinik/animate) Its README there says of ANIMATE.TXT, the 1995 text in this archive, “The information is no longer valid.”",
+  "accuracy": ["Compared only with its author's own DOSBox captures, not yet with real hardware."],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=2859"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/7393/"
+    },
+    {
+      "label": "GitHub",
+      "url": "https://github.com/mtreinik/animate"
+    }
+  ],
+  "imageAlt": "Animate's metallic vase in front of a gray background, running in DosKit",
+  "authorType": "Person"
+}

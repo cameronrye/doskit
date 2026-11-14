@@ -22,7 +22,7 @@
 
 ## Overview
 
-DosKit runs DOS demoscene productions and the music trackers they were made with in the browser, from their original files, with nothing to install: Second Reality, Unreal, Panic and Crystal Dream 2, two BBS intros, and Impulse Tracker and Scream Tracker 3. It is a web app around js-dos, which runs DOSBox compiled to WebAssembly.
+DosKit runs DOS demoscene productions and the music trackers they were made with in the browser, from their original files, with nothing to install: fifty-two productions, among them Second Reality, Unreal, Panic and Crystal Dream 2, Assembly's winners from 1992 to 1997, intros, musicdisks, a diskmag, and six trackers, Impulse Tracker and Scream Tracker 3 among them. It is a web app around js-dos, which runs DOSBox compiled to WebAssembly.
 
 The project leverages js-dos v8.3.20, a WebAssembly-based DOS emulator built on DOSBox. Combined with React 19's modern component architecture and Vite's lightning-fast build system, DosKit delivers an exceptional user experience for retro computing enthusiasts and developers.
 
@@ -33,11 +33,11 @@ DosKit comes with a library of demoscene productions and music trackers, among t
 ### Core Features
 
 - **DOS Prompt**: The start page opens the application selector with nothing running under it; closing the selector without a pick boots a DOS command prompt where users can execute DOS commands
-- **Application Library**: Demoscene productions and music trackers, picked from a selector of floppy disks that works with the mouse or the keyboard (arrow keys, Home, End, Space, Enter, Escape; see Basic Usage under Usage). It lists the demos first, each disk shows the size of its archive, and the productions that flash come with a warning
+- **Application Library**: Demoscene productions and music trackers, picked from a selector of floppy disks that works with the mouse or the keyboard (arrow keys, Home, End, Space, Enter, Escape; see Basic Usage under Usage). It lists the demos first, each disk shows the size of its archive, and the productions that flash or show nudity come with a warning
 - **A Page per Production**: Each application opens at a page of its own, such as https://doskit.net/secondreality, with its own title, description and share card; old `?app=` links still work (see Deep Linking under Usage)
-- **One Press to Play**: An application opened from its link, or after a long download, waits on a Play screen, whose click starts it with sound; otherwise one picked in the selector starts at once. DosKit presses the start keys of the seven productions that wait at a setup screen, and shows an end card when a program returns to DOS
+- **One Press to Play**: An application opened from its link, or after a long download, waits on a Play screen, whose click starts it with sound; otherwise one picked in the selector starts at once. DosKit presses the start keys of the twenty-six productions that wait at a setup screen, and shows an end card when a program returns to DOS
 - **About Panel**: The header's About button shows the current production's page text: what it is, where it was shown, its credits, its authors' terms, and how it runs here compared with real hardware
-- **Tracker Files**: What Impulse Tracker and Scream Tracker 3 save is kept in the browser and comes back at their next start; their Files button downloads it, brings in modules, or starts over
+- **Tracker Files**: What the six trackers save is kept in the browser and comes back at their next start; their Files button downloads it, brings in modules or songs, or starts over
 - **Platforms**: Desktop browsers on Windows, macOS and Linux, and phones and tablets on iOS and Android, where the on-screen keyboard stands in for a real one
 - **Progressive Web App (PWA)**: Can be installed as a native app, with offline support
 - **Offline Functionality**: After the first visit the app and its DOS prompt work offline; each application works offline once it has been opened online
@@ -146,7 +146,7 @@ In development, StrictMode mounts every component twice at once, so each DosPlay
 
 - React hooks (useState, useEffect, useCallback, useReducer) for component state, held in App and DosPlayerWithApps and passed down as props; there is no context or global store. DosPlayerWithApps keeps what the player runs in one reducer (src/components/playerSession.ts): nothing, a requested app loading or failed, a tracker's saved files being read, the Play screen, or a running session
 - Local storage for the install prompt's dismissals, and for reading the settings js-dos saves from its settings panel (`jsdos.8.*`), through src/utils/storage.ts, which never throws when storage is blocked or full
-- IndexedDB for the files Impulse Tracker and Scream Tracker 3 save (src/utils/savedFiles.ts)
+- IndexedDB for the files the trackers save (src/utils/savedFiles.ts)
 - The URL's path for the app it shows, `/<id>`
 
 ### Service Worker
@@ -390,15 +390,15 @@ All three label their keys as js-dos does (␛ Esc, ⌫ Backspace, ↵ Enter, �
 
 Visit https://doskit.net/ to use the emulator directly in your browser. DosKit opens the application selector, with nothing running under it and the footer saying Idle: pick an application to run it, or close the selector for a DOS prompt, where you can execute DOS commands.
 
-In the selector, click a disk to see its details and Load Application, or double-click it to load it at once. Each disk shows the size of its application's archive, and the details of the productions that flash (Second Reality, Panic and Crystal Dream 2) warn of it. Opened over a running application, from the header's Change Application, the selector pauses it, sound and all, until it closes; closed without a pick, the application goes on. With the keyboard, Tab reaches the disks as a single stop; the arrow keys, Home and End move between them and select them (during a download they only move the focus), Space selects the focused disk, Enter loads it, and Escape cancels a download, or else closes the selector. Choosing another disk while one downloads, with Space or a click, cancels that download, and loading another, with Enter or a double-click, replaces it. Tab and Shift+Tab stay inside the selector. Picking the application that is running starts it again.
+In the selector, click a disk to see its details and Load Application, or double-click it to load it at once. Each disk shows the size of its application's archive, and the details of the productions that flash, such as Second Reality and Panic, warn of it, and those that show nudity, such as Timeless, say so. Opened over a running application, from the header's Change Application, the selector pauses it, sound and all, until it closes; closed without a pick, the application goes on. With the keyboard, Tab reaches the disks as a single stop; the arrow keys, Home and End move between them and select them (during a download they only move the focus), Space selects the focused disk, Enter loads it, and Escape cancels a download, or else closes the selector. Choosing another disk while one downloads, with Space or a click, cancels that download, and loading another, with Enter or a double-click, replaces it. Tab and Shift+Tab stay inside the selector. Picking the application that is running starts it again.
 
 Keys pressed on DosKit's own controls (the selector, the header's buttons, the notices, the update prompt and the footer's links) stay with those controls and never reach the running program. Once the focus is on the page, such as after a pick or a click on the DOS screen, every key goes to DOS, Tab included: to use DosKit's controls again, click one. A key's release goes where its press went, whatever has the focus when the key comes up, and the repeats of a key held down on one of DosKit's controls stay away from DOS once the focus has left it.
 
 ### Starting a Production
 
-An application picked in the selector starts once it has downloaded, while the click or key press that picked it is fresh. One opened without a fresh click or key press, from its link, by Back or Forward, or after a longer download, waits on a Play screen: its name, author and year, its description, a warning if it flashes, and what its start will do, with a Play button (Start for the trackers). Browsers start sound only within a few seconds of a click or key press, so the click on Play starts the emulator, and its sound with it.
+An application picked in the selector starts once it has downloaded, while the click or key press that picked it is fresh. One opened without a fresh click or key press, from its link, by Back or Forward, or after a longer download, waits on a Play screen: its name, author and year, its description, a warning if it flashes or shows nudity, and what its start will do, with a Play button (Start for the trackers, Read for the diskmag). Browsers start sound only within a few seconds of a click or key press, so the click on Play starts the emulator, and its sound with it.
 
-Seven productions wait at a setup screen for a key: Second Reality, Unreal, Panic, Crystal Dream 2, Impulse Tracker, Scream Tracker 3 and the 3D Rotation Demo. DosKit sends their keys through js-dos's `ci.sendKeyEvent()`, one at a time from a queue, never `ci.simulateKeyPress()`, which stops js-dos's keyboard for the session when two calls come within 16 ms. It sends them once the setup screen is up, which it knows by the fingerprint of the frame, a line DOS prints, or a DOSBox log line followed by a screen at rest, and then checks that the screen went on: a screen not seen before, a mode change, or sound. A lone key is sent up to 3 times; when the keys still do not take, a bar over the player says which keys to press. Unreal's setup starts on No sound, and its keys pick SoundBlaster Pro at 20 kHz.
+Twenty-six productions wait at a setup screen for a key, among them Second Reality, Unreal, Panic, Crystal Dream 2, Impulse Tracker and Scream Tracker 3. DosKit sends their keys through js-dos's `ci.sendKeyEvent()`, one at a time from a queue, never `ci.simulateKeyPress()`, which stops js-dos's keyboard for the session when two calls come within 16 ms. It sends them once the setup screen is up, which it knows by the fingerprint of the frame, a line DOS prints, or a DOSBox log line followed by a screen at rest, and then checks that the screen went on: a screen not seen before, a mode change, or sound. A lone key is sent up to 3 times; when the keys still do not take, a bar over the player says which keys to press. Holistic's keys step its setup to the Sound Blaster 16, and blind's and MONOTONE's are digits.
 
 Each application's autoexec ends with `echo <Name> has ended.`. When that line reaches the console output, DosKit leaves js-dos's fullscreen, if the player is in it, and shows "<Name> has ended." with Play again (the same files, in a new player), Choose another (the selector) and Back to DOS. A production that never returns to DOS shows no end card: the header's Change Application leaves it.
 
@@ -410,22 +410,65 @@ Each has a data file in `src/apps/`, and each opens at its own page:
 
 <!-- apps:start -->
 - Second Reality (Future Crew, 1993), demo: https://doskit.net/secondreality
-- Unreal (Future Crew, 1992), demo: https://doskit.net/unreal
+- Unreal (Future Crew, 1993), demo: https://doskit.net/unreal
 - Panic (Future Crew, 1993), demo: https://doskit.net/panic
 - Crystal Dream 2 (Triton, 1993), demo: https://doskit.net/crystaldream2
+- Mental Surgery (Future Crew, 1991), demo: https://doskit.net/mentalsurgery
+- Verses (Electromotive Force, 1995), demo: https://doskit.net/verses
+- Holistic (Cascada VR Section, 1994), demo: https://doskit.net/holistic
+- Heartquake (Iguana, 1994), demo: https://doskit.net/heartquake
+- Timeless (Tran, 1994), demo: https://doskit.net/timeless
+- Inconexia (Iguana, 1993), demo: https://doskit.net/inconexia
+- Pump (Iguana, 1995), demo: https://doskit.net/pump
+- Stars: Wonders of the World (NoooN, 1995), demo: https://doskit.net/starsnooon
+- DX Project (Realtech, 1995), demo: https://doskit.net/dxproject
+- Untitled (Dust, 1994), demo: https://doskit.net/untitleddust
+- Dope (Complex, 1995), demo: https://doskit.net/dope
+- Solstice (Valhalla, 1995), demo: https://doskit.net/solstice
+- Contrast (TFL-TDV, 1994), demo: https://doskit.net/contrast
+- Slideshow I (Future Crew, 1990), demo: https://doskit.net/slideshow1
+- Machines of Madness (Dubius, 1996), demo: https://doskit.net/machinesofmadness
+- Boost (Doomsday, 1997), demo: https://doskit.net/boost
 - StarPort BBS Intro II (Future Crew, 1993), intro: https://doskit.net/starportbbstro
 - Squid BBS Intro (cld & The Doctor, 1994), intro: https://doskit.net/squidbbstro
+- GR8 (Future Crew, 1990), intro: https://doskit.net/gr8
+- YO! (Future Crew, 1990), intro: https://doskit.net/yo
+- Fishtro (Future Crew, 1992), intro: https://doskit.net/fishtro
+- StarPort BBS Intro (Future Crew, 1992), intro: https://doskit.net/starportbbstro1
+- The Party '92 Invitation (Future Crew, 1992), intro: https://doskit.net/theparty92invite
+- Assembly '93 Invitation Intro (Future Crew, 1993), intro: https://doskit.net/assembly93invite
+- Bussimatkaintro 93 (Future Crew, 1993), intro: https://doskit.net/bussimatkaintro93
+- Assembly '94 Pre-Invitation Intro (Future Crew and Sonic PC, 1994), intro: https://doskit.net/assembly94preinvite
+- Assembly '94 Invitation Dentro (Future Crew and Sonic PC, 1994), intro: https://doskit.net/assembly94invite
+- SOPPA! (Future Crew, 1994), intro: https://doskit.net/soppa
+- Animate (Schwartz, 1995), intro: https://doskit.net/animate
+- Drift (Wild Light, 1995), intro: https://doskit.net/drift
+- blind (Eufrosyne, 1997), intro: https://doskit.net/blind
+- Helium (viznut, 1997), intro: https://doskit.net/helium
+- The Globe (Jare of VangeliSTeam, 1993), intro: https://doskit.net/theglobe
+- BlasterSound BBS Intro #2 (Iguana, 1994), intro: https://doskit.net/blastersound2
+- Kukoo2 (Type One of The FLamoots, 1994), intro: https://doskit.net/kukoo2
+- Journey 1 (Future Crew, 1993), musicdisk: https://doskit.net/journey1
+- Journey 2 (Future Crew, 1993), musicdisk: https://doskit.net/journey2
+- Chaotic Mind (Future Crew, 1994), musicdisk: https://doskit.net/chaoticmind
+- Worldcharts #1 (Future Crew, 1993), diskmag: https://doskit.net/worldcharts1
 - Impulse Tracker (Jeffrey Lim, 1997), tracker: https://doskit.net/impulsetracker
 - Scream Tracker 3 (Future Crew, 1994), tracker: https://doskit.net/screamtracker
+- Composer 669 (Tran, 1992), tracker: https://doskit.net/composer669
+- EdLib (Jens-Christian Huus, 1994), tracker: https://doskit.net/edlib
+- MONOTONE (Trixter of Hornet, 2017), tracker: https://doskit.net/monotone
+- Adlib Tracker II (subz3ro of Altair, 2026), tracker: https://doskit.net/adlibtracker2
 - 3D Rotation Demo (Draeden of VLA, 1993), effect: https://doskit.net/3drotate
 - Starfield Effect (Draeden of VLA, 1993), effect: https://doskit.net/stars
+- Fire Demo (VangeliSTeam, 1993), effect: https://doskit.net/firedemo
+- Iris (Jare of VangeliSTeam, 1993), effect: https://doskit.net/iris
 <!-- apps:end -->
 
 ### Tracker Files
 
-Impulse Tracker and Scream Tracker 3 keep what they save. DosKit asks js-dos for the files that differ from the tracker's archive (`ci.persist(true)`) 3 seconds after the last key or tap, every 30 seconds, and when the tab is hidden or the page goes, keeps them in the browser's IndexedDB, and starts the tracker with them after its archive the next time. Where the browser cannot keep files, as in some private windows, the tracker starts without them, and its Files panel says so.
+The six trackers keep what they save. DosKit asks js-dos for the files that differ from the tracker's archive (`ci.persist(true)`) 3 seconds after the last key or tap, every 30 seconds, and when the tab is hidden or the page goes, keeps them in the browser's IndexedDB, and starts the tracker with them after its archive the next time. Where the browser cannot keep files, as in some private windows, the tracker starts without them, and its Files panel says so.
 
-The Files button at the top right of a running tracker opens "Your files": Download your files saves the ZIP as js-dos packed it, as `<id>-files.zip`; Bring in modules writes modules from the computer into `C:\` under DOS 8.3 names in capitals that differ from the names of the archive's files and the saved ones, and restarts the tracker to read them, and they are kept with its saved files from then on; Start over asks, then deletes the kept files and restarts the tracker as it came.
+The Files button at the top right of a running tracker opens "Your files": Download your files saves the ZIP as js-dos packed it, as `<id>-files.zip`; Bring in modules writes modules, or a tracker's own song formats such as EdLib's `.edl` and MONOTONE's `.mon`, from the computer into `C:\`, or the folder the tracker reads them from, such as EdLib's `C:\SONGS`, under DOS 8.3 names in capitals that differ from the names of the archive's files and the saved ones, and restarts the tracker to read them, and they are kept with its saved files from then on; Start over asks, then deletes the kept files and restarts the tracker as it came.
 
 Picking another application in the selector while a tracker runs asks "Leave <name>?" and keeps its files first; Back and Forward cannot ask. While a tracker runs, closing or reloading the page asks first: work not saved with the tracker's own save lives only in the emulator's memory, as does every file the other applications write, and is gone once another player starts or the page reloads; and on Windows, Linux and ChromeOS browsers keep Ctrl+W, Ctrl+N and Ctrl+T for themselves, so there Scream Tracker 3's Ctrl-W (save) would close the tab (macOS browsers use ⌘ for these, and Ctrl+W reaches DOS).
 
@@ -451,7 +494,7 @@ An application in the selector is five pieces, and `src/dos-apps/README.md` walk
 
 1. A ZIP archive of the program's files at `public/demos/<id>.zip`
 2. A config module, `src/dos-apps/<id>.config.ts`, with the DOSBox configuration, built from a preset in `src/utils/dosboxConfigBuilder.ts` and exported as `dosboxConf`; the registry imports it lazily
-3. A data file, `src/apps/<id>.json` (the fields of `AppData` in `src/types/dos-app.ts`): its place in the selector, kind, name, description, author, year and archive size, and where they apply its flashing warning, its start keys (`start`, with the signal its setup screen gives and a note for the Play screen) and the hint shown when they fail, `saveFiles` for a tracker, and js-dos options of its own. `src/config/apps.config.ts` builds the registry from these files with `import.meta.glob`
+3. A data file, `src/apps/<id>.json` (the fields of `AppData` in `src/types/dos-app.ts`): its place in the selector, kind, name, description, author, year and archive size, and where they apply its flashing warning, its content note, its start keys (`start`, with the signal its setup screen gives and a note for the Play screen) and the hint shown when they fail, `saveFiles` and `modules` for a tracker, and js-dos options of its own. `src/config/apps.config.ts` builds the registry from these files with `import.meta.glob`
 4. A page file, `src/apps/<id>.page.json`: the text of its page and About panel (its description, about, released, credits, accuracy notes, terms, links and the share card's alt text)
 5. A share card, `public/cards/<id>.png` (the id without hyphens), drawn by `npm run generate-app-cards` from a frame in `cards-src/` and committed
 

@@ -1,0 +1,28 @@
+{
+  "description": "Chaotic Mind, Future Crew's musicdisk of eight songs by Skaven, running from its original files in your browser.",
+  "about": [
+    "Chaotic Mind is Skaven's musicdisk for Future Crew, released in February 1994 with version 1.1 of Future Crew's MusicDiskPlayer, which plays MOD, STM and S3M modules on the Gravis UltraSound or a Sound Blaster.",
+    "It has eight songs, written from 1992 to 1994: Amazonas, Space Hulk I: Captured Sun, Mangrove, Mercury Rain, ID, Rama Gardens, War in the Middle Earth (a remix of an earlier song) and Crystal Dragon.",
+    "Up and Down move through its menu, and Enter plays a song, which loops until another is picked. Escape switches between the menu and the playing screen while the music goes on, and F10 returns to DOS. Version 1.1 of the player adds + and - for the volume, and S to switch between mono and stereo."
+  ],
+  "released": "Released on 20 February 1994. In February 1995 the charts of the diskmag Imphobia, issue 9, placed it second among musicdisks.",
+  "credits": "Music by Skaven. The MusicDiskPlayer by Future Crew, with its code by Psi (as Demozoo credits it). ID's notes say “70% of the samples have NOT been ripped!”",
+  "terms": "Freeware: “All our demos, except the ones which we have created for different companies, are freeware. This means that you can copy and distribute them freely as long as you make no modifications to them.” (FCINFO13.TXT) Skaven's own site said of his songs, Chaotic Mind's among them, in 2002: “All the songs on this page are freeware. They may be freely distributed in unmodified form.”",
+  "accuracy": [
+    "DosKit gives it a Gravis UltraSound, which its player looks for first.",
+    "Its menu is 512x480 and its playing screen 640x480: DosKit's 4:3 view stretches the menu 25% wider.",
+    "In about half of its frames here, the playing screen shows a row of blocks across its top, which captures from the Internet Archive's emulator never show. Neither is real hardware, so which is right is open.",
+    "Mono: js-dos mixes the two channels into one."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=6516"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/99945/"
+    }
+  ],
+  "imageAlt": "Chaotic Mind's song menu, under its title, running in DosKit"
+}

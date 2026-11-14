@@ -1,0 +1,26 @@
+{
+  "description": "Fire Demo by Jare of VangeliSTeam, a fire effect with its source, played to Jester's module Elysium, running from its original files in your browser.",
+  "about": [
+    "Fire Demo is a fire effect for MS-DOS that Jare of VangeliSTeam, in Madrid, coded on 9 and 10 May 1993 and released with its source. Its music is Elysium, a 1991 Amiga module by Jester of Sanity, played by ShellVT, the player of VangeliSTracker 1.2b, which runs the effect while it plays.",
+    "Any key ends it: it then shows its credits and returns to DOS."
+  ],
+  "released": "Coded on 9 and 10 May 1993 (FIRE.NFO); Iguana's list of its releases dates it May 1993.",
+  "credits": "Code by Jare. Music: “Elysium” by Jester (Volker Tripp) of Sanity. Player: ShellVT, from VangeliSTracker 1.2b, by JCAB.",
+  "terms": "Public domain, by Iguana's list of its releases: “All these productions ... are public domain and can be distributed freely, as long as no fee is charged” (RELEASES.TXT, in Heartquake's archive). The music is not Iguana's to grant: The Mod Archive lists Elysium, with Jester as its registered artist, under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 license, https://creativecommons.org/licenses/by-nc-sa/4.0/, and DosKit serves it on those terms, without charge.",
+  "accuracy": [
+    "DosKit starts its player itself, with the command its setup, RUNDEMO, builds for the DMA Stereo Sound Blaster Pro or 16 at 22000 Hz, so the setup's questions do not appear.",
+    "Mono: js-dos mixes the two channels into one.",
+    "Not yet compared with a capture made on real hardware."
+  ],
+  "links": [
+    {
+      "label": "pouet.net",
+      "url": "https://www.pouet.net/prod.php?which=15071"
+    },
+    {
+      "label": "Demozoo",
+      "url": "https://demozoo.org/productions/157368/"
+    }
+  ],
+  "imageAlt": "Fire Demo's flames, running in DosKit"
+}

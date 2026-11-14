@@ -1,0 +1,11 @@
+{
+  "id": "iris",
+  "order": 53,
+  "kind": "effect",
+  "name": "Iris",
+  "description": "Jare's plasma effect, in 2,716 bytes with its source",
+  "author": "Jare of VangeliSTeam",
+  "year": 1993,
+  "archiveBytes": 12665,
+  "flashing": true
+}
