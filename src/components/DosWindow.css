@@ -10,9 +10,10 @@
  */
 .dos-window {
   position: relative;
-  padding-top: 0.6em;
+  padding: 10px;
   color: var(--window-text);
   background: var(--window);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.6);
 }
 
 .dos-window-frame {
@@ -37,7 +38,7 @@
 
 @media (forced-colors: active) {
   .dos-window {
-    border: 1px solid CanvasText;
+    box-shadow: none;
   }
 
   .dos-window-frame {
