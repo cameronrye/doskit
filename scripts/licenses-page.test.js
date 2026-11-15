@@ -38,6 +38,13 @@ describe('the licenses page', () => {
     expect(existsSync(join(PUBLIC_DIR, 'demos', 'adlib-tracker-2.zip'))).toBe(true);
   });
 
+  it('links the OFL-1.1 text of the Silkscreen and VT323 fonts, which is next to it', () => {
+    expect(urls).toContain('/licenses/ofl-1.1.txt');
+    expect(readFileSync(join(LICENSES_DIR, 'ofl-1.1.txt'), 'utf8')).toMatch(
+      /SIL OPEN FONT LICENSE Version 1\.1/
+    );
+  });
+
   it('links the licenses of the bundled packages, which the build writes next to it', () => {
     expect(licenseFile).toBeTypeOf('string');
     expect(posix.dirname(licenseFile)).toBe('licenses');

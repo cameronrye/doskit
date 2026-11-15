@@ -1,6 +1,6 @@
 /**
  * Global Styles
- * Reset and base styles for the application
+ * Design tokens (the 16 VGA colours and what is built on them), reset and base styles
  */
 
 /* CSS Reset and Base Styles */
@@ -12,14 +12,71 @@
   padding: 0;
 }
 
+/*
+ * Every colour is one of the 16 VGA text-mode colours, and no component redefines these.
+ * The contrast ratios in the comments are of text on its ground, as the WCAG computes them.
+ */
 :root {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --vga-black: #000000;
+  --vga-blue: #0000aa;
+  --vga-green: #00aa00;
+  --vga-cyan: #00aaaa;
+  --vga-red: #aa0000;
+  --vga-magenta: #aa00aa;
+  --vga-brown: #aa5500;
+  --vga-lightgrey: #aaaaaa;
+  --vga-darkgrey: #555555;
+  --vga-lightblue: #5555ff;
+  --vga-lightgreen: #55ff55;
+  --vga-lightcyan: #55ffff;
+  --vga-lightred: #ff5555;
+  --vga-lightmagenta: #ff55ff;
+  --vga-yellow: #ffff55;
+  --vga-white: #ffffff;
+
+  /* The page: light grey on black is 9.0:1, white 21:1, cyan 7.3:1, light magenta 8.0:1,
+     light cyan 17.1:1, yellow 19.7:1, light red 6.7:1 */
+  --surface: var(--vga-black);
+  --surface-raised: #0d0d12;
+  --text: var(--vga-lightgrey);
+  --text-strong: var(--vga-white);
+  --author: var(--vga-cyan);
+  --year: var(--vga-lightmagenta);
+  --accent: var(--vga-lightcyan);
+  --title: var(--vga-yellow);
+  --focus: var(--vga-yellow);
+  --warning: var(--vga-yellow);
+  --danger: var(--vga-lightred);
+
+  /* A window: light grey on blue is 5.7:1, yellow 12.5:1, light cyan 10.8:1, white 13.3:1 */
+  --window: var(--vga-blue);
+  --window-text: var(--vga-lightgrey);
+  --window-title: var(--vga-yellow);
+
+  /* A menu bar: black on light grey is 9.0:1, blue 5.7:1, white on blue 13.3:1 */
+  --menu: var(--vga-lightgrey);
+  --menu-text: var(--vga-black);
+  --menu-accel: var(--vga-blue);
+  --menu-selected: var(--vga-blue);
+  --menu-selected-text: var(--vga-white);
+
+  /* A key cap: black on cyan is 7.3:1 */
+  --key: var(--vga-cyan);
+  --key-text: var(--vga-black);
+
+  /* Silkscreen is for short uppercase headings, VT323 for the interface, and anything
+     longer than a line is set in the reading stack */
+  --font-display: 'Silkscreen', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-ui: 'VT323', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-read: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  font-family: var(--font-read);
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #1a1a1a;
+  color: var(--text);
+  background-color: var(--surface);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -39,7 +96,9 @@ body {
 
 body {
   min-width: 320px;
-  background-color: #1a1a1a;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: var(--font-read);
   /* iOS Safari viewport fix - ensure body fills viewport properly */
   min-height: 100vh;
   min-height: -webkit-fill-available;
@@ -68,28 +127,29 @@ p {
   margin: 0;
 }
 
-/* Links */
+/* Links: light cyan on black is 17.1:1 */
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--accent);
   text-decoration: none;
   transition: color 0.2s;
 }
 
 a:hover {
-  color: #535bf2;
+  color: var(--text-strong);
+  text-decoration: underline;
 }
 
 /* Buttons */
 button {
-  border-radius: 8px;
+  border-radius: 0;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
-  color: #fff;
+  background-color: var(--surface);
+  color: var(--text-strong);
   cursor: pointer;
   transition:
     border-color 0.25s,
@@ -97,19 +157,21 @@ button {
 }
 
 button:hover {
-  border-color: #646cff;
-  background-color: #2a2a2a;
-}
-
-button:focus,
-button:focus-visible {
-  outline: 2px solid #646cff;
-  outline-offset: 2px;
+  border-color: var(--accent);
+  background-color: var(--surface-raised);
 }
 
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Focus: yellow on black is 19.7:1, and on blue 12.5:1 */
+:focus-visible,
+button:focus,
+button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 /* Scrollbar styling (for browsers that support it) */
@@ -119,27 +181,91 @@ button:disabled {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: var(--surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #444;
-  border-radius: 5px;
+  background: var(--vga-darkgrey);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--vga-lightgrey);
 }
 
-/* Selection */
+/* Selection: black on light cyan is 17.1:1 */
 ::selection {
-  background-color: #646cff;
-  color: #fff;
+  background-color: var(--accent);
+  color: var(--vga-black);
 }
 
 ::-moz-selection {
-  background-color: #646cff;
-  color: #fff;
+  background-color: var(--accent);
+  color: var(--vga-black);
+}
+
+/* Utilities */
+
+/* The copper bar of an Amiga demo: a stripe that runs from purple through pink to gold */
+.copper {
+  height: 10px;
+  background: linear-gradient(
+    to bottom,
+    var(--vga-magenta),
+    var(--vga-lightmagenta) 50%,
+    var(--vga-brown)
+  );
+}
+
+.copper--thin {
+  height: 4px;
+}
+
+.copper--blue {
+  height: 4px;
+  background: var(--vga-blue);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A DOS menu bar: black on light grey, and the pressed item is white on blue */
+.dos-menu {
+  display: flex;
+  flex-wrap: wrap;
+  background-color: var(--menu);
+  color: var(--menu-text);
+  font-family: var(--font-ui);
+  font-size: 1.125rem;
+}
+
+.dos-menu-item {
+  padding: 0 0.75em;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  color: var(--menu-text);
+  font: inherit;
+  line-height: 1.5;
+}
+
+.dos-menu-item:hover {
+  border: 0;
+  background-color: var(--menu-selected);
+  color: var(--menu-selected-text);
+}
+
+.dos-menu-item[aria-pressed='true'] {
+  background-color: var(--menu-selected);
+  color: var(--menu-selected-text);
 }
 
 /* Mobile optimizations */
@@ -160,10 +286,16 @@ button:disabled {
   }
 }
 
-/* Focus visible for keyboard navigation */
-:focus-visible {
-  outline: 2px solid #646cff;
-  outline-offset: 2px;
+/* Forced colours replace the palette with the system's */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+
+  .dos-menu-item[aria-pressed='true'] {
+    background-color: Highlight;
+    color: HighlightText;
+  }
 }
 
 /* Print styles */
