@@ -46,6 +46,7 @@
     "test:e2e": "playwright test --project=chromium",
     "generate-icons": "node scripts/generate-icons.js",
     "generate-social-images": "node scripts/generate-social-images.js",
+    "generate-thumbnails": "node scripts/generate-thumbnails.js",
     "generate-app-cards": "node scripts/generate-app-cards.js",
     "generate-app-lists": "node scripts/generate-app-lists.js",
     "docs": "typedoc",

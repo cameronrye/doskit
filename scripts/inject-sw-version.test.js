@@ -93,6 +93,25 @@ describe('collectBundledAssets', () => {
     ]);
   });
 
+  it('lists fonts and thumbnails with the bundles, but not source maps or woff', () => {
+    dist = createDist({
+      'index.html': '',
+      'assets/a.js': '',
+      'assets/b.css': '',
+      'assets/c.woff2': '',
+      'assets/d.png': '',
+      'assets/e.woff': '',
+      'assets/a.js.map': '',
+    });
+
+    expect(collectBundledAssets(dist)).toEqual([
+      '/assets/a.js',
+      '/assets/b.css',
+      '/assets/c.woff2',
+      '/assets/d.png',
+    ]);
+  });
+
   it('keeps what index.html references under /assets/, so a missing bundle fails the build', () => {
     dist = createDist({ 'index.html': BUILT_INDEX_HTML, 'assets/index-abc123.js': '' });
 

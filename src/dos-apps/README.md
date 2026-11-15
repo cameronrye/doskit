@@ -276,6 +276,9 @@ the machine's fonts, so the cards are made by hand and committed:
 2. Keep the frame that shows the production best as `cards-src/mydemo.png`, and delete the others.
 3. `npm run generate-app-cards` draws every app's card from its frame and its data file into
    `public/cards/`. Commit the frame and the card.
+4. `npm run generate-thumbnails` makes its thumbnail from the same frame into
+   `src/assets/thumbs/mydemo.png`, which the production grid and page show and the service worker
+   precaches. Commit it with the card, before any commit, because the hook tests the whole tree.
 
 `scripts/app-pages.test.ts` checks that every app has a card, and that it is 1200x630.
 

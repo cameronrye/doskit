@@ -40,8 +40,8 @@ const HEX_DIGEST = /^[0-9a-f]+$/;
 const DEMO_ARCHIVE = /\.zip$/;
 const STATIC_ASSETS_LIST = /(const STATIC_ASSETS = \[[^\]]+)(];)/;
 const PRECACHE_LISTS = /const (?:STATIC|EMULATOR)_ASSETS = \[([^\]]*)\]/g;
-// JavaScript and CSS, without their source maps (*.js.map)
-const BUNDLE_FILE = /\.(?:js|css)$/;
+// JavaScript, CSS, fonts (woff2) and thumbnails (png), without source maps (*.js.map)
+const BUNDLE_FILE = /\.(?:js|css|woff2|png)$/;
 // What the worker never stores: it answers a navigation from the network, and offline with
 // index.html alone (servePage), so an app's page at the root of the site, and the sitemap
 // that lists those pages, reach visitors without a new worker. index.html stays in the hash:
@@ -86,7 +86,8 @@ export function extractBundledAssets(indexHtml) {
 }
 
 /**
- * What install precaches from dist/assets: every JS and CSS file there, including the
+ * What install precaches from dist/assets: every JS and CSS file there, and the fonts
+ * (woff2) and thumbnails (png) the styles and the production grid use, including the
  * chunks the app imports lazily (each app's config and the DOSBox config builder), which
  * an app opened offline needs although index.html does not name them. What index.html
  * references is listed too, so that a bundle missing from dist/ fails the build.
