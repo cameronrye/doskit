@@ -243,8 +243,9 @@ button:focus-visible {
   flex-wrap: wrap;
   background-color: var(--menu);
   color: var(--menu-text);
+  /* In px: VT323 is never set under 18px, and the root is 14px on phones */
   font-family: var(--font-ui);
-  font-size: 1.125rem;
+  font-size: 18px;
 }
 
 .dos-menu-item {

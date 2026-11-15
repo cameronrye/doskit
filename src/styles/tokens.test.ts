@@ -66,4 +66,21 @@ describe('the design tokens', () => {
     expect(color('--vga-yellow')).toBe('#ffff55');
     expect(Object.keys(tokens).filter((name) => name.startsWith('--vga-'))).toHaveLength(16);
   });
+
+  // The root is 14px on phones, so a rem size would fall under the floor of its font
+  it.each([
+    ['--font-ui', 18],
+    ['--font-display', 16],
+  ])('sets text in %s in px, at %s or more', (font, floor) => {
+    const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(([, , body]) =>
+      body?.includes(`font-family: var(${font})`)
+    );
+    for (const [, selector, body] of rules) {
+      if (selector?.trim() === ':root') continue;
+      const size = /font-size:\s*([\d.]+)px/.exec(body ?? '')?.[1];
+      expect(Number(size), `${selector?.trim()} font-size`).toBeGreaterThanOrEqual(floor);
+    }
+    // Silkscreen has no rule yet, so only the interface font must have one to be checked
+    if (font === '--font-ui') expect(rules.length).toBeGreaterThan(0);
+  });
 });
