@@ -1,0 +1,48 @@
+/**
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ */
+
+/*
+ * The credits line. Contrast: --text (#aaa) on --surface (#000) 9:1; links in --accent
+ * (#5ff) on --surface 15:1; --focus (#ff5) ring on --surface 19:1.
+ */
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1.5rem;
+  padding: 0.75rem 1rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  font-family: var(--font-ui);
+  font-size: 18px;
+  color: var(--text);
+}
+
+.site-footer a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.site-footer a:hover {
+  color: var(--text-strong);
+}
+
+.site-footer a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (max-height: 500px) {
+  .site-footer {
+    flex-wrap: nowrap;
+    padding-block: 0.25rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .site-footer a {
+    color: LinkText;
+  }
+}

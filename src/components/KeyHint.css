@@ -1,0 +1,33 @@
+/**
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ */
+
+/* A key cap and its action. Contrast: --key-text (#000) on --key (#0aa) 7.3:1. */
+.key-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-ui);
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text);
+}
+
+.key-hint kbd {
+  padding: 0.1em 0.4em;
+  font-family: var(--font-ui);
+  font-size: inherit;
+  color: var(--key-text);
+  background: var(--key);
+  border-radius: 2px;
+}
+
+@media (forced-colors: active) {
+  .key-hint kbd {
+    color: ButtonText;
+    background: ButtonFace;
+    border: 1px solid ButtonText;
+  }
+}

@@ -1,0 +1,46 @@
+/**
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ */
+
+/*
+ * A DOS window: grey-on-blue text in a 4px double border, the title set into the top edge.
+ * Contrast: --window-text (#aaa) on --window (#00a) 5.7:1; --window-title (#ff5) on --window 12.4:1.
+ */
+.dos-window {
+  position: relative;
+  padding-top: 0.6em;
+  color: var(--window-text);
+  background: var(--window);
+}
+
+.dos-window-frame {
+  position: relative;
+  padding: 1rem 1.25rem;
+  border: 4px double var(--window-title);
+}
+
+.dos-window-title {
+  position: absolute;
+  top: 0;
+  left: 1rem;
+  transform: translateY(-62%);
+  padding: 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--window-title);
+  background: var(--window);
+}
+
+@media (forced-colors: active) {
+  .dos-window {
+    border: 1px solid CanvasText;
+  }
+
+  .dos-window-frame {
+    border-color: CanvasText;
+  }
+}
