@@ -217,7 +217,7 @@ workerThread: true;
 
 The built `index.html` also gets `<link rel="modulepreload">` tags from Vite, for the app's own chunks: the React vendor chunk and the Rolldown runtime (see section 8).
 
-Chrome warns in the console that the module "was preloaded using link preload but not used within a few seconds" when no player starts that soon after the page loads: on the start page, where nothing runs until an app is picked or the selector closes, on a Play screen waiting for its click, or while a deep link's archive is still downloading or after a load that failed. A player that starts later still uses the preloaded response; the file is not downloaded twice.
+Chrome warns in the console that the module "was preloaded using link preload but not used within a few seconds" when no player starts that soon after the page loads: on the start page, where nothing runs until a production is opened, on a production's page waiting for Play, or while a deep link's archive is still downloading or after a load that failed. A player that starts later still uses the preloaded response; the file is not downloaded twice.
 
 Safari (WebKit) does not answer `emulators.js`'s request from the preload, and logs that the file was preloaded but not used on every page load, even when a player starts at once. A first visit in WebKit downloads the 1.46 MB file twice, both under `vite preview`, which sends `Cache-Control: no-cache`, and from a server that sends GitHub Pages' caching headers (`max-age=600` and an ETag), where Chromium downloads it once. Once the service worker is installed, it answers both requests from its emulator cache (section 7). The preload stays for Chromium's sake, where the first player gets the module sooner.
 
@@ -294,7 +294,7 @@ export default defineConfig({
 **What it does:**
 
 - React and React DOM, with the scheduler they import, get a chunk of their own, `react-vendor-<hash>.js`. Its name follows its content: React itself, the file name of the Rolldown runtime chunk it imports, and the short names Rolldown gives its exports. A release that leaves these alone need not download it again: the service worker's install copies it from the previous release's cache (section 7).
-- `src/config/apps.config.ts` loads each app's config module (`src/dos-apps/<id>.config.ts`) through `import.meta.glob`, which Vite turns into an `import()` of each, so each is a small chunk of its own, downloaded when the app loads or when the selector preloads it after a 150 ms hover. The DOSBox config builder is a chunk they share. Each app's page text, `src/apps/<id>.page.json`, is a chunk of its own too, which the About panel imports when it opens.
+- `src/config/apps.config.ts` loads each app's config module (`src/dos-apps/<id>.config.ts`) through `import.meta.glob`, which Vite turns into an `import()` of each, so each is a small chunk of its own, downloaded when the app loads. The DOSBox config builder is a chunk they share. Each app's page text, `src/apps/<id>.page.json`, is a chunk of its own too, which the About panel imports when it opens.
 - The archive loader (`src/utils/diskLoader.ts`) is imported statically by `apps.config.ts`, so it is part of the entry chunk, like the default DOS prompt's config. Before its archive starts downloading, an app needs two chunks, its own config and the DOSBox config builder's, which Vite fetches in parallel; the builder's comes once per page.
 - The service worker precaches every chunk (section 7), so an app can still load its config offline.
 

@@ -97,7 +97,7 @@ and Squid intro. Each is counted once above.
   summary of its Finnish text), Worldcharts, GR8 (+ and -), The Globe, the Assembly '94 Invitation
   Dentro (arrow keys), Timeless, Verses, Stars (no key works).
 - **New kinds.** `musicdisk` (Journey, Chaotic Mind) and `diskmag` (Worldcharts): `AppKind`, the
-  selector's order, the Play button's label, the structured data, the generated app lists and the
+  start page's order, the Play button's label, the structured data, the generated app lists and the
   tests that list apps by kind all name the kinds.
 - **Licence texts** for the licences page and `public/demos/README.md`: the GPL v3 text and a
   CWSDPMI source notice (Adlib Tracker II); MIT notices (Animate, Kukoo2, Contrast); the MIDAS

@@ -77,7 +77,7 @@ For each demo (the full steps, with code, are in [`src/dos-apps/README.md`](../s
 
 1. **Add the Archive** - Put the package in `public/demos/` as its source publishes it, byte for byte, wherever there is one: several authors ask for their files to be passed on unmodified, and a repacked archive loses the file dates that help establish the year. Zip loose files only when no package exists, and record where they came from in `public/demos/README.md`
 2. **Create Config** - Add config file in `src/dos-apps/`, define DOSBox configuration
-3. **Register App** - Add a data file, `src/apps/<id>.json`, with its start keys if it waits at a setup screen, and a page file, `src/apps/<id>.page.json`, with its text; the registry reads every data file, so the selector needs no change
+3. **Register App** - Add a data file, `src/apps/<id>.json`, with its start keys if it waits at a setup screen, and a page file, `src/apps/<id>.page.json`, with its text; the registry reads every data file, so the start page needs no change
 4. **Make Its Card** - Capture a frame of it running into `cards-src/`, and draw its share card with `npm run generate-app-cards`
 5. **Record Its Source** - Give the archive an entry in `public/demos/README.md`: where it comes from, its authors and year, and its terms
 6. **List It** - Add it to the table above, and to the other lists of the apps that the guide's "List it" step names; the lists in `README.md` and `public/llms-full.txt` are generated with `npm run generate-app-lists`

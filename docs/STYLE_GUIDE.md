@@ -32,26 +32,26 @@ This document defines the coding standards and naming conventions for the DosKit
   ```typescript
   // Good
   export const DosPlayer: React.FC<DosPlayerProps> = () => { ... };
-  export const DemoSelector: React.FC = () => { ... };
+  export const StartPage: React.FC = () => { ... };
 
   // Bad
   export const dosPlayer = () => { ... };
-  export const demo_selector = () => { ... };
+  export const start_page = () => { ... };
   ```
 
 - **Component Files**: Use `PascalCase` with `.tsx` extension
 
   ```
   Good: DosPlayer.tsx
-  Good: DemoSelector.tsx
+  Good: StartPage.tsx
   Bad: dosPlayer.tsx
-  Bad: demo-selector.tsx
+  Bad: start-page.tsx
   ```
 
 - **Component Styles**: Match component name with `.css` extension
   ```
   Good: DosPlayer.css
-  Good: DemoSelector.css
+  Good: StartPage.css
   ```
 
 ### Hooks
@@ -206,7 +206,7 @@ src/
 ├── components/
 │   ├── DosPlayer.tsx
 │   ├── DosPlayer.css
-│   └── DemoSelector.tsx
+│   └── StartPage.tsx
 ├── hooks/
 │   └── useDosEmulator.ts
 ├── utils/
@@ -257,17 +257,17 @@ const config = {
 - **Types**: A type comes from the module that declares it, next to that module's other imports: `import type { ... }` when only types come from it, an inline `type` beside values otherwise. With `verbatimModuleSyntax`, `import { type X }` alone would still load the module at run time, and ESLint (`@typescript-eslint/no-import-type-side-effects`) rejects it.
 - **Stylesheet order**: CSS imports land in the built CSS in the order they run, so `main.tsx` imports `index.css`, the page's base styles, before `App`, whose stylesheets then come after it and win ties
 
-Prettier and ESLint check neither order, so keep to what the files around yours do. From `src/components/DemoSelector.tsx`:
+Prettier and ESLint check neither order, so keep to what the files around yours do. From `src/components/StartPage.tsx`:
 
 ```typescript
-import { useState, useCallback, useRef, useEffect, useId } from 'react';
-import { FloppyDisk, LIGHT_FLOPPY_THEME, type FloppyLabel, type FloppyTheme } from 'retro-floppy';
-import 'retro-floppy/dist/retro-floppy.css';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import DosWindow from './DosWindow';
+import { ProductionGrid } from './ProductionGrid';
+import { KIND_TABS, countByKind, type KindFilter } from '../utils/productionFilter';
+import { loadStartPageState, saveStartPageState } from '../utils/startPageState';
 import type { DosApp } from '../types/dos-app';
-import type { LoadProgress } from '../utils/diskLoader';
-import { getUserFriendlyError, type FriendlyError } from '../utils/errorMessages';
-import { availableApps } from '../config/apps.config';
-import './DemoSelector.css';
+import './StartPage.css';
 ```
 
 ### Spacing
@@ -488,7 +488,7 @@ src/
 ├── components/        # React components
 │   ├── DosPlayer.tsx
 │   ├── DosPlayer.css
-│   └── DemoSelector.tsx
+│   └── StartPage.tsx
 ├── hooks/            # Custom React hooks
 │   └── useDosEmulator.ts
 ├── utils/            # Utility functions
@@ -518,7 +518,7 @@ Static assets, such as icons and the app archives in `demos/`, live in `public/`
 
 ### File Size
 
-- **No line limit**: Several files run to a few hundred lines, `DemoSelector.tsx` and `dosboxConfigBuilder.ts` among them
+- **No line limit**: Several files run to a few hundred lines, `DosPlayerWithApps.tsx` and `dosboxConfigBuilder.ts` among them
 - **Split by job**: Move a part that has a job of its own into a module of its own, as `DosPlayer` leaves running js-dos to the `useDosEmulator` hook and its markup to `DosPlayerUI`
 
 ## Comments and Documentation

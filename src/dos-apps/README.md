@@ -1,6 +1,6 @@
 # DOS Applications
 
-Every app in DosKit's selector is made of five pieces:
+Every production on DosKit's start page is made of five pieces:
 
 | Piece         | Where                                           | What it holds                                                       |
 | ------------- | ----------------------------------------------- | ------------------------------------------------------------------- |
@@ -121,29 +121,28 @@ Add a data file for it, `src/apps/my-demo.json`, named after its id:
 
 `src/config/apps.config.ts` builds the registry from these files, in `order`, with
 `import.meta.glob`, and finds the config module by the same id. The config module is imported only
-when the app loads, or when the selector preloads it on hover: each one is a small chunk of its own
+when the app loads: each one is a small chunk of its own
 (in production builds the service worker still stores every chunk when it installs, so that the
 app can start offline). `AppData` in `src/types/dos-app.ts` gives every field:
 
-- `order` is its place in the selector, which lists the demos first, then the intros, the
+- `order` is its place on the start page, which lists the demos first, then the intros, the
   musicdisks, the diskmags, the trackers and the effects.
 - `kind` is `demo`, `intro`, `musicdisk`, `diskmag`, `tracker` or `effect`. The generated app
-  lists name it, the Play screen's button says Start for a tracker, Read for a diskmag and Play
+  lists name it, the production page's button says Start for a tracker, Read for a diskmag and Play
   for the others, and a tracker's page calls it a MultimediaApplication in its structured data.
-- `description` is one line of facts for the selector: no "legendary" or "classic".
-- `archiveBytes` is the archive's size in bytes, which its disk shows; a test checks it.
+- `description` is one line of facts for the start page and the production's page: no "legendary" or "classic".
+- `archiveBytes` is the archive's size in bytes, which the start page and the production's page show; a test checks it.
 - `flashing: true` for a production that flashes more than three times a second over a large
-  part of the picture, the limit of WCAG 2.3.1: the selector, the Play screen, the About panel and
+  part of the picture, the limit of WCAG 2.3.1: the start page, the production's page, the About panel and
   its page warn of it.
 - `contentNote` for a production that shows something else a visitor may want to know of before
   it starts, such as nudity: one sentence that starts with "Contains", as Timeless's "Contains
-  nudity: …". The selector, the Play screen, the About panel and its page show it beside the
-  flashing warning, and a production with one waits on its Play screen, as a flashing one does.
+  nudity: …". The start page, the production's page, the About panel and its page show it beside the
+  flashing warning.
 
-`author` and `year` are the release's, from the archive's own files where they say; the header
-shows them as "Some Group (1994)", or whichever of the two the app has, and the selector names
-its disk "My Demo by Some Group (1994). Press Enter to load." for screen readers, leaving out a
-missing author or year.
+`author` and `year` are the release's, from the archive's own files where they say; the run bar
+shows them as "Some Group (1994)", or whichever of the two the app has, and the start page's link
+reads "My Demo Some Group '94" for screen readers, leaving out a missing author or year.
 Both are optional: leave out a year that nothing establishes rather than guess one.
 
 For a program that waits at a setup screen for a key, add its `start` and `hint` (step 4). For a
@@ -153,7 +152,7 @@ program people make things in, such as a tracker:
   the archive 3 seconds after the last key or tap, every 30 seconds, and when the tab is
   hidden or the page goes, keeps them in the browser's IndexedDB, and starts the app with them
   after its archive the next time. The app gets the Files button, which downloads them, brings in
-  modules, or starts over, and picking another app in the selector asks before it leaves.
+  modules, or starts over, and Browse in the run bar asks before it leaves.
 - `modules` says what the Files button brings in, and where: EdLib's
   `{ "accept": [".edl"], "folder": "SONGS" }` takes its songs into `C:\SONGS`, the only folder it
   reads them from. Left out, it takes the module formats Impulse Tracker and Scream Tracker 3
@@ -167,7 +166,7 @@ program people make things in, such as a tracker:
 settings: Impulse Tracker's `{ "renderAspect": "AsIs" }` lines its own mouse pointer up with the
 real one.
 
-The app now appears in the selector and opens at `/mydemo`, its page; `/?app=my-demo` works too,
+The app now appears on the start page and opens at `/mydemo`, its page; `/?app=my-demo` works too,
 and the address bar shows `/mydemo`.
 
 ### 4. Give it its start keys
@@ -200,7 +199,7 @@ keys from its data file, and DosKit presses them once that screen is up:
   - `{ "message": "<text>", "calmMs": <ms> }`: DOSBox logged a line holding this text, and the
     screen has not changed for this long since (Impulse Tracker, whose screen changes under the
     mouse)
-- `note` is what the start does, for the Play screen: what it picks, and what comes first. It ends
+- `note` is what the start does, for the production's page: what it picks, and what comes first. It ends
   with a period.
 - `hint` is what to press, which a bar over the player shows when DosKit cannot send the keys or
   they do not take. It says "press". It shows only for an app with `start`: the keys of a
@@ -312,12 +311,12 @@ table in [`docs/SCENERS.md`](../../docs/SCENERS.md) as well.
   line must name the cycles the app runs at, and its `Audio:` line the Gravis UltraSound only
   when the app has one. It also checks that every archive in `public/demos` belongs to an app and
   that `public/demos/README.md` lists it and records its size and MD5 as they are. Some of its
-  tests list the apps by id (the selector's order, the ones with start keys, the ones that flash,
+  tests list the apps by id (the start page's order, the ones with start keys, the ones that flash,
   the ones that ask before the page closes): add the new app to the lists it belongs in.
 - `npx vitest run scripts/app-pages.test.ts` checks its page file and its card, and that its page
   takes no name the site uses.
 - Run `npm run dev` and open `http://localhost:5173/mydemo` (Vite takes the next free port if 5173
-  is in use, and prints the address). The app waits on its Play screen, as a page opened from its
+  is in use, and prints the address). The app waits on its page for Play, as a page opened from its
   address has no click to start sound with. After Play, the program should start on its own, past
   its setup screen if it has start keys, not stop at a DOS prompt or an error, and its effects
   should keep their speed (see the CPU speed notes in step 2). Once it returns to DOS, the end

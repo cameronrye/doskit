@@ -136,9 +136,9 @@ Both reporters get the tracker from `getErrorTracker()`, so nothing else changes
 - Provides reset functionality
 - Customizable fallback UI
 
-The default fallback says "Something went wrong" and offers Refresh Page and Try Again (which renders the children again); development builds add the error message, stack trace and component stack. `main.tsx` wraps App in one boundary and App wraps DosPlayerWithApps in another, so an error in the player area leaves the header and footer in place. Each fallback fills the element it renders in, the page or the player's area between the header and the footer, and scrolls when its card is taller; in windows under 500px tall the card is smaller, so both buttons show.
+The default fallback says "Something went wrong" and offers Refresh Page and Try Again (which renders the children again); development builds add the error message, stack trace and component stack. `main.tsx` wraps App in one boundary and App wraps DosPlayerWithApps in another, so an error in a production's page or the player leaves the offline and install notices in place. Each fallback fills the element it renders in, the page or App's main area, and scrolls when its card is taller; in windows under 500px tall the card is smaller, so both buttons show.
 
-The boundary leaves logging to the tracker: the tracker's report, with the component stack, is the one line it logs for an error, and React logs the error too (its default `onCaughtError`, which `main.tsx`'s `createRoot` keeps). It also calls its `onError` prop with each error it catches, once its children have been replaced: App's boundary uses it to show Error in the footer, since a player that has gone reports no status, until Try Again remounts the player.
+The boundary leaves logging to the tracker: the tracker's report, with the component stack, is the one line it logs for an error, and React logs the error too (its default `onCaughtError`, which `main.tsx`'s `createRoot` keeps). It also calls its `onError` prop with each error it catches, once its children have been replaced: App's boundary uses it to set the status to Error, since a player that has gone reports no status, until Try Again remounts the player.
 
 **Usage:**
 
@@ -177,7 +177,7 @@ A custom fallback is `(error: Error, errorInfo: ErrorInfo | null, reset: () => v
 - Returns the technical message as `originalError`, in every build; a value without text has none
 - Extensible error mappings: add a pattern to `ERROR_MAPPINGS`
 
-DemoSelector and DosPlayerWithApps show its explanation of a failed load on the page (see [Component-Level Error States](#5-component-level-error-states)), and pass `{ online: navigator.onLine }`. The global error handler passes no options: in production builds it adds the message and suggestion to each error's report (`metadata.friendlyError`).
+DosPlayerWithApps shows its explanation of a failed load on the production's page (see [Component-Level Error States](#5-component-level-error-states)), and pass `{ online: navigator.onLine }`. The global error handler passes no options: in production builds it adds the message and suggestion to each error's report (`metadata.friendlyError`).
 
 `getUserFriendlyError(error, { online })` takes any value, `undefined` and values without a string form included, and returns `{ message, suggestion, originalError }`. Only `online: false` changes the result, since `navigator.onLine` being true only means that a network interface is up.
 
@@ -200,11 +200,11 @@ try {
 **Error Categories**, checked in this order:
 
 1. An error named `AbortError`: "Operation was cancelled" / "The operation was stopped before it could complete. Please try again."
-2. A network failure: "Unable to connect to the server" / "Please check your internet connection and try again." With `online: false`, it is "This application isn't available offline yet" / "Each application works offline once it has been opened while online. Connect to the internet and try again." instead. A network failure is recognized by each browser's wording: Chrome and Edge's "Failed to fetch" (also "Failed to fetch dynamically imported module"), Firefox's "NetworkError when attempting to fetch resource." and "error loading dynamically imported module", Safari's "Load failed" and "Importing a module script failed.", and `fetchWithRetry`'s own "Fetch failed after retries". "Load failed" counts wherever it is in the message: with the service worker in control, Safari and every other browser on iOS reject a download the worker could not make either with "FetchEvent.respondWith received an error: TypeError: Load failed".
+2. A network failure: "Unable to connect to the server" / "Please check your internet connection and try again." With `online: false`, it is "This production isn't available offline yet" / "Each production works offline once it has been opened while online. Connect to the internet and try again." instead. A network failure is recognized by each browser's wording: Chrome and Edge's "Failed to fetch" (also "Failed to fetch dynamically imported module"), Firefox's "NetworkError when attempting to fetch resource." and "error loading dynamically imported module", Safari's "Load failed" and "Importing a module script failed.", and `fetchWithRetry`'s own "Fetch failed after retries". "Load failed" counts wherever it is in the message: with the service worker in control, Safari and every other browser on iOS reject a download the worker could not make either with "FetchEvent.respondWith received an error: TypeError: Load failed".
 3. "timeout", "time out" or "timed out" in the message: "The request took too long to complete" / "The connection or the server might be slow. Please try again."
 4. "abort", "cancelled" or "canceled" in the message: cancelled, as in 1.
 5. An HTTP status, read from `HTTP <code>` in the message: 404 and 410 give "The requested file was not found" / "It might have moved in an update of DosKit. Reload the page and try again."; any 5xx gives "The server is temporarily unavailable" / "Please try again in a few minutes."; 408 is a timeout, as in 3; 429 gives "Too many requests". Other statuses go on to the patterns below. A number anywhere else in the message is not a status.
-6. Patterns in the message: rate limit (too many requests); a ZIP that failed to load with any other status, such as 403, or that is not a ZIP archive ("Unable to load the application archive"); file not found; service worker; WebAssembly; fullscreen; keyboard lock; permission denied or not allowed; out of memory.
+6. Patterns in the message: rate limit (too many requests); a ZIP that failed to load with any other status, such as 403, or that is not a ZIP archive ("Unable to load the production archive"); file not found; service worker; WebAssembly; fullscreen; keyboard lock; permission denied or not allowed; out of memory.
 
 Anything else is "An unexpected error occurred".
 
@@ -212,29 +212,23 @@ Anything else is "An unexpected error occurred".
 
 ### 5. Component-Level Error States
 
-**Files:** `src/components/DemoSelector.tsx`, `src/components/DosPlayerWithApps.tsx`, `src/hooks/useDosEmulator.ts`, `src/adapters/EmulatorAdapter.ts`, `src/utils/diskLoader.ts`
+**Files:** `src/components/DosPlayerWithApps.tsx`, `src/components/ProductionPage.tsx`, `src/hooks/useDosEmulator.ts`, `src/adapters/EmulatorAdapter.ts`, `src/utils/diskLoader.ts`
 
 **Purpose:** Shows load and start failures where they happen
 
 Each part that loads or starts something handles its own failures: it logs them with `console.error` and shows them in place, without passing them to the error tracker. A load the user cancelled, or that a newer navigation superseded, is aborted on purpose, and shows and logs nothing.
 
-The selector and the error overlay explain a failed load the same way: they log the raw error, then show `getUserFriendlyError(error, { online: navigator.onLine })`'s message, its suggestion, and a collapsed "Details" disclosure with the technical message, such as "Failed to fetch" or "Failed to load ZIP: HTTP 404". Offline, a network failure reads "This application isn't available offline yet".
+A production's page explains a failed load: DosPlayerWithApps logs the raw error, then the page shows `getUserFriendlyError(error, { online: navigator.onLine })`'s message, its suggestion, and a collapsed "Details" disclosure with the technical message, such as "Failed to fetch" or "Failed to load ZIP: HTTP 404". Offline, a network failure reads "This production isn't available offline yet".
 
-**DemoSelector** (apps picked in the selector):
+**DosPlayerWithApps and ProductionPage** (every production, whether from a link in the grid, a shared URL, or Back and Forward):
 
-- A failed load shows that explanation in an alert below the disks, with the selected app. Load Application tries again.
+- A failed load shows that explanation in the page, in an alert (`role="alert"`) beside the production's facts, with a Try Again button. Try Again loads the production again, and shows the error again if that fails too; offline, a production that is not cached fails again at once, since a download fails at once while the browser reports being offline.
+- Try Again takes the keyboard focus when the error appears, so Enter tries again
 - A download that receives no data for 20 seconds fails as "The request took too long to complete" / "The connection or the server might be slow. Please try again.", with "Download timed out: no data received for 20 seconds" under Details (see diskLoader below). One that keeps receiving data has no time limit.
-- A load whose download has not started 20 seconds after it began fails the same way, with "Loading timed out: nothing arrived for 20 seconds" under Details. The download reports its start as it makes its request, so this covers only the app's config chunk, which its loader imports first: from the request on, retries included, the download's own limit applies.
-- Cancel Loading, Escape, closing the selector, choosing another disk (a click or Space) or loading one (Enter or a double-click) aborts the load quietly. During a download the arrow keys only move the focus, so they abort nothing.
-
-**DosPlayerWithApps** (apps the URL asks for: deep links, back/forward):
-
-- A failed load shows the "Error Loading Application" overlay (`role="alert"`) with that explanation and two buttons. Try Again loads the same app again, behind the loading overlay, and shows the error overlay again if that fails too; offline, an app that is not cached fails again at once, since a download fails at once while the browser reports being offline. Choose Another Application opens the selector with nothing running under it; closed without a pick, the selector boots the default DOS prompt.
-- Try Again takes the keyboard focus when the overlay appears, or, if the selector is open over it, once the selector closes, so Enter tries again
-- A download that stalls ends in the same overlay, as the timeout described under diskLoader below, so Try Again is offered. Nothing times out the app's config chunk on this path: the loading overlay's Cancel stops the load and does what Choose Another Application does.
-- Nothing runs behind the overlay: a requested app stops the running one as its load starts
-- A newer request, a pick in the selector, Cancel or unmounting aborts the load and drops its result or error
-- The loading overlay's "Loading application..." is a status region, which screen readers announce without its Cancel button
+- A load whose download has not started 20 seconds after it began fails the same way, with "Loading timed out: nothing arrived for 20 seconds" under Details. The download reports its start as it makes its request, so this covers only the app's config chunk, which its loader imports first: from the request on, retries included, the download's own limit applies. Either way, the page shows an error with Try Again, never an endless spinner.
+- Nothing runs behind the page: a requested production stops the running one as its load starts
+- A newer request, Cancel (on the page, which goes to the start page) or unmounting aborts the load and drops its result or error
+- "Downloading ...", on the page, is a status region, which screen readers announce without its changing figure or its Cancel button
 
 **useDosEmulator, the adapter and DosPlayerUI** (starting js-dos):
 
@@ -242,10 +236,10 @@ The selector and the error overlay explain a failed load the same way: they log 
 - If `window.Dos()` throws: its message, which the adapter prefixes with "Failed to initialize js-dos:", keeping js-dos's error as the `cause`
 - If `emulators.js`, which js-dos's first start loads, fails to download: "The DOS emulator could not be loaded: /emulators/emulators.js failed to download. Check your connection, then reload the page." js-dos logs an error of its own for any failed download of it: "Unable to init emulators.js Error: Unable to add emulators.js. Probably you should set the 'pathPrefix' option to point to the js-dos folder."
 - If `emulators.js` runs without setting up the emulator: "The DOS emulator could not be loaded: /emulators/emulators.js ran but did not set up the emulator. Reload the page."
-- Every start that waits for `emulators.js` gets that error (see [Adapter Pattern](ARCHITECTURE.md#6-adapter-pattern)), and the adapter removes its script tag, so that the next start, such as a pick in the selector, downloads it again
+- Every start that waits for `emulators.js` gets that error (see [Adapter Pattern](ARCHITECTURE.md#6-adapter-pattern)), and the adapter removes its script tag, so that the next start, such as a production opened next, downloads it again
 - Each shows an Error panel with a Reload Page button, an alert that screen readers announce at once; the player's "Loading DOS emulator..." panel before it is a status region. For all but a missing `window.Dos`, the hook logs "[useDosEmulator] Failed to initialize emulator:" with the error. A start that fails after the player unmounted is ignored, and failing to unmute audio or to stop a player is only logged.
-- DosPlayer passes the error it shows to its `onError` while it is mounted, and DosPlayerWithApps then reports the status `error`, which the footer shows as Error
-- A failure that js-dos handles itself after `Dos()` has returned, such as a `wdosbox.wasm` or `wdosbox.js` that does not download, shows only in js-dos's own window, "Oops... Something went wrong...". js-dos sends no event for it, so DosKit shows no error of its own, and the footer goes on saying Loading.
+- DosPlayer passes the error it shows to its `onError` while it is mounted, and DosPlayerWithApps then reports the status `error`, which the run bar shows as Error
+- A failure that js-dos handles itself after `Dos()` has returned, such as a `wdosbox.wasm` or `wdosbox.js` that does not download, shows only in js-dos's own window, "Oops... Something went wrong...". js-dos sends no event for it, so DosKit shows no error of its own, and the run bar goes on saying Loading.
 
 **diskLoader and fetchWithRetry** (archive downloads):
 
@@ -253,9 +247,9 @@ The selector and the error overlay explain a failed load the same way: they log 
 - A network failure while `navigator.onLine` is false is thrown at once, since every retry would fail the same way. This is checked at each failure, so a connection lost between retries ends them too. `navigator.onLine` being true only means that a network interface is up, so a network failure then is still retried.
 - `loadZipArchive` turns an error response into `Failed to load ZIP: HTTP <status> <status text>`, without the text when there is none: "Failed to load ZIP: HTTP 404" over HTTP/2, which GitHub Pages serves and which has no status text, or "Failed to load ZIP: HTTP 404 Not Found" over HTTP/1.1.
 - It fails a download that receives no data for 20 seconds, counted from the request, again at each retry, from the response and from each chunk of the archive, with a `TimeoutError`: "Download timed out: no data received for 20 seconds". A download that keeps receiving data has no time limit.
-- An archive that does not start with the ZIP signature fails as "Failed to load ZIP: not a ZIP archive", with the response's Content-Type in parentheses when it has one, and reads "Unable to load the application archive". Vite's dev and preview servers answer a missing archive with 200 and `index.html`, which would otherwise start as an empty drive: on the dev server, that gives "Failed to load ZIP: not a ZIP archive (text/html)".
-- It logs a failure unless the caller aborted, and rethrows, so a failed download is logged twice: by `[DiskLoader]`, then by the selector or DosPlayerWithApps.
-- An abort by the caller rejects at once with the abort's reason, an `AbortError` for the selector's and DosPlayerWithApps' aborts, and no progress is reported after it. On its own, `fetchWithRetry` rejects with `Operation aborted` before a request or during a wait.
+- An archive that does not start with the ZIP signature fails as "Failed to load ZIP: not a ZIP archive", with the response's Content-Type in parentheses when it has one, and reads "Unable to load the production archive". Vite's dev and preview servers answer a missing archive with 200 and `index.html`, which would otherwise start as an empty drive: on the dev server, that gives "Failed to load ZIP: not a ZIP archive (text/html)".
+- It logs a failure unless the caller aborted, and rethrows, so a failed download is logged twice: by `[DiskLoader]`, then by DosPlayerWithApps.
+- An abort by the caller rejects at once with the abort's reason, an `AbortError` for DosPlayerWithApps' aborts, and no progress is reported after it. On its own, `fetchWithRetry` rejects with `Operation aborted` before a request or during a wait.
 
 ## Error Flow
 
@@ -292,7 +286,7 @@ Track with error tracking service (the console tracker logs it, with the compone
   ↓
 Add breadcrumb
   ↓
-Call onError (App's boundary: the footer shows Error)
+Call onError (App's boundary: the status is Error)
 ```
 
 ### 3. Component Error Flow
@@ -332,7 +326,7 @@ const handleLoadApp = async (signal: AbortSignal) => {
   } catch (error) {
     // Cancelled or superseded on purpose: not a failure
     if (signal.aborted) return;
-    // Message, suggestion and technical details, as the selector shows them
+    // Message, suggestion and technical details, as a production's page shows them
     setError(getUserFriendlyError(error, { online: navigator.onLine }));
     getErrorTracker().captureError(error instanceof Error ? error : new Error(String(error)), {
       userAction: 'Loading app',
@@ -346,7 +340,7 @@ const handleLoadApp = async (signal: AbortSignal) => {
 ```typescript
 tracker.captureError(error, {
   userAction: 'Loading Second Reality demo',
-  component: 'DemoSelector',
+  component: 'DosPlayerWithApps',
   metadata: {
     appId: 'second-reality',
     zipUrl: '/demos/second-reality.zip',

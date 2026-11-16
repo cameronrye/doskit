@@ -108,7 +108,7 @@ Write clear, concise commit messages that describe what changed and why:
 feat: add screenshot capture
 
 - Save the emulator's screen as a PNG with ci.screenshot()
-- Add a Screenshot button to the header
+- Add a Screenshot button to the run bar
 - Document it in the README
 
 Closes #123
@@ -266,7 +266,7 @@ Vitest does not type-check the tests; `npx tsc -b` does, through `tsconfig.test.
 - `e2e/pages.spec.ts` checks each production's page: its 200 status, title, canonical link and share card, the sitemap, and that an old `/?app=` link and a path with a trailing slash or capitals reach the page.
 - `e2e/trackers.spec.ts` saves a song in Scream Tracker 3, reloads, finds it again, downloads it from the Files panel, and brings in a module from the computer.
 
-`e2e/hook.js`, an init script, watches each emulator through js-dos's own API, without changing what the page does: its frames' fingerprints, what DOS prints, DOSBox's log, the keys DosKit sends and how loud the sound is. It logs them as console lines starting with `[e2e]`, and the specs read those lines rather than the page: Playwright's locators and `page.evaluate()` give the page user activation, as recording a trace does, and with it DosKit starts a production without its Play screen. So the specs query nothing before the click, which goes where the hook says the Play button is, and `playwright.config.ts` turns traces off. Screenshots of failed tests go to `test-results/`.
+`e2e/hook.js`, an init script, watches each emulator through js-dos's own API, without changing what the page does: its frames' fingerprints, what DOS prints, DOSBox's log, the keys DosKit sends and how loud the sound is. It logs them as console lines starting with `[e2e]`, and the specs read those lines rather than the page: Playwright's locators and `page.evaluate()` give the page user activation, as recording a trace does, and with it DosKit starts a production without waiting for Play. So the specs query nothing before the click, which goes where the hook says the Play button is, and `playwright.config.ts` turns traces off. Screenshots of failed tests go to `test-results/`.
 
 CI runs the browser tests in its Browser Tests job. Locally you can run them in WebKit too, with `npx playwright test --project=webkit` once `npx playwright install webkit` has installed it, though an automated WebKit window never gets sound.
 

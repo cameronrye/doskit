@@ -1,6 +1,6 @@
 # App Archives
 
-Every app in DosKit's selector runs from a ZIP archive in this folder, named after the app's id:
+Every production on DosKit's start page runs from a ZIP archive in this folder, named after the app's id:
 `panic.zip` belongs to the `panic` app. Vite copies `public/` into the build unchanged, so the app
 downloads its archive from `/demos/<id>.zip` on DosKit's own site, and the archive's files become
 the directory its autoexec mounts as `C:`.

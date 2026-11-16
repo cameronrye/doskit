@@ -43,7 +43,7 @@
     React
     TypeScript
     Vite (Rolldown bundler)
-    retro-floppy (application selector)
+    Silkscreen and VT323 from fontsource (the VGA look)
 
     ## Emulation
     js-dos
@@ -101,7 +101,7 @@
     Components: React Components
     Fonts: Segoe UI and system sans-serif; Courier New, monospace
     Standards: W3C, WHATWG
-    Accessibility: Keyboard-navigable application selector, ARIA labels, prefers-reduced-motion support
+    Accessibility: Keyboard-navigable production grid, ARIA labels, prefers-reduced-motion support
     SEO: Schema.org JSON-LD, Open Graph, Twitter Cards
     
 # FEATURES

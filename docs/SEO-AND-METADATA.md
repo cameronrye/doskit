@@ -79,7 +79,7 @@ Location: `dist/sitemap.xml`, which the build writes (`renderSitemap` in `script
 Includes:
 
 - Main page, https://doskit.net/
-- Every app's page, by its canonical URL, in the selector's order, such as https://doskit.net/secondreality
+- Every app's page, by its canonical URL, in the start page's order, such as https://doskit.net/secondreality
 
 It has no `lastmod`, `priority` or `changefreq`. Google ignores `priority` and `changefreq`, and uses `lastmod` only while it stays consistently accurate, which a date the build set at every deploy would not be.
 
@@ -98,7 +98,7 @@ Each app has a page of its own at `/<id>`, its id with the hyphens dropped, such
 
 Every tag the build rewrites must be in `index.html` exactly once: a tag that is renamed or reformatted fails the build rather than leave a page with the home page's metadata. The build also fails when an app's id would take a name the site already uses (`findPageCollisions`): a file or directory at the site's root, such as `index` or `licenses`, a name kept for the site's own pages, such as `about` or `cards`, or another app's id without its hyphens.
 
-The app writes `/<id>` as each app's URL, and rewrites the other forms it accepts, an old `/?app=secondreality` link or another spelling such as `?app=Second-Reality`, to it without adding a history entry. It also sets the canonical link to the URL it shows, since picking another app in the selector changes the URL without loading that app's page. Share and list app pages in the `/<id>` form:
+The app writes `/<id>` as each app's URL, and rewrites the other forms it accepts, an old `/?app=secondreality` link or another spelling such as `?app=Second-Reality`, to it without adding a history entry. It also sets the canonical link to the URL it shows, since opening another production from the start page changes the URL without loading that app's page. Share and list app pages in the `/<id>` form:
 
 - A `/?app=` link is answered with the home page's `index.html`, so a crawler that does not run JavaScript, such as a social media preview, sees the home page's title, description, `og:url` and image there.
 - GitHub Pages has no file for a path with a trailing slash or capitals, such as `/secondreality/` or `/SecondReality`, so it answers with `404.html` (the build's copy of `index.html`) and HTTP status 404. The app still opens, but crawlers treat the URL as missing.
