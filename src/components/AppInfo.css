@@ -3,9 +3,12 @@
  * Copyright (c) 2025 Cameron Rye
  * Licensed under the MIT License
  *
- * The About panel, over the page at the selector's layers (DosPlayerWithApps.css lists the
- * stacking order): the two never show together. Classes named doskit-, as js-dos.css styles
- * many common names for the whole page.
+ * The About and Files panels as DOS windows (the look is DosWindow.css's), over the page at
+ * the selector's layers (DosPlayerWithApps.css lists the stacking order): the two never show
+ * together. Classes named doskit-, as js-dos.css styles many common names for the whole page.
+ *
+ * Contrast on --window (#00a): --window-text (#aaa) 5.7:1; body text #e6e6f2 10.6:1;
+ * --title (#ff5) 12.4:1; --accent (#5ff) 10.8:1; --focus (#ff5) 12.4:1.
  */
 
 .doskit-info-backdrop {
@@ -21,16 +24,32 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
   width: min(42rem, calc(100vw - 2rem));
   max-height: calc(100vh - 2rem);
   max-height: calc(100dvh - 2rem);
-  overflow-y: auto;
-  padding: 1.25rem 1.5rem 1.5rem;
-  border: 1px solid #3a3a46;
-  border-radius: 0.75rem;
-  background: #16161c;
-  color: #e6e6ea;
+  padding: 10px;
+  color: #e6e6f2;
   line-height: 1.5;
+}
+
+/* The frame scrolls, so the border and its title stay put */
+.doskit-info-frame {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.25rem 1.25rem 1rem;
+  font-family: var(--font-read);
+  font-size: 0.85rem;
+}
+
+/* Set into the top border, which starts 10px in and is 4px thick (DosWindow.css offsets from
+   the frame's inside); short, so it cannot run past the border on a phone */
+.doskit-info-title {
+  top: 14px;
+  z-index: 1;
 }
 
 .doskit-info-header {
@@ -42,16 +61,22 @@
 
 .doskit-info h2 {
   margin: 0;
-  font-size: 1.6rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: 28px;
+  font-weight: normal;
+  line-height: 1.1;
+  color: var(--title);
 }
 
 .doskit-info h3 {
   margin: 1.1rem 0 0.25rem;
-  font-size: 0.85rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  /* 9.1:1 on the panel */
-  color: #b4b8c8;
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: normal;
+  line-height: 1.2;
+  color: var(--title);
 }
 
 .doskit-info p,
@@ -72,36 +97,65 @@
   list-style: none;
 }
 
-/* 9.5:1 on the panel */
+/* Window text: 5.7:1 */
 .doskit-info-release {
-  color: #b8bcc8;
+  color: var(--window-text);
 }
 
-/* Amber, as on the Play screen: 11:1 */
-.doskit-info-warning {
-  color: #ffc078;
+/* Yellow, as the title: 12.4:1 */
+.doskit-info-warning,
+.doskit-files-notice {
+  color: var(--warning);
 }
 
-/* 7.9:1 on the panel */
 .doskit-info a {
-  color: #91a7ff;
+  color: var(--accent);
 }
 
 .doskit-info-close {
   flex: none;
   min-width: 2.25rem;
   min-height: 2.25rem;
-  border: 1px solid #4a4a58;
-  border-radius: 0.4rem;
+  border: 2px solid var(--window-text);
+  border-radius: 0;
   background: transparent;
-  color: inherit;
+  color: var(--text-strong);
+  font-family: var(--font-ui);
+  font-size: 20px;
   cursor: pointer;
+}
+
+.doskit-info-close:hover {
+  background: var(--window-text);
+  color: var(--vga-black);
 }
 
 .doskit-info-close:focus-visible,
 .doskit-info a:focus-visible {
-  outline: 3px solid #ffc078;
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
+}
+
+/* The credits, then the key that closes, on the window's own colours */
+.doskit-info .doskit-info-credits {
+  justify-content: flex-start;
+  margin-top: 1rem;
+  padding: 0;
+  color: var(--window-text);
+}
+
+.doskit-info .doskit-info-credits a {
+  color: var(--accent);
+}
+
+.doskit-info-keys {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.doskit-info .key-hint {
+  color: var(--window-text);
 }
 
 /* The Files panel's actions */
@@ -118,31 +172,33 @@
   margin: 0;
 }
 
+/* A grey menu-style button: black on #aaa 9:1 */
 .doskit-files-button {
   display: inline-block;
-  padding: 0.5rem 1rem;
-  border: 1px solid #5c5c6e;
-  border-radius: 0.45rem;
-  background: #24242e;
-  color: #f1f3f5;
-  font: inherit;
+  padding: 0.4rem 1rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--menu);
+  color: var(--menu-text);
+  font-family: var(--font-ui);
+  font-size: 20px;
   cursor: pointer;
 }
 
 .doskit-files-button:hover {
-  background: #2e2e3a;
+  background: var(--text-strong);
 }
 
-/* White on #c92a2a: 5.5:1 */
-.doskit-files-danger {
-  border-color: #c92a2a;
-  background: #c92a2a;
-  color: #ffffff;
+/* Black on --danger (#f55): 6.7:1 */
+.doskit-files-danger,
+.doskit-files-danger:hover {
+  background: var(--danger);
+  color: var(--vga-black);
 }
 
 .doskit-files-button:focus-visible,
 .doskit-files-input:focus-visible + .doskit-files-button {
-  outline: 3px solid #ffc078;
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -154,12 +210,36 @@
   opacity: 0;
 }
 
+/* Window text: 5.7:1 */
 .doskit-files-note {
-  font-size: 0.9rem;
-  color: #b8bcc8;
+  font-size: 0.85rem;
+  color: var(--window-text);
 }
 
-/* Amber, as for warnings: 11:1 on the panel */
-.doskit-files-notice {
-  color: #ffc078;
+@media (forced-colors: active) {
+  .doskit-info h2,
+  .doskit-info h3,
+  .doskit-info-warning,
+  .doskit-files-notice {
+    color: CanvasText;
+  }
+
+  .doskit-info a,
+  .doskit-info .doskit-info-credits a {
+    color: LinkText;
+  }
+
+  .doskit-info-close,
+  .doskit-files-button {
+    border: 1px solid ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+  }
+
+  .doskit-info-close:focus-visible,
+  .doskit-info a:focus-visible,
+  .doskit-files-button:focus-visible,
+  .doskit-files-input:focus-visible + .doskit-files-button {
+    outline-color: Highlight;
+  }
 }

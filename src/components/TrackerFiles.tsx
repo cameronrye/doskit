@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useId, useRef, useState } from 'react';
+import './DosWindow.css';
 import './AppInfo.css';
 
 interface TrackerFilesProps {
@@ -74,7 +75,7 @@ export function TrackerFiles({
       <div className="doskit-info-backdrop" onClick={() => onClose(false)} />
       {/* tabIndex -1: a click on the panel's text keeps the focus in it, where Escape works */}
       <div
-        className="doskit-info"
+        className="dos-window doskit-info"
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
@@ -86,86 +87,93 @@ export function TrackerFiles({
           }
         }}
       >
-        <div className="doskit-info-header">
-          <h2 id={headingId}>Your files</h2>
-          <button
-            ref={closeRef}
-            className="doskit-info-close"
-            aria-label="Close"
-            onClick={(event) => onClose(event.detail === 0)}
-          >
-            ✕
-          </button>
-        </div>
-
-        <p role="status">
-          {!kept
-            ? `This browser can't keep files, as in some private windows: download what you save in ${appName} before you leave.`
-            : savedAt === null
-              ? `Save in ${appName} with its own save, and DosKit keeps what it writes in this browser, for your next visit.`
-              : `What ${appName} saved was kept in this browser at ${timeOf(savedAt)}. Unsaved work in the tracker is not.`}
-        </p>
-
-        <div className="doskit-files-actions">
-          <button className="doskit-files-button" onClick={onDownload}>
-            Download your files (.zip)
-          </button>
-          <input
-            id={inputId}
-            className="doskit-files-input"
-            type="file"
-            multiple
-            accept={accept.join(',')}
-            aria-label="Bring in modules"
-            onChange={(event) => {
-              const files = Array.from(event.target.files ?? []);
-              event.target.value = '';
-              if (files.length > 0) onImport(files);
-            }}
-          />
-          <label className="doskit-files-button" htmlFor={inputId}>
-            Bring in modules…
-          </label>
-        </div>
-        {notice && <p className="doskit-files-notice">{notice}</p>}
-        <p className="doskit-files-note">
-          Modules you bring in appear in {appName}'s file list. {appName} restarts to read them:
-          save your song first.
-        </p>
-
-        <section>
-          <h3>Start over</h3>
-          {confirmingReset ? (
-            <div className="doskit-files-actions">
-              {/* Each answer is described by the question, which a screen reader then reads
-                  with whichever answer has the focus */}
-              <p id={questionId}>Delete the files kept for {appName} and restart it as it came?</p>
-              <button
-                className="doskit-files-button doskit-files-danger"
-                aria-describedby={questionId}
-                onClick={onReset}
-              >
-                Delete them and restart
-              </button>
-              <button
-                ref={keepRef}
-                className="doskit-files-button"
-                aria-describedby={questionId}
-                onClick={() => setConfirmingReset(false)}
-              >
-                Keep them
-              </button>
-            </div>
-          ) : (
+        <span className="dos-window-title doskit-info-title" aria-hidden="true">
+          Files
+        </span>
+        <div className="dos-window-frame doskit-info-frame">
+          <div className="doskit-info-header">
+            <h2 id={headingId}>Your files</h2>
             <button
-              ref={startOverRef}
-              className="doskit-files-button"
-              onClick={() => setConfirmingReset(true)}
+              ref={closeRef}
+              className="doskit-info-close"
+              aria-label="Close"
+              onClick={(event) => onClose(event.detail === 0)}
             >
-              Start over
+              ✕
             </button>
-          )}
-        </section>
+          </div>
+
+          <p role="status">
+            {!kept
+              ? `This browser can't keep files, as in some private windows: download what you save in ${appName} before you leave.`
+              : savedAt === null
+                ? `Save in ${appName} with its own save, and DosKit keeps what it writes in this browser, for your next visit.`
+                : `What ${appName} saved was kept in this browser at ${timeOf(savedAt)}. Unsaved work in the tracker is not.`}
+          </p>
+
+          <div className="doskit-files-actions">
+            <button className="doskit-files-button" onClick={onDownload}>
+              Download your files (.zip)
+            </button>
+            <input
+              id={inputId}
+              className="doskit-files-input"
+              type="file"
+              multiple
+              accept={accept.join(',')}
+              aria-label="Bring in modules"
+              onChange={(event) => {
+                const files = Array.from(event.target.files ?? []);
+                event.target.value = '';
+                if (files.length > 0) onImport(files);
+              }}
+            />
+            <label className="doskit-files-button" htmlFor={inputId}>
+              Bring in modules…
+            </label>
+          </div>
+          {notice && <p className="doskit-files-notice">{notice}</p>}
+          <p className="doskit-files-note">
+            Modules you bring in appear in {appName}'s file list. {appName} restarts to read them:
+            save your song first.
+          </p>
+
+          <section>
+            <h3>Start over</h3>
+            {confirmingReset ? (
+              <div className="doskit-files-actions">
+                {/* Each answer is described by the question, which a screen reader then reads
+                  with whichever answer has the focus */}
+                <p id={questionId}>
+                  Delete the files kept for {appName} and restart it as it came?
+                </p>
+                <button
+                  className="doskit-files-button doskit-files-danger"
+                  aria-describedby={questionId}
+                  onClick={onReset}
+                >
+                  Delete them and restart
+                </button>
+                <button
+                  ref={keepRef}
+                  className="doskit-files-button"
+                  aria-describedby={questionId}
+                  onClick={() => setConfirmingReset(false)}
+                >
+                  Keep them
+                </button>
+              </div>
+            ) : (
+              <button
+                ref={startOverRef}
+                className="doskit-files-button"
+                onClick={() => setConfirmingReset(true)}
+              >
+                Start over
+              </button>
+            )}
+          </section>
+        </div>
       </div>
     </>
   );

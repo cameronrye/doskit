@@ -118,4 +118,22 @@ describe('AppInfo', () => {
 
     expect(screen.getByText('Your files')).toBeInTheDocument();
   });
+
+  it('ends with the credits and the Licenses link', () => {
+    render(<AppInfo app={panic} onClose={() => {}} />);
+
+    const panel = screen.getByRole('dialog');
+    expect(within(panel).getByRole('link', { name: 'Licenses' })).toHaveAttribute(
+      'href',
+      '/licenses/'
+    );
+    expect(within(panel).getByRole('link', { name: 'Cameron Rye' })).toBeInTheDocument();
+  });
+
+  it('shows Esc Close', () => {
+    render(<AppInfo app={panic} onClose={() => {}} />);
+
+    const key = within(screen.getByRole('dialog')).getByText('Esc');
+    expect(key.tagName).toBe('KBD');
+  });
 });

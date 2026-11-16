@@ -10,6 +10,9 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { AppPage, DosApp } from '../types/dos-app';
 import { loadAppPage } from '../config/appPages';
+import SiteFooter from './SiteFooter';
+import KeyHint from './KeyHint';
+import './DosWindow.css';
 import './AppInfo.css';
 
 interface AppInfoProps {
@@ -89,95 +92,108 @@ export function AppInfo({ app, onClose, children }: AppInfoProps) {
           rather than on the page, where keys go to DOS */}
       <div
         ref={panelRef}
-        className="doskit-info"
+        className="dos-window doskit-info"
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
       >
-        <div className="doskit-info-header">
-          <h2 id={headingId}>{app.name}</h2>
-          <button
-            ref={closeRef}
-            className="doskit-info-close"
-            aria-label="Close"
-            onClick={(event) => onClose(event.detail === 0)}
-          >
-            ✕
-          </button>
+        {/* A short title in the border: the production's name, which can be long, is the heading
+            inside, where it wraps */}
+        <span className="dos-window-title doskit-info-title" aria-hidden="true">
+          About
+        </span>
+        <div className="dos-window-frame doskit-info-frame">
+          <div className="doskit-info-header">
+            <h2 id={headingId}>{app.name}</h2>
+            <button
+              ref={closeRef}
+              className="doskit-info-close"
+              aria-label="Close"
+              onClick={(event) => onClose(event.detail === 0)}
+            >
+              ✕
+            </button>
+          </div>
+          {release && <p className="doskit-info-release">{release}</p>}
+
+          {!loaded && <p className="doskit-info-loading">Loading…</p>}
+          {loaded &&
+            (text?.about ?? [app.description]).map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+
+          {app.flashing && (
+            <p className="doskit-info-warning">
+              <span aria-hidden="true">⚠ </span>
+              Contains flashing lights, which may affect people with photosensitive epilepsy.
+            </p>
+          )}
+          {app.contentNote && (
+            <p className="doskit-info-warning">
+              <span aria-hidden="true">⚠ </span>
+              {app.contentNote}
+            </p>
+          )}
+
+          {text?.released && (
+            <section>
+              <h3>Shown and released</h3>
+              <p>{text.released}</p>
+            </section>
+          )}
+          {text?.credits && (
+            <section>
+              <h3>Credits</h3>
+              <p>{text.credits}</p>
+            </section>
+          )}
+          {text?.accuracy && text.accuracy.length > 0 && (
+            <section>
+              <h3>How it runs here</h3>
+              <ul>
+                {text.accuracy.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {children}
+
+          {text?.terms && (
+            <section>
+              <h3>Terms</h3>
+              <p>{text.terms}</p>
+            </section>
+          )}
+          {text?.links && text.links.length > 0 && (
+            <section>
+              <h3>Elsewhere</h3>
+              <ul className="doskit-info-links">
+                {text.links.map((link) => (
+                  <li key={link.url}>
+                    <a href={link.url} target="_blank" rel="noopener noreferrer">
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <section>
+            <h3>For rights holders</h3>
+            <p>
+              If you made this production or hold its rights, and want it credited differently or
+              taken down, email cameron@rye.dev and it will be done.
+            </p>
+          </section>
+          <SiteFooter className="doskit-info-credits" />
+          <div className="doskit-info-keys">
+            <KeyHint keyName="Esc">Close</KeyHint>
+          </div>
         </div>
-        {release && <p className="doskit-info-release">{release}</p>}
-
-        {!loaded && <p className="doskit-info-loading">Loading…</p>}
-        {loaded &&
-          (text?.about ?? [app.description]).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-
-        {app.flashing && (
-          <p className="doskit-info-warning">
-            <span aria-hidden="true">⚠ </span>
-            Contains flashing lights, which may affect people with photosensitive epilepsy.
-          </p>
-        )}
-        {app.contentNote && (
-          <p className="doskit-info-warning">
-            <span aria-hidden="true">⚠ </span>
-            {app.contentNote}
-          </p>
-        )}
-
-        {text?.released && (
-          <section>
-            <h3>Shown and released</h3>
-            <p>{text.released}</p>
-          </section>
-        )}
-        {text?.credits && (
-          <section>
-            <h3>Credits</h3>
-            <p>{text.credits}</p>
-          </section>
-        )}
-        {text?.accuracy && text.accuracy.length > 0 && (
-          <section>
-            <h3>How it runs here</h3>
-            <ul>
-              {text.accuracy.map((note) => (
-                <li key={note}>{note}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {children}
-
-        {text?.terms && (
-          <section>
-            <h3>Terms</h3>
-            <p>{text.terms}</p>
-          </section>
-        )}
-        {text?.links && text.links.length > 0 && (
-          <section>
-            <h3>Elsewhere</h3>
-            <ul className="doskit-info-links">
-              {text.links.map((link) => (
-                <li key={link.url}>
-                  <a href={link.url} target="_blank" rel="noopener noreferrer">
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-        <section>
-          <h3>For rights holders</h3>
-          <p>
-            If you made this production or hold its rights, and want it credited differently or
-            taken down, email cameron@rye.dev and it will be done.
-          </p>
-        </section>
       </div>
     </>
   );
