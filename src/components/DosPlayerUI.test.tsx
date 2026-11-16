@@ -1,12 +1,13 @@
 /**
- * Tests for DosPlayerUI: what it tells screen readers, and its layout under js-dos's soft
- * fullscreen
+ * Tests for DosPlayerUI: what it tells screen readers, how it looks, and its layout under
+ * js-dos's soft fullscreen
  */
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { createRef } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { DosPlayerUI } from './DosPlayerUI';
+import { applyStylesheet, keyframesIn, readStylesheets, resolveTokens } from '../test/stylesheets';
 
 /**
  * DosPlayer.css, read from disk: Vitest keeps imported CSS, ?raw imports included, out of
@@ -25,7 +26,7 @@ describe('DosPlayerUI', () => {
     it('announces that the emulator is loading', () => {
       render(<DosPlayerUI dosContainerRef={createRef()} isLoading={true} error={null} />);
 
-      expect(screen.getByRole('status')).toHaveTextContent('Loading DOS emulator...');
+      expect(screen.getByRole('status')).toHaveTextContent('Loading DOS emulator…');
     });
 
     it('announces at once why the emulator could not start', () => {
@@ -41,6 +42,54 @@ describe('DosPlayerUI', () => {
         'DOS emulator library not loaded. Please refresh the page.'
       );
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+  });
+
+  // As every other screen: the VGA tokens, the interface type for a line and the reading type
+  // for a sentence, and nothing that moves
+  describe('in the DOS look', () => {
+    const OWN = 'src/components/DosPlayer.css';
+    const ERROR = 'DOS emulator library not loaded. Please refresh the page.';
+    let sheet: HTMLStyleElement;
+    let own: string;
+    beforeAll(async () => {
+      const sheets = await readStylesheets();
+      own = sheets.get(OWN)!.replace(/\/\*[\s\S]*?\*\//g, '');
+      sheet = applyStylesheet(resolveTokens(sheets, own));
+    });
+    afterAll(() => sheet.remove());
+
+    it('says it is loading in a line of VT323 on black, with nothing turning', () => {
+      const { container } = render(
+        <DosPlayerUI dosContainerRef={createRef()} isLoading={true} error={null} />
+      );
+
+      const status = screen.getByRole('status');
+      const line = within(status).getByText('Loading DOS emulator…');
+      expect(getComputedStyle(line).fontFamily).toMatch(/^["']?VT323/);
+      // In px, as the root is 14px on phones: VT323 is never under 18px
+      expect(getComputedStyle(line).fontSize).toMatch(/^(1[89]|[2-9]\d)px$/);
+      expect(getComputedStyle(status).backgroundColor).toBe('rgb(0, 0, 0)');
+      expect(container.querySelector('[class*="spinner"]')).toBeNull();
+    });
+
+    it('animates nothing and names no colour of its own', () => {
+      expect(keyframesIn(own)).toEqual([]);
+      expect(own).not.toMatch(/animation|rotate\(/);
+      expect(own).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(/i);
+    });
+
+    it('shows why the emulator could not start in a DOS window, in the reading type', () => {
+      render(<DosPlayerUI dosContainerRef={createRef()} isLoading={false} error={ERROR} />);
+
+      const alert = screen.getByRole('alert');
+      expect(getComputedStyle(alert).backgroundColor).toBe('rgb(0, 0, 0)');
+      expect(within(alert).getByText('Error')).toHaveClass('dos-window-title');
+      expect(getComputedStyle(within(alert).getByText(ERROR)).fontFamily).toMatch(/^ui-monospace/);
+      // Black on light grey, the menu's colours
+      const reload = within(alert).getByRole('button', { name: 'Reload Page' });
+      expect(getComputedStyle(reload).color).toBe('rgb(0, 0, 0)');
+      expect(getComputedStyle(reload).backgroundColor).toBe('rgb(170, 170, 170)');
     });
   });
 

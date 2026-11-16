@@ -7,7 +7,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  background-color: #000;
+  background-color: var(--surface);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -32,7 +32,7 @@
   bottom: 0;
   left: 0;
   z-index: 999;
-  background: #000;
+  background: var(--surface);
   /* index.html lets the page run under a phone's notch, rounded corners and home indicator
      (viewport-fit=cover): keep js-dos's screen and sidebar clear of them, within the
      element's 100% width and height */
@@ -41,8 +41,10 @@
     env(safe-area-inset-left);
 }
 
-/* Loading indicator. Like the error below, above js-dos's own sidebar (z-index 10) and
-   below everything the app puts over the player: see DosPlayerWithApps.css. */
+/* While js-dos starts the emulator, as after Play: one line on black over the player, opaque,
+   as js-dos draws a loading screen and errors of its own under it. Like the error below, it
+   sits above js-dos's own sidebar (z-index 10) and below everything the app puts over the
+   player: see DosPlayerWithApps.css. Light grey on black 9.0:1. */
 .dos-player-loading {
   position: absolute;
   top: 0;
@@ -50,39 +52,25 @@
   right: 0;
   bottom: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.9);
-  color: #fff;
+  padding: 1rem;
+  background-color: var(--surface);
+  color: var(--text);
   z-index: 50;
-  gap: 1rem;
 }
 
-.dos-player-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: dos-spinner-rotate 1s linear infinite;
-}
-
-@keyframes dos-spinner-rotate {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
+/* VT323 in px, over its 18px floor; the root is 14px on phones */
 .dos-player-loading p {
   margin: 0;
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+  font-family: var(--font-ui);
+  font-size: 24px;
+  line-height: 1.2;
+  text-align: center;
 }
 
-/* Error message */
+/* Why the emulator could not start: a DOS window on black, over the player as the loading
+   panel is. The message is the window's light grey on blue, 5.7:1, in the reading stack. */
 .dos-player-error {
   position: absolute;
   top: 0;
@@ -90,60 +78,63 @@
   right: 0;
   bottom: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: rgba(139, 0, 0, 0.9);
-  color: #fff;
+  padding: 1rem;
+  overflow-y: auto;
+  background-color: var(--surface);
   z-index: 50;
-  padding: 2rem;
-  text-align: center;
 }
 
-.dos-player-error h3 {
-  margin: 0 0 1rem 0;
-  font-family: 'Courier New', monospace;
-  font-size: 24px;
-  text-transform: uppercase;
+.dos-player-error .dos-window {
+  width: min(32rem, 100%);
+  margin: auto;
+}
+
+.dos-player-error .dos-window-frame {
+  padding-top: 1.5rem;
 }
 
 .dos-player-error p {
-  margin: 0 0 1.5rem 0;
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  max-width: 500px;
+  margin: 0 0 1rem;
+  font-family: var(--font-read);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
+/* Black on light grey, the menu's 9:1, and white on blue 13.3:1 when hovered. VT323 in px. */
 .dos-player-error button {
-  padding: 0.75rem 1.5rem;
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  background-color: #fff;
-  color: #8b0000;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  text-transform: uppercase;
-  font-weight: bold;
-  transition: background-color 0.2s;
+  padding: 0.25rem 1rem;
+  border: 2px solid var(--menu);
+  border-radius: 0;
+  background-color: var(--menu);
+  color: var(--menu-text);
+  font-family: var(--font-ui);
+  font-size: 20px;
 }
 
 .dos-player-error button:hover {
-  background-color: #f0f0f0;
+  border-color: var(--text-strong);
+  background-color: var(--menu-selected);
+  color: var(--menu-selected-text);
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-  .dos-player-loading p {
-    font-size: 12px;
+/* The ring sits on the window's blue around the button: yellow on blue 12.4:1 */
+.dos-player-error button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .dos-player-error button {
+    border-color: ButtonText;
+    background-color: ButtonFace;
+    color: ButtonText;
   }
 
-  .dos-player-error h3 {
-    font-size: 18px;
-  }
-
-  .dos-player-error p {
-    font-size: 12px;
+  .dos-player-error button:focus-visible {
+    outline-color: Highlight;
   }
 }
 
@@ -154,12 +145,5 @@
     height: 100vh; /* Fallback for older browsers */
     height: -webkit-fill-available; /* Fallback for older iOS Safari */
     height: 100dvh; /* Modern dynamic viewport height - best for iOS */
-  }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .dos-player-wrapper {
-    background-color: #000;
   }
 }

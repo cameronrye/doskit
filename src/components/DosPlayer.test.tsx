@@ -129,11 +129,6 @@ describe('DosPlayer', () => {
       expect(screen.getByText(/Loading DOS emulator/i)).toBeInTheDocument();
     });
 
-    it('should show loading spinner', () => {
-      const { container } = render(<DosPlayer />);
-      expect(container.querySelector('.dos-player-spinner')).toBeInTheDocument();
-    });
-
     // The panel is nearly opaque, over the player: every app would run hidden under it
     it('hides the loading panel once js-dos reports the emulator ready', () => {
       const { container } = render(<DosPlayer />);

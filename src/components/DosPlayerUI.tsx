@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+import DosWindow from './DosWindow';
 import './DosPlayer.css';
 
 export interface DosPlayerUIProps {
@@ -36,20 +37,23 @@ export const DosPlayerUI: React.FC<DosPlayerUIProps> = ({
 }) => {
   return (
     <div className={`dos-player-wrapper ${className}`} style={style}>
-      {/* Loading indicator, which screen readers announce */}
+      {/* While js-dos starts the emulator, as after Play: a status, which screen readers
+          announce. Nothing on it moves. */}
       {isLoading && !error && (
         <div className="dos-player-loading" role="status">
-          <div className="dos-player-spinner"></div>
-          <p>Loading DOS emulator...</p>
+          <p>Loading DOS emulator…</p>
         </div>
       )}
 
-      {/* Error message, which screen readers announce at once */}
+      {/* Why the emulator could not start, which screen readers announce at once */}
       {error && (
         <div className="dos-player-error" role="alert">
-          <h3>Error</h3>
-          <p>{error}</p>
-          <button onClick={() => window.location.reload()}>Reload Page</button>
+          <DosWindow title="Error">
+            <p>{error}</p>
+            <button type="button" onClick={() => window.location.reload()}>
+              Reload Page
+            </button>
+          </DosWindow>
         </div>
       )}
 
