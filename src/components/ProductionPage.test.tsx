@@ -168,6 +168,38 @@ describe('ProductionPage', () => {
     expect(onAbout).toHaveBeenCalledOnce();
   });
 
+  describe('focus', () => {
+    const LOADING: ProductionPageStatus = { kind: 'loading', progress: null };
+    const FAILED: ProductionPageStatus = { kind: 'error', error: { message: 'No connection' } };
+    const outside = () => {
+      const dialog = document.createElement('button');
+      document.body.append(dialog);
+      dialog.focus();
+      return dialog;
+    };
+
+    it.each([
+      ['ready', READY],
+      ['error', FAILED],
+    ])('leaves a focus outside the page alone as loading becomes %s', async (_name, next) => {
+      const { rerender, onPlay, onRetry, onCancel, onBrowse, onAbout, onOpenApp } =
+        await renderPage({ status: LOADING });
+      const dialog = outside();
+      const handlers = { onPlay, onRetry, onCancel, onBrowse, onAbout, onOpenApp };
+      rerender(<ProductionPage app={unreal} apps={availableApps} status={next} {...handlers} />);
+      expect(dialog).toHaveFocus();
+      dialog.remove();
+    });
+
+    it('focuses Play when loading becomes ready with nothing focused', async () => {
+      const { rerender, container, ...handlers } = await renderPage({ status: LOADING });
+      expect(container.querySelector('.production-page')).toHaveFocus();
+      (document.activeElement as HTMLElement).blur();
+      rerender(<ProductionPage app={unreal} apps={availableApps} status={READY} {...handlers} />);
+      expect(screen.getByRole('button', { name: 'Play' })).toHaveFocus();
+    });
+  });
+
   it('leaves the keys to a text field', async () => {
     const { onAbout, container } = await renderPage();
     const field = document.createElement('input');

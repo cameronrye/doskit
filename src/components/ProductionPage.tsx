@@ -62,6 +62,7 @@ export function ProductionPage({
   aboutButtonRef,
 }: ProductionPageProps) {
   const rootRef = useRef<HTMLElement>(null);
+  const playRef = useRef<HTMLButtonElement>(null);
   // The alt text and the share's outcome belong to the production they came for
   const [loadedAlt, setLoadedAlt] = useState<{ id: string; alt: string } | null>(null);
   const [outcome, setOutcome] = useState<{ id: string; result: ShareResult } | null>(null);
@@ -70,12 +71,17 @@ export function ProductionPage({
   const more = moreByAuthor(app, apps);
   const kind = kindLabel(app.kind);
 
-  // Focus the page so that its keys work, unless a control in it has the focus. Run again as
-  // the status changes: the focused Cancel or Try Again unmounts and drops the focus on body.
+  // Put the focus where the page's keys work: on Play once it is ready, else on the page.
+  // Only a lost focus (on body, or on a control that unmounted, as Try Again does) or a focus
+  // already inside the page moves; one outside it, such as the About dialog's, stays.
   const statusKind = status.kind;
   useEffect(() => {
     const root = rootRef.current;
-    if (root && !root.contains(document.activeElement)) root.focus();
+    const active = document.activeElement;
+    const lost = !active || active === document.body || !active.isConnected;
+    if (!root || !(lost || root.contains(active))) return;
+    if (statusKind === 'ready' && playRef.current) playRef.current.focus();
+    else if (lost) root.focus();
   }, [statusKind]);
 
   useEffect(() => {
@@ -233,7 +239,7 @@ export function ProductionPage({
             )}
             {status.kind === 'ready' && (
               <div className="production-play">
-                <button type="button" className="doskit-play-button" autoFocus onClick={onPlay}>
+                <button type="button" className="doskit-play-button" ref={playRef} onClick={onPlay}>
                   {playLabelOf(app.kind)}
                 </button>
                 <KeyHint keyName="Enter">{playLabelOf(app.kind)}</KeyHint>
