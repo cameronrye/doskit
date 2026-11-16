@@ -34,7 +34,7 @@
 
   // Where DosKit's Play button is, once it shows. A test clicks there with real mouse input,
   // without querying the page first: Playwright's locators, like page.evaluate(), give the
-  // page user activation, after which DosKit starts a production without its Play screen.
+  // page user activation, which would let sound start without the click on Play under test.
   new MutationObserver(() => {
     const button = document.querySelector('.doskit-play-button');
     if (!button || button.dataset.e2eReported) return;

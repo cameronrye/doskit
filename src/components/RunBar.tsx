@@ -9,7 +9,7 @@ import type { PlayerStatus } from './playerSession';
 import './RunBar.css';
 
 /** What the bar's status says for each status of the player */
-export const STATUS_LABELS: Record<PlayerStatus, string> = {
+const STATUS_LABELS: Record<PlayerStatus, string> = {
   idle: 'Idle',
   loading: 'Loading',
   ready: 'Ready',

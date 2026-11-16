@@ -6,7 +6,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { createEvent, fireEvent, render, screen } from '@testing-library/react';
-import { RunBar, STATUS_LABELS } from './RunBar';
+import { RunBar } from './RunBar';
 
 describe('RunBar', () => {
   it('names the production with its author and year', () => {
@@ -37,7 +37,6 @@ describe('RunBar', () => {
       <RunBar title="Unreal" meta={null} status={status} isOnline onBrowse={vi.fn()} />
     );
     expect(screen.getByRole('status')).toHaveTextContent(`${label} · Online`);
-    expect(STATUS_LABELS[status]).toBe(label);
 
     rerender(
       <RunBar title="Unreal" meta={null} status={status} isOnline={false} onBrowse={vi.fn()} />

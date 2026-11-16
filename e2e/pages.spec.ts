@@ -79,3 +79,17 @@ test('a page with a trailing slash or capitals still opens its production', asyn
   await expect(page).toHaveURL(/\/secondreality$/);
   await expect(page).toHaveTitle('Second Reality - DosKit');
 });
+
+// A click on a grid link gives the page user activation, which no longer starts anything
+test("the start page opens a production's page, which waits for Play", async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('link', { name: /Second Reality/ }).click();
+
+  await expect(page).toHaveURL(/\/secondreality$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Second Reality' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.locator('canvas')).toHaveCount(0);
+});

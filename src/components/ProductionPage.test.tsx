@@ -98,7 +98,7 @@ describe('ProductionPage', () => {
     expect(screen.getByText('Downloading… 2.0 MB')).not.toHaveAttribute('aria-hidden');
   });
 
-  it('shows an error with Try Again', async () => {
+  it('shows an error with Try Again, focused', async () => {
     const { onRetry } = await renderPage({
       status: {
         kind: 'error',
@@ -109,6 +109,7 @@ describe('ProductionPage', () => {
     expect(alert).toHaveTextContent('No connection');
     expect(alert).toHaveTextContent('Check it');
     expect(alert).toHaveTextContent('boom');
+    expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
     await userEvent.click(screen.getByRole('button', { name: 'Try Again' }));
     expect(onRetry).toHaveBeenCalledOnce();
   });
@@ -197,6 +198,21 @@ describe('ProductionPage', () => {
       (document.activeElement as HTMLElement).blur();
       rerender(<ProductionPage app={unreal} apps={availableApps} status={READY} {...handlers} />);
       expect(screen.getByRole('button', { name: 'Play' })).toHaveFocus();
+    });
+
+    // As the error overlay did before the page: Enter tries again at once
+    it('focuses Try Again when loading fails with the focus on the page', async () => {
+      const { rerender, container, ...handlers } = await renderPage({ status: LOADING });
+      expect(container.querySelector('.production-page')).toHaveFocus();
+      rerender(<ProductionPage app={unreal} apps={availableApps} status={FAILED} {...handlers} />);
+      expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
+    });
+
+    it('focuses Try Again when loading fails with nothing focused', async () => {
+      const { rerender, ...handlers } = await renderPage({ status: LOADING });
+      (document.activeElement as HTMLElement).blur();
+      rerender(<ProductionPage app={unreal} apps={availableApps} status={FAILED} {...handlers} />);
+      expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
     });
   });
 

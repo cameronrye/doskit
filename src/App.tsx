@@ -74,14 +74,6 @@ function applyUrlRoute(route: Route): void {
   setTitleFor(route);
 }
 
-/** "Author (year)" for the header, or whichever of the two an app gives, or null for neither */
-function describeRelease({ author, year }: DosApp): string | null {
-  if (author && year) {
-    return `${author} (${year})`;
-  }
-  return author || year?.toString() || null;
-}
-
 /**
  * js-dos listens for keys on window, sends each one to DOS and cancels the browser's own
  * handling of it. Keys pressed on DosKit's own controls stop here, once React has handled
@@ -95,30 +87,20 @@ function keepKeysFromDos(event: React.KeyboardEvent) {
   }
 }
 
-/** What the footer's DOS badge shows for each status of the player */
-const STATUS_BADGES: Record<PlayerStatus, { className: string; label: string; title: string }> = {
-  idle: { className: 'is-idle', label: 'Idle', title: 'No application is running' },
-  loading: { className: 'is-loading', label: 'Loading', title: 'Loading DOS emulator' },
-  ready: { className: 'ready', label: 'Ready', title: 'DOS emulator is ready' },
-  error: {
-    className: 'is-error',
-    label: 'Error',
-    title: 'The application could not be loaded or started',
-  },
-};
-
 function App() {
   // The route the page was loaded with, and the one it shows
   const [initialRoute] = useState(readUrlRoute);
   const [route, setRoute] = useState(initialRoute);
   // The production DosPlayerWithApps runs, or null for the start page and the DOS prompt
   const currentApp = route.view === 'app' ? route.app : null;
-  // Nothing runs on the start page
+  // Nothing runs on the start page. The run bar shows the status; App asks before the page
+  // goes while it is ready.
   const [playerStatus, setPlayerStatus] = useState<PlayerStatus>(
     initialRoute.view === 'start' ? 'idle' : 'loading'
   );
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  // The About panel, for the current app; it closes when the route changes
+  // The About panel, for the current app; it closes when the route changes. Its button is
+  // the player's, on the production's page or in the run bar.
   const [infoFor, setInfoFor] = useState<DosApp | null>(null);
   const aboutButtonRef = useRef<HTMLButtonElement>(null);
   const showInfo = infoFor !== null && infoFor === currentApp;
@@ -212,9 +194,6 @@ function App() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [warnBeforeLeaving]);
 
-  const release = currentApp && describeRelease(currentApp);
-  const statusBadge = STATUS_BADGES[playerStatus];
-
   return (
     <div className="app" onKeyDown={keepKeysFromDos}>
       {/* PWA Offline Indicator and Install Prompt */}
@@ -230,37 +209,8 @@ function App() {
         />
       ) : (
         <>
-          <header className="app-header">
-            <div className="header-content">
-              <div className="header-left">
-                <img src="/logo.svg" alt="DosKit Logo" className="header-logo" />
-                <h1>DosKit</h1>
-              </div>
-              {currentApp && (
-                <div className="header-center">
-                  <div className="header-app-info">
-                    <span className="header-app-name">{currentApp.name}</span>
-                    {release && <span className="header-app-meta">{release}</span>}
-                  </div>
-                </div>
-              )}
-              <div className="header-right">
-                {currentApp && (
-                  <button
-                    ref={aboutButtonRef}
-                    className="header-about-button"
-                    onClick={() => setInfoFor(currentApp)}
-                  >
-                    About
-                  </button>
-                )}
-                <button className="header-change-app-button" onClick={() => handleBrowse()}>
-                  Browse
-                </button>
-              </div>
-            </div>
-          </header>
-
+          {/* Outside the player, so that keys pressed in the panel never reach the production
+              page's own key handler */}
           {showInfo && <AppInfo app={currentApp} onClose={closeInfo} />}
 
           <main className="app-main">
@@ -268,53 +218,17 @@ function App() {
             <ErrorBoundary onError={() => setPlayerStatus('error')}>
               <DosPlayerWithApps
                 requestedApp={currentApp}
+                apps={availableApps}
                 onBrowse={handleBrowse}
+                onOpenApp={(app) => navigate({ view: 'app', app })}
+                onAbout={() => setInfoFor(currentApp)}
+                aboutButtonRef={aboutButtonRef}
+                isOnline={isOnline}
                 onStatusChange={setPlayerStatus}
                 className="dos-player"
               />
             </ErrorBoundary>
           </main>
-
-          <footer className="app-footer">
-            <div className="info">
-              {/* A polite live region: screen readers announce each change of the badges */}
-              <div className="status-indicators" role="status">
-                {/* DOS Status */}
-                <span className={`status-badge ${statusBadge.className}`} title={statusBadge.title}>
-                  <span className="status-dot"></span>
-                  <span>{statusBadge.label}</span>
-                </span>
-
-                {/* Network Status */}
-                <span
-                  className={`status-badge ${isOnline ? 'online' : 'offline'}`}
-                  title={isOnline ? 'Connected to internet' : 'No internet connection'}
-                >
-                  <span className="status-dot"></span>
-                  <span>{isOnline ? 'Online' : 'Offline'}</span>
-                </span>
-              </div>
-            </div>
-            <div className="made-with">
-              Made with <span className="heart">❤️</span> by{' '}
-              <a href="https://rye.dev/" target="_blank" rel="noopener noreferrer">
-                Cameron Rye
-              </a>
-            </div>
-            <div className="credits">
-              <span className="credits-js-dos">
-                Powered by{' '}
-                <a href="https://js-dos.com" target="_blank" rel="noopener noreferrer">
-                  js-dos v{import.meta.env.VITE_JSDOS_VERSION}
-                </a>
-                <span aria-hidden="true"> · </span>
-              </span>
-              {/* The GPL notices of js-dos and DOSBox, which DosKit ships */}
-              <a href="/licenses/" target="_blank" rel="noopener noreferrer">
-                Licenses
-              </a>
-            </div>
-          </footer>
         </>
       )}
     </div>

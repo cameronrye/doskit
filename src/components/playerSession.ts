@@ -27,7 +27,7 @@ export interface Session {
   importsZip?: Uint8Array;
 }
 
-/** A requested app that failed to load: what the error overlay says, and the app to retry */
+/** A requested app that failed to load: what its page says, and the app to retry */
 export interface LoadError extends FriendlyError {
   app: DosApp;
 }
@@ -60,7 +60,7 @@ export type PlayerAction =
   /** The requestedApp prop changed */
   | { type: 'requested'; app: DosApp | null }
   /**
-   * A requested app's files and config arrived. It waits on the Play screen, unless play: a
+   * A requested app's files and config arrived. It waits on its page for Play, unless play: a
    * load Try Again started, whose click is still fresh enough to start sound with.
    */
   | { type: 'loaded'; app: DosApp; files: Uint8Array; dosboxConf: string; play: boolean }
@@ -68,7 +68,7 @@ export type PlayerAction =
   | { type: 'loadFailed'; app: DosApp; error: FriendlyError }
   /** The files a tracker saved before were read: null for none, or none to be had */
   | { type: 'prepared'; sessionId: number; saved: Uint8Array | null }
-  /** Play on the Play screen */
+  /** Play on the production's page */
   | { type: 'played' }
   /**
    * Play again, once the program has returned to DOS: the same files, a new player, and for
@@ -90,10 +90,10 @@ export type PlayerAction =
   | { type: 'ended'; sessionId: number };
 
 /**
- * How the player is doing: 'idle' while nothing runs, as on the Play screen; 'loading' while
- * a requested app downloads or an emulator starts, and after DOS has exited until the next
- * start; 'ready' once js-dos reports the emulator ready; 'error' while the load error or the
- * emulator's start error shows
+ * How the player is doing: 'idle' while nothing runs, as on a page that waits for Play;
+ * 'loading' while a requested app downloads or an emulator starts, and after DOS has exited
+ * until the next start; 'ready' once js-dos reports the emulator ready; 'error' while the load
+ * error or the emulator's start error shows
  */
 export type PlayerStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -127,7 +127,7 @@ export function preparingOf(state: PlayerState): Session | null {
   return state.phase.kind === 'preparing' ? state.phase.session : null;
 }
 
-/** A session that waits on the Play screen, unless it may start now; the DOS prompt starts */
+/** A session that waits on its page for Play, unless it may start now; the DOS prompt starts */
 const starting = (session: Session, play: boolean): Phase =>
   play || !session.app ? running(session) : { kind: 'poster', session };
 

@@ -5,9 +5,9 @@
  * module brought in from the computer appears in its file system under a DOS name.
  *
  * As in play.spec.ts, nothing queries the page before the click on Start: Playwright's
- * locators would give the page user activation, which skips the Start screen. Keys go to
- * DOS through the real keyboard, and the file system is read with page.evaluate() only
- * after the tracker has started.
+ * locators would give the page a user activation of their own, which a visitor's page gets
+ * only from that click. Keys go to DOS through the real keyboard, and the file system is read
+ * with page.evaluate() only after the tracker has started.
  */
 import { expect, test, type Page } from '@playwright/test';
 

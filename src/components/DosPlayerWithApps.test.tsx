@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ComponentProps } from 'react';
+import { createRef, type ComponentProps } from 'react';
 import { DosPlayerWithApps } from './DosPlayerWithApps';
 import type { DosApp } from '../types/dos-app';
 import type { DosOptions } from '../types/js-dos';
@@ -155,23 +155,52 @@ vi.mock('./DosPlayer', async () => {
   };
 });
 
-/** What App passes to the player for the start page */
+// The production page's screenshot takes its alt text from the page file, which the tests
+// leave out: it would arrive after the test, outside act()
+vi.mock('../config/appPages', () => ({
+  loadAppPage: () => new Promise(() => {}),
+}));
+
+/** What App passes to the player for the start page, another production and About */
 const onBrowse = vi.fn();
+const onOpenApp = vi.fn();
+const onAbout = vi.fn();
 
 /** The kinds the player asked the start page to show, undefined for none */
 const browsedKinds = () => onBrowse.mock.calls.map(([kind]) => kind as unknown);
 
 /** The player as App renders it: the DOS prompt, unless a test asks for a production */
 function Player(props: Partial<ComponentProps<typeof DosPlayerWithApps>>) {
-  return <DosPlayerWithApps requestedApp={null} onBrowse={onBrowse} {...props} />;
+  return (
+    <DosPlayerWithApps
+      requestedApp={null}
+      onBrowse={onBrowse}
+      onOpenApp={onOpenApp}
+      onAbout={onAbout}
+      isOnline
+      apps={[]}
+      {...props}
+    />
+  );
 }
 
-/** The Play screen's button: Play, or Start for a tracker, or Read for a diskmag */
+/** The production page's button: Play, or Start for a tracker, or Read for a diskmag */
 const playButton = () => screen.getByRole('button', { name: /^(Play|Start|Read)$/ });
 
-/** Open a production, as a link to it or Back and Forward do, and wait for its Play screen */
-async function openApp(app: DosApp) {
-  const view = render(<Player requestedApp={app} />);
+/** A production's page, a region named by its heading */
+const productionPage = (name: string) => screen.getByRole('region', { name });
+
+/** The bar over a running production or the DOS prompt, if it shows */
+const queryRunBar = () => document.querySelector<HTMLElement>('.run-bar');
+function runBar(): HTMLElement {
+  const bar = queryRunBar();
+  if (!bar) throw new Error('No run bar in the page');
+  return bar;
+}
+
+/** Open a production, as a link to it or Back and Forward do, and wait for its Play button */
+async function openApp(app: DosApp, props: Partial<ComponentProps<typeof DosPlayerWithApps>> = {}) {
+  const view = render(<Player requestedApp={app} {...props} />);
   await screen.findByRole('button', { name: /^(Play|Start|Read)$/ });
   return view;
 }
@@ -236,34 +265,6 @@ function deferredApp(id: string) {
   };
 }
 
-/**
- * A stylesheet beside this file, read from disk: Vitest keeps imported CSS out of tests.
- * node:fs comes through importActual, as the tests have the browser's types only.
- */
-async function readStylesheet(file: string): Promise<string> {
-  const fs = await vi.importActual<{ readFileSync(file: URL, encoding: 'utf8'): string }>(
-    'node:fs'
-  );
-  return fs.readFileSync(new URL(file, import.meta.url), 'utf8');
-}
-
-/** WCAG's contrast ratio between two opaque colours as getComputedStyle gives them */
-function contrastRatio(foreground: string, background: string): number {
-  const luminance = (color: string) => {
-    const [r = 0, g = 0, b = 0, alpha = 1] = (color.match(/[\d.]+/g) ?? []).map(Number);
-    if (alpha < 1) throw new Error(`${color} is not an opaque colour`);
-    const linear = (channel: number) => {
-      const c = channel / 255;
-      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    };
-    return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
-  };
-  const [lighter = 0, darker = 0] = [luminance(foreground), luminance(background)].sort(
-    (a, b) => b - a
-  );
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
 describe('DosPlayerWithApps', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -297,6 +298,18 @@ describe('DosPlayerWithApps', () => {
 
       expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
       expect(boots).toEqual([]);
+    });
+
+    it('names the DOS prompt in its bar, with Browse and neither About nor Files', () => {
+      render(<Player />);
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+
+      const bar = runBar();
+      expect(bar).toHaveTextContent('DOS prompt');
+      expect(within(bar).queryByRole('button', { name: 'About' })).not.toBeInTheDocument();
+      expect(within(bar).queryByRole('button', { name: 'Files' })).not.toBeInTheDocument();
+      fireEvent.click(within(bar).getByRole('button', { name: 'Browse' }));
+      expect(browsedKinds()).toEqual([undefined]);
     });
   });
 
@@ -357,7 +370,7 @@ describe('DosPlayerWithApps', () => {
       expect(onExit).toHaveBeenCalled();
     });
 
-    it('asks for the start page with no kind from Cancel and from Choose Another', async () => {
+    it("asks for the start page from the production's page: Cancel and Escape with no kind, the breadcrumb with its kind", async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       const stars = deferredApp('stars');
       render(<Player requestedApp={stars.app} />);
@@ -366,9 +379,29 @@ describe('DosPlayerWithApps', () => {
       expect(browsedKinds()).toEqual([undefined]);
 
       await stars.fail(new TypeError('Failed to fetch'));
-      fireEvent.click(screen.getByRole('button', { name: 'Choose Another Application' }));
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Try Again' }), { key: 'Escape' });
+      fireEvent.click(
+        within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('button', {
+          name: 'Demos',
+        })
+      );
 
-      expect(browsedKinds()).toEqual([undefined, undefined]);
+      expect(browsedKinds()).toEqual([undefined, undefined, 'demo']);
+    });
+
+    it('opens About from the page and from the bar, whose button takes the ref', async () => {
+      const aboutButtonRef = createRef<HTMLButtonElement>();
+      await openApp(mockApp, { aboutButtonRef });
+      const onPage = within(productionPage('Test App')).getByRole('button', { name: 'About' });
+      expect(aboutButtonRef.current).toBe(onPage);
+      fireEvent.click(onPage);
+
+      fireEvent.click(playButton());
+      const inBar = within(runBar()).getByRole('button', { name: 'About' });
+      expect(aboutButtonRef.current).toBe(inBar);
+      fireEvent.click(inBar);
+
+      expect(onAbout).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -483,8 +516,91 @@ describe('DosPlayerWithApps', () => {
     });
   });
 
-  describe('Play screen', () => {
-    it('asks for Play before it starts a production opened with no fresh click', async () => {
+  describe("The production's page", () => {
+    it('the production page carries the download, the error and Play', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const stars = deferredApp('stars');
+      render(<Player requestedApp={stars.app} />);
+
+      // The download, in the page, with nothing running and no bar
+      const page = productionPage('stars');
+      expect(within(page).getByRole('progressbar', { name: 'Download progress' })).toBeVisible();
+      expect(within(page).getByText('Downloading stars…')).toHaveAttribute('role', 'status');
+      expect(queryRunBar()).not.toBeInTheDocument();
+      expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
+
+      // Its error, in the same page, with Try Again focused
+      await stars.fail(new TypeError('Failed to fetch'));
+      expect(productionPage('stars')).toBe(page);
+      expect(within(page).getByRole('alert')).toHaveTextContent('Unable to connect to the server');
+      expect(within(page).getByRole('button', { name: 'Try Again' })).toHaveFocus();
+
+      // A click on Try Again that is no longer fresh by the time the files are in waits for Play
+      setActivation(false);
+      fireEvent.click(within(page).getByRole('button', { name: 'Try Again' }));
+      expect(within(page).queryByRole('alert')).not.toBeInTheDocument();
+      expect(within(page).getByText('Starting download…')).toBeInTheDocument();
+      await stars.finish();
+
+      expect(within(page).getByRole('button', { name: 'Play' })).toHaveFocus();
+      expect(within(page).queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(boots).toEqual([]);
+    });
+
+    it('the run bar replaces the page once Play is pressed, with Files for a tracker that saves', async () => {
+      const tracker: DosApp = {
+        ...mockApp,
+        id: 'tracker',
+        name: 'Tracker',
+        kind: 'tracker',
+        saveFiles: true,
+      };
+      await openApp(tracker);
+      expect(queryRunBar()).not.toBeInTheDocument();
+
+      fireEvent.click(playButton());
+
+      expect(screen.queryByRole('region', { name: 'Tracker' })).not.toBeInTheDocument();
+      const bar = runBar();
+      expect(bar).toHaveTextContent('Tracker');
+      expect(bar).toHaveTextContent('Test Author · 2024');
+      expect(within(bar).getByRole('status')).toHaveTextContent('Loading · Online');
+      expect(within(bar).getByRole('button', { name: 'Browse' })).toBeInTheDocument();
+      expect(within(bar).getByRole('button', { name: 'About' })).toBeInTheDocument();
+      // Files once the tracker is ready, and its status heard but no longer shown
+      expect(within(bar).queryByRole('button', { name: 'Files' })).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
+      expect(within(bar).getByRole('button', { name: 'Files' })).toBeInTheDocument();
+      expect(within(bar).getByRole('status')).toHaveTextContent('Ready · Online');
+      expect(within(bar).getByRole('status')).toHaveClass('visually-hidden');
+    });
+
+    it('says Offline in the bar while the browser is offline', async () => {
+      const { rerender } = await runApp(mockApp);
+
+      rerender(<Player requestedApp={mockApp} isOnline={false} />);
+
+      expect(within(runBar()).getByRole('status')).toHaveTextContent('Ready · Offline');
+      expect(within(runBar()).getByRole('status')).not.toHaveClass('visually-hidden');
+    });
+
+    it('offers no Files to a production that keeps none', async () => {
+      await runApp(mockApp);
+
+      expect(within(runBar()).queryByRole('button', { name: 'Files' })).not.toBeInTheDocument();
+    });
+
+    it('More by opens another production through onOpenApp', async () => {
+      const other: DosApp = { ...mockApp, id: 'other', name: 'Other App' };
+      await openApp(mockApp, { apps: [mockApp, other] });
+
+      const more = screen.getByRole('list', { name: 'More by Test Author' });
+      fireEvent.click(within(more).getByRole('link', { name: /^Other App/ }));
+
+      expect(onOpenApp).toHaveBeenCalledExactlyOnceWith(other);
+    });
+
+    it('waits for Play before it starts a production opened with no fresh click', async () => {
       setActivation(false);
       const stars = deferredApp('stars');
       const onStatusChange = vi.fn();
@@ -502,12 +618,9 @@ describe('DosPlayerWithApps', () => {
 
     // A click on the start page's grid, or anywhere else, while it loads is no press of Play
     it('waits for Play even when the page has fresh user activation', async () => {
-      Object.defineProperty(navigator, 'userActivation', {
-        value: { isActive: true },
-        configurable: true,
-      });
-      render(<DosPlayerWithApps requestedApp={mockApp} onBrowse={vi.fn()} />);
-      expect(await screen.findByRole('button', { name: 'Play' })).toBeInTheDocument();
+      setActivation(true);
+      await openApp(mockApp);
+
       // The mock DosPlayer's test id: no emulator has started
       expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
       expect(boots).toEqual([]);
@@ -522,9 +635,12 @@ describe('DosPlayerWithApps', () => {
       render(<Player requestedApp={panic.app} />);
       await panic.finish();
 
-      expect(screen.getByText(/contains flashing lights/i)).toBeInTheDocument();
-      expect(screen.getByText('DosKit picks Execute the demo in its menu.')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Play' })).toHaveFocus();
+      const page = productionPage('panic');
+      expect(within(page).getByText(/contains flashing lights/i)).toBeInTheDocument();
+      expect(
+        within(page).getByText('DosKit picks Execute the demo in its menu.')
+      ).toBeInTheDocument();
+      expect(within(page).getByRole('button', { name: 'Play' })).toHaveFocus();
     });
 
     it('says what else a production shows before it plays', async () => {
@@ -533,8 +649,9 @@ describe('DosPlayerWithApps', () => {
       render(<Player requestedApp={timeless.app} />);
       await timeless.finish();
 
-      expect(screen.getByText('Contains nudity: its end picture.')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Play' })).toHaveFocus();
+      const page = productionPage('timeless');
+      expect(within(page).getByText('Contains nudity: its end picture.')).toBeInTheDocument();
+      expect(within(page).getByRole('button', { name: 'Play' })).toHaveFocus();
     });
 
     it("names a diskmag's button Read", async () => {
@@ -543,7 +660,7 @@ describe('DosPlayerWithApps', () => {
       render(<Player requestedApp={diskmag.app} />);
       await diskmag.finish();
 
-      expect(screen.getByRole('button', { name: 'Read' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Read' })).toHaveClass('doskit-play-button');
     });
 
     it("names a tracker's button Start", async () => {
@@ -552,10 +669,10 @@ describe('DosPlayerWithApps', () => {
       render(<Player requestedApp={tracker.app} />);
       await tracker.finish();
 
-      expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start' })).toHaveClass('doskit-play-button');
     });
 
-    // Try Again is a click on the same screen: it starts the production, as Play would
+    // Try Again is a click on the same page: it starts the production, as Play would
     it('starts at once on Try Again while its click is fresh, and waits for Play otherwise', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       /** Open a production whose first download fails, and press Try Again */
@@ -740,15 +857,26 @@ describe('DosPlayerWithApps', () => {
       jsdos: { renderAspect: 'AsIs' },
     };
 
-    it('opens from the Files button, there only while a tracker runs', async () => {
+    it("opens from the run bar's Files button, there only while a tracker runs", async () => {
       await openApp(tracker);
       expect(screen.queryByRole('button', { name: 'Files' })).not.toBeInTheDocument();
       fireEvent.click(playButton());
       fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
 
-      fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+      fireEvent.click(within(runBar()).getByRole('button', { name: 'Files' }));
 
       expect(screen.getByRole('dialog', { name: 'Your files' })).toBeInTheDocument();
+    });
+
+    it("gives the bar's Files button the focus back when the panel is closed from the keyboard", async () => {
+      await runApp(tracker);
+      const files = within(runBar()).getByRole('button', { name: 'Files' });
+      fireEvent.click(files);
+
+      fireEvent.keyDown(screen.getByRole('dialog', { name: 'Your files' }), { key: 'Escape' });
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(files).toHaveFocus();
     });
 
     it('downloads what the tracker saved, as the ZIP js-dos packed', async () => {
@@ -830,7 +958,8 @@ describe('DosPlayerWithApps', () => {
     });
   });
 
-  // Choose another on the end card is the way to the start page from inside the player
+  // Browse, in the run bar or on the end card, is the way to the start page from a running
+  // production
   describe('Leaving a running tracker', () => {
     const tracker: DosApp = {
       ...mockApp,
@@ -840,11 +969,39 @@ describe('DosPlayerWithApps', () => {
       saveFiles: true,
       dosboxConf: '[autoexec]\nTRACKER.EXE\n',
     };
-    /** The tracker returns to DOS, and the visitor asks for the start page */
+    /** The tracker returns to DOS, and the visitor asks for the start page from its end card */
     const browse = () => {
       act(() => handles.at(-1)?.print('Tracker has ended.'));
-      fireEvent.click(screen.getByRole('button', { name: 'Choose another' }));
+      const card = screen.getByRole('dialog', { name: 'Tracker has ended.' });
+      fireEvent.click(within(card).getByRole('button', { name: 'Browse' }));
     };
+
+    it("asks before the run bar's Browse leaves a running tracker, and keeps its files first", async () => {
+      await runApp(tracker);
+      persisted.next = new Uint8Array([6]);
+
+      fireEvent.click(within(runBar()).getByRole('button', { name: 'Browse' }));
+      expect(onBrowse).not.toHaveBeenCalled();
+      const ask = screen.getByRole('dialog', { name: 'Leave Tracker?' });
+      expect(within(ask).getByRole('button', { name: 'Leave' })).toHaveFocus();
+      fireEvent.click(within(ask).getByRole('button', { name: 'Leave' }));
+
+      await waitFor(() => expect(browsedKinds()).toEqual([undefined]));
+      expect(putSavedFiles).toHaveBeenCalledWith('tracker', new Uint8Array([6]));
+      expect(vi.mocked(putSavedFiles).mock.invocationCallOrder[0]).toBeLessThan(
+        onBrowse.mock.invocationCallOrder[0]!
+      );
+    });
+
+    it("leaves from the run bar's Browse without asking while the tracker is still starting", async () => {
+      await openApp(tracker);
+      fireEvent.click(playButton());
+
+      fireEvent.click(within(runBar()).getByRole('button', { name: 'Browse' }));
+
+      expect(screen.queryByRole('dialog', { name: /^Leave/ })).not.toBeInTheDocument();
+      expect(browsedKinds()).toEqual([undefined]);
+    });
 
     it('asks before Browse leaves a running tracker, and keeps its files first', async () => {
       await runApp(tracker);
@@ -1096,12 +1253,12 @@ describe('DosPlayerWithApps', () => {
       return view;
     };
 
-    it('offers to play it again, or to choose another, once it returns to DOS', async () => {
+    it('offers to play it again, or to browse, once it returns to DOS', async () => {
       await runToTheEnd();
 
       const card = screen.getByRole('dialog', { name: 'Test App has ended.' });
       expect(within(card).getByRole('button', { name: 'Play again' })).toHaveFocus();
-      expect(within(card).getByRole('button', { name: 'Choose another' })).toBeInTheDocument();
+      expect(within(card).getByRole('button', { name: 'Browse' })).toBeInTheDocument();
       expect(within(card).getByRole('button', { name: 'Back to DOS' })).toBeInTheDocument();
     });
 
@@ -1141,10 +1298,11 @@ describe('DosPlayerWithApps', () => {
       expect(boots).toHaveLength(1);
     });
 
-    it('goes to the start page on Choose another', async () => {
+    it('goes to the start page on Browse', async () => {
       await runToTheEnd();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Choose another' }));
+      const card = screen.getByRole('dialog', { name: 'Test App has ended.' });
+      fireEvent.click(within(card).getByRole('button', { name: 'Browse' }));
 
       expect(browsedKinds()).toEqual([undefined]);
     });
@@ -1175,7 +1333,7 @@ describe('DosPlayerWithApps', () => {
     });
   });
 
-  describe('Error overlay', () => {
+  describe("A load error on the production's page", () => {
     beforeEach(() => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
     });
@@ -1184,7 +1342,7 @@ describe('DosPlayerWithApps', () => {
       render(<Player requestedApp={mockAppWithError} />);
 
       const alert = await screen.findByRole('alert');
-      expect(alert).toHaveTextContent('Error Loading Application');
+      expect(productionPage('Test App')).toContainElement(alert);
       // Explained, not the browser's own words
       expect(alert).toHaveTextContent('Unable to connect to the server');
       expect(alert).toHaveTextContent('Please check your internet connection and try again.');
@@ -1207,10 +1365,12 @@ describe('DosPlayerWithApps', () => {
       render(<Player requestedApp={mockAppWithError} />);
 
       const alert = await screen.findByRole('alert');
+      expect(productionPage('Test App')).toContainElement(alert);
       expect(alert).toHaveTextContent("This application isn't available offline yet");
       expect(alert).toHaveTextContent(
         'Each application works offline once it has been opened while online.'
       );
+      expect(screen.getByRole('button', { name: 'Try Again' })).toBeInTheDocument();
     });
 
     it('explains an archive the server does not have', async () => {
@@ -1238,14 +1398,13 @@ describe('DosPlayerWithApps', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent('An unexpected error occurred');
     });
 
-    it('offers Try Again and Choose Another Application', async () => {
+    it('offers Try Again in the alert, and keeps the page itself', async () => {
       render(<Player requestedApp={mockAppWithError} />);
 
       const alert = await screen.findByRole('alert');
       expect(within(alert).getByRole('button', { name: 'Try Again' })).toBeInTheDocument();
-      expect(
-        within(alert).getByRole('button', { name: 'Choose Another Application' })
-      ).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Test App' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Play' })).not.toBeInTheDocument();
     });
 
     it('loads the app that failed again on Try Again', async () => {
@@ -1279,23 +1438,6 @@ describe('DosPlayerWithApps', () => {
       expect(boots).toEqual([]);
     });
 
-    // Normal-size text needs 4.5:1. On the page's accent colour, Try Again's white text had
-    // 2.75:1, and 3.12:1 in the light colour scheme.
-    it('draws Try Again in colours of its own, with 4.5:1 contrast between them', async () => {
-      const sheet = document.createElement('style');
-      sheet.textContent = await readStylesheet('DosPlayerWithApps.css');
-      document.head.append(sheet);
-      try {
-        render(<Player requestedApp={mockAppWithError} />);
-
-        const style = getComputedStyle(await screen.findByRole('button', { name: 'Try Again' }));
-
-        expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(4.5);
-      } finally {
-        sheet.remove();
-      }
-    });
-
     it('focuses Try Again when the error appears', async () => {
       render(<Player requestedApp={mockAppWithError} />);
 
@@ -1303,26 +1445,24 @@ describe('DosPlayerWithApps', () => {
       await waitFor(() => expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus());
     });
 
-    it('reaches both buttons from the keyboard', async () => {
+    it('tries again from the keyboard', async () => {
       const user = userEvent.setup();
       const stars = deferredApp('stars');
       render(<Player requestedApp={stars.app} />);
       await stars.fail(new TypeError('Failed to fetch'));
 
-      await user.tab();
-      expect(screen.getByRole('button', { name: 'Choose Another Application' })).toHaveFocus();
-      await user.tab({ shift: true });
       expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
       await user.keyboard('{Enter}');
 
       expect(stars.loader).toHaveBeenCalledTimes(2);
     });
 
-    it('goes to the start page on Choose Another Application, with nothing running', async () => {
+    it('goes to the start page on Escape, with nothing running', async () => {
+      const user = userEvent.setup();
       render(<Player requestedApp={mockAppWithError} />);
-      await screen.findByRole('alert');
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus());
 
-      fireEvent.click(screen.getByRole('button', { name: 'Choose Another Application' }));
+      await user.keyboard('{Escape}');
 
       expect(browsedKinds()).toEqual([undefined]);
       expect(boots).toEqual([]);
@@ -1422,7 +1562,7 @@ describe('DosPlayerWithApps', () => {
       rerender(<Player requestedApp={broken.app} />);
       await broken.fail(new TypeError('Failed to fetch'));
 
-      expect(screen.getByRole('alert')).toHaveTextContent('Error Loading Application');
+      expect(within(productionPage('broken')).getByRole('alert')).toBeInTheDocument();
       expect(screen.queryByTestId('dos-player-mock')).not.toBeInTheDocument();
       expect(boots).toEqual(['conf:stars']);
       expect(stops).toEqual(['conf:stars']);
@@ -1443,11 +1583,12 @@ describe('DosPlayerWithApps', () => {
     it('replaces a load error with the default prompt when no app is requested', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       const { rerender } = render(<Player requestedApp={mockAppWithError} />);
-      expect(await screen.findByText('Error Loading Application')).toBeInTheDocument();
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
 
       rerender(<Player requestedApp={null} />);
 
-      expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'Test App' })).not.toBeInTheDocument();
       expect(boots).toEqual(['default']);
     });
 
@@ -1455,11 +1596,11 @@ describe('DosPlayerWithApps', () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       const stars = deferredApp('stars');
       const { rerender } = render(<Player requestedApp={mockAppWithError} />);
-      expect(await screen.findByText('Error Loading Application')).toBeInTheDocument();
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
 
       rerender(<Player requestedApp={stars.app} />);
 
-      expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
       await stars.finish();
       fireEvent.click(playButton());
       expect(boots).toEqual(['conf:stars']);
@@ -1476,6 +1617,30 @@ describe('DosPlayerWithApps', () => {
       await stars.report({ loadedBytes: 50, totalBytes: 100 });
 
       expect(screen.getByText('Downloading… 50%')).toBeInTheDocument();
+    });
+
+    // Until then the page would say the download is starting
+    it("keeps the finished download on the page while a tracker's saved files are read", async () => {
+      let answer: (found: null) => void = () => {};
+      vi.mocked(getSavedFiles).mockReturnValueOnce(
+        new Promise((resolve) => {
+          answer = resolve;
+        })
+      );
+      const tracker = deferredApp('tracker');
+      Object.assign(tracker.app, { kind: 'tracker', saveFiles: true });
+      render(<Player requestedApp={tracker.app} />);
+      await tracker.report({ loadedBytes: 100, totalBytes: 100 });
+
+      await tracker.finish();
+
+      const page = productionPage('tracker');
+      expect(within(page).getByText('Downloading… 100%')).toBeInTheDocument();
+      expect(within(page).getByText('Downloading tracker…')).toHaveAttribute('role', 'status');
+      expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument();
+
+      answer(null);
+      expect(await screen.findByRole('button', { name: 'Start' })).toBeInTheDocument();
     });
 
     it('shows no progress from a superseded load', async () => {
@@ -1503,10 +1668,13 @@ describe('DosPlayerWithApps', () => {
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         await act(() => vi.advanceTimersByTimeAsync(1_000));
 
-        expect(screen.getByRole('alert')).toHaveTextContent(
+        // In the production's page, in place of the download: no endless progress bar
+        const page = productionPage('stars');
+        expect(within(page).getByRole('alert')).toHaveTextContent(
           'The request took too long to complete'
         );
-        expect(screen.getByRole('button', { name: 'Try Again' })).toBeInTheDocument();
+        expect(within(page).getByRole('button', { name: 'Try Again' })).toHaveFocus();
+        expect(within(page).queryByRole('progressbar')).not.toBeInTheDocument();
         expect(stars.signal()?.aborted).toBe(true);
         expect(boots).toEqual([]);
       } finally {
@@ -1601,24 +1769,28 @@ describe('DosPlayerWithApps', () => {
     });
   });
 
-  // A download that stalls would keep it up for good
-  describe('Loading overlay', () => {
+  // The download on the production's page: one that stalls would keep it up for good
+  describe("The download on the production's page", () => {
+    /** The page's announcement of the download */
+    const downloadStatus = () => within(productionPage('stars')).getByText(/^Downloading stars…$/);
+
     // The share changes with each chunk of the archive: announced, it would be read out up to
     // a hundred times
     it('tells screen readers once that it downloads, and keeps the share in a progress bar', async () => {
       const stars = deferredApp('stars');
       render(<Player requestedApp={stars.app} />);
-      const status = screen.getByRole('status');
+      const status = downloadStatus();
       const bar = screen.getByRole('progressbar', { name: 'Download progress' });
 
       // Only the message: the share and the Cancel button are no part of what is announced
+      expect(status).toHaveAttribute('role', 'status');
       expect(status).toHaveTextContent(/^Downloading stars…$/);
       expect(screen.getByText('Starting download…')).toBeInTheDocument();
       expect(bar).not.toHaveAttribute('aria-valuenow');
 
       await stars.report({ loadedBytes: 913_000, totalBytes: 2_000_000 });
 
-      expect(screen.getByRole('status')).toBe(status);
+      expect(downloadStatus()).toBe(status);
       expect(status).toHaveTextContent(/^Downloading stars…$/);
       // Shown, and hidden from screen readers, which have the bar's value
       expect(screen.getByText('Downloading… 45%')).toHaveAttribute('aria-hidden', 'true');
@@ -1638,7 +1810,7 @@ describe('DosPlayerWithApps', () => {
       expect(screen.getByRole('progressbar', { name: 'Download progress' })).not.toHaveAttribute(
         'aria-valuenow'
       );
-      expect(screen.getByRole('status')).toHaveTextContent(/^Downloading stars…$/);
+      expect(downloadStatus()).toHaveAttribute('role', 'status');
     });
   });
 
@@ -1719,7 +1891,7 @@ describe('DosPlayerWithApps', () => {
 
       await broken.fail(new Error('Network down'));
 
-      expect(screen.queryByText('Error Loading Application')).not.toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
       expect(consoleError).not.toHaveBeenCalled();
       await stars.finish();
       fireEvent.click(playButton());

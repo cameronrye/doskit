@@ -63,6 +63,7 @@ export function ProductionPage({
 }: ProductionPageProps) {
   const rootRef = useRef<HTMLElement>(null);
   const playRef = useRef<HTMLButtonElement>(null);
+  const tryAgainRef = useRef<HTMLButtonElement>(null);
   // The alt text and the share's outcome belong to the production they came for
   const [loadedAlt, setLoadedAlt] = useState<{ id: string; alt: string } | null>(null);
   const [outcome, setOutcome] = useState<{ id: string; result: ShareResult } | null>(null);
@@ -71,9 +72,10 @@ export function ProductionPage({
   const more = moreByAuthor(app, apps);
   const kind = kindLabel(app.kind);
 
-  // Put the focus where the page's keys work: on Play once it is ready, else on the page.
-  // Only a lost focus (on body, or on a control that unmounted, as Try Again does) or a focus
-  // already inside the page moves; one outside it, such as the About dialog's, stays.
+  // Put the focus where the page's keys work: on Play once it is ready, on Try Again after an
+  // error, so that Enter tries again at once, else on the page. Only a lost focus (on body, or
+  // on a control that unmounted, as Try Again does) or a focus already inside the page moves;
+  // one outside it, such as the About dialog's, stays.
   const statusKind = status.kind;
   useEffect(() => {
     const root = rootRef.current;
@@ -81,6 +83,7 @@ export function ProductionPage({
     const lost = !active || active === document.body || !active.isConnected;
     if (!root || !(lost || root.contains(active))) return;
     if (statusKind === 'ready' && playRef.current) playRef.current.focus();
+    else if (statusKind === 'error' && tryAgainRef.current) tryAgainRef.current.focus();
     else if (lost) root.focus();
   }, [statusKind]);
 
@@ -162,7 +165,8 @@ export function ProductionPage({
         </span>
       </header>
 
-      <main className="production-main">
+      {/* Not a main: the page sits in the one App runs the player in */}
+      <div className="production-main">
         <CrtScreen src={thumbnailOf(app)} alt={imageAlt} size="large" loading="eager" />
         <div className="production-details">
           <h1 id="production-title" className="production-heading">
@@ -232,7 +236,12 @@ export function ProductionPage({
                     <code>{status.error.originalError}</code>
                   </details>
                 )}
-                <button type="button" className="production-button" onClick={onRetry}>
+                <button
+                  type="button"
+                  className="production-button"
+                  ref={tryAgainRef}
+                  onClick={onRetry}
+                >
                   Try Again
                 </button>
               </div>
@@ -263,7 +272,7 @@ export function ProductionPage({
             </div>
           </div>
         </div>
-      </main>
+      </div>
 
       {more.length > 0 && app.author && (
         <div className="production-more">

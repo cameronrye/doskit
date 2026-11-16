@@ -21,7 +21,7 @@ export default defineConfig({
     // The service worker would answer from its cache what the test means to fetch
     serviceWorkers: 'block',
     // Off: a recording trace gives the page user activation from the start, as
-    // page.evaluate() does, so a link would start a production without its Play screen
+    // page.evaluate() does, which would let sound start before the click on Play under test
     trace: 'off',
     screenshot: 'only-on-failure',
   },

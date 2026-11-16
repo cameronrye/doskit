@@ -4,9 +4,10 @@
  * make some, with the browser letting it play.
  *
  * Nothing here queries the page before the click. Playwright's locators and page.evaluate()
- * give the page user activation, and DosKit starts a production at once, without its Play
- * screen, when the page has a fresh one. Everything is read from the console lines of
- * e2e/hook.js instead, and the click goes where the hook says the button is.
+ * give the page user activation, which would let the browser start sound without the click on
+ * Play that these tests check (the production would still wait on its page for Play).
+ * Everything is read from the console lines of e2e/hook.js instead, and the click goes where
+ * the hook says the button is.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
@@ -190,7 +191,7 @@ for (const app of apps) {
     const seen = watch(page);
     await page.goto(`/${app.id.replaceAll('-', '')}`);
 
-    // The Play screen, with nothing running behind it
+    // The production's page, with nothing running behind it
     await expect.poll(() => seen.playButton, { timeout: 30_000 }).not.toBeNull();
     expect(seen.playButton?.name).toBe(PLAY_LABELS[app.kind] ?? 'Play');
     expect(seen.starts).toBe(0);

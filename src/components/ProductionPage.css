@@ -80,9 +80,11 @@
   outline-offset: 3px;
 }
 
+/* The details keep 18rem and the screenshot gives way: beside a whole 640px screenshot, a
+   window under about 1000px wide, such as a phone held sideways, left them a word a line */
 .production-main {
   display: grid;
-  grid-template-columns: minmax(0, 640px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 640px) minmax(18rem, 1fr);
   gap: 2rem;
   align-items: start;
   padding: 1rem 1.25rem 1.5rem;

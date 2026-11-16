@@ -4,17 +4,19 @@
  * Licensed under the MIT License
  *
  * DosPlayer with Application Support
- * Runs the production a page asks for, or the plain DOS prompt: it downloads the production,
- * waits on its Play screen, and runs it
+ * Runs the production a page asks for, or the plain DOS prompt: it downloads the production
+ * on its page, waits there for Play, and runs it under the run bar
  */
 
-import { useState, useCallback, useEffect, useEffectEvent, useReducer, useRef } from 'react';
+import { useState, useEffect, useEffectEvent, useReducer, useRef, type Ref } from 'react';
 import { DosPlayer } from './DosPlayer';
+import DosWindow from './DosWindow';
+import { ProductionPage, type ProductionPageStatus } from './ProductionPage';
+import { RunBar } from './RunBar';
 import type { DosApp } from '../types/dos-app';
 import type { CommandInterface } from '../types/js-dos';
 import type { PlayerHandle } from '../hooks/useDosEmulator';
 import type { LoadProgress } from '../utils/diskLoader';
-import { describeProgress } from '../utils/describeProgress';
 import type { KindFilter } from '../utils/productionFilter';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { endMarkerFor, withEndMarker } from '../utils/endMarker';
@@ -22,7 +24,6 @@ import { runStartRecipe, type RecipeEmulator, type RecipeState } from '../utils/
 import { createPersistQueue } from '../utils/persistQueue';
 import { getSavedFiles, putSavedFiles, removeSavedFiles } from '../utils/savedFiles';
 import { dosPathFor, zipEntryNames } from '../utils/dosNames';
-import { playLabelOf } from '../utils/playLabel';
 import { TrackerFiles } from './TrackerFiles';
 import { fnv1a } from '../utils/frameHash';
 import {
@@ -47,6 +48,16 @@ interface DosPlayerWithAppsProps {
   requestedApp: DosApp | null;
   /** To the start page, with a kind to select; a running tracker asks first (the Leave dialog) */
   onBrowse: (kind?: KindFilter) => void;
+  /** To another production's page, from a "More by" link on this one's */
+  onOpenApp: (app: DosApp) => void;
+  /** About the production, from its page or the run bar: App shows the panel */
+  onAbout: () => void;
+  /** About's button on the page or in the bar, whichever shows: it gets the focus back */
+  aboutButtonRef?: Ref<HTMLButtonElement>;
+  /** Whether the browser is online, for the run bar's status */
+  isOnline: boolean;
+  /** Every production, for the page's "More by" */
+  apps: readonly DosApp[];
   /** Called with the status on mount, and again whenever it changes */
   onStatusChange?: (status: PlayerStatus) => void;
   onReady?: (ci: CommandInterface) => void;
@@ -63,8 +74,8 @@ const START_TIMEOUT_MS = 20_000;
 /**
  * Whether the page has a click or key press of the last few seconds to start sound with.
  * Browsers start sound only within a few seconds of one (Safari after about 5). A production
- * waits on its Play screen for the click that starts it, however it was opened; only Try
- * Again, a click on the same screen, starts it at once while that click is this fresh.
+ * waits on its page for the click on Play that starts it, however it was opened; only Try
+ * Again, a click on the same page, starts it at once while that click is this fresh.
  */
 function hasFreshActivation(): boolean {
   return navigator.userActivation?.isActive ?? false;
@@ -103,6 +114,11 @@ function releaseOf({ author, year }: DosApp): string {
 export function DosPlayerWithApps({
   requestedApp,
   onBrowse,
+  onOpenApp,
+  onAbout,
+  aboutButtonRef,
+  isOnline,
+  apps,
   onStatusChange,
   onReady,
   onExit,
@@ -113,9 +129,7 @@ export function DosPlayerWithApps({
   const posterSession = posterOf(state);
   const preparingSession = preparingOf(state);
   const loading = state.phase.kind === 'loading' ? state.phase : null;
-  const loadingApp = loading?.app ?? null;
   const error = state.phase.kind === 'error' ? state.phase.error : null;
-  const tryAgainRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   // The running session's emulator, once js-dos has handed it out
   const [handed, setHanded] = useState<{ sessionId: number; handle: PlayerHandle } | null>(null);
@@ -135,20 +149,25 @@ export function DosPlayerWithApps({
     dispatch({ type: 'requested', app: requestedApp });
   }
 
-  // Give Try Again the keyboard focus when the error appears
-  useEffect(() => {
-    if (error) tryAgainRef.current?.focus();
-  }, [error]);
-
   // How much of the archive has arrived, for the load that reported it: a new load, even of
-  // the same production, as on Try Again, starts from nothing
+  // the same production, as on Try Again, starts from nothing. While a tracker's saved files
+  // are read next, its download stays as it finished.
   const [progress, setProgress] = useState<{
     load: Extract<Phase, { kind: 'loading' }>;
     progress: LoadProgress;
   } | null>(null);
-  const download = describeProgress(
-    loading && progress?.load === loading ? progress.progress : null
-  );
+  const reported =
+    progress !== null && (progress.load === loading || progress.load.app === preparingSession?.app)
+      ? progress.progress
+      : null;
+
+  // The production's page, until Play: its download, its load error, then Play
+  const pageApp = loading?.app ?? error?.app ?? preparingSession?.app ?? posterSession?.app ?? null;
+  const pageStatus: ProductionPageStatus = error
+    ? { kind: 'error', error }
+    : posterSession
+      ? { kind: 'ready' }
+      : { kind: 'loading', progress: reported };
 
   // Load the requested app's files and DOSBox config. A newer request, Try Again or
   // unmounting starts another load or none, which aborts this one and drops its result.
@@ -192,8 +211,8 @@ export function DosPlayerWithApps({
             files,
             dosboxConf: conf,
             // Only Try Again starts the production at once, while its click can still start
-            // sound. A production that flashes, or has a content note, waits on the Play
-            // screen all the same, which warns of it.
+            // sound. A production that flashes, or has a content note, waits for Play on its
+            // page all the same, which warns of it.
             play:
               loading.retry === true && hasFreshActivation() && !app.flashing && !app.contentNote,
           });
@@ -370,14 +389,9 @@ export function DosPlayerWithApps({
     dispatch({ type: 'restarted', saved: null, imports: [] });
   };
 
-  // Try Again: load the app that failed once more, behind the loading overlay
-  const handleRetry = useCallback((app: DosApp) => {
-    dispatch({ type: 'retried', app });
-  }, []);
-
-  // Choose another on the end card: the start page, once the question over a running tracker
-  // has been answered, which the end card gives way to
-  const handleChooseAnother = () => {
+  // Browse on the end card: the start page, once the question over a running tracker has
+  // been answered, which the end card gives way to
+  const handleEndBrowse = () => {
     dispatch({ type: 'endDismissed' });
     requestBrowse();
   };
@@ -484,215 +498,159 @@ export function DosPlayerWithApps({
 
   return (
     <div ref={containerRef} className={`dos-player-with-apps ${className || ''}`}>
-      {/* Loading State: screen readers announce its message once, and neither the share, which
-          changes with each chunk of the archive, nor the button. Cancel goes to the start page,
-          which stops the download as it replaces the player. */}
-      {loadingApp && (
-        <div className="loading-overlay">
-          <div className="dos-app-loading-spinner" aria-hidden="true" />
-          <p role="status">Downloading {loadingApp.name}…</p>
-          {/* Without a size to measure against, an indeterminate bar: no aria-valuenow */}
-          <div
-            className={`doskit-download-bar${download.percent === null ? ' doskit-download-unsized' : ''}`}
-            role="progressbar"
-            aria-label="Download progress"
-            aria-valuenow={download.percent ?? undefined}
-            aria-valuemin={download.percent === null ? undefined : 0}
-            aria-valuemax={download.percent === null ? undefined : 100}
-          >
-            <div
-              className="doskit-download-fill"
-              style={download.percent === null ? undefined : { width: `${download.percent}%` }}
-            />
-          </div>
-          {/* The share repeats the bar's value; megabytes, which the bar can't hold, stay
-              readable */}
-          <p className="doskit-download-text" aria-hidden={download.percent !== null || undefined}>
-            {download.text}
-          </p>
-          <button onClick={() => onBrowse()}>Cancel</button>
-        </div>
-      )}
-
-      {/* Error State */}
-      {error && (
-        <div className="error-overlay">
-          <div className="error-box" role="alert">
-            <h3>Error Loading Application</h3>
-            <p>{error.message}</p>
-            {error.suggestion && <p className="error-suggestion">{error.suggestion}</p>}
-            {error.originalError && (
-              <details className="error-details">
-                <summary>Details</summary>
-                <code>{error.originalError}</code>
-              </details>
-            )}
-            <div className="error-actions">
-              <button ref={tryAgainRef} onClick={() => handleRetry(error.app)}>
-                Try Again
-              </button>
-              <button className="error-secondary-action" onClick={() => onBrowse()}>
-                Choose Another Application
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Play screen: the click on Play starts the emulator, and with it the sound */}
-      {posterSession?.app && (
-        <div className="doskit-poster">
-          <div className="doskit-poster-box" role="group" aria-labelledby="doskit-poster-title">
-            <h2 id="doskit-poster-title">{posterSession.app.name}</h2>
-            {releaseOf(posterSession.app) && (
-              <p className="doskit-poster-release">{releaseOf(posterSession.app)}</p>
-            )}
-            <p>{posterSession.app.description}</p>
-            {posterSession.app.flashing && (
-              <p className="doskit-flash-warning">
-                <span aria-hidden="true">⚠ </span>
-                Contains flashing lights, which may affect people with photosensitive epilepsy.
-              </p>
-            )}
-            {posterSession.app.contentNote && (
-              <p className="doskit-content-warning">
-                <span aria-hidden="true">⚠ </span>
-                {posterSession.app.contentNote}
-              </p>
-            )}
-            {posterSession.app.startNote && (
-              <p className="doskit-poster-note">{posterSession.app.startNote}</p>
-            )}
-            <button
-              className="doskit-play-button"
-              autoFocus
-              onClick={() => dispatch({ type: 'played' })}
-            >
-              {playLabelOf(posterSession.app.kind)}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* The keys to press, once DosKit's own start has given up. Its button takes no focus
-          from a click, so that keys go on reaching DOS. */}
-      {showHint && session && (
-        <div className="doskit-start-hint" role="status">
-          <p>{sessionApp?.hint}</p>
-          <button
-            aria-label="Dismiss the hint"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => setHintDismissed(session.id)}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* A running tracker's files. The button takes no focus from a click, so that keys go
-          on reaching DOS. */}
-      {session?.app?.saveFiles && status === 'ready' && (
-        <button
-          ref={filesButtonRef}
-          className="doskit-files-open"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => {
-            setFilesNotice(null);
-            setFilesOpenFor(session.id);
-          }}
-        >
-          Files
-        </button>
-      )}
-      {filesOpen && session?.app && (
-        <TrackerFiles
-          appName={session.app.name}
-          accept={session.app.modules?.accept}
-          savedAt={filesSavedAt?.sessionId === session.id ? filesSavedAt.at : null}
-          kept={filesKept}
-          notice={filesNotice}
-          onDownload={() => void handleDownload()}
-          onImport={(chosen) => void handleImport(chosen)}
-          onReset={() => void handleReset()}
-          onClose={(fromKeyboard) => {
-            setFilesOpenFor(null);
-            // From the keyboard, back to the Files button; with the mouse, to the page,
-            // where keys go to DOS
-            if (fromKeyboard) {
-              filesButtonRef.current?.focus();
-            } else if (document.activeElement instanceof HTMLElement) {
-              document.activeElement.blur();
-            }
-          }}
+      {/* The production's page, with nothing running. Its Cancel goes to the start page, which
+          stops the download as it replaces the player; its Try Again loads the production
+          once more. */}
+      {pageApp && (
+        <ProductionPage
+          app={pageApp}
+          apps={apps}
+          status={pageStatus}
+          onPlay={() => dispatch({ type: 'played' })}
+          onRetry={() => dispatch({ type: 'retried', app: pageApp })}
+          onCancel={() => onBrowse()}
+          onBrowse={onBrowse}
+          onAbout={onAbout}
+          onOpenApp={onOpenApp}
+          aboutButtonRef={aboutButtonRef}
         />
       )}
 
-      {/* Leaving a running tracker: its saved files are kept, unsaved work is lost */}
-      {leaveAsked && sessionApp && (
-        <div className="doskit-end-card" role="dialog" aria-labelledby="doskit-leave-title">
-          <h2 id="doskit-leave-title">Leave {sessionApp.name}?</h2>
-          <p>
-            {filesKept
-              ? "What you saved in it stays in this browser. Work you haven't saved with its own save is lost."
-              : "This browser can't keep files, so what you saved in it is lost when you leave: download it first with the Files button."}
-          </p>
-          <div className="doskit-end-actions">
-            <button autoFocus onClick={() => void handleLeave()}>
-              Leave
-            </button>
-            <button onClick={() => setPendingLeave(null)}>Stay</button>
-          </div>
-        </div>
-      )}
-
-      {/* End card, once the program has returned to DOS */}
-      {ended && session && endMarker && (
-        <div className="doskit-end-card" role="dialog" aria-labelledby="doskit-end-title">
-          <h2 id="doskit-end-title">{endMarker}</h2>
-          <div className="doskit-end-actions">
-            <button autoFocus onClick={() => void handlePlayAgain()}>
-              Play again
-            </button>
-            <button onClick={handleChooseAnother}>Choose another</button>
-            <button onClick={() => dispatch({ type: 'endDismissed' })}>Back to DOS</button>
-          </div>
-        </div>
-      )}
-
-      {/* DOS Player */}
+      {/* A running production, or the DOS prompt, under its bar. Browse asks first over a
+          running tracker, as the end card's does. */}
       {session && (
-        <DosPlayer
-          key={session.id} // A new session starts a new player
-          dosboxConf={sessionConf}
-          options={
-            session.app && session.files
-              ? {
-                  // The archive, then the visitor's own files packed as a bundle, then what the
-                  // app saved, whose files replace those of the same name before them: a
-                  // module brought in and since saved with edits comes back edited. js-dos packs
-                  // every file of the bundles after the first one with the program's saves, but
-                  // never loose start files, so the modules are kept too.
-                  initFs: [
-                    session.files,
-                    ...(session.importsZip ? [session.importsZip] : []),
-                    ...(session.saved ? [session.saved] : []),
-                  ],
-                  ...session.app.jsdos,
+        <RunBar
+          title={session.app?.name ?? 'DOS prompt'}
+          meta={(session.app && releaseOf(session.app)) || null}
+          status={status}
+          isOnline={isOnline}
+          onBrowse={() => requestBrowse()}
+          onAbout={session.app ? onAbout : undefined}
+          onFiles={
+            trackerRuns
+              ? () => {
+                  setFilesNotice(null);
+                  setFilesOpenFor(session.id);
                 }
-              : {}
+              : undefined
           }
-          onReady={(ci) => {
-            dispatch({ type: 'started', sessionId: session.id, status: 'ready' });
-            onReady?.(ci);
-          }}
-          onHandle={(handle) => setHanded({ sessionId: session.id, handle })}
-          onExit={() => {
-            dispatch({ type: 'exited', sessionId: session.id });
-            onExit?.();
-          }}
-          onError={() => dispatch({ type: 'started', sessionId: session.id, status: 'error' })}
-          className="dos-player-instance"
+          aboutButtonRef={aboutButtonRef}
+          filesButtonRef={filesButtonRef}
         />
+      )}
+
+      {session && (
+        <div className="doskit-stage">
+          {/* The keys to press, once DosKit's own start has given up. Its button takes no
+              focus from a click, so that keys go on reaching DOS. */}
+          {showHint && (
+            <div className="doskit-start-hint" role="status">
+              <DosWindow title="Keys">
+                <p>{sessionApp?.hint}</p>
+                <button
+                  aria-label="Dismiss the hint"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => setHintDismissed(session.id)}
+                >
+                  ✕
+                </button>
+              </DosWindow>
+            </div>
+          )}
+
+          {/* A running tracker's files, from the run bar's Files */}
+          {filesOpen && session.app && (
+            <TrackerFiles
+              appName={session.app.name}
+              accept={session.app.modules?.accept}
+              savedAt={filesSavedAt?.sessionId === session.id ? filesSavedAt.at : null}
+              kept={filesKept}
+              notice={filesNotice}
+              onDownload={() => void handleDownload()}
+              onImport={(chosen) => void handleImport(chosen)}
+              onReset={() => void handleReset()}
+              onClose={(fromKeyboard) => {
+                setFilesOpenFor(null);
+                // From the keyboard, back to the Files button; with the mouse, to the page,
+                // where keys go to DOS
+                if (fromKeyboard) {
+                  filesButtonRef.current?.focus();
+                } else if (document.activeElement instanceof HTMLElement) {
+                  document.activeElement.blur();
+                }
+              }}
+            />
+          )}
+
+          {/* Leaving a running tracker: its saved files are kept, unsaved work is lost */}
+          {leaveAsked && sessionApp && (
+            <div className="doskit-end-card" role="dialog" aria-labelledby="doskit-leave-title">
+              <DosWindow title="Leave">
+                <h2 id="doskit-leave-title">Leave {sessionApp.name}?</h2>
+                <p>
+                  {filesKept
+                    ? "What you saved in it stays in this browser. Work you haven't saved with its own save is lost."
+                    : "This browser can't keep files, so what you saved in it is lost when you leave: download it first with the Files button."}
+                </p>
+                <div className="doskit-end-actions">
+                  <button autoFocus onClick={() => void handleLeave()}>
+                    Leave
+                  </button>
+                  <button onClick={() => setPendingLeave(null)}>Stay</button>
+                </div>
+              </DosWindow>
+            </div>
+          )}
+
+          {/* End card, once the program has returned to DOS */}
+          {ended && endMarker && (
+            <div className="doskit-end-card" role="dialog" aria-labelledby="doskit-end-title">
+              <DosWindow title="The end">
+                <h2 id="doskit-end-title">{endMarker}</h2>
+                <div className="doskit-end-actions">
+                  <button autoFocus onClick={() => void handlePlayAgain()}>
+                    Play again
+                  </button>
+                  <button onClick={handleEndBrowse}>Browse</button>
+                  <button onClick={() => dispatch({ type: 'endDismissed' })}>Back to DOS</button>
+                </div>
+              </DosWindow>
+            </div>
+          )}
+
+          <DosPlayer
+            key={session.id} // A new session starts a new player
+            dosboxConf={sessionConf}
+            options={
+              session.app && session.files
+                ? {
+                    // The archive, then the visitor's own files packed as a bundle, then what
+                    // the app saved, whose files replace those of the same name before them: a
+                    // module brought in and since saved with edits comes back edited. js-dos
+                    // packs every file of the bundles after the first one with the program's
+                    // saves, but never loose start files, so the modules are kept too.
+                    initFs: [
+                      session.files,
+                      ...(session.importsZip ? [session.importsZip] : []),
+                      ...(session.saved ? [session.saved] : []),
+                    ],
+                    ...session.app.jsdos,
+                  }
+                : {}
+            }
+            onReady={(ci) => {
+              dispatch({ type: 'started', sessionId: session.id, status: 'ready' });
+              onReady?.(ci);
+            }}
+            onHandle={(handle) => setHanded({ sessionId: session.id, handle })}
+            onExit={() => {
+              dispatch({ type: 'exited', sessionId: session.id });
+              onExit?.();
+            }}
+            onError={() => dispatch({ type: 'started', sessionId: session.id, status: 'error' })}
+            className="dos-player-instance"
+          />
+        </div>
       )}
     </div>
   );

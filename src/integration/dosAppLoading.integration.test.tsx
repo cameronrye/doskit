@@ -352,11 +352,11 @@ describe('DOS Application Loading Integration Tests', () => {
 });
 
 // The whole app, with only js-dos and the network faked
-describe('Status badge as players come and go', () => {
+describe("The run bar's status as players come and go", () => {
   let mockDos: Mock<DosFn>;
 
-  /** The Ready/Loading badge in the footer */
-  const badge = () => document.querySelector('.status-indicators .status-badge');
+  /** The status in the bar over a running player, which says Loading, Ready or Error */
+  const badge = () => document.querySelector('.run-bar [role="status"]');
 
   /** Report the newest player ready, as js-dos does once its command interface is up */
   const reportReady = () =>
@@ -425,7 +425,7 @@ describe('Status badge as players come and go', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Play' }));
 
     await act(async () => {});
-    expect(document.querySelector('.header-app-name')).toHaveTextContent('Starfield Effect');
+    expect(document.querySelector('.run-bar-title')).toHaveTextContent('Starfield Effect');
     expect(mockDos).toHaveBeenCalledTimes(1);
     expect(badge()).toHaveTextContent('Loading');
 
@@ -442,7 +442,7 @@ describe('Status badge as players come and go', () => {
 
   it('says Loading from the moment a new player mounts until that player is ready', async () => {
     render(<App />);
-    // Nothing runs on the start page, which has no badge
+    // Nothing runs on the start page, which has no bar
     expect(mockDos).not.toHaveBeenCalled();
     expect(badge()).toBeNull();
     // Its DOS prompt starts at once
@@ -453,13 +453,14 @@ describe('Status badge as players come and go', () => {
     expect(badge()).toHaveTextContent('Ready');
 
     // Go to a production, as going forward to its URL does: it downloads, then waits for Play
+    // on its page, with nothing running and no bar
     await act(async () => {
       window.history.pushState({}, '', '/?app=stars');
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
     const play = await screen.findByRole('button', { name: 'Play' }, { timeout: 3000 });
     expect(mockDos).toHaveBeenCalledTimes(1);
-    expect(badge()).toHaveTextContent('Idle');
+    expect(badge()).toBeNull();
     fireEvent.click(play);
     await waitFor(() => expect(mockDos).toHaveBeenCalledTimes(2));
     // With the DOSBox config the app loads, which runs it, and the line that tells its end
