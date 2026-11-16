@@ -1514,6 +1514,73 @@ describe('DosPlayerWithApps', () => {
       }
     });
 
+    // A load that reported a share, then failed, such as one that stalled
+    it("starts a load Try Again begins from nothing, not from the last load's share", async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const stars = deferredApp('stars');
+      render(<Player requestedApp={stars.app} />);
+      await stars.report({ loadedBytes: 50, totalBytes: 100 });
+      await stars.fail(new Error('Download timed out: no data received for 20 seconds'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+
+      expect(screen.getByText('Starting download…')).toBeInTheDocument();
+      expect(screen.getByRole('progressbar', { name: 'Download progress' })).not.toHaveAttribute(
+        'aria-valuenow'
+      );
+    });
+
+    // Back or Forward away from a production while it downloads, and to it again
+    it('starts a new load of the same production from nothing', async () => {
+      const stars = deferredApp('stars');
+      const rotate = deferredApp('3drotate');
+      const { rerender } = render(<Player requestedApp={stars.app} />);
+      await stars.report({ loadedBytes: 50, totalBytes: 100 });
+      rerender(<Player requestedApp={rotate.app} />);
+
+      rerender(<Player requestedApp={stars.app} />);
+
+      expect(stars.loader).toHaveBeenCalledTimes(2);
+      expect(screen.getByText('Starting download…')).toBeInTheDocument();
+    });
+
+    // The failed load's 20 s would otherwise run out during the next one, and fail it
+    it("clears a failed load's start timer before Try Again", async () => {
+      vi.useFakeTimers();
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        let fail: (error: unknown) => void = () => {};
+        let report: ((progress: LoadProgress) => void) | undefined;
+        const loader = vi
+          .fn<DosApp['loader']>()
+          .mockImplementationOnce(
+            () =>
+              new Promise((_, reject) => {
+                fail = reject;
+              })
+          )
+          .mockImplementationOnce((onProgress) => {
+            report = onProgress;
+            return new Promise(() => {});
+          });
+        render(<Player requestedApp={{ ...mockApp, id: 'stalls', loader }} />);
+        await act(() => vi.advanceTimersByTimeAsync(5_000));
+        fail(new TypeError('Failed to fetch'));
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+        act(() => report?.({ loadedBytes: 0, totalBytes: null }));
+        await act(() => vi.advanceTimersByTimeAsync(25_000));
+
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(loader).toHaveBeenCalledTimes(2);
+        expect(loader.mock.calls[1]?.[1]?.aborted).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     // loadZipArchive gives up on a download that stalls, from its request on, retries
     // included; one that keeps going may take minutes on a slow connection
     it('sets no time limit of its own on a download that has started', async () => {
@@ -1536,25 +1603,42 @@ describe('DosPlayerWithApps', () => {
 
   // A download that stalls would keep it up for good
   describe('Loading overlay', () => {
-    it('tells screen readers how the download is going', async () => {
+    // The share changes with each chunk of the archive: announced, it would be read out up to
+    // a hundred times
+    it('tells screen readers once that it downloads, and keeps the share in a progress bar', async () => {
       const stars = deferredApp('stars');
       render(<Player requestedApp={stars.app} />);
+      const status = screen.getByRole('status');
+      const bar = screen.getByRole('progressbar', { name: 'Download progress' });
 
-      // Only the message: the Cancel button is no part of what is announced
-      expect(screen.getByRole('status')).toHaveTextContent(/^Starting download…$/);
+      // Only the message: the share and the Cancel button are no part of what is announced
+      expect(status).toHaveTextContent(/^Downloading stars…$/);
+      expect(screen.getByText('Starting download…')).toBeInTheDocument();
+      expect(bar).not.toHaveAttribute('aria-valuenow');
 
       await stars.report({ loadedBytes: 913_000, totalBytes: 2_000_000 });
 
-      expect(screen.getByRole('status')).toHaveTextContent(/^Downloading… 45%$/);
+      expect(screen.getByRole('status')).toBe(status);
+      expect(status).toHaveTextContent(/^Downloading stars…$/);
+      // Shown, and hidden from screen readers, which have the bar's value
+      expect(screen.getByText('Downloading… 45%')).toHaveAttribute('aria-hidden', 'true');
+      expect(bar).toHaveAttribute('aria-valuenow', '45');
+      expect(bar).toHaveAttribute('aria-valuemin', '0');
+      expect(bar).toHaveAttribute('aria-valuemax', '100');
     });
 
-    it('shows the megabytes received when the size is unknown', async () => {
+    it('shows the megabytes received on an indeterminate bar when the size is unknown', async () => {
       const stars = deferredApp('stars');
       render(<Player requestedApp={stars.app} />);
 
       await stars.report({ loadedBytes: 1_250_000, totalBytes: null });
 
-      expect(screen.getByText('Downloading… 1.3 MB')).toBeInTheDocument();
+      // The bar has no value to give, so the figure stays readable
+      expect(screen.getByText('Downloading… 1.3 MB')).not.toHaveAttribute('aria-hidden');
+      expect(screen.getByRole('progressbar', { name: 'Download progress' })).not.toHaveAttribute(
+        'aria-valuenow'
+      );
+      expect(screen.getByRole('status')).toHaveTextContent(/^Downloading stars…$/);
     });
   });
 

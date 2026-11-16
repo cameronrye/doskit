@@ -31,6 +31,7 @@ import {
   preparingOf,
   sessionOf,
   statusOf,
+  type Phase,
   type PlayerStatus,
 } from './playerSession';
 import './DosPlayerWithApps.css';
@@ -145,9 +146,15 @@ export function DosPlayerWithApps({
     if (error) tryAgainRef.current?.focus();
   }, [error]);
 
-  // How much of the archive has arrived, for the app whose download reported it
-  const [progress, setProgress] = useState<{ appId: string; progress: LoadProgress } | null>(null);
-  const loadProgress = loadingApp && progress?.appId === loadingApp.id ? progress.progress : null;
+  // How much of the archive has arrived, for the load that reported it: a new load, even of
+  // the same production, as on Try Again, starts from nothing
+  const [progress, setProgress] = useState<{
+    load: Extract<Phase, { kind: 'loading' }>;
+    progress: LoadProgress;
+  } | null>(null);
+  const download = describeProgress(
+    loading && progress?.load === loading ? progress.progress : null
+  );
 
   // Load the requested app's files and DOSBox config. A newer request, Try Again or
   // unmounting starts another load or none, which aborts this one and drops its result.
@@ -178,7 +185,7 @@ export function DosPlayerWithApps({
     Promise.all([
       app.loader((reported) => {
         clearTimeout(startTimer);
-        if (!controller.signal.aborted) setProgress({ appId: app.id, progress: reported });
+        if (!controller.signal.aborted) setProgress({ load: loading, progress: reported });
       }, controller.signal),
       app.loadDosboxConf ? app.loadDosboxConf() : Promise.resolve(app.dosboxConf),
     ])
@@ -483,12 +490,32 @@ export function DosPlayerWithApps({
 
   return (
     <div ref={containerRef} className={`dos-player-with-apps ${className || ''}`}>
-      {/* Loading State: screen readers announce its message, not the button with it. Cancel
-          goes to the start page, which stops the download as it replaces the player. */}
+      {/* Loading State: screen readers announce its message once, and neither the share, which
+          changes with each chunk of the archive, nor the button. Cancel goes to the start page,
+          which stops the download as it replaces the player. */}
       {loadingApp && (
         <div className="loading-overlay">
           <div className="dos-app-loading-spinner" aria-hidden="true" />
-          <p role="status">{describeProgress(loadProgress).text}</p>
+          <p role="status">Downloading {loadingApp.name}…</p>
+          {/* Without a size to measure against, an indeterminate bar: no aria-valuenow */}
+          <div
+            className={`doskit-download-bar${download.percent === null ? ' doskit-download-unsized' : ''}`}
+            role="progressbar"
+            aria-label="Download progress"
+            aria-valuenow={download.percent ?? undefined}
+            aria-valuemin={download.percent === null ? undefined : 0}
+            aria-valuemax={download.percent === null ? undefined : 100}
+          >
+            <div
+              className="doskit-download-fill"
+              style={download.percent === null ? undefined : { width: `${download.percent}%` }}
+            />
+          </div>
+          {/* The share repeats the bar's value; megabytes, which the bar can't hold, stay
+              readable */}
+          <p className="doskit-download-text" aria-hidden={download.percent !== null || undefined}>
+            {download.text}
+          </p>
           <button onClick={() => onBrowse()}>Cancel</button>
         </div>
       )}

@@ -75,6 +75,49 @@
   font-size: 1.1rem;
 }
 
+/*
+ * The download's progress under the overlay's message, over the black player area: the bar's
+ * frame is --text on black, 9:1, and its fill --accent, 17:1. Without a size there is no share
+ * to show, and the fill stays still and dim (motion is kept to hover and focus); the frame
+ * carries the bar then. The figure is --text on black, 9:1.
+ */
+.doskit-download-bar {
+  box-sizing: border-box;
+  width: min(20rem, 80vw);
+  height: 0.75rem;
+  margin-top: 1rem;
+  border: 1px solid var(--text);
+  overflow: hidden;
+}
+
+.doskit-download-fill {
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+}
+
+.doskit-download-unsized .doskit-download-fill {
+  width: 100%;
+  opacity: 0.35;
+}
+
+.loading-overlay .doskit-download-text {
+  margin: 0.5rem 0 0;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+/* Forced colours drop the fill's background, which left the bar blank */
+@media (forced-colors: active) {
+  .doskit-download-bar {
+    border-color: CanvasText;
+  }
+
+  .doskit-download-fill {
+    background: Highlight;
+  }
+}
+
 /* Cancel, on the overlay's dark ground in either colour scheme */
 .loading-overlay button {
   margin-top: 0.5rem;
