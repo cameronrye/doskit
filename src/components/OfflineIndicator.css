@@ -1,5 +1,15 @@
 /**
  * Offline Indicator Styles
+ *
+ * The offline banner is a DOS menu-bar grey strip with black text; the install prompt is a
+ * DOS window (the look is DosWindow.css's). OfflineIndicator measures the height of each
+ * into --offline-banner-height and --install-prompt-height, which the start page, the
+ * production page and the run bar pad by.
+ *
+ * Contrast: black (--menu-text) on --menu (#aaa) 9.0:1; the install prompt's text #e6e6f2 on
+ * --window (#00a) 10.6:1; its title --window-title (#ff5) 12.4:1; the key buttons black on
+ * --key (#0aa) 7.3:1 and black on --menu 9.0:1; the online notice black on --vga-lightgreen
+ * (#5f5) 15.8:1.
  */
 
 /* Offline Message Banner */
@@ -8,15 +18,13 @@
   top: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-  /* 6.1:1 or more on the orange; white was 2.2 to 2.9:1 */
-  color: #1a1a1a;
+  background-color: var(--menu);
+  color: var(--menu-text);
+  border-bottom: 2px solid var(--vga-darkgrey);
   /* Its text clear of an installed iPhone app's status bar, and of the notch sideways */
-  padding: calc(1rem + env(safe-area-inset-top, 0px)) calc(1rem + env(safe-area-inset-right, 0px))
-    1rem calc(1rem + env(safe-area-inset-left, 0px));
+  padding: calc(0.5rem + env(safe-area-inset-top, 0px)) calc(1rem + env(safe-area-inset-right, 0px))
+    0.5rem calc(1rem + env(safe-area-inset-left, 0px));
   z-index: 10000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  animation: offline-indicator-slide-down 0.3s ease-out;
 }
 
 .offline-content {
@@ -36,48 +44,66 @@
   flex: 1;
 }
 
+/* In px: VT323 is never set under 18px, and the root is 14px on phones */
 .offline-text strong {
   display: block;
-  font-size: 1.1rem;
+  font-family: var(--font-ui);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.2;
   margin-bottom: 0.25rem;
 }
 
 .offline-text p {
   margin: 0;
-  font-size: 0.9rem;
-  opacity: 0.9;
+  font-family: var(--font-read);
+  font-size: 0.85rem;
 }
 
 .offline-close {
-  background: rgba(0, 0, 0, 0.12);
-  border: none;
-  color: #1a1a1a;
+  background: transparent;
+  border: 2px solid var(--menu-text);
+  color: var(--menu-text);
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  padding: 0;
+  border-radius: 0;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-family: var(--font-ui);
+  font-size: 20px;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
   flex-shrink: 0;
 }
 
+/* The pressed look of a menu item: white on blue 13.3:1 */
 .offline-close:hover {
-  background: rgba(0, 0, 0, 0.2);
+  border-color: var(--menu-selected);
+  background-color: var(--menu-selected);
+  color: var(--menu-selected-text);
 }
 
-/* Dark on orange: the page's own focus ring, #646cff, was 1.5:1 against it */
+/* The yellow ring is only 2.2:1 on grey, so black, 9.0:1, as on the menu bar. On the blue of
+   a hovered button black fails, so the ring turns white, 13.3:1. */
 .offline-close:focus,
 .offline-close:focus-visible {
-  outline-color: #1a1a1a;
+  outline: 2px solid var(--menu-text);
+  outline-offset: 2px;
+}
+
+.offline-close:hover:focus,
+.offline-close:hover:focus-visible {
+  outline-color: var(--menu-selected-text);
 }
 
 /*
- * Online Indicator (brief notification), at the top in the middle: the header's Change
- * Application button and the selector's Close button are at the top right, which it would
- * cover for its 3 seconds
+ * Online Indicator (brief notification), at the top in the middle: the production page's
+ * and the start page's controls are at the top right, which it would cover for its 3 seconds
  */
 .online-indicator {
   position: fixed;
@@ -87,34 +113,27 @@
   width: max-content;
   max-width: calc(100% - 2rem);
   margin: 0 auto;
-  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
-  /* 4.8:1 or more on the green; white was 2.9 to 3.7:1 */
-  color: #1a1a1a;
-  padding: 0.75rem 1.25rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background-color: var(--vga-lightgreen);
+  color: var(--vga-black);
+  border: 2px solid var(--vga-black);
+  font-family: var(--font-ui);
+  font-size: 20px;
+  line-height: 1.2;
+  padding: 0.25rem 0.75rem;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
   z-index: 10000;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  animation:
-    online-indicator-slide-in 0.3s ease-out,
-    online-indicator-fade-out 0.3s ease-out 2.7s forwards;
+  animation: online-indicator-fade-out 0.3s ease-out 2.7s forwards;
 }
 
 .online-icon {
-  font-size: 1.2rem;
-  background: rgba(255, 255, 255, 0.2);
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 1.1rem;
 }
 
-/* Install Prompt */
-.install-prompt {
+/* Install Prompt: a DOS window, set clear of the screen's edges and the 8px shadow */
+.install-prompt.dos-window {
   position: fixed;
   /* Clear of the home indicator, and of the notch on a phone held sideways */
   bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
@@ -122,16 +141,7 @@
   right: calc(1rem + env(safe-area-inset-right, 0px));
   max-width: 500px;
   margin: 0 auto;
-  /* A 15% dark veil keeps white text at 4.85:1 or more anywhere on the purple, as in the header */
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)),
-    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 1.25rem;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   z-index: 9999;
-  animation: install-prompt-slide-up 0.4s ease-out;
 }
 
 .install-content {
@@ -145,96 +155,73 @@
   text-align: center;
 }
 
-.install-text strong {
-  display: block;
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
-}
-
 .install-text p {
   margin: 0;
-  font-size: 0.95rem;
+  font-family: var(--font-read);
+  font-size: 0.85rem;
   line-height: 1.4;
+  color: #e6e6f2;
+}
+
+/* The title is set into the border by .dos-window-title: Silkscreen has no 600 weight, and
+   <strong> would ask for bold */
+.install-content .dos-window-title {
+  font-weight: 400;
 }
 
 .install-actions {
   display: flex;
   gap: 0.75rem;
-  margin-top: 0.5rem;
 }
 
+/* Key-style buttons, in VT323 at 18px or more: the root is 14px on phones, so px */
 .install-button {
   flex: 1;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 0.25rem 1rem;
+  border: 2px solid transparent;
+  border-radius: 0;
+  font-family: var(--font-ui);
+  font-size: 20px;
+  line-height: 1.4;
   cursor: pointer;
-  transition: all 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
-/* White on purple: the page's own focus ring, #646cff, hardly shows against it */
-.install-button:focus {
-  outline-color: white;
+/* Beats the page's button:hover, which lights a cyan border */
+.install-button:hover {
+  border-color: transparent;
+}
+
+/* Yellow on the blue window 12.4:1, the ring outside the button */
+.install-button:focus,
+.install-button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
 }
 
 .install-button.primary {
-  background: white;
-  /* The prompt's purple, darkened to keep a 4.5:1 contrast on white */
-  color: #4c5fd5;
+  background: var(--key);
+  color: var(--key-text);
 }
 
 .install-button.primary:hover {
-  background: #f0f0f0;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: var(--accent);
+  color: var(--key-text);
 }
 
-/* A dark tint, not a light one, which brought its white label under 4.5:1 */
 .install-button.secondary {
-  background: rgba(0, 0, 0, 0.2);
-  color: white;
+  background: var(--menu);
+  color: var(--menu-text);
 }
 
 .install-button.secondary:hover {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--vga-white);
+  color: var(--menu-text);
 }
 
 /* Animations */
-@keyframes offline-indicator-slide-down {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes install-prompt-slide-up {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes online-indicator-slide-in {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
 @keyframes online-indicator-fade-out {
   from {
     opacity: 1;
@@ -252,7 +239,7 @@
     text-align: center;
   }
 
-  .install-prompt {
+  .install-prompt.dos-window {
     left: calc(0.5rem + env(safe-area-inset-left, 0px));
     right: calc(0.5rem + env(safe-area-inset-right, 0px));
     bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
@@ -265,19 +252,20 @@
 
 /*
  * In a short window, such as a phone's held sideways, the install prompt keeps to one row,
- * so that the selector keeps room between it and the offline banner. After the rules above,
- * which it overrides on a narrow phone too.
+ * so that the production page keeps room between it and the offline banner. After the rules
+ * above, which it overrides on a narrow phone too.
  */
 @media (max-height: 450px) {
-  .install-prompt {
+  .install-prompt.dos-window {
     bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
-    padding: 0.5rem 0.75rem;
+    padding: 8px;
   }
 
   .install-content {
     flex-direction: row;
     align-items: center;
     gap: 0.75rem;
+    padding: 0.75rem 0.75rem 0.5rem;
   }
 
   .install-icon,
@@ -289,31 +277,25 @@
     flex: 1;
   }
 
-  .install-text strong {
-    margin-bottom: 0;
-    font-size: 1rem;
-  }
-
   .install-actions {
     flex-direction: row;
-    margin-top: 0;
   }
 
   .install-button {
     flex: none;
-    padding: 0.5rem 1rem;
+    padding: 0.15rem 1rem;
   }
 }
 
 /*
  * In a short window, such as a phone held sideways or a window zoomed to 200%, the offline
- * banner keeps to one line too: the header moves below it, so its height comes out of the
- * player's. After the narrow-window rules above, which it overrides.
+ * banner keeps to one line too: the page's header moves below it, so its height comes out of
+ * the player's. After the narrow-window rules above, which it overrides.
  */
 @media (max-height: 500px) {
   .offline-indicator {
-    padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
-    padding-bottom: 0.5rem;
+    padding-top: calc(0.25rem + env(safe-area-inset-top, 0px));
+    padding-bottom: 0.25rem;
   }
 
   .offline-content {
@@ -329,15 +311,37 @@
 
   .offline-text strong {
     margin-bottom: 0;
-    font-size: 1rem;
+    font-size: 20px;
+  }
+}
+
+/* Forced colours: system colours, and borders where the grey and the shadows were */
+@media (forced-colors: active) {
+  .offline-indicator {
+    border-bottom-color: CanvasText;
+  }
+
+  .offline-close,
+  .install-button {
+    border-color: ButtonText;
+  }
+
+  .install-button:focus,
+  .install-button:focus-visible,
+  .offline-close:focus,
+  .offline-close:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .online-indicator {
+    border-color: CanvasText;
+    box-shadow: none;
   }
 }
 
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
-  .offline-indicator,
-  .online-indicator,
-  .install-prompt {
+  .online-indicator {
     animation: none;
   }
 }

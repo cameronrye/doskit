@@ -2,6 +2,13 @@
  * DosKit - Update Notification Styles
  * Copyright (c) 2025 Cameron Rye
  * Licensed under the MIT License
+ *
+ * The update prompt as a DOS window (the look is DosWindow.css's) over a black veil.
+ *
+ * Contrast on --window (#00a): body text #e6e6f2 10.6:1; --window-title (#ff5) 12.4:1.
+ * Update Now: --key-text (black) on --key (#0aa) 7.3:1, and the key against the window
+ * 4.6:1. Later: black on --menu (#aaa) 9.0:1, the grey against the window 5.7:1.
+ * Focus: --focus (#ff5) on the window 12.4:1, the ring outside the buttons.
  */
 
 .update-notification-overlay {
@@ -10,92 +17,50 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  /* The prompt clear of the notch and the home indicator, as well as the window's edges */
+  /* The prompt clear of the notch and the home indicator, as well as the window's edges
+     (and of its 8px shadow) */
   padding: max(1rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px))
     max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
-  animation: update-notification-fade-in 0.3s ease-out;
-}
-
-@keyframes update-notification-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  overflow-y: auto;
 }
 
 .update-notification {
-  /* A 15% dark veil keeps white text at 4.85:1 or more anywhere on the purple, as in the header */
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)),
-    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 400px;
+  max-width: 420px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: update-notification-slide-up 0.3s ease-out;
-  color: white;
-}
-
-@keyframes update-notification-slide-up {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  /* Centred by its margins, which keep the top of a window taller than the screen in reach */
+  margin: auto;
 }
 
 .update-notification-icon {
-  width: 48px;
-  height: 48px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
-}
-
-.update-notification-icon svg {
-  animation: update-notification-rotate 2s linear infinite;
-}
-
-@keyframes update-notification-rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.75rem;
+  border: 2px solid var(--window-title);
+  color: var(--window-title);
 }
 
 .update-notification-content {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
+/* Set into the top border by .dos-window-title; Silkscreen has no 600 for the heading's */
 .update-notification-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
-  color: white;
+  font-weight: 400;
 }
 
 .update-notification-message {
-  font-size: 0.95rem;
+  font-family: var(--font-read);
+  font-size: 0.9rem;
   line-height: 1.5;
-  margin: 0;
-  color: white;
+  color: #e6e6f2;
 }
 
 .update-notification-actions {
@@ -104,65 +69,94 @@
   flex-direction: column;
 }
 
+/* Key-style buttons, in VT323 at 18px or more: the root is 14px on phones, so px */
 .update-notification-button {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 0.25rem 1rem;
+  border: 2px solid transparent;
+  border-radius: 0;
+  font-family: var(--font-ui);
+  font-size: 20px;
+  line-height: 1.4;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
-/* White on purple: the page's own focus ring, #646cff, hardly shows against it */
-.update-notification-button:focus {
-  outline-color: white;
+/* Beats the page's button:hover, which lights a cyan border on a near-black ground */
+.update-notification-button:hover {
+  border-color: transparent;
+}
+
+.update-notification-button:focus,
+.update-notification-button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
 }
 
 .update-notification-button-primary {
-  background-color: white;
-  /* The prompt's purple, darkened to keep a 4.5:1 contrast on white */
-  color: #4c5fd5;
+  background-color: var(--key);
+  color: var(--key-text);
 }
 
 .update-notification-button-primary:hover {
-  background-color: rgba(255, 255, 255, 0.9);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background-color: var(--accent);
+  color: var(--key-text);
 }
 
-.update-notification-button-primary:active {
-  transform: translateY(0);
-}
-
-/* A dark tint, not a light one, which brought its white label under 4.5:1 */
 .update-notification-button-secondary {
-  background-color: rgba(0, 0, 0, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background-color: var(--menu);
+  color: var(--menu-text);
 }
 
 .update-notification-button-secondary:hover {
-  background-color: rgba(0, 0, 0, 0.3);
-}
-
-.update-notification-button-secondary:active {
-  background-color: rgba(0, 0, 0, 0.35);
+  background-color: var(--vga-white);
+  color: var(--menu-text);
 }
 
 /* Mobile optimizations */
 @media (max-width: 480px) {
-  .update-notification {
-    padding: 1.5rem;
+  .update-notification-message {
+    font-size: 0.85rem;
+  }
+}
+
+/* A short window, such as a phone held sideways: the buttons side by side, a smaller icon */
+@media (max-height: 500px) {
+  .update-notification-actions {
+    flex-direction: row;
   }
 
-  .update-notification-title {
-    font-size: 1.25rem;
+  .update-notification-button {
+    flex: 1;
+  }
+
+  .update-notification-icon {
+    display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .update-notification-overlay {
+    background-color: Canvas;
+  }
+
+  .update-notification-icon {
+    border-color: CanvasText;
+    color: CanvasText;
   }
 
   .update-notification-message {
-    font-size: 0.9rem;
+    color: CanvasText;
+  }
+
+  .update-notification-button {
+    border-color: ButtonText;
+  }
+
+  .update-notification-button:focus,
+  .update-notification-button:focus-visible {
+    outline-color: Highlight;
   }
 }
 

@@ -213,7 +213,7 @@ describe('diskLoader', () => {
           'message',
           'Failed to load ZIP: not a ZIP archive (text/html)'
         );
-        expect(getUserFriendlyError(error).message).toBe('Unable to load the application archive');
+        expect(getUserFriendlyError(error).message).toBe('Unable to load the production archive');
       });
 
       it('rejects an empty one', async () => {

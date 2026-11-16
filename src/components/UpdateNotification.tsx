@@ -10,6 +10,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { PWA_CONFIG } from '../constants/app';
 import { logger } from '../utils/logger';
+import './DosWindow.css';
 import './UpdateNotification.css';
 
 // What Update Now goes through, logged in development only
@@ -202,57 +203,59 @@ export function UpdateNotification({
     >
       {/* Focusable, so that a click on its text keeps the focus in it */}
       <div
-        className="update-notification"
+        className="update-notification dos-window"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={messageId}
         tabIndex={-1}
       >
-        <div className="update-notification-icon">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-            <path d="M21 3v5h-5" />
-          </svg>
-        </div>
+        <div className="dos-window-frame">
+          <div className="update-notification-icon">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+              <path d="M21 3v5h-5" />
+            </svg>
+          </div>
 
-        {/* A live region, so that screen readers announce the new wording once another tab
-            updates: the dialog stays, and so does the focus */}
-        <div className="update-notification-content" aria-live="polite">
-          <h2 id={titleId} className="update-notification-title">
-            {updatedInAnotherTab ? 'Update Installed' : 'Update Available'}
-          </h2>
-          <p id={messageId} className="update-notification-message">
-            {updatedInAnotherTab
-              ? 'DosKit was updated in another tab. Reload to use the new version.'
-              : 'A new version of DosKit is ready to install. Update now to get the latest ' +
-                'features and improvements.'}
-          </p>
-        </div>
+          {/* A live region, so that screen readers announce the new wording once another tab
+              updates: the dialog stays, and so does the focus */}
+          <div className="update-notification-content" aria-live="polite">
+            <h2 id={titleId} className="update-notification-title dos-window-title">
+              {updatedInAnotherTab ? 'Update Installed' : 'Update Available'}
+            </h2>
+            <p id={messageId} className="update-notification-message">
+              {updatedInAnotherTab
+                ? 'DosKit was updated in another tab. Reload to use the new version.'
+                : 'A new version of DosKit is ready to install. Update now to get the latest ' +
+                  'features and improvements.'}
+            </p>
+          </div>
 
-        <div className="update-notification-actions">
-          <button
-            ref={updateButton}
-            className="update-notification-button update-notification-button-primary"
-            onClick={handleUpdate}
-          >
-            {updatedInAnotherTab ? 'Reload' : 'Update Now'}
-          </button>
-          <button
-            ref={laterButton}
-            className="update-notification-button update-notification-button-secondary"
-            onClick={handleDismiss}
-          >
-            Later
-          </button>
+          <div className="update-notification-actions">
+            <button
+              ref={updateButton}
+              className="update-notification-button update-notification-button-primary"
+              onClick={handleUpdate}
+            >
+              {updatedInAnotherTab ? 'Reload' : 'Update Now'}
+            </button>
+            <button
+              ref={laterButton}
+              className="update-notification-button update-notification-button-secondary"
+              onClick={handleDismiss}
+            >
+              Later
+            </button>
+          </div>
         </div>
       </div>
     </div>

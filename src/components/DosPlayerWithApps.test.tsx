@@ -1419,9 +1419,9 @@ describe('DosPlayerWithApps', () => {
 
       const alert = await screen.findByRole('alert');
       expect(productionPage('Test App')).toContainElement(alert);
-      expect(alert).toHaveTextContent("This application isn't available offline yet");
+      expect(alert).toHaveTextContent("This production isn't available offline yet");
       expect(alert).toHaveTextContent(
-        'Each application works offline once it has been opened while online.'
+        'Each production works offline once it has been opened while online.'
       );
       expect(screen.getByRole('button', { name: 'Try Again' })).toBeInTheDocument();
     });

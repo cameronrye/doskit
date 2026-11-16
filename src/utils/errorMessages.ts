@@ -36,12 +36,12 @@ const CONNECTION_FAILED: Explanation = {
   suggestion: 'Please check your internet connection and try again.',
 };
 
-// The service worker stores an application's archive the first time it is opened
-// online, and the application works offline from then on
+// The service worker stores a production's archive the first time it is opened
+// online, and the production works offline from then on
 const NOT_AVAILABLE_OFFLINE: Explanation = {
-  message: "This application isn't available offline yet",
+  message: "This production isn't available offline yet",
   suggestion:
-    'Each application works offline once it has been opened while online. Connect to the internet and try again.',
+    'Each production works offline once it has been opened while online. Connect to the internet and try again.',
 };
 
 const TIMED_OUT: Explanation = {
@@ -123,15 +123,15 @@ const ERROR_MAPPINGS: ErrorMapping[] = [
   // File loading errors
   {
     pattern: /failed to load.*zip/i,
-    message: 'Unable to load the application archive',
-    suggestion: 'The file might be corrupted or unavailable. Please try a different application.',
+    message: 'Unable to load the production archive',
+    suggestion: 'The file might be corrupted or unavailable. Please try a different production.',
   },
   { pattern: /file.*not found/i, ...NOT_FOUND },
 
   // Service Worker errors
   {
     pattern: /service worker/i,
-    message: 'Application update failed',
+    message: 'DosKit update failed',
     suggestion: 'Please refresh the page to try again.',
   },
 
@@ -165,7 +165,7 @@ const ERROR_MAPPINGS: ErrorMapping[] = [
   {
     pattern: /out of memory|memory.*exceeded/i,
     message: 'Not enough memory',
-    suggestion: 'Please close other tabs or applications and try again.',
+    suggestion: 'Please close other tabs or programs and try again.',
   },
 ];
 

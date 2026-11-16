@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useId, useRef } from 'react';
 import { PWA_CONFIG, UI_CONFIG } from '../constants/app';
 import { logger } from '../utils/logger';
 import { safeLocalStorage } from '../utils/storage';
+import './DosWindow.css';
 import './OfflineIndicator.css';
 
 // What the install prompt goes through, logged in development only
@@ -263,7 +264,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
       {/*
        * The live regions stay in the page, empty while there is nothing to say: screen
        * readers announce what is added to one, but not always a region added with its text.
-       * Losing the connection changes which applications can load, so it interrupts (alert);
+       * Losing the connection changes which productions can load, so it interrupts (alert);
        * its return needs nothing done, so it waits for a pause (status).
        */}
       <div role="alert">
@@ -275,9 +276,9 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
               </span>
               <div className="offline-text">
                 <strong>You're offline</strong>
-                {/* The service worker keeps an application's archive once it has been opened online */}
+                {/* The service worker keeps a production's archive once it has been opened online */}
                 <p>
-                  Applications you've opened while online still work. Others need a connection to
+                  Productions you've opened while online still work. Others need a connection to
                   load.
                 </p>
               </div>
@@ -308,17 +309,19 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
       {/* Install Prompt, a region of the page that screen readers can go to */}
       {showInstallPrompt && !isInstalled && deferredPrompt && (
         <div
-          className="install-prompt"
+          className="install-prompt dos-window"
           ref={installPromptRef}
           role="region"
           aria-labelledby={installTitleId}
         >
-          <div className="install-content">
+          <div className="install-content dos-window-frame">
+            <strong className="dos-window-title" id={installTitleId}>
+              Install DosKit
+            </strong>
             <div className="install-icon" aria-hidden="true">
               📱
             </div>
             <div className="install-text">
-              <strong id={installTitleId}>Install DosKit</strong>
               <p>Install this app for a better experience and offline access.</p>
             </div>
             <div className="install-actions">

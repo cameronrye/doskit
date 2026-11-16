@@ -61,7 +61,7 @@ describe('getUserFriendlyError', () => {
     it.each([
       ['HTTP 408', 'The request took too long to complete'],
       ['HTTP 429', 'Too many requests'],
-      ['HTTP 403', 'Unable to load the application archive'],
+      ['HTTP 403', 'Unable to load the production archive'],
     ])('explains "Failed to load ZIP: %s" as "%s"', (status, friendly) => {
       expect(getUserFriendlyError(new Error(`Failed to load ZIP: ${status}`)).message).toBe(
         friendly
@@ -117,9 +117,9 @@ describe('getUserFriendlyError', () => {
   // What else reaches the global error handler
   it.each([
     ['Rate limit exceeded', 'Too many requests'],
-    ['Failed to load ZIP: unexpected end of data', 'Unable to load the application archive'],
+    ['Failed to load ZIP: unexpected end of data', 'Unable to load the production archive'],
     ['File not found: DEMO.EXE', 'The requested file was not found'],
-    ['Service worker registration failed', 'Application update failed'],
+    ['Service worker registration failed', 'DosKit update failed'],
     ['WebAssembly is not supported in this browser', 'Emulator initialization failed'],
     ["Failed to execute 'requestFullscreen' on 'Element'", 'Fullscreen mode is not available'],
     ['Keyboard lock is not supported', 'Keyboard lock is not available'],
@@ -163,13 +163,22 @@ describe('getUserFriendlyError', () => {
     expect(getUserFriendlyError(Object.create(null)).message).toBe('An unexpected error occurred');
   });
 
-  // The service worker stores an application's archive the first time it is opened
-  // online; until then, the application cannot load offline
-  describe('for an application loading while the browser is offline', () => {
+  it('words the archive and memory suggestions without "application"', () => {
+    expect(getUserFriendlyError(new Error('Failed to load ZIP: bad')).suggestion).toBe(
+      'The file might be corrupted or unavailable. Please try a different production.'
+    );
+    expect(getUserFriendlyError(new Error('out of memory')).suggestion).toBe(
+      'Please close other tabs or programs and try again.'
+    );
+  });
+
+  // The service worker stores a production's archive the first time it is opened
+  // online; until then, the production cannot load offline
+  describe('for a production loading while the browser is offline', () => {
     const OFFLINE = {
-      message: "This application isn't available offline yet",
+      message: "This production isn't available offline yet",
       suggestion:
-        'Each application works offline once it has been opened while online. Connect to the internet and try again.',
+        'Each production works offline once it has been opened while online. Connect to the internet and try again.',
     };
 
     it.each([

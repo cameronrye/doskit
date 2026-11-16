@@ -6,6 +6,7 @@
 
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { getErrorTracker } from '../utils/errorTracking';
+import './DosWindow.css';
 import './ErrorBoundary.css';
 
 interface ErrorBoundaryProps {
@@ -91,48 +92,58 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       // Default fallback UI
       return (
         <div className="error-boundary">
-          <div className="error-boundary-content">
-            <div className="error-boundary-icon">⚠️</div>
-            <h1 className="error-boundary-title">Something went wrong</h1>
-            <p className="error-boundary-message">
-              We're sorry, but an unexpected error occurred. Please try refreshing the page.
-            </p>
+          <div className="error-boundary-content dos-window">
+            <div className="dos-window-frame">
+              <span className="dos-window-title" aria-hidden="true">
+                Error
+              </span>
+              <div className="error-boundary-icon">⚠️</div>
+              <h1 className="error-boundary-title">Something went wrong</h1>
+              <p className="error-boundary-message">
+                We're sorry, but an unexpected error occurred. Please try refreshing the page.
+              </p>
 
-            <div className="error-boundary-actions">
-              <button
-                className="error-boundary-button primary"
-                onClick={() => window.location.reload()}
-              >
-                Refresh Page
-              </button>
-              <button className="error-boundary-button secondary" onClick={this.handleReset}>
-                Try Again
-              </button>
+              <div className="error-boundary-actions">
+                <button
+                  className="error-boundary-button primary"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh Page
+                </button>
+                <button className="error-boundary-button secondary" onClick={this.handleReset}>
+                  Try Again
+                </button>
+                {/* The header's way back is gone, so this is the visitor's only one out of a crash
+                  caught by App's boundary. A full page load, which is right after a crash. */}
+                <a className="error-boundary-button link" href="/">
+                  Back to the list
+                </a>
+              </div>
+
+              {import.meta.env.DEV && this.state.error && (
+                <details className="error-boundary-details">
+                  <summary>Error Details (Development Only)</summary>
+                  <div className="error-boundary-stack">
+                    <h3>Error Message:</h3>
+                    <pre>{this.state.error.toString()}</pre>
+
+                    {this.state.error.stack && (
+                      <>
+                        <h3>Stack Trace:</h3>
+                        <pre>{this.state.error.stack}</pre>
+                      </>
+                    )}
+
+                    {this.state.errorInfo && (
+                      <>
+                        <h3>Component Stack:</h3>
+                        <pre>{this.state.errorInfo.componentStack}</pre>
+                      </>
+                    )}
+                  </div>
+                </details>
+              )}
             </div>
-
-            {import.meta.env.DEV && this.state.error && (
-              <details className="error-boundary-details">
-                <summary>Error Details (Development Only)</summary>
-                <div className="error-boundary-stack">
-                  <h3>Error Message:</h3>
-                  <pre>{this.state.error.toString()}</pre>
-
-                  {this.state.error.stack && (
-                    <>
-                      <h3>Stack Trace:</h3>
-                      <pre>{this.state.error.stack}</pre>
-                    </>
-                  )}
-
-                  {this.state.errorInfo && (
-                    <>
-                      <h3>Component Stack:</h3>
-                      <pre>{this.state.errorInfo.componentStack}</pre>
-                    </>
-                  )}
-                </div>
-              </details>
-            )}
           </div>
         </div>
       );

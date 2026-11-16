@@ -10,6 +10,7 @@ import {
   applyStylesheet,
   classesIn,
   contrastRatio,
+  resolveTokens,
   keyframesIn,
   readStylesheets,
   styles,
@@ -168,16 +169,16 @@ describe('OfflineIndicator', () => {
       });
     });
 
-    it('says that only the applications opened while online still work', () => {
+    it('says that only the productions opened while online still work', () => {
       render(<OfflineIndicator />);
 
       fireEvent(window, new Event('offline'));
 
-      // The service worker stores an application's archive the first time it is opened
-      // online; any other fails to load ("This application isn't available offline yet")
+      // The service worker stores a production's archive the first time it is opened
+      // online; any other fails to load ("This production isn't available offline yet")
       expect(
         screen.getByText(
-          "Applications you've opened while online still work. Others need a connection to load."
+          "Productions you've opened while online still work. Others need a connection to load."
         )
       ).toBeInTheDocument();
       expect(screen.queryByText(/continue to work/)).not.toBeInTheDocument();
@@ -656,7 +657,8 @@ describe('OfflineIndicator', () => {
     });
 
     it("keeps the Install button's label readable, at 4.5:1 against the button", async () => {
-      const sheet = applyStylesheet((await readStylesheets()).get(OWN)!);
+      const sheets = await readStylesheets();
+      const sheet = applyStylesheet(resolveTokens(sheets, sheets.get(OWN)!));
       vi.useFakeTimers();
       try {
         render(<OfflineIndicator />);

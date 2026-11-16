@@ -131,6 +131,16 @@ describe('ErrorBoundary', () => {
     expect(screen.queryByText('Something went wrong')).not.toBeInTheDocument();
   });
 
+  it('links back to the list with a full page load, as the header is gone', () => {
+    render(
+      <ErrorBoundary>
+        <Child />
+      </ErrorBoundary>
+    );
+
+    expect(screen.getByRole('link', { name: 'Back to the list' })).toHaveAttribute('href', '/');
+  });
+
   it('shows a custom fallback instead, which gets the error and a reset', () => {
     render(
       <ErrorBoundary

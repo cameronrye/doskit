@@ -10,6 +10,7 @@ import {
   applyStylesheet,
   classesIn,
   contrastRatio,
+  resolveTokens,
   keyframesIn,
   readStylesheets,
   styles,
@@ -497,16 +498,10 @@ describe('UpdateNotification', () => {
   describe('its stylesheet', () => {
     const OWN = 'src/components/UpdateNotification.css';
 
-    it('names its animations so that no other stylesheet replaces them', async () => {
-      // Keyframes are global: of two with one name, the page uses the one it loads last
+    it('has no animations: the look moves only on hover and focus', async () => {
       const sheets = await readStylesheets();
-      const own = keyframesIn(sheets.get(OWN)!);
-      const others = [...sheets]
-        .filter(([file]) => file !== OWN)
-        .flatMap(([, css]) => keyframesIn(css));
 
-      expect(own).not.toEqual([]);
-      expect(own.filter((name, i) => others.includes(name) || own.indexOf(name) !== i)).toEqual([]);
+      expect(keyframesIn(sheets.get(OWN)!)).toEqual([]);
     });
 
     it("styles no class that js-dos's stylesheet styles too", async () => {
@@ -518,7 +513,8 @@ describe('UpdateNotification', () => {
     });
 
     it("keeps Update Now's label readable, at 4.5:1 against the button", async () => {
-      const sheet = applyStylesheet((await readStylesheets()).get(OWN)!);
+      const sheets = await readStylesheets();
+      const sheet = applyStylesheet(resolveTokens(sheets, sheets.get(OWN)!));
       try {
         render(<UpdateNotification registration={mockRegistration} />);
 

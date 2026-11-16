@@ -47,6 +47,25 @@ export const classesIn = (css: string): string[] => [
 export const styles = (css: string, className: string): boolean =>
   new RegExp(`\\.${className}(?![\\w-])`).test(withoutComments(css));
 
+/**
+ * A stylesheet with each var(--token) replaced by the value index.css gives the token, as
+ * jsdom resolves no custom properties
+ * @param sheets - What readStylesheets returned
+ * @param css - The stylesheet to resolve
+ */
+export function resolveTokens(sheets: Map<string, string>, css: string): string {
+  const tokens = new Map(
+    [...withoutComments(sheets.get('src/index.css')!).matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map(
+      ([, name, value]) => [name!, value!.trim()] as const
+    )
+  );
+  const resolve = (text: string): string =>
+    text.replace(/var\((--[\w-]+)\)/g, (match, name: string) =>
+      tokens.has(name) ? resolve(tokens.get(name)!) : match
+    );
+  return resolve(css);
+}
+
 /** Add a stylesheet to the document, as the page would load it */
 export function applyStylesheet(css: string): HTMLStyleElement {
   const sheet = document.createElement('style');
