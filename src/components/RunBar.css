@@ -24,8 +24,11 @@
   line-height: 1.5;
 }
 
-/* The name takes the room, and gives way to the buttons on a narrow screen */
+/* The name takes the room, and gives way to the buttons on a narrow screen. It is the running
+   view's h1, in the bar's type rather than a heading's. */
 .run-bar-title {
+  font-size: inherit;
+  font-weight: inherit;
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;

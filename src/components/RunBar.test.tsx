@@ -7,6 +7,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createEvent, fireEvent, render, screen } from '@testing-library/react';
 import { RunBar } from './RunBar';
+import { applyStylesheet, readStylesheets, resolveTokens } from '../test/stylesheets';
 
 describe('RunBar', () => {
   it('names the production with its author and year', () => {
@@ -16,6 +17,27 @@ describe('RunBar', () => {
 
     expect(container.querySelector('.run-bar-title')).toHaveTextContent('Unreal');
     expect(container.querySelector('.run-bar-meta')).toHaveTextContent('Future Crew · 1993');
+  });
+
+  // The page's own heading is gone with the page: the name heads the running view, set as the
+  // bar's other items are, in VT323 at the bar's 18px, not as a heading would be
+  it("makes the name the running view's heading, in the bar's own type", async () => {
+    const sheets = await readStylesheets();
+    const applied = ['src/index.css', 'src/components/RunBar.css'].map((file) =>
+      applyStylesheet(resolveTokens(sheets, sheets.get(file)!))
+    );
+    try {
+      render(<RunBar title="Unreal" meta={null} status="ready" isOnline onBrowse={vi.fn()} />);
+      const heading = screen.getByRole('heading', { level: 1, name: 'Unreal' });
+      const style = getComputedStyle(heading);
+      expect([style.fontSize, style.fontWeight, style.lineHeight]).toEqual([
+        'inherit',
+        'inherit',
+        '1.5',
+      ]);
+    } finally {
+      applied.forEach((sheet) => sheet.remove());
+    }
   });
 
   it('shows just the name for a production with neither author nor year', () => {

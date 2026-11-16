@@ -58,7 +58,8 @@ export function RunBar({
       <button type="button" className="dos-menu-item" onMouseDown={keepFocus} onClick={onBrowse}>
         <span aria-hidden="true">◄ </span>Browse
       </button>
-      <span className="run-bar-title">{title}</span>
+      {/* The running view's heading, which the production's page had */}
+      <h1 className="run-bar-title">{title}</h1>
       {meta && <span className="run-bar-meta">{meta}</span>}
       {/* A polite live region: screen readers announce each change */}
       <span role="status" className={`run-bar-status${quiet ? ' visually-hidden' : ''}`}>
