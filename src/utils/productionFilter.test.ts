@@ -27,7 +27,9 @@ describe('productionFilter', () => {
   it('returns nothing for no match, and keeps data order', () => {
     expect(filterProductions(availableApps, 'all', 'zzzz')).toEqual([]);
     const demos = filterProductions(availableApps, 'demo', '');
-    expect(demos.map((a) => a.order)).toEqual([...demos.map((a) => a.order)].sort((x, y) => x - y));
+    expect(demos.map((a) => a.id)).toEqual(
+      availableApps.filter((a) => a.kind === 'demo').map((a) => a.id)
+    );
   });
 
   it('keeps only the chosen kind', () => {
