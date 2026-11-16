@@ -21,8 +21,13 @@ interface ProductionGridProps {
   onOpen: (app: DosApp) => void;
   /** The roving tab stop; the first app when null or not in `apps` */
   activeId: string | null;
-  /** The pointer entered, or the focus reached, an app */
+  /** The focus reached an app, which becomes the tab stop */
   onActiveChange: (app: DosApp) => void;
+  /**
+   * The pointer entered, or the focus reached, an app, such as for an info window. The pointer
+   * leaves the tab stop where it is, so that Tab from a link goes where the keyboard left it.
+   */
+  onHighlight?: (app: DosApp) => void;
   /** Focus the active link once mounted, such as on return to the start page */
   autoFocusActive?: boolean;
   variant?: 'grid' | 'strip';
@@ -35,6 +40,7 @@ export function ProductionGrid({
   onOpen,
   activeId,
   onActiveChange,
+  onHighlight,
   autoFocusActive = false,
   variant = 'grid',
 }: ProductionGridProps) {
@@ -116,8 +122,11 @@ export function ProductionGrid({
               href={`/${getUrlFriendlyId(app.id)}`}
               tabIndex={index === activeIndex ? 0 : -1}
               onClick={(event) => handleClick(event, app)}
-              onMouseEnter={() => onActiveChange(app)}
-              onFocus={() => onActiveChange(app)}
+              onMouseEnter={() => onHighlight?.(app)}
+              onFocus={() => {
+                onActiveChange(app);
+                onHighlight?.(app);
+              }}
             >
               <CrtScreen src={thumbnailOf(app)} alt="" size="small" />
               <span className="production-name">{app.name}</span>{' '}

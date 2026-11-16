@@ -26,6 +26,7 @@ const last = apps.length - 1;
 const renderGrid = (props: Partial<React.ComponentProps<typeof ProductionGrid>> = {}) => {
   const onOpen = vi.fn();
   const onActiveChange = vi.fn();
+  const onHighlight = vi.fn();
   render(
     <ProductionGrid
       apps={apps}
@@ -33,10 +34,11 @@ const renderGrid = (props: Partial<React.ComponentProps<typeof ProductionGrid>> 
       onOpen={onOpen}
       activeId={null}
       onActiveChange={onActiveChange}
+      onHighlight={onHighlight}
       {...props}
     />
   );
-  return { onOpen, onActiveChange };
+  return { onOpen, onActiveChange, onHighlight };
 };
 
 const linkAt = (index: number) => screen.getAllByRole('link')[index]!;
@@ -111,11 +113,15 @@ describe('ProductionGrid', () => {
     expect(onOpen).not.toHaveBeenCalled();
   });
 
-  it('reports the active app on pointer enter and focus', () => {
-    const { onActiveChange } = renderGrid();
+  // The pointer only highlights: were the tab stop to follow it, Tab from a link with the
+  // focus could land on whichever link the pointer last crossed
+  it('highlights the app under the pointer, and moves the tab stop with the focus only', () => {
+    const { onActiveChange, onHighlight } = renderGrid();
     fireEvent.mouseEnter(linkAt(2));
-    expect(onActiveChange).toHaveBeenLastCalledWith(apps[2]);
+    expect(onHighlight).toHaveBeenLastCalledWith(apps[2]);
+    expect(onActiveChange).not.toHaveBeenCalled();
     fireEvent.focus(linkAt(3));
+    expect(onHighlight).toHaveBeenLastCalledWith(apps[3]);
     expect(onActiveChange).toHaveBeenLastCalledWith(apps[3]);
   });
 

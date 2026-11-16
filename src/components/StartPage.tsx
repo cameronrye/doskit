@@ -42,14 +42,20 @@ export function StartPage({ apps, notice, onOpen, onOpenPrompt }: StartPageProps
   // Only the grid of the first view takes focus; once the visitor searches or picks a kind, a
   // remount, such as after a search that matched nothing, must leave it in the search
   const [restoreFocus, setRestoreFocus] = useState(saved?.focusId != null);
+  // The grid's tab stop, which follows the focus and is saved, and the production the info
+  // window shows, which follows the pointer too
   const [activeId, setActiveId] = useState<string | null>(saved?.focusId ?? null);
+  const [highlightId, setHighlightId] = useState<string | null>(saved?.focusId ?? null);
   const rootRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const scrollTop = useRef(saved?.scrollTop ?? 0);
 
   const counts = useMemo(() => countByKind(apps), [apps]);
   const shown = useMemo(() => filterProductions(apps, kind, query), [apps, kind, query]);
-  const active = shown.find((app) => app.id === activeId) ?? shown[0];
+  const active =
+    shown.find((app) => app.id === highlightId) ??
+    shown.find((app) => app.id === activeId) ??
+    shown[0];
 
   useLayoutEffect(() => {
     if (rootRef.current) rootRef.current.scrollTop = scrollTop.current;
@@ -79,7 +85,9 @@ export function StartPage({ apps, notice, onOpen, onOpenPrompt }: StartPageProps
     saveStartPageState({ ...latest.current, scrollTop: scrollTop.current });
   };
 
+  // Back, Browse and Escape return to the production opened, which R and a tap leave unfocused
   const open = (app: DosApp) => {
+    latest.current = { ...latest.current, focusId: app.id };
     saveScroll();
     onOpen(app);
   };
@@ -192,6 +200,7 @@ export function StartPage({ apps, notice, onOpen, onOpenPrompt }: StartPageProps
               onOpen={open}
               activeId={activeId}
               onActiveChange={(app) => setActiveId(app.id)}
+              onHighlight={(app) => setHighlightId(app.id)}
               autoFocusActive={restoreFocus}
             />
           ) : (

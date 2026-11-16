@@ -227,6 +227,32 @@ describe('StartPage', () => {
     expect(links()).toHaveLength(availableApps.length);
   });
 
+  it('shows the production under the pointer in the info window, and keeps the tab stop', () => {
+    renderPage();
+    const info = screen.getByRole('complementary', { name: 'Highlighted production' });
+    fireEvent.mouseEnter(links()[3] as HTMLElement);
+    expect(info).toHaveTextContent(availableApps[3]?.description ?? '');
+    expect(links()[0]).toHaveAttribute('tabindex', '0');
+    expect(links()[3]).toHaveAttribute('tabindex', '-1');
+    expect(loadStartPageState()?.focusId).not.toBe(availableApps[3]?.id);
+  });
+
+  // Back, Browse or Escape comes back to the production that was left, as after R, which
+  // focuses nothing, and not to the one last under the pointer
+  it('saves the production it opens as the one to focus on return', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    try {
+      const { onOpen, unmount } = renderPage();
+      fireEvent.mouseEnter(links()[4] as HTMLElement);
+      await userEvent.keyboard('r');
+      expect(onOpen).toHaveBeenCalledWith(availableApps[0]);
+      unmount();
+      expect(loadStartPageState()?.focusId).toBe(availableApps[0]?.id);
+    } finally {
+      vi.mocked(Math.random).mockRestore();
+    }
+  });
+
   it('starts on the first production when the saved focus id is gone', () => {
     saveStartPageState({ kind: 'all', query: '', scrollTop: 0, focusId: 'gone' });
     renderPage();
