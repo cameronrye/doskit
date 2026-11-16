@@ -6,6 +6,46 @@ release-please writes each release's entry from the conventional commits merged 
 before it (see [CONTRIBUTING.md](CONTRIBUTING.md#release-process)), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0](https://github.com/cameronrye/doskit/compare/v1.4.0...v1.5.0) (2026-11-16)
+
+
+### Features
+
+* add production filtering and the start page's saved state ([e3c5d21](https://github.com/cameronrye/doskit/commit/e3c5d2193c7e01b782e6b6161d638a7cd9afc02d))
+* add the CRT screen, DOS window, key hint and footer pieces ([e28834d](https://github.com/cameronrye/doskit/commit/e28834dbd5ce34e3f14ac6475a0ee68f5d579525))
+* add the production grid, a list of links with a roving focus ([d49526f](https://github.com/cameronrye/doskit/commit/d49526f8ac968a11f8c924f1c07db8a78a7f10ab))
+* add the production page: screenshot, facts, Play, Share and more by the same author ([15f1031](https://github.com/cameronrye/doskit/commit/15f10314ff856256bd81b04e3d0584306b514e94))
+* add the run bar shown while a production runs ([ef1a75c](https://github.com/cameronrye/doskit/commit/ef1a75c6b5ee7998f84c698424d3ca646b86f24e))
+* add the start page: kinds, search, the grid and its shortcuts ([3443db4](https://github.com/cameronrye/doskit/commit/3443db4f968e724dbbcd05071c2dd98175c0619a))
+* add the VGA design tokens and bundle the Silkscreen and VT323 fonts ([ecabd43](https://github.com/cameronrye/doskit/commit/ecabd43491ee9867c193d00e127f37602b2ca856))
+* carry the DOS look to the update, offline, install and error notices ([4a54bc6](https://github.com/cameronrye/doskit/commit/4a54bc6fd38e02ab0a46dca5bf3ea24a021bae21))
+* give each production a thumbnail from its frame, precached for offline use ([cb07a5e](https://github.com/cameronrye/doskit/commit/cb07a5ef2d803e7c19dbd24e2280aefb6598482f))
+* open DosKit on the start page, retire the selector, and make every production wait for Play ([c22adba](https://github.com/cameronrye/doskit/commit/c22adba31d92c4208b30be21afad92e45504766d))
+* show About and a tracker's Files as DOS windows, with the credits in About ([4be006a](https://github.com/cameronrye/doskit/commit/4be006add15798d65a763856d2190a446579ce91))
+* show each production on its own page and run it under one bar ([6ac8dc0](https://github.com/cameronrye/doskit/commit/6ac8dc0fa085f463da0a1437fcb8d40ec65749db))
+
+
+### Bug Fixes
+
+* ask before leaving a tracker from its end card, and link the licences from the prompt ([8cd03b0](https://github.com/cameronrye/doskit/commit/8cd03b0c91c59dfe11eefdba81ee24cbd4b563b8))
+* give About's button the focus back when About closes on a production's page ([15f82b6](https://github.com/cameronrye/doskit/commit/15f82b68ca7b9bd8b64a410fef2b873973c470ac))
+* give the logo and production titles the scene's stacked text shadow ([b8ae081](https://github.com/cameronrye/doskit/commit/b8ae0817a105db3ed856a79c6f670e98d5d74a3d))
+* give the search the focus after Clear search, so the start page's keys keep working ([040e680](https://github.com/cameronrye/doskit/commit/040e6804bc15d7dc3d23cdc75ec9298388d003be))
+* hide the production page's key hints on touch screens, as the start page does ([3539074](https://github.com/cameronrye/doskit/commit/35390744d5a9f0a76bec1f929b07d05efaf9b704))
+* inset the DOS window's border and give it a hard shadow ([bba1b68](https://github.com/cameronrye/doskit/commit/bba1b688f61111e5bed55ef9b3fec13194add263))
+* keep the download's percentage out of screen readers' announcements ([be03b75](https://github.com/cameronrye/doskit/commit/be03b75da5ce6651a40adf59b578c9c411bc4a71))
+* keep the menu's VT323 text at 18px on phones ([4619261](https://github.com/cameronrye/doskit/commit/4619261b262f99a62e060850aa76e3097fd43565))
+* keep the new screens whole on phones, short windows, zoom and forced colours ([b5fc0ee](https://github.com/cameronrye/doskit/commit/b5fc0ee5bc259ae5f11bb01e689ef5a039df9c57))
+* keep the offline banner's focus ring visible on grey ([32680a4](https://github.com/cameronrye/doskit/commit/32680a4cc98d8eebcde2385836e80e49de4dffb3))
+* keep the production page's keys working after Try Again ([23caaab](https://github.com/cameronrye/doskit/commit/23caaabfe331384c7cb38f2a9e71966b45b7dba0))
+* keep the search's focus and the saved scroll position on the start page ([7322569](https://github.com/cameronrye/doskit/commit/7322569d543166ff6957983e963a0e428a5e3dd8))
+* keep the start page's tab stop off the pointer, and return to the production opened ([4758a1c](https://github.com/cameronrye/doskit/commit/4758a1c5712fa0f42b1386e607f488a415e73ffd))
+* leave the focus in About when a download finishes behind it ([6a6b71d](https://github.com/cameronrye/doskit/commit/6a6b71d7a2d3a1e2b4223a794d72b017e1d0c18e))
+* leave the focus on a control of the production page when its download finishes ([ad188cf](https://github.com/cameronrye/doskit/commit/ad188cf08168779cfdd303c848e59e3c44e00e65))
+* make the run bar's name the running view's heading ([27ed6de](https://github.com/cameronrye/doskit/commit/27ed6de03f2462b8e8c807a23b86e03aff6dcb76))
+* move the More-by strip's tab stop with the focus, and name it by its heading ([004459d](https://github.com/cameronrye/doskit/commit/004459d363ab34752731b88bd0c3a5046f2e30a0))
+* show the player's loading and start-error panels in the DOS look, with nothing spinning ([5a1845a](https://github.com/cameronrye/doskit/commit/5a1845ab379053e03bedc9a247de4d6dfa5aef81))
+
 ## [1.4.0](https://github.com/cameronrye/doskit/compare/v1.3.1...v1.4.0) (2026-11-14)
 
 
