@@ -214,6 +214,36 @@ describe('ProductionPage', () => {
       dialog.remove();
     });
 
+    // Someone looking round the page, as at Share or the next production by the author, keeps
+    // their place when the download finishes
+    it.each([
+      ['Share', () => screen.getByRole('button', { name: 'Share' })],
+      [
+        'a More-by link',
+        () => within(screen.getByRole('list', { name: /^More by/ })).getAllByRole('link')[0]!,
+      ],
+    ])('leaves the focus on %s as loading becomes ready', async (_name, target) => {
+      const a = make('a', { author: 'Crew' });
+      const b = make('b', { author: 'Crew' });
+      const { rerender, onPlay, onRetry, onCancel, onBrowse, onAbout, onOpenApp } =
+        await renderPage({ app: a, apps: [a, b], status: LOADING });
+      const control = target();
+      act(() => control.focus());
+      const handlers = { onPlay, onRetry, onCancel, onBrowse, onAbout, onOpenApp };
+      rerender(<ProductionPage app={a} apps={[a, b]} status={READY} {...handlers} />);
+      expect(control).toHaveFocus();
+    });
+
+    // Cancel goes with the download, and the focus with it
+    it('focuses Try Again when loading fails with the focus on Cancel', async () => {
+      const { rerender, onPlay, onRetry, onCancel, onBrowse, onAbout, onOpenApp } =
+        await renderPage({ status: LOADING });
+      act(() => screen.getByRole('button', { name: 'Cancel' }).focus());
+      const handlers = { onPlay, onRetry, onCancel, onBrowse, onAbout, onOpenApp };
+      rerender(<ProductionPage app={unreal} apps={availableApps} status={FAILED} {...handlers} />);
+      expect(screen.getByRole('button', { name: 'Try Again' })).toHaveFocus();
+    });
+
     it('focuses Play when loading becomes ready with nothing focused', async () => {
       const { rerender, container, ...handlers } = await renderPage({ status: LOADING });
       expect(container.querySelector('.production-page')).toHaveFocus();

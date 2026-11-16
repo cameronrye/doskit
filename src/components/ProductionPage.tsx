@@ -76,14 +76,15 @@ export function ProductionPage({
 
   // Put the focus where the page's keys work: on Play once it is ready, on Try Again after an
   // error, so that Enter tries again at once, else on the page. Only a lost focus (on body, or
-  // on a control that unmounted, as Try Again does) or a focus already inside the page moves;
-  // one outside it, such as the About dialog's, stays.
+  // on a control that unmounted, as Cancel does with the download and Try Again with the
+  // error) or one on the page itself moves. A focus on a control, such as Share or a More-by
+  // link, and one outside the page, such as the About dialog's, stay where they are.
   const statusKind = status.kind;
   useEffect(() => {
     const root = rootRef.current;
     const active = document.activeElement;
     const lost = !active || active === document.body || !active.isConnected;
-    if (!root || !(lost || root.contains(active))) return;
+    if (!root || !(lost || active === root)) return;
     if (statusKind === 'ready' && playRef.current) playRef.current.focus();
     else if (statusKind === 'error' && tryAgainRef.current) tryAgainRef.current.focus();
     else if (lost) root.focus();
