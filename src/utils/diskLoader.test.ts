@@ -100,7 +100,7 @@ describe('diskLoader', () => {
       };
 
       // The download times itself out from its request on, retries included, so a caller
-      // that times the steps before it, as the selector does, can stop once it has started
+      // that times the steps before it, as DosPlayerWithApps does, can stop once it has started
       it('reports its start before any answer arrives', async () => {
         answerLater();
         const controller = new AbortController();
@@ -232,7 +232,7 @@ describe('diskLoader', () => {
       expect(consoleError).toHaveBeenCalledWith('[DiskLoader] Error loading ZIP:', error);
     });
 
-    // Callers abort on purpose: the selector's Cancel, or a navigation that supersedes
+    // Callers abort on purpose: the page's Cancel, or a navigation that supersedes
     // the load. They still need the rejection, but it is no failure worth logging.
     describe('when the caller aborts', () => {
       it('rejects without logging if aborted before the request starts', async () => {

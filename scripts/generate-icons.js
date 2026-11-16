@@ -48,7 +48,7 @@ const APPLE_TOUCH_SIZES = [
   { size: 120, name: 'apple-touch-icon-120x120.png' },
 ];
 
-// The theme colour, #667eea. The maskable and Apple touch icons are flattened onto it,
+// The logo's colour, #667eea, which the icons carry. The maskable and Apple touch icons are flattened onto it,
 // since logo.svg's corners and margins are transparent, and launchers fill those with a
 // colour of their own and iOS with black. The background given to resize() fills only
 // the bars that fit: 'contain' adds, and a square logo gets none.

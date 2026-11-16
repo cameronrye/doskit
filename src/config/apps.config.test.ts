@@ -18,7 +18,7 @@ vi.mock('../utils/diskLoader', () => ({
   loadZipArchive: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
 }));
 
-/** The DOSBox config an app runs with, as DemoSelector resolves it */
+/** The DOSBox config an app runs with, as DosPlayerWithApps resolves it */
 const dosboxConfOf = async (app: DosApp): Promise<string> =>
   (await app.loadDosboxConf?.()) ?? app.dosboxConf;
 
@@ -204,7 +204,7 @@ describe('availableApps', () => {
     });
 
     it('should describe itself without superlatives', () => {
-      // Facts read better than praise, and the selector's line has room for one
+      // Facts read better than praise, and the start page's line has room for one
       expect(app.description).not.toMatch(/legendary|groundbreaking|classic|iconic|ultimate/i);
     });
 

@@ -33,9 +33,10 @@ const STORAGE_KEYS = {
 } as const;
 
 /**
- * A ref for a notice fixed at an edge of the window. The notices stay above the selector
- * (see DosPlayerWithApps.css), so while one is shown its height is kept in a custom
- * property on the root element, and DemoSelector.css fits the selector in the space left.
+ * A ref for a notice fixed at an edge of the window. The notices stay above the pages and
+ * the run bar (see DosPlayerWithApps.css), so while one is shown its height is kept in a
+ * custom property on the root element, and StartPage.css, ProductionPage.css and RunBar.css
+ * keep clear of it.
  */
 function keepHeightIn(property: string) {
   return (notice: HTMLElement | null) => {

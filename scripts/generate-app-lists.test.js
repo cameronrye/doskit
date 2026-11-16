@@ -17,7 +17,7 @@ describe('the generated app lists', () => {
     }
   );
 
-  it("list every app, in the selector's order, at its page", () => {
+  it("list every app, in the start page's order, at its page", () => {
     const readme = listTargets(apps).find(({ file }) => file === 'README.md');
     const list = readme.render();
 

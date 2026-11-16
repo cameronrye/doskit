@@ -33,7 +33,7 @@ try {
       if (message.text().includes('"play-button"')) button = JSON.parse(message.text().slice(6));
     });
     await page.goto(`${site.url}/${app.id.replaceAll('-', '')}`);
-    // The Play screen: the click starts the emulator, as a visitor's would
+    // The production's page: the click starts the emulator, as a visitor's would
     while (!button) await page.waitForTimeout(100);
     await page.mouse.click(button.x, button.y);
     // Crystal Dream 2 shows its menu after about 8.5 s

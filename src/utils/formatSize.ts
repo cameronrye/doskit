@@ -3,7 +3,7 @@
  * Copyright (c) 2025 Cameron Rye
  * Licensed under the MIT License
  *
- * Sizes as the selector shows them, in decimal units like the download progress: one decimal
+ * Sizes as the start page and a production's page show them, in decimal units like the download progress: one decimal
  * under 10 of a unit, whole numbers above
  */
 

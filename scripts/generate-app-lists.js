@@ -15,7 +15,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const START = '<!-- apps:start -->';
 const END = '<!-- apps:end -->';
 
-/** The apps' data files, in the selector's order */
+/** The apps' data files, in the start page's order */
 export function readAppData(dir) {
   return readdirSync(dir)
     .filter((name) => /^[^.]+\.json$/.test(name))

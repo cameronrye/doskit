@@ -868,8 +868,8 @@ describe('App', () => {
     });
   });
 
-  // What App shows instead of the selector: the start page, or the player
-  describe('Selector visibility management', () => {
+  // What App shows by route: the start page, or the player
+  describe('Start page and player', () => {
     it('shows the start page, not the player, at /', () => {
       render(<App />);
 

@@ -272,7 +272,7 @@
 
 /*
  * In a short window, such as a phone held sideways or a window zoomed to 200%, the offline
- * banner keeps to one line too: the page's header moves below it, so its height comes out of
+ * banner keeps to one line too: the page's top bar moves below it, so its height comes out of
  * the player's. After the narrow-window rules above, which it overrides.
  */
 @media (max-height: 500px) {

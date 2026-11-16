@@ -4,7 +4,7 @@
  * Licensed under the MIT License
  *
  * The About and Files panels as DOS windows (the look is DosWindow.css's), over the page at
- * the selector's layers (DosPlayerWithApps.css lists the stacking order): the two never show
+ * layers of their own (DosPlayerWithApps.css lists the stacking order): the two never show
  * together. Classes named doskit-, as js-dos.css styles many common names for the whole page.
  *
  * Contrast on --window (#00a): --window-text (#aaa) 5.7:1; body text #e6e6f2 10.6:1;

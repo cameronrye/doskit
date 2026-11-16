@@ -78,7 +78,7 @@ function appFromData(data: AppData): DosApp {
 }
 
 /**
- * Available DOS applications and demos, in the selector's order: one data file per app in
+ * Available DOS applications and demos, in the start page's order: one data file per app in
  * src/apps, and one config module per app in src/dos-apps
  */
 export const availableApps: DosApp[] = Object.values(appData)

@@ -140,7 +140,7 @@ describe('UpdateNotification', () => {
     const renderOverPage = (onDismiss?: () => void) =>
       render(
         <>
-          <button>Change Application</button>
+          <button>Browse</button>
           <UpdateNotification registration={mockRegistration} onDismiss={onDismiss} />
         </>
       );
@@ -220,12 +220,12 @@ describe('UpdateNotification', () => {
 
     it('gives the focus back to where it was once it closes', async () => {
       const user = userEvent.setup();
-      const { rerender } = render(<button>Change Application</button>);
-      const behind = screen.getByRole('button', { name: 'Change Application' });
+      const { rerender } = render(<button>Browse</button>);
+      const behind = screen.getByRole('button', { name: 'Browse' });
       behind.focus();
       rerender(
         <>
-          <button>Change Application</button>
+          <button>Browse</button>
           <UpdateNotification registration={mockRegistration} />
         </>
       );
@@ -241,7 +241,7 @@ describe('UpdateNotification', () => {
     it('takes the focus back when the page behind takes it, and gives it there once it closes', async () => {
       const user = userEvent.setup();
       renderOverPage();
-      const behind = screen.getByRole('button', { name: 'Change Application' });
+      const behind = screen.getByRole('button', { name: 'Browse' });
 
       act(() => behind.focus());
 
@@ -257,7 +257,7 @@ describe('UpdateNotification', () => {
       await user.tab();
       expect(updateNow()).toHaveFocus();
 
-      act(() => screen.getByRole('button', { name: 'Change Application' }).focus());
+      act(() => screen.getByRole('button', { name: 'Browse' }).focus());
 
       expect(updateNow()).toHaveFocus();
     });

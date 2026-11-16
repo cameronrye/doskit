@@ -478,7 +478,8 @@ describe('OfflineIndicator', () => {
     });
   });
 
-  // The selector keeps clear of the notices, which stay above it (DemoSelector.css)
+  // The pages and the run bar keep clear of the notices, which stay above them (StartPage.css,
+  // ProductionPage.css, RunBar.css)
   describe('the space the notices take', () => {
     /** The rendered heights jsdom lacks, by the notice's first class */
     const heights: Record<string, number> = {};

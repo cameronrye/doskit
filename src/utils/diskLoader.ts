@@ -189,7 +189,7 @@ export async function loadZipArchive(
   } catch (error) {
     // Whatever a stalled download failed with on its way out, it timed out
     const failure = stalled ? timedOut : error;
-    // An abort is the caller's own doing (the selector's Cancel, a navigation that
+    // An abort is the caller's own doing (the page's Cancel, a navigation that
     // supersedes the load): it still rejects, but is no failure to log
     if (!signal?.aborted) {
       console.error(`[DiskLoader] Error loading ZIP:`, failure);

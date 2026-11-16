@@ -10,7 +10,7 @@ import type { LoadProgress } from '../utils/diskLoader';
 import type { ReadySignal, StartRecipe } from '../utils/startRecipe';
 import type { DosOptions } from './js-dos';
 
-/** What a production is, which decides where the selector lists it */
+/** What a production is, which decides the start page's tab it is listed under */
 export type AppKind = 'demo' | 'intro' | 'musicdisk' | 'diskmag' | 'tracker' | 'effect';
 
 /**
@@ -25,25 +25,25 @@ export interface ModuleImport {
 }
 
 /**
- * What an app's data file, src/apps/<id>.json, holds: the facts the registry, the selector and
+ * What an app's data file, src/apps/<id>.json, holds: the facts the registry, the start page and
  * the build's pages share. Its text for visitors is in <id>.page.json beside it.
  */
 export interface AppData {
   /** Its id, also the name of its archive in public/demos and of its config in src/dos-apps */
   id: string;
   /**
-   * Its place in the selector: the demos first, then the intros, musicdisks, diskmags,
+   * Its place on the start page: the demos first, then the intros, musicdisks, diskmags,
    * trackers and effects
    */
   order: number;
   kind: AppKind;
   name: string;
-  /** One line for the selector: facts, no praise */
+  /** One line for the start page and the production's page: facts, no praise */
   description: string;
   /** The release's author and year, from the archive's own files; left out when unknown */
   author?: string;
   year?: number;
-  /** The size of public/demos/<id>.zip, shown on its disk */
+  /** The size of public/demos/<id>.zip, shown on the start page and the production's page */
   archiveBytes: number;
   /** Whether it flashes more than three times a second over a large part of the picture */
   flashing?: boolean;
@@ -64,7 +64,7 @@ export interface AppData {
     /** Between one key's release and the next one's press; 250 ms when left out */
     gapMs?: number;
     ready: ReadySignal;
-    /** What the start does, for the Play screen: what it picks, and what comes first */
+    /** What the start does, for the production's page: what it picks, and what comes first */
     note: string;
   };
   /** The keys to press when DosKit cannot start it, shown once its own start gives up */
@@ -113,18 +113,18 @@ export interface DosApp {
   archiveBytes: number;
   /**
    * Whether it flashes more than three times a second over a large part of the picture, the
-   * limit of WCAG 2.3.1: the selector and the Play screen warn of it
+   * limit of WCAG 2.3.1: the start page and the production's page warn of it
    */
   flashing?: boolean;
   /**
    * What else it shows that a visitor may want to know before it starts, such as nudity: one
-   * sentence, starting "Contains", which the selector, the Play screen, the About panel and
+   * sentence, starting "Contains", which the start page, the production's page, the About panel and
    * its page show beside the flashing warning
    */
   contentNote?: string;
   /** The keys DosKit sends to get past its setup screen, once that screen is up */
   start?: StartRecipe;
-  /** What that start does, for the Play screen */
+  /** What that start does, for the production's page */
   startNote?: string;
   /** The keys to press when DosKit's start gives up */
   hint?: string;
@@ -140,7 +140,7 @@ export interface DosApp {
    * own mouse pointer, which lines up with the real one only at the AsIs aspect
    */
   jsdos?: Partial<DosOptions>;
-  /** How the application's files arrive, shown on its disk in the selector: every app is a ZIP */
+  /** How the production's files arrive: every app is a ZIP */
   loadMethod: 'zip';
   /** DOSBox configuration string */
   dosboxConf: string;

@@ -1,5 +1,5 @@
 /**
- * Tests for the sizes the selector shows
+ * Tests for the sizes the start page shows
  */
 
 import { describe, it, expect } from 'vitest';

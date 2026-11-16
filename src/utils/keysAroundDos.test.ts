@@ -49,7 +49,7 @@ describe('keysAroundDos', () => {
     expect(reachedDos).toEqual([]);
   });
 
-  // Escape closes the selector as it goes down, and the focus falls to the page
+  // Escape closes a dialog as it goes down, and the focus falls to the page
   it("keeps the release of a key pressed on DosKit's controls from DOS, wherever it lands", () => {
     press(control, 'Escape');
     release(document.body, 'Escape');
@@ -57,7 +57,7 @@ describe('keysAroundDos', () => {
     expect(reachedDos).toEqual([]);
   });
 
-  // Such as a key held in DOS while Change Application is clicked, or the update prompt
+  // Such as a key held in DOS while Browse is clicked, or the update prompt
   // takes the focus: without its release, DOSBox repeats the key without end
   it("gives DOS the release of a key pressed in DOS, even on DosKit's controls", () => {
     press(document.body, 'KeyA');
@@ -74,7 +74,7 @@ describe('keysAroundDos', () => {
     expect(reachedDos).toEqual(['keydown KeyA', 'keyup KeyA']);
   });
 
-  // Enter held on a disk: the selector closes as the app starts, the focus falls to the
+  // Enter held on a grid link: the production's page replaces the start page, the focus falls to the
   // page, and the key goes on repeating there. DOS never had it go down, and its release
   // stays with the controls, so a repeat that got through would leave it down in DOS.
   it('stops the repeats of a key held down from a control once the focus has left it', () => {

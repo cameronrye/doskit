@@ -50,7 +50,7 @@ const forgetPress = (event: KeyboardEvent) => {
 };
 
 // A key held down from one of DosKit's controls goes on repeating wherever the focus goes,
-// such as to the page once the selector closes over a starting app. A repeat that reaches
+// such as to the page once a dialog closes under a held key. A repeat that reaches
 // document has passed every control, so js-dos, which listens on window, would send it to
 // DOS as a press: DOS would then keep the key down, as its release stays with the controls.
 const keepRepeatFromDos = (event: KeyboardEvent) => {
