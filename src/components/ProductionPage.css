@@ -1,0 +1,292 @@
+/*
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ */
+
+/* The page scrolls by itself, below the offline banner and above the install prompt */
+.production-page {
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  padding-bottom: var(--install-prompt-height, 0px);
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+/* Focused only so that its keys work; there is nothing to ring */
+.production-page:focus {
+  outline: none;
+}
+
+.production-page .copper {
+  margin-top: var(--offline-banner-height, 0px);
+}
+
+/* Silkscreen in px, over its 16px floor; the root is 14px on phones */
+.production-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+  padding: 0.75rem 1.25rem;
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+}
+
+/* Yellow on black 19.7:1 */
+.production-logo {
+  font-family: var(--font-display);
+  font-size: 18px;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--title);
+}
+
+.production-breadcrumb {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: 20px;
+  color: var(--text);
+}
+
+/* Light grey on black 9:1; the current name is white, 21:1 */
+.production-breadcrumb button {
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.production-breadcrumb [aria-current] {
+  color: var(--text-strong);
+}
+
+.production-keys {
+  display: flex;
+  gap: 1.25rem;
+}
+
+/* A --focus ring, yellow on black 19.7:1 */
+.production-page a:focus-visible,
+.production-page button:focus-visible,
+.production-page summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.production-main {
+  display: grid;
+  grid-template-columns: minmax(0, 640px) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+  padding: 1rem 1.25rem 1.5rem;
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+}
+
+/* Yellow on black 19.7:1 */
+.production-heading {
+  margin: 0 0 1.5rem;
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: var(--title);
+}
+
+/* The window's text is the reading stack; its colours are the window's, 5.7:1 and up */
+.production-facts {
+  font-family: var(--font-read);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.production-facts p {
+  margin: 0 0 0.75rem;
+}
+
+.production-facts p:last-child {
+  margin-bottom: 0;
+}
+
+/* Light cyan on blue 10.8:1 */
+.production-credit {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Yellow on blue 12.4:1 */
+.production-warning {
+  color: var(--warning);
+}
+
+.production-actions {
+  margin-top: 1.75rem;
+}
+
+.production-play {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Black on light cyan 17:1 (the menu's pair, inverted); yellow ring on black 19.7:1 */
+.production-page .doskit-play-button {
+  padding: 0.5rem 2.5rem;
+  font-family: var(--font-display);
+  font-size: 24px;
+  text-transform: uppercase;
+  color: var(--vga-black);
+  background: var(--accent);
+  border: 3px solid var(--text-strong);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.production-page .doskit-play-button:hover {
+  background: var(--text-strong);
+}
+
+.production-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* Black on light grey, the menu's 9:1 */
+.production-button {
+  padding: 0.25rem 1rem;
+  font-family: var(--font-ui);
+  font-size: 20px;
+  color: var(--menu-text);
+  background: var(--menu);
+  border: 2px solid var(--menu);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.production-button:hover {
+  color: var(--menu-selected-text);
+  background: var(--menu-selected);
+}
+
+/* Yellow does not meet 3:1 on light grey, so the ring sits on the black around the button:
+   its outer offset leaves a black gap, and the ring is 19.7:1 against that */
+.production-page .production-button:focus-visible {
+  outline-offset: 2px;
+}
+
+/* Light grey on black 9:1 */
+.production-share-status {
+  font-family: var(--font-ui);
+  font-size: 18px;
+  color: var(--text);
+}
+
+.production-download,
+.production-error {
+  max-width: 28rem;
+}
+
+.production-download p,
+.production-error p {
+  margin: 0 0 0.5rem;
+}
+
+.production-download [role='status'],
+.production-figure {
+  font-family: var(--font-ui);
+  font-size: 20px;
+}
+
+.production-bar-track {
+  box-sizing: border-box;
+  height: 0.75rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--text);
+  overflow: hidden;
+}
+
+.production-bar-fill {
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+}
+
+.production-bar-unsized .production-bar-fill {
+  width: 100%;
+  opacity: 0.35;
+}
+
+/* Light red on black 6.7:1 */
+.production-error {
+  font-family: var(--font-read);
+  color: var(--danger);
+}
+
+.production-error code {
+  overflow-wrap: anywhere;
+}
+
+.production-more {
+  padding: 0 1.25rem 1.5rem;
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+}
+
+/* Silkscreen in px over its 16px floor; light cyan on black 14:1 */
+.production-more-title {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  font-size: 16px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* One column, the details below the screenshot, and the strip in three columns */
+@media (max-width: 768px) {
+  .production-main {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .production-more .production-grid--strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-height: 500px) {
+  .production-topbar {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (forced-colors: active) {
+  .production-page .doskit-play-button,
+  .production-button {
+    color: ButtonText;
+    background: ButtonFace;
+    border-color: ButtonText;
+  }
+
+  .production-bar-track {
+    border-color: CanvasText;
+  }
+
+  .production-bar-fill {
+    background: Highlight;
+  }
+
+  .production-page a:focus-visible,
+  .production-page button:focus-visible {
+    outline-color: Highlight;
+  }
+}

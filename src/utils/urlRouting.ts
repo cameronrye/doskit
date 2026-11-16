@@ -118,6 +118,11 @@ export function isPromptUrl(): boolean {
 /** The site's address, which canonical links name */
 const SITE = 'https://doskit.net';
 
+/** The address of an app's page, such as https://doskit.net/unreal */
+export function canonicalUrlOf(appId: string): string {
+  return `${SITE}/${getUrlFriendlyId(appId)}`;
+}
+
 /**
  * Update the browser URL with the specified app ID: an app's URL is its page, /<id> without
  * hyphens, which the build writes as <id>.html and GitHub Pages serves with a 200, and the

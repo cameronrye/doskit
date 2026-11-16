@@ -10,7 +10,7 @@
 
 import { useState, useCallback, useEffect, useEffectEvent, useReducer, useRef } from 'react';
 import { DosPlayer } from './DosPlayer';
-import type { AppKind, DosApp } from '../types/dos-app';
+import type { DosApp } from '../types/dos-app';
 import type { CommandInterface } from '../types/js-dos';
 import type { PlayerHandle } from '../hooks/useDosEmulator';
 import type { LoadProgress } from '../utils/diskLoader';
@@ -22,6 +22,7 @@ import { runStartRecipe, type RecipeEmulator, type RecipeState } from '../utils/
 import { createPersistQueue } from '../utils/persistQueue';
 import { getSavedFiles, putSavedFiles, removeSavedFiles } from '../utils/savedFiles';
 import { dosPathFor, zipEntryNames } from '../utils/dosNames';
+import { playLabelOf } from './ProductionPage';
 import { TrackerFiles } from './TrackerFiles';
 import { fnv1a } from '../utils/frameHash';
 import {
@@ -97,13 +98,6 @@ function readBytes(file: Blob): Promise<Uint8Array> {
 /** "Author · year", or whichever of the two an app gives */
 function releaseOf({ author, year }: DosApp): string {
   return [author, year].filter(Boolean).join(' · ');
-}
-
-/** What the Play screen's button says: a tracker is started, a diskmag read, the rest played */
-function playLabelOf(kind: AppKind): string {
-  if (kind === 'tracker') return 'Start';
-  if (kind === 'diskmag') return 'Read';
-  return 'Play';
 }
 
 export function DosPlayerWithApps({

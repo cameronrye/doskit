@@ -8,6 +8,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
+  canonicalUrlOf,
   getAppRequestFromUrl,
   isPromptUrl,
   normalizeAppId,
@@ -18,6 +19,13 @@ import {
 } from './urlRouting';
 
 describe('urlRouting', () => {
+  describe('canonicalUrlOf', () => {
+    it('names the production page without hyphens', () => {
+      expect(canonicalUrlOf('unreal')).toBe('https://doskit.net/unreal');
+      expect(canonicalUrlOf('second-reality')).toBe('https://doskit.net/secondreality');
+    });
+  });
+
   describe('getAppRequestFromUrl', () => {
     it.each([
       ['/?app=secondreality', 'second-reality'],
