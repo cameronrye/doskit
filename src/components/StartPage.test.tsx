@@ -88,6 +88,27 @@ describe('StartPage', () => {
     expect(screen.getByRole('searchbox')).toHaveValue('');
   });
 
+  // Clear search goes as it clears: the focus must not fall to the body, out of the page's keys
+  it('gives the search the focus after Clear search, so that Escape and the keys still work', async () => {
+    const { onOpen } = renderPage();
+    const search = screen.getByRole('searchbox');
+    await userEvent.type(search, 'zzzz');
+    await userEvent.click(screen.getByRole('button', { name: 'Clear search' }));
+    expect(search).toHaveFocus();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getByRole('main')).toHaveFocus();
+    await userEvent.keyboard('r');
+    expect(onOpen).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the focus in the search after Clear search on return, not on the saved production', async () => {
+    saveStartPageState({ kind: 'all', query: 'zzzz', scrollTop: 0, focusId: 'fishtro' });
+    renderPage();
+    await userEvent.click(screen.getByRole('button', { name: 'Clear search' }));
+    expect(links()).toHaveLength(availableApps.length);
+    expect(screen.getByRole('searchbox')).toHaveFocus();
+  });
+
   it('focuses the search on /, and types / and r inside it', async () => {
     renderPage();
     await userEvent.keyboard('/');

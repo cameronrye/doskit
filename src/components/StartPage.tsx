@@ -197,7 +197,17 @@ export function StartPage({ apps, notice, onOpen, onOpenPrompt }: StartPageProps
           ) : (
             <div className="start-empty">
               <p>Nothing matches “{query.trim()}”.</p>
-              <button type="button" className="start-clear" onClick={() => setQuery('')}>
+              {/* The button goes as it clears: the search takes the focus, where Escape leaves
+                  it for the page and its keys, rather than the body, which has none */}
+              <button
+                type="button"
+                className="start-clear"
+                onClick={() => {
+                  setRestoreFocus(false);
+                  setQuery('');
+                  searchRef.current?.focus();
+                }}
+              >
                 Clear search
               </button>
             </div>
