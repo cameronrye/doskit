@@ -67,9 +67,25 @@
   color: var(--text-strong);
 }
 
+/* The key hints are for devices with a keyboard and a precise pointer, as the start page's
+   shortcut bar is: a phone shows neither I and Esc nor Enter */
 .production-keys {
-  display: flex;
+  display: none;
   gap: 1.25rem;
+}
+
+.production-play .key-hint {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .production-keys {
+    display: flex;
+  }
+
+  .production-play .key-hint {
+    display: inline-flex;
+  }
 }
 
 /* A --focus ring, yellow on black 19.7:1 */

@@ -82,6 +82,37 @@ describe('ProductionPage', () => {
     }
   });
 
+  // As the start page's shortcut bar: the hints are for a keyboard and a precise pointer.
+  // jsdom matches no (hover: hover) and (pointer: fine), as a touch screen doesn't; with the
+  // query stood in for by screen, which it matches, the page is on a computer with a mouse.
+  it.each([
+    ['hides', 'a touch screen', (css: string) => css, false],
+    [
+      'shows',
+      'a computer with a mouse',
+      (css: string) => css.replaceAll('(hover: hover) and (pointer: fine)', 'screen'),
+      true,
+    ],
+  ])('%s the key hints on %s', async (_verb, _device, adapt, visible) => {
+    const sheets = await readStylesheets();
+    const applied = [
+      'src/index.css',
+      'src/components/KeyHint.css',
+      'src/components/ProductionPage.css',
+    ].map((file) => applyStylesheet(adapt(resolveTokens(sheets, sheets.get(file)!))));
+    try {
+      const { container } = await renderPage();
+      const hints = Array.from(container.querySelectorAll('.key-hint'));
+      expect(hints.map((hint) => hint.textContent)).toEqual(['IAbout', 'EscBrowse', 'EnterPlay']);
+      for (const hint of hints) {
+        if (visible) expect(hint).toBeVisible();
+        else expect(hint).not.toBeVisible();
+      }
+    } finally {
+      applied.forEach((sheet) => sheet.remove());
+    }
+  });
+
   it('calls onPlay from the button', async () => {
     const { onPlay } = await renderPage();
     await userEvent.click(screen.getByRole('button', { name: 'Play' }));
