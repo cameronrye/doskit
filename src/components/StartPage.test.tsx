@@ -5,7 +5,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StartPage } from './StartPage';
 import { availableApps } from '../config/apps.config';
@@ -88,6 +88,9 @@ describe('StartPage', () => {
     expect(search).toHaveFocus();
     await userEvent.keyboard('{Escape}');
     expect(search).not.toHaveFocus();
+    expect(screen.getByRole('main')).toHaveFocus();
+    await userEvent.keyboard('/');
+    expect(search).toHaveFocus();
   });
 
   it('opens a random shown production on R, but not with Ctrl', async () => {
@@ -108,11 +111,56 @@ describe('StartPage', () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
-  it('opens the DOS prompt from its menu item, saving the scroll position first', async () => {
+  it('opens the DOS prompt from its menu item', async () => {
     const { onOpenPrompt } = renderPage();
     await userEvent.click(screen.getByRole('button', { name: 'C:\\> DOS prompt' }));
     expect(onOpenPrompt).toHaveBeenCalledTimes(1);
-    expect(loadStartPageState()).not.toBeNull();
+  });
+
+  it('saves the scroll position before opening a production or the prompt', async () => {
+    const { onOpen, onOpenPrompt } = renderPage();
+    const page = screen.getByRole('main');
+    page.scrollTop = 321;
+    onOpen.mockImplementation(() => expect(loadStartPageState()?.scrollTop).toBe(321));
+    await userEvent.click(links()[0] as HTMLElement);
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    page.scrollTop = 654;
+    onOpenPrompt.mockImplementation(() => expect(loadStartPageState()?.scrollTop).toBe(654));
+    await userEvent.click(screen.getByRole('button', { name: 'C:\\> DOS prompt' }));
+    expect(onOpenPrompt).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores the saved scroll position', () => {
+    saveStartPageState({ kind: 'all', query: '', scrollTop: 480, focusId: null });
+    renderPage();
+    expect(screen.getByRole('main').scrollTop).toBe(480);
+  });
+
+  it('leaves the search its focus when the grid comes back after returning', async () => {
+    saveStartPageState({ kind: 'all', query: '', scrollTop: 0, focusId: 'fishtro' });
+    renderPage();
+    const search = screen.getByRole('searchbox');
+    await userEvent.click(search);
+    await userEvent.type(search, 'zzzz');
+    await userEvent.type(search, '{Backspace>4/}');
+    expect(links()).toHaveLength(availableApps.length);
+    expect(search).toHaveFocus();
+  });
+
+  it('falls back to all when the saved kind has no productions', () => {
+    saveStartPageState({ kind: 'tracker', query: '', scrollTop: 0, focusId: null });
+    renderPage({ apps: availableApps.filter((app) => app.kind === 'demo') });
+    expect(screen.getByRole('button', { name: /^All/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(links().length).toBeGreaterThan(0);
+  });
+
+  it('ignores a held R key', async () => {
+    const { onOpen } = renderPage();
+    const page = screen.getByRole('main');
+    fireEvent.keyDown(page, { key: 'r' });
+    fireEvent.keyDown(page, { key: 'r', repeat: true });
+    fireEvent.keyDown(page, { key: 'r', repeat: true });
+    expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
   it('opens a production from its link', async () => {

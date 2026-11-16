@@ -35,8 +35,13 @@ interface StartPageProps {
 /** The page at `/`: kinds, search, and every production as a link */
 export function StartPage({ apps, notice, onOpen, onOpenPrompt }: StartPageProps) {
   const [saved] = useState(loadStartPageState);
-  const [kind, setKind] = useState<KindFilter>(saved?.kind ?? 'all');
+  const [kind, setKind] = useState<KindFilter>(() =>
+    saved && countByKind(apps)[saved.kind] > 0 ? saved.kind : 'all'
+  );
   const [query, setQuery] = useState(saved?.query ?? '');
+  // Only the grid of the first view takes focus; once the visitor searches or picks a kind, a
+  // remount, such as after a search that matched nothing, must leave it in the search
+  const [restoreFocus, setRestoreFocus] = useState(saved?.focusId != null);
   const [activeId, setActiveId] = useState<string | null>(saved?.focusId ?? null);
   const rootRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -86,7 +91,7 @@ export function StartPage({ apps, notice, onOpen, onOpenPrompt }: StartPageProps
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLElement>) => {
-      if (event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
       const target = event.target as HTMLElement;
       if (target.closest('input, textarea, [contenteditable]')) return;
       if (event.key === '/') {
@@ -108,6 +113,8 @@ export function StartPage({ apps, notice, onOpen, onOpenPrompt }: StartPageProps
       setQuery('');
     } else {
       event.currentTarget.blur();
+      // So that / and R work again
+      rootRef.current?.focus({ preventScroll: true });
     }
   };
 
@@ -140,7 +147,10 @@ export function StartPage({ apps, notice, onOpen, onOpenPrompt }: StartPageProps
               type="button"
               className="dos-menu-item"
               aria-pressed={kind === tab.kind}
-              onClick={() => setKind(tab.kind)}
+              onClick={() => {
+                setRestoreFocus(false);
+                setKind(tab.kind);
+              }}
             >
               {tab.label} {counts[tab.kind]}
             </button>
@@ -156,7 +166,10 @@ export function StartPage({ apps, notice, onOpen, onOpenPrompt }: StartPageProps
           aria-label="Search productions"
           placeholder="Search"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            setRestoreFocus(false);
+            setQuery(event.target.value);
+          }}
           onKeyDown={handleSearchKeyDown}
         />
       </div>
@@ -179,7 +192,7 @@ export function StartPage({ apps, notice, onOpen, onOpenPrompt }: StartPageProps
               onOpen={open}
               activeId={activeId}
               onActiveChange={(app) => setActiveId(app.id)}
-              autoFocusActive={saved?.focusId != null}
+              autoFocusActive={restoreFocus}
             />
           ) : (
             <div className="start-empty">

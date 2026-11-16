@@ -76,9 +76,11 @@
   opacity: 1;
 }
 
+/* Inside the grey bar a yellow ring is 2.2:1; black inset on the black field is not seen, so
+   the ring is a white inset one on the black field, 21:1, with the grey bar round it */
 .start-search:focus-visible {
-  outline: 2px solid var(--focus); /* yellow on black, 19.7:1 */
-  outline-offset: 0;
+  outline: 2px solid var(--text-strong);
+  outline-offset: -4px;
 }
 
 .start-body {
