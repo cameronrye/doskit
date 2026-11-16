@@ -225,6 +225,24 @@ button:focus-visible {
   background: var(--vga-blue);
 }
 
+/*
+ * The stacked shadow of the scene's logos, on display type over black: light magenta, then
+ * blue, each a step further down and to the right, in steps of 2px, or of 1px on type under
+ * 24px. The text keeps the black along its top and left edges (yellow on black 19.7:1); the
+ * shadow is decoration, and forced colours drop it.
+ */
+.display-shadow {
+  text-shadow:
+    2px 2px 0 var(--vga-lightmagenta),
+    4px 4px 0 var(--vga-blue);
+}
+
+.display-shadow--small {
+  text-shadow:
+    1px 1px 0 var(--vga-lightmagenta),
+    2px 2px 0 var(--vga-blue);
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -306,6 +324,11 @@ button:focus-visible {
 @media (forced-colors: active) {
   :focus-visible {
     outline-color: Highlight;
+  }
+
+  .display-shadow,
+  .display-shadow--small {
+    text-shadow: none;
   }
 
   /* The browser puts a Canvas backplate behind text it adjusts, and on Highlight that left

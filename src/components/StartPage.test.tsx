@@ -11,6 +11,7 @@ import { StartPage } from './StartPage';
 import { availableApps } from '../config/apps.config';
 import { countByKind } from '../utils/productionFilter';
 import { loadStartPageState, saveStartPageState } from '../utils/startPageState';
+import { applyStylesheet, readStylesheets, resolveTokens } from '../test/stylesheets';
 
 const renderPage = (props: Partial<React.ComponentProps<typeof StartPage>> = {}) => {
   const onOpen = vi.fn();
@@ -41,6 +42,22 @@ describe('StartPage', () => {
       `${availableApps.length} productions`
     );
     expect(links()).toHaveLength(availableApps.length);
+  });
+
+  it('sets the logo in display type with the stacked shadow, light magenta then blue', async () => {
+    const sheets = await readStylesheets();
+    const applied = ['src/index.css', 'src/components/StartPage.css'].map((file) =>
+      applyStylesheet(resolveTokens(sheets, sheets.get(file)!))
+    );
+    try {
+      renderPage();
+      const logo = screen.getByRole('heading', { level: 1, name: 'DosKit' });
+      expect(getComputedStyle(logo).textShadow.replace(/\s+/g, ' ')).toBe(
+        '2px 2px 0 #ff55ff, 4px 4px 0 #0000aa'
+      );
+    } finally {
+      applied.forEach((sheet) => sheet.remove());
+    }
   });
 
   it('filters by kind, and says how many are shown', async () => {

@@ -132,7 +132,7 @@ export function StartPage({ apps, notice, onOpen, onOpenPrompt }: StartPageProps
     >
       <div className="copper" />
       <header className="start-header">
-        <h1 className="start-logo">DosKit</h1>
+        <h1 className="start-logo display-shadow">DosKit</h1>
         <p className="start-tagline">
           The PC demoscene, 1990–1997, running in your browser. {apps.length} productions.
         </p>

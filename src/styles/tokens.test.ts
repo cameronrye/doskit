@@ -70,6 +70,14 @@ describe('the design tokens', () => {
     expect(Object.keys(tokens).filter((name) => name.startsWith('--vga-'))).toHaveLength(16);
   });
 
+  // The stacked shadow is decoration: the system's colours replace it with none
+  it('drops the display shadow in forced colours', () => {
+    const forced = css.slice(css.indexOf('@media (forced-colors: active)'));
+    expect(forced).toMatch(
+      /\.display-shadow,\s*\.display-shadow--small\s*\{\s*text-shadow:\s*none;/
+    );
+  });
+
   // The root is 14px on phones, so a rem size would fall under the floor of its font
   it.each([
     ['--font-ui', 18],

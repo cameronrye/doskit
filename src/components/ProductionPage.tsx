@@ -149,7 +149,11 @@ export function ProductionPage({
     >
       <div className="copper copper--thin" aria-hidden="true" />
       <header className="production-topbar">
-        <a className="production-logo" href="/" onClick={handleHome}>
+        <a
+          className="production-logo display-shadow display-shadow--small"
+          href="/"
+          onClick={handleHome}
+        >
           DosKit
         </a>
         <nav className="production-breadcrumb" aria-label="Breadcrumb">
@@ -169,7 +173,7 @@ export function ProductionPage({
       <div className="production-main">
         <CrtScreen src={thumbnailOf(app)} alt={imageAlt} size="large" loading="eager" />
         <div className="production-details">
-          <h1 id="production-title" className="production-heading">
+          <h1 id="production-title" className="production-heading display-shadow">
             {app.name}
           </h1>
           <DosWindow title={app.year ? `${kind} · ${app.year}` : kind}>

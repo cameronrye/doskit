@@ -11,6 +11,7 @@ import { ProductionPage, type ProductionPageStatus } from './ProductionPage';
 import { availableApps } from '../config/apps.config';
 import { loadAppPage } from '../config/appPages';
 import type { DosApp } from '../types/dos-app';
+import { applyStylesheet, readStylesheets, resolveTokens } from '../test/stylesheets';
 
 const make = (id: string, extra: Partial<DosApp> = {}): DosApp =>
   ({
@@ -58,6 +59,27 @@ describe('ProductionPage', () => {
     expect(play).toHaveFocus();
     expect(screen.getByRole('heading', { level: 1, name: 'Unreal' })).toBeInTheDocument();
     expect(screen.getByAltText(/\S/)).toBeInTheDocument();
+  });
+
+  // Steps of 2px on the 32px title, and of 1px on the 18px logo
+  it('sets the logo and the title in display type with the stacked shadow', async () => {
+    const sheets = await readStylesheets();
+    const applied = ['src/index.css', 'src/components/ProductionPage.css'].map((file) =>
+      applyStylesheet(resolveTokens(sheets, sheets.get(file)!))
+    );
+    const shadow = (element: HTMLElement) =>
+      getComputedStyle(element).textShadow.replace(/\s+/g, ' ');
+    try {
+      await renderPage();
+      expect(shadow(screen.getByRole('heading', { level: 1, name: 'Unreal' }))).toBe(
+        '2px 2px 0 #ff55ff, 4px 4px 0 #0000aa'
+      );
+      expect(shadow(screen.getByRole('link', { name: 'DosKit' }))).toBe(
+        '1px 1px 0 #ff55ff, 2px 2px 0 #0000aa'
+      );
+    } finally {
+      applied.forEach((sheet) => sheet.remove());
+    }
   });
 
   it('calls onPlay from the button', async () => {
