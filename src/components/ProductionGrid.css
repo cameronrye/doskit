@@ -1,0 +1,88 @@
+/*
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ */
+
+.production-grid {
+  display: grid;
+  gap: 20px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.production-grid--grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.production-grid--strip {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+@media (max-width: 480px) {
+  .production-grid--grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.production-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-strong); /* white on black, 21:1 */
+  text-decoration: none;
+  font-family: var(--font-ui);
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.production-link .crt {
+  max-width: none;
+  transition: box-shadow 0.15s;
+}
+
+.production-name {
+  overflow-wrap: anywhere;
+}
+
+.production-meta {
+  font-size: 18px;
+}
+
+.production-author {
+  color: var(--author); /* cyan on black, 14.6:1 */
+}
+
+.production-year {
+  color: var(--year); /* light magenta on black, 7.2:1 */
+}
+
+.production-link:hover .production-name,
+.production-link:focus-visible .production-name {
+  text-decoration: underline;
+}
+
+/* A --focus ring round the CRT: yellow on black, 19.6:1 */
+.production-link:focus-visible {
+  outline: none;
+}
+
+.production-link:focus-visible .crt {
+  box-shadow:
+    0 0 0 3px var(--focus),
+    inset 0 0 12px rgba(0, 0, 0, 0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .production-link .crt {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .production-link:focus-visible .crt {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+}
