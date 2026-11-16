@@ -300,7 +300,7 @@ describe('DosPlayerWithApps', () => {
       expect(boots).toEqual([]);
     });
 
-    it('names the DOS prompt in its bar, with Browse and neither About nor Files', () => {
+    it('names the DOS prompt in its bar, with Browse and Licenses, and neither About nor Files', () => {
       render(<Player />);
       fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
 
@@ -308,6 +308,11 @@ describe('DosPlayerWithApps', () => {
       expect(bar).toHaveTextContent('DOS prompt');
       expect(within(bar).queryByRole('button', { name: 'About' })).not.toBeInTheDocument();
       expect(within(bar).queryByRole('button', { name: 'Files' })).not.toBeInTheDocument();
+      // Without About, where a production's bar leads to them, the licenses are linked here
+      expect(within(bar).getByRole('link', { name: 'Licenses' })).toHaveAttribute(
+        'href',
+        '/licenses/'
+      );
       fireEvent.click(within(bar).getByRole('button', { name: 'Browse' }));
       expect(browsedKinds()).toEqual([undefined]);
     });
@@ -405,7 +410,7 @@ describe('DosPlayerWithApps', () => {
     });
   });
 
-  // What the page's footer shows
+  // What the player reports to App, and its run bar shows
   describe('Status', () => {
     it('reports loading until js-dos reports the emulator ready', () => {
       const onStatusChange = vi.fn();
@@ -567,6 +572,8 @@ describe('DosPlayerWithApps', () => {
       expect(within(bar).getByRole('status')).toHaveTextContent('Loading · Online');
       expect(within(bar).getByRole('button', { name: 'Browse' })).toBeInTheDocument();
       expect(within(bar).getByRole('button', { name: 'About' })).toBeInTheDocument();
+      // A production's licenses are a part of its About
+      expect(within(bar).queryByRole('link', { name: 'Licenses' })).not.toBeInTheDocument();
       // Files once the tracker is ready, and its status heard but no longer shown
       expect(within(bar).queryByRole('button', { name: 'Files' })).not.toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Trigger Ready' }));
@@ -588,6 +595,38 @@ describe('DosPlayerWithApps', () => {
       await runApp(mockApp);
 
       expect(within(runBar()).queryByRole('button', { name: 'Files' })).not.toBeInTheDocument();
+    });
+
+    it.each([
+      ['its author and year', { author: 'Test Author', year: 2024 }, 'Test Author · 2024'],
+      ['its author alone', { author: 'Test Author', year: undefined }, 'Test Author'],
+      ['its year alone', { author: undefined, year: 2024 }, '2024'],
+      ['neither', { author: undefined, year: undefined }, null],
+    ])('names a running production in its bar with %s', async (_, release, meta) => {
+      const { container } = await runApp({ ...mockApp, ...release });
+
+      expect(container.querySelector('.run-bar-title')).toHaveTextContent(/^Test App$/);
+      const shown = container.querySelector('.run-bar-meta');
+      if (meta === null) {
+        expect(shown).not.toBeInTheDocument();
+      } else {
+        expect(shown).toHaveTextContent(new RegExp(`^${meta}$`));
+      }
+    });
+
+    // A "More by" link, or Back and Forward: the page scrolls by itself, and a page kept for
+    // the next production would open it where the last one was left, at the bottom on a phone
+    it("opens another production's page as a page of its own, at its top", async () => {
+      const other: DosApp = { ...mockApp, id: 'other', name: 'Other App' };
+      const { rerender } = await openApp(mockApp);
+      const first = productionPage('Test App');
+      first.scrollTop = 600;
+
+      rerender(<Player requestedApp={other} />);
+
+      const next = await screen.findByRole('region', { name: 'Other App' });
+      expect(next).not.toBe(first);
+      expect(next.scrollTop).toBe(0);
     });
 
     it('More by opens another production through onOpenApp', async () => {
@@ -991,6 +1030,20 @@ describe('DosPlayerWithApps', () => {
       expect(vi.mocked(putSavedFiles).mock.invocationCallOrder[0]).toBeLessThan(
         onBrowse.mock.invocationCallOrder[0]!
       );
+    });
+
+    // A tracker that has quit to DOS is still ready: the question takes the end card's place
+    it("asks over the end card from the run bar's Browse, which the card gives way to", async () => {
+      await runApp(tracker);
+      act(() => handles.at(-1)?.print('Tracker has ended.'));
+      expect(screen.getByRole('dialog', { name: 'Tracker has ended.' })).toBeInTheDocument();
+
+      fireEvent.click(within(runBar()).getByRole('button', { name: 'Browse' }));
+
+      expect(screen.queryByRole('dialog', { name: 'Tracker has ended.' })).not.toBeInTheDocument();
+      expect(screen.getAllByRole('dialog')).toHaveLength(1);
+      const ask = screen.getByRole('dialog', { name: 'Leave Tracker?' });
+      expect(within(ask).getByRole('button', { name: 'Leave' })).toHaveFocus();
     });
 
     it("leaves from the run bar's Browse without asking while the tracker is still starting", async () => {

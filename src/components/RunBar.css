@@ -48,9 +48,16 @@
   white-space: nowrap;
 }
 
-/* Push the status and the buttons to the right when there is no meta to fill the row */
-.run-bar-title + .run-bar-status {
+/* Push the status and the buttons to the right when there is no meta to fill the row. A
+   hidden status leaves the row, so the button after it goes right instead. */
+.run-bar-title + .run-bar-status,
+.run-bar-title + .run-bar-status.visually-hidden + * {
   margin-left: auto;
+}
+
+/* The prompt's Licenses link, as the buttons beside it: white on blue when hovered, 13.3:1 */
+.run-bar a.dos-menu-item:hover {
+  text-decoration: none;
 }
 
 @media (max-height: 500px) {

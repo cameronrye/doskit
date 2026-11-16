@@ -114,6 +114,34 @@ describe('RunBar', () => {
     expect(screen.getAllByRole('button')).toHaveLength(3);
   });
 
+  // The GPL notices must be reachable from every screen: the prompt's bar has no About
+  it('links the licenses only when asked, in a new tab, and takes no focus from a click', () => {
+    const { rerender } = render(
+      <RunBar title="Unreal" meta={null} status="ready" isOnline onBrowse={vi.fn()} />
+    );
+    expect(screen.queryByRole('link', { name: 'Licenses' })).not.toBeInTheDocument();
+
+    rerender(
+      <RunBar
+        title="DOS prompt"
+        meta={null}
+        status="ready"
+        isOnline
+        onBrowse={vi.fn()}
+        showLicenses
+      />
+    );
+
+    const link = screen.getByRole('link', { name: 'Licenses' });
+    expect(link).toHaveAttribute('href', '/licenses/');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(link).toHaveClass('dos-menu-item');
+    const event = createEvent.mouseDown(link);
+    fireEvent(link, event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
   it('offers About and Files only when given', () => {
     const { rerender } = render(
       <RunBar title="DOS prompt" meta={null} status="ready" isOnline onBrowse={vi.fn()} />

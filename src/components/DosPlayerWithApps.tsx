@@ -389,9 +389,10 @@ export function DosPlayerWithApps({
     dispatch({ type: 'restarted', saved: null, imports: [] });
   };
 
-  // Browse on the end card: the start page, once the question over a running tracker has
-  // been answered, which the end card gives way to
-  const handleEndBrowse = () => {
+  // Browse, in the run bar or on the end card: the start page, once the question over a
+  // running tracker has been answered. The end card gives way to the question: a tracker that
+  // has quit to DOS is still ready, and the card would cover the question.
+  const handleBrowse = () => {
     dispatch({ type: 'endDismissed' });
     requestBrowse();
   };
@@ -498,11 +499,12 @@ export function DosPlayerWithApps({
 
   return (
     <div ref={containerRef} className={`dos-player-with-apps ${className || ''}`}>
-      {/* The production's page, with nothing running. Its Cancel goes to the start page, which
-          stops the download as it replaces the player; its Try Again loads the production
-          once more. */}
+      {/* The production's page, with nothing running: a page of its own for each production,
+          which opens at its top. Its Cancel goes to the start page, which stops the download as
+          it replaces the player; its Try Again loads the production once more. */}
       {pageApp && (
         <ProductionPage
+          key={pageApp.id}
           app={pageApp}
           apps={apps}
           status={pageStatus}
@@ -517,15 +519,17 @@ export function DosPlayerWithApps({
       )}
 
       {/* A running production, or the DOS prompt, under its bar. Browse asks first over a
-          running tracker, as the end card's does. */}
+          running tracker. */}
       {session && (
         <RunBar
           title={session.app?.name ?? 'DOS prompt'}
           meta={(session.app && releaseOf(session.app)) || null}
           status={status}
           isOnline={isOnline}
-          onBrowse={() => requestBrowse()}
+          onBrowse={handleBrowse}
           onAbout={session.app ? onAbout : undefined}
+          // The prompt has no About, where a production's bar leads to the licenses
+          showLicenses={!session.app}
           onFiles={
             trackerRuns
               ? () => {
@@ -611,7 +615,7 @@ export function DosPlayerWithApps({
                   <button autoFocus onClick={() => void handlePlayAgain()}>
                     Play again
                   </button>
-                  <button onClick={handleEndBrowse}>Browse</button>
+                  <button onClick={handleBrowse}>Browse</button>
                   <button onClick={() => dispatch({ type: 'endDismissed' })}>Back to DOS</button>
                 </div>
               </DosWindow>

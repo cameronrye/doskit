@@ -28,6 +28,8 @@ interface RunBarProps {
   onAbout?: () => void;
   /** Given to a tracker that saves, once ready */
   onFiles?: () => void;
+  /** A link to the licenses, for the prompt, which has no About to hold them */
+  showLicenses?: boolean;
   aboutButtonRef?: Ref<HTMLButtonElement>;
   filesButtonRef?: Ref<HTMLButtonElement>;
 }
@@ -44,6 +46,7 @@ export function RunBar({
   onBrowse,
   onAbout,
   onFiles,
+  showLicenses = false,
   aboutButtonRef,
   filesButtonRef,
 }: RunBarProps) {
@@ -82,6 +85,19 @@ export function RunBar({
         >
           Files
         </button>
+      )}
+      {/* The GPL notices of js-dos and DOSBox, which DosKit ships, in a new tab so that DOS
+          keeps running */}
+      {showLicenses && (
+        <a
+          href="/licenses/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="dos-menu-item"
+          onMouseDown={keepFocus}
+        >
+          Licenses
+        </a>
       )}
     </div>
   );
