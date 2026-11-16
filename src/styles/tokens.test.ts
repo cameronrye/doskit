@@ -3,7 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import { readStylesheets } from '../test/stylesheets';
 
-const css = (await readStylesheets()).get('src/index.css') ?? '';
+const sheets = await readStylesheets();
+const css = sheets.get('src/index.css') ?? '';
 
 // The first :root block holds the tokens
 const root = /:root\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
@@ -76,6 +77,12 @@ describe('the design tokens', () => {
     expect(forced).toMatch(
       /\.display-shadow,\s*\.display-shadow--small\s*\{\s*text-shadow:\s*none;/
     );
+  });
+
+  // The root of everything, which Vite's starter gave a grey, white and Segoe UI of its own
+  it("leaves App's root to the colours and type body takes from the tokens", () => {
+    const app = (sheets.get('src/App.css') ?? '').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(app).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|Segoe/i);
   });
 
   // The root is 14px on phones, so a rem size would fall under the floor of its font

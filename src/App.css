@@ -3,7 +3,8 @@
  * Main application layout and styling
  */
 
-/* A column of one main: the start page's own, or the one the player runs in */
+/* A column of one main: the start page's own, or the one the player runs in. Its colours and
+   type are body's, from the tokens (index.css). */
 .app {
   display: flex;
   flex-direction: column;
@@ -11,9 +12,6 @@
   height: 100dvh; /* Dynamic viewport height for modern browsers */
   width: 100vw;
   width: 100dvw; /* Dynamic viewport width for consistency */
-  background-color: #1a1a1a;
-  color: #fff;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* The production's page or the running player fill it; each keeps clear of the notch, the
