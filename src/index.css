@@ -269,6 +269,21 @@ button:focus-visible {
   color: var(--menu-selected-text);
 }
 
+/*
+ * Focus on the bar: the yellow ring is only 2.2:1 on light grey, so the ring is black,
+ * 9.0:1 on grey, inset. On the blue of a hovered or pressed item black fails, so the
+ * ring turns white, 13.3:1.
+ */
+.dos-menu .dos-menu-item:focus-visible {
+  outline: 2px solid var(--menu-text);
+  outline-offset: -2px;
+}
+
+.dos-menu .dos-menu-item:hover:focus-visible,
+.dos-menu .dos-menu-item[aria-pressed='true']:focus-visible {
+  outline-color: var(--menu-selected-text);
+}
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
   :root {
@@ -293,9 +308,16 @@ button:focus-visible {
     outline-color: Highlight;
   }
 
-  .dos-menu-item[aria-pressed='true'] {
+  .dos-menu .dos-menu-item:hover,
+  .dos-menu .dos-menu-item[aria-pressed='true'] {
     background-color: Highlight;
     color: HighlightText;
+  }
+
+  .dos-menu .dos-menu-item:focus-visible,
+  .dos-menu .dos-menu-item:hover:focus-visible,
+  .dos-menu .dos-menu-item[aria-pressed='true']:focus-visible {
+    outline-color: CanvasText;
   }
 }
 

@@ -1,0 +1,239 @@
+/*
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ */
+
+/* The page scrolls by itself, below the offline banner and above the install prompt */
+.start-page {
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  padding-bottom: var(--install-prompt-height, 0px);
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+/* Focused only so that its shortcut keys work; there is nothing to ring */
+.start-page:focus {
+  outline: none;
+}
+
+.start-header {
+  padding: 1rem 1.25rem;
+  padding-top: max(env(safe-area-inset-top, 0px), var(--offline-banner-height, 0px));
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+}
+
+/* Silkscreen in px, over its 16px floor; the root is 14px on phones. Yellow on black 19.7:1 */
+.start-logo {
+  margin: 0.75rem 0 0.25rem;
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: var(--title);
+}
+
+/* Light grey on black, 9:1 */
+.start-tagline {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 20px;
+  color: var(--text);
+}
+
+/* The menu: black on light grey 9:1; the search is white on black, 21:1 */
+.start-menu {
+  align-items: center;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.start-kinds {
+  display: contents;
+}
+
+.start-search {
+  box-sizing: border-box;
+  flex: 1 1 100%;
+  margin: 4px 8px;
+  padding: 0 0.5em;
+  border: 2px solid var(--menu-text);
+  border-radius: 0;
+  background-color: var(--surface);
+  color: var(--text-strong);
+  font-family: var(--font-ui);
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+/* Light grey on black, 9:1: the darker grey would fail */
+.start-search::placeholder {
+  color: var(--text);
+  opacity: 1;
+}
+
+.start-search:focus-visible {
+  outline: 2px solid var(--focus); /* yellow on black, 19.7:1 */
+  outline-offset: 0;
+}
+
+.start-body {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  padding: 1.25rem;
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+}
+
+.start-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Without the info window the grid has room for more columns; on phones, two */
+@media (min-width: 481px) {
+  .start-page .production-grid--grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+/* Light red on black, 6.7:1 */
+.start-notice {
+  margin: 0 0 1rem;
+  font-family: var(--font-ui);
+  font-size: 20px;
+  color: var(--danger);
+}
+
+.start-empty {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  color: var(--text);
+}
+
+.start-clear {
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 2px solid var(--menu-text);
+  border-radius: 0;
+  background-color: var(--menu);
+  color: var(--menu-text); /* black on light grey, 9:1 */
+  font-family: var(--font-ui);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.start-clear:hover {
+  background-color: var(--menu-selected);
+  color: var(--menu-selected-text);
+}
+
+/* The info window shows only where it fits beside the grid */
+.start-info {
+  display: none;
+}
+
+.start-info-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.start-info-body p,
+.start-info-body h2 {
+  margin: 0;
+}
+
+/* Yellow on blue, 12.5:1 */
+.start-info-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  text-transform: uppercase;
+  color: var(--window-title);
+}
+
+/* Light cyan on blue, 10.8:1 */
+.start-info-author {
+  color: var(--accent);
+}
+
+/* Anything longer than a line is in the reading stack */
+.start-info-body p {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 14px;
+}
+
+/* Yellow on blue, 12.5:1 */
+.start-info-body .start-info-warning {
+  color: var(--warning);
+}
+
+@media (min-width: 1100px) {
+  .start-info {
+    display: block;
+    position: sticky;
+    top: 1.25rem;
+    flex: 0 0 320px;
+  }
+
+  .start-page .production-grid--grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* The shortcut bar is for devices with a keyboard and a precise pointer */
+.start-shortcuts {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .start-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 1.5rem;
+    padding: 0.5rem 1rem;
+    font-family: var(--font-ui);
+    font-size: 18px;
+    color: var(--text); /* light grey on black, 9:1 */
+  }
+}
+
+/* On wide screens the menu is one row, the search at its right end */
+@media (min-width: 769px) {
+  .start-menu {
+    flex-wrap: nowrap;
+  }
+
+  .start-search {
+    flex: 0 1 16rem;
+    margin-left: auto;
+  }
+}
+
+@media (max-height: 500px) {
+  .start-header {
+    padding-top: max(env(safe-area-inset-top, 0px), var(--offline-banner-height, 0px));
+    padding-bottom: 0.5rem;
+  }
+
+  .start-logo {
+    margin-top: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .start-search,
+  .start-clear {
+    border-color: CanvasText;
+  }
+
+  .start-search:focus-visible {
+    outline-color: Highlight;
+  }
+}

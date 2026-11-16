@@ -54,6 +54,9 @@ const PAIRS: [fg: string, bg: string, min: number][] = [
   ['--danger', '--surface', 4.5],
   ['--warning', '--window', 4.5],
   ['--focus', '--surface', 3],
+  // The focus ring on the menu bar: black on grey, and white on the blue of a selected item
+  ['--menu-text', '--menu', 3],
+  ['--menu-selected-text', '--menu-selected', 3],
 ];
 
 describe('the design tokens', () => {
