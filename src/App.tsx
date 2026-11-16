@@ -104,11 +104,15 @@ function App() {
   const [infoFor, setInfoFor] = useState<DosApp | null>(null);
   const aboutButtonRef = useRef<HTMLButtonElement>(null);
   const showInfo = infoFor !== null && infoFor === currentApp;
-  // Closed from the keyboard, the About button gets the focus back; with the mouse, the page
-  // keeps it, where keys go to DOS
+  // Whether a production or the DOS prompt runs under the run bar, rather than the production's
+  // page showing
+  const [running, setRunning] = useState(false);
+  // The About button gets the focus back, where the production page's keys work, unless the
+  // panel was closed with the mouse while a production runs: then the page keeps it, where
+  // keys go to DOS
   const closeInfo = (fromKeyboard: boolean) => {
     setInfoFor(null);
-    if (fromKeyboard) {
+    if (fromKeyboard || !running) {
       aboutButtonRef.current?.focus();
     } else if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
@@ -225,6 +229,7 @@ function App() {
                 aboutButtonRef={aboutButtonRef}
                 isOnline={isOnline}
                 onStatusChange={setPlayerStatus}
+                onRunningChange={setRunning}
                 className="dos-player"
               />
             </ErrorBoundary>

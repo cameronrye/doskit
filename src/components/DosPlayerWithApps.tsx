@@ -60,6 +60,12 @@ interface DosPlayerWithAppsProps {
   apps: readonly DosApp[];
   /** Called with the status on mount, and again whenever it changes */
   onStatusChange?: (status: PlayerStatus) => void;
+  /**
+   * Called on mount, and again whenever it changes, with whether a production or the DOS
+   * prompt runs under the run bar, where keys go to DOS, rather than the production's page
+   * showing
+   */
+  onRunningChange?: (running: boolean) => void;
   onReady?: (ci: CommandInterface) => void;
   onExit?: () => void;
   className?: string;
@@ -120,6 +126,7 @@ export function DosPlayerWithApps({
   isOnline,
   apps,
   onStatusChange,
+  onRunningChange,
   onReady,
   onExit,
   className,
@@ -140,6 +147,12 @@ export function DosPlayerWithApps({
   useEffect(() => {
     reportStatus(status);
   }, [status]);
+
+  const running = session !== null;
+  const reportRunning = useEffectEvent((current: boolean) => onRunningChange?.(current));
+  useEffect(() => {
+    reportRunning(running);
+  }, [running]);
 
   // The parent's prop, adjusted for while rendering instead of in an effect. A new request
   // supersedes any load still running for an earlier one, and a request for the app already

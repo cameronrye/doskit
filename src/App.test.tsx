@@ -21,6 +21,7 @@ interface DosPlayerWithAppsProps {
   isOnline: boolean;
   apps: readonly DosApp[];
   onStatusChange?: (status: 'idle' | 'loading' | 'ready' | 'error') => void;
+  onRunningChange?: (running: boolean) => void;
   onReady?: () => void;
   onExit?: () => void;
 }
@@ -97,6 +98,7 @@ vi.mock('./components/DosPlayerWithApps', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./components/DosPlayerWithApps')>();
   const MockPlayer = ({
     onStatusChange,
+    onRunningChange,
     onBrowse,
     onOpenApp,
     onAbout,
@@ -128,6 +130,8 @@ vi.mock('./components/DosPlayerWithApps', async (importOriginal) => {
         <button onClick={() => onStatusChange?.('loading')}>Report Loading</button>
         <button onClick={() => onStatusChange?.('idle')}>Report Idle</button>
         <button onClick={() => onStatusChange?.('error')}>Report Error</button>
+        {/* As Play does, which replaces the production's page with the run bar */}
+        <button onClick={() => onRunningChange?.(true)}>Report Running</button>
         {/* As the run bar's Browse and the end card's, and the production page's breadcrumb */}
         <button onClick={() => onBrowse()}>Browse</button>
         <button onClick={() => onBrowse('intro')}>Player Browse Intros</button>
@@ -702,9 +706,10 @@ describe('App', () => {
       expect(screen.getByRole('button', { name: 'About' })).toHaveFocus();
     });
 
-    it('leaves the focus with the page when the panel is closed with the mouse, so keys reach DOS', async () => {
+    it('leaves the focus with the page when the panel is closed with the mouse while a production runs, so keys reach DOS', async () => {
       window.history.replaceState({}, '', '/testapp');
       render(<App />);
+      fireEvent.click(screen.getByRole('button', { name: 'Report Running' }));
       fireEvent.click(screen.getByRole('button', { name: 'About' }));
       await screen.findByText('A test DOS application');
 
@@ -714,6 +719,36 @@ describe('App', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       expect(document.activeElement).toBe(document.body);
     });
+
+    // Nothing runs to take the keys: the page's I, Escape and Enter must go on working
+    it.each([
+      [
+        'its Close button',
+        (panel: HTMLElement) => within(panel).getByRole('button', { name: 'Close' }),
+      ],
+      ['a click beside it', () => document.querySelector<HTMLElement>('.doskit-info-backdrop')!],
+    ])(
+      "gives About's button the focus back when the panel is closed with the mouse on the production's page, by %s",
+      async (_name, closer) => {
+        player.real = true;
+        window.history.replaceState({}, '', '/testapp');
+        const user = userEvent.setup();
+        render(<App />);
+        const page = await screen.findByRole('region', { name: 'Test Application' });
+        await within(page).findByRole('button', { name: 'Play' });
+        const about = within(page).getByRole('button', { name: 'About' });
+        await user.click(about);
+        const panel = screen.getByRole('dialog', { name: 'Test Application' });
+        await within(panel).findByText('A test DOS application');
+
+        await user.click(closer(panel));
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(about).toHaveFocus();
+        await user.keyboard('{Escape}');
+        expect(window.location.pathname).toBe('/');
+      }
+    );
 
     // Back and Forward come through under an open panel
     it('closes the panel when the page changes, and keeps it closed on return', async () => {

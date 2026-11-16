@@ -408,6 +408,23 @@ describe('DosPlayerWithApps', () => {
 
       expect(onAbout).toHaveBeenCalledTimes(2);
     });
+
+    // App gives the focus back to About's button on the page, and to DOS under the run bar
+    it('reports whether something runs under the run bar: not on the page, then after Play', async () => {
+      const onRunningChange = vi.fn();
+      await openApp(mockApp, { onRunningChange });
+      expect(onRunningChange.mock.calls).toEqual([[false]]);
+
+      fireEvent.click(playButton());
+
+      expect(onRunningChange.mock.calls).toEqual([[false], [true]]);
+    });
+
+    it('reports the DOS prompt running at once', () => {
+      const onRunningChange = vi.fn();
+      render(<Player onRunningChange={onRunningChange} />);
+      expect(onRunningChange.mock.calls).toEqual([[true]]);
+    });
   });
 
   // What the player reports to App, and its run bar shows
