@@ -10,7 +10,7 @@
   height: 100vh;
   height: 100dvh;
   overflow-y: auto;
-  padding-bottom: var(--install-prompt-height, 0px);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--install-prompt-height, 0px));
   background-color: var(--surface);
   color: var(--text);
 }
@@ -21,7 +21,7 @@
 }
 
 .production-page .copper {
-  margin-top: var(--offline-banner-height, 0px);
+  margin-top: max(env(safe-area-inset-top, 0px), var(--offline-banner-height, 0px));
 }
 
 /* Silkscreen in px, over its 16px floor; the root is 14px on phones */

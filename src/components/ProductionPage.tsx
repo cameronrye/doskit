@@ -19,9 +19,10 @@ import type { LoadProgress } from '../utils/diskLoader';
 import { formatSize } from '../utils/formatSize';
 import { kindLabel, moreByAuthor } from '../utils/productionFilter';
 import type { KindFilter } from '../utils/productionFilter';
+import { playLabelOf } from '../utils/playLabel';
 import { shareLink, type ShareResult } from '../utils/share';
 import { canonicalUrlOf } from '../utils/urlRouting';
-import type { AppKind, DosApp } from '../types/dos-app';
+import type { DosApp } from '../types/dos-app';
 import './ProductionPage.css';
 
 export type ProductionPageStatus =
@@ -40,14 +41,6 @@ interface ProductionPageProps {
   onAbout: () => void;
   onOpenApp: (app: DosApp) => void;
   aboutButtonRef?: Ref<HTMLButtonElement>;
-}
-
-/** What the Play button says: a tracker is started, a diskmag read, the rest played */
-// eslint-disable-next-line react-refresh/only-export-components
-export function playLabelOf(kind: AppKind): string {
-  if (kind === 'tracker') return 'Start';
-  if (kind === 'diskmag') return 'Read';
-  return 'Play';
 }
 
 const SHARE_STATUS: Partial<Record<ShareResult, string>> = {
@@ -77,11 +70,13 @@ export function ProductionPage({
   const more = moreByAuthor(app, apps);
   const kind = kindLabel(app.kind);
 
-  // Focus the page so that its keys work, unless Play already has the focus
+  // Focus the page so that its keys work, unless a control in it has the focus. Run again as
+  // the status changes: the focused Cancel or Try Again unmounts and drops the focus on body.
+  const statusKind = status.kind;
   useEffect(() => {
     const root = rootRef.current;
     if (root && !root.contains(document.activeElement)) root.focus();
-  }, []);
+  }, [statusKind]);
 
   useEffect(() => {
     let current = true;
@@ -101,13 +96,18 @@ export function ProductionPage({
       target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') ||
       event.ctrlKey ||
       event.altKey ||
-      event.metaKey
+      event.metaKey ||
+      event.repeat
     ) {
       return;
     }
     if (event.key === 'i' || event.key === 'I') {
       event.preventDefault();
       onAbout();
+    } else if (event.key === 'Enter' && target === event.currentTarget && statusKind === 'ready') {
+      // A button or link takes Enter itself; this is for the page's own focus
+      event.preventDefault();
+      onPlay();
     } else if (event.key === 'Escape') {
       event.preventDefault();
       onBrowse();

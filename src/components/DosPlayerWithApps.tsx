@@ -22,7 +22,7 @@ import { runStartRecipe, type RecipeEmulator, type RecipeState } from '../utils/
 import { createPersistQueue } from '../utils/persistQueue';
 import { getSavedFiles, putSavedFiles, removeSavedFiles } from '../utils/savedFiles';
 import { dosPathFor, zipEntryNames } from '../utils/dosNames';
-import { playLabelOf } from './ProductionPage';
+import { playLabelOf } from '../utils/playLabel';
 import { TrackerFiles } from './TrackerFiles';
 import { fnv1a } from '../utils/frameHash';
 import {

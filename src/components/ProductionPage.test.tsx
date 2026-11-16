@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ProductionPage, playLabelOf, type ProductionPageStatus } from './ProductionPage';
+import { ProductionPage, type ProductionPageStatus } from './ProductionPage';
 import { availableApps } from '../config/apps.config';
 import { loadAppPage } from '../config/appPages';
 import type { DosApp } from '../types/dos-app';
@@ -64,12 +64,6 @@ describe('ProductionPage', () => {
     const { onPlay } = await renderPage();
     await userEvent.click(screen.getByRole('button', { name: 'Play' }));
     expect(onPlay).toHaveBeenCalledOnce();
-  });
-
-  it('says Start for a tracker and Read for the diskmag', () => {
-    expect(playLabelOf('tracker')).toBe('Start');
-    expect(playLabelOf('diskmag')).toBe('Read');
-    expect(playLabelOf('demo')).toBe('Play');
   });
 
   it('shows the download without announcing its figure, and Cancel', async () => {
@@ -131,6 +125,47 @@ describe('ProductionPage', () => {
     expect(onAbout).toHaveBeenCalledOnce();
     fireEvent.keyDown(play, { key: 'Escape' });
     expect(onBrowse).toHaveBeenCalledWith();
+  });
+
+  it('plays on Enter from the page itself, but not while loading or on repeat', async () => {
+    const { onPlay, onAbout, container, rerender, ...handlers } = await renderPage();
+    const root = container.querySelector('.production-page')!;
+    fireEvent.keyDown(root, { key: 'i', repeat: true });
+    expect(onAbout).not.toHaveBeenCalled();
+    fireEvent.keyDown(root, { key: 'Enter' });
+    expect(onPlay).toHaveBeenCalledOnce();
+
+    rerender(
+      <ProductionPage
+        app={unreal}
+        apps={availableApps}
+        status={{ kind: 'loading', progress: null }}
+        onPlay={onPlay}
+        onAbout={onAbout}
+        {...handlers}
+      />
+    );
+    fireEvent.keyDown(root, { key: 'Enter' });
+    expect(onPlay).toHaveBeenCalledOnce();
+  });
+
+  it('keeps its keys after Try Again unmounts the focused button', async () => {
+    const error: ProductionPageStatus = { kind: 'error', error: { message: 'No connection' } };
+    const { rerender, container, onAbout, ...handlers } = await renderPage({ status: error });
+    const retry = screen.getByRole('button', { name: 'Try Again' });
+    retry.focus();
+    rerender(
+      <ProductionPage
+        app={unreal}
+        apps={availableApps}
+        status={{ kind: 'loading', progress: null }}
+        onAbout={onAbout}
+        {...handlers}
+      />
+    );
+    expect(container.querySelector('.production-page')).toHaveFocus();
+    await userEvent.keyboard('i');
+    expect(onAbout).toHaveBeenCalledOnce();
   });
 
   it('leaves the keys to a text field', async () => {
