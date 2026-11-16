@@ -134,6 +134,8 @@ describe('findPageCollisions', () => {
     ['licenses', 'the site already serves /licenses'],
     ['sitemap', 'the site already serves /sitemap'],
     ['library', 'the site already serves /library'],
+    // The DOS prompt's own path, which the app routes to itself
+    ['dos', 'the site already serves /dos'],
     ['star_wars', 'is not [a-z0-9]+'],
   ])('refuses an app called %s', (id, why) => {
     expect(findPageCollisions([{ ...APP, id }], ['index.html', 'licenses']).join()).toContain(why);

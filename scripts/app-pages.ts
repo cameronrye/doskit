@@ -255,6 +255,8 @@ export const RESERVED = [
   'trackers',
   'assets',
   'cards',
+  // The plain DOS prompt, which the app routes to itself (PROMPT_SEGMENT in urlRouting.ts)
+  'dos',
 ];
 
 /**

@@ -19,7 +19,7 @@ if (!('ResizeObserver' in globalThis)) {
 }
 
 // jsdom has no navigator.userActivation. Tests start as a click in the page would leave it:
-// active, so that an app starts at once; a test of the Play screen sets it inactive.
+// active, so that Try Again starts a production at once; a test can set it inactive.
 if (!('userActivation' in navigator)) {
   Object.defineProperty(navigator, 'userActivation', {
     configurable: true,

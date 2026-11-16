@@ -18,15 +18,15 @@
  *   1000   the loading and error overlays, the Play screen, the start hint, the end card, a
  *          tracker's Files button and the leave question, over the whole player (here). The
  *          end card leaves js-dos's fullscreen first, if the player is in it.
- *   1100   the selector's backdrop (here), 1101 the selector (DemoSelector.css); the About
- *          and Files panels take the same two layers (AppInfo.css), and none shows with another
+ *   1100   the About and Files panels' backdrop, 1101 the panels (AppInfo.css); only one
+ *          panel shows at a time
  *   9999   the install prompt (OfflineIndicator.css)
  *   10000  the offline and back-online notices (OfflineIndicator.css), and the update
  *          prompt (UpdateNotification.css), whose root comes later in the page
- * The offline banner and the install prompt are above the selector, but the selector is
- * kept clear of them by layout, not by z-index: while one is shown, OfflineIndicator keeps
- * its height in --offline-banner-height or --install-prompt-height on the root element,
- * and DemoSelector.css fits the selector in the space the two leave.
+ * The start page and the header keep clear of the offline banner and the install prompt by
+ * layout, not by z-index: while one is shown, OfflineIndicator keeps its height in
+ * --offline-banner-height or --install-prompt-height on the root element. StartPage.css
+ * pads the start page by both, and App.css the header by the banner's.
  */
 
 .dos-player-with-apps {
@@ -35,18 +35,6 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-/* Overlay for modal */
-.selector-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  z-index: 1100;
 }
 
 /* Loading Overlay */

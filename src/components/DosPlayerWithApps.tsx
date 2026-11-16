@@ -4,15 +4,18 @@
  * Licensed under the MIT License
  *
  * DosPlayer with Application Support
- * Enhanced DosPlayer that supports loading different DOS applications
+ * Runs the production a page asks for, or the plain DOS prompt: it downloads the production,
+ * waits on its Play screen, and runs it
  */
 
 import { useState, useCallback, useEffect, useEffectEvent, useReducer, useRef } from 'react';
 import { DosPlayer } from './DosPlayer';
-import { DemoSelector, type LoadedApp } from './DemoSelector';
 import type { AppKind, DosApp } from '../types/dos-app';
 import type { CommandInterface } from '../types/js-dos';
 import type { PlayerHandle } from '../hooks/useDosEmulator';
+import type { LoadProgress } from '../utils/diskLoader';
+import { describeProgress } from '../utils/describeProgress';
+import type { KindFilter } from '../utils/productionFilter';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { endMarkerFor, withEndMarker } from '../utils/endMarker';
 import { runStartRecipe, type RecipeEmulator, type RecipeState } from '../utils/startRecipe';
@@ -35,32 +38,31 @@ import './DosPlayerWithApps.css';
 export type { PlayerStatus } from './playerSession';
 
 interface DosPlayerWithAppsProps {
+  /**
+   * The production to run, or null for the plain DOS prompt. Each new value stops what is
+   * running and loads that production, unless it is already running or waiting for Play.
+   */
+  requestedApp: DosApp | null;
+  /** To the start page, with a kind to select; a running tracker asks first (the Leave dialog) */
+  onBrowse: (kind?: KindFilter) => void;
+  /** Called with the status on mount, and again whenever it changes */
+  onStatusChange?: (status: PlayerStatus) => void;
   onReady?: (ci: CommandInterface) => void;
   onExit?: () => void;
   className?: string;
-  showSelector?: boolean;
-  /**
-   * App to run, such as the one a URL names. Each new value stops what is running and loads
-   * that app, unless it is already running; null runs the default DOS prompt, or nothing while
-   * the selector is open. Apps picked in the selector run without it.
-   */
-  requestedApp?: DosApp | null;
-  /**
-   * Called when an app starts running (picked or requested), and with null when Choose
-   * Another Application after a failed load, or Cancel during one, returns to the selector
-   */
-  onAppChange?: (app: DosApp | null) => void;
-  onSelectorVisibilityChange?: (visible: boolean) => void;
-  /** Called with the status on mount, and again whenever it changes */
-  onStatusChange?: (status: PlayerStatus) => void;
-  /** A notice for the selector to show above the disks, such as a link that named no app */
-  selectorNotice?: string | null;
 }
 
 /**
+ * How long a load may report nothing before its download has started, as a stall would: the
+ * download times itself out only from its request on
+ */
+const START_TIMEOUT_MS = 20_000;
+
+/**
  * Whether the page has a click or key press of the last few seconds to start sound with.
- * Browsers start sound only within a few seconds of one (Safari after about 5), and a demo
- * opened from a link has none: it waits on the Play screen for the click that starts it.
+ * Browsers start sound only within a few seconds of one (Safari after about 5). A production
+ * waits on its Play screen for the click that starts it, however it was opened; only Try
+ * Again, a click on the same screen, starts it at once while that click is this fresh.
  */
 function hasFreshActivation(): boolean {
   return navigator.userActivation?.isActive ?? false;
@@ -104,27 +106,20 @@ function playLabelOf(kind: AppKind): string {
 }
 
 export function DosPlayerWithApps({
+  requestedApp,
+  onBrowse,
+  onStatusChange,
   onReady,
   onExit,
   className,
-  showSelector = false,
-  requestedApp = null,
-  onAppChange,
-  onSelectorVisibilityChange,
-  onStatusChange,
-  selectorNotice = null,
 }: DosPlayerWithAppsProps) {
-  const [state, dispatch] = useReducer(
-    playerReducer,
-    { requestedApp, showSelector },
-    initialPlayerState
-  );
+  const [state, dispatch] = useReducer(playerReducer, { requestedApp }, initialPlayerState);
   const session = sessionOf(state);
   const posterSession = posterOf(state);
   const preparingSession = preparingOf(state);
-  const loadingApp = state.phase.kind === 'loading' ? state.phase.app : null;
+  const loading = state.phase.kind === 'loading' ? state.phase : null;
+  const loadingApp = loading?.app ?? null;
   const error = state.phase.kind === 'error' ? state.phase.error : null;
-  const showAppSelector = state.selectorOpen;
   const tryAgainRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   // The running session's emulator, once js-dos has handed it out
@@ -137,84 +132,87 @@ export function DosPlayerWithApps({
     reportStatus(status);
   }, [status]);
 
-  // The parent's props, adjusted for while rendering instead of in an effect: the selector's
-  // prop first, so that a request for no app sees whether the selector is open. A new
-  // request supersedes any load still running for an earlier one, and a request for the app
-  // already running changes nothing.
+  // The parent's prop, adjusted for while rendering instead of in an effect. A new request
+  // supersedes any load still running for an earlier one, and a request for the app already
+  // running changes nothing.
   // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
-  if (showSelector !== state.shownBy) {
-    dispatch({ type: 'selectorProp', open: showSelector });
-  }
   if ((requestedApp?.id ?? null) !== state.requestedId) {
     dispatch({ type: 'requested', app: requestedApp });
   }
 
-  const reportAppRunning = useEffectEvent((app: DosApp) => onAppChange?.(app));
-
-  // Give Try Again the keyboard focus when the error appears, and when the selector over it
-  // closes, without taking the focus from an open selector
+  // Give Try Again the keyboard focus when the error appears
   useEffect(() => {
-    if (error && !showAppSelector) tryAgainRef.current?.focus();
-  }, [error, showAppSelector]);
+    if (error) tryAgainRef.current?.focus();
+  }, [error]);
 
-  // Load the requested app's files and DOSBox config. A newer request, a pick in the
-  // selector or unmounting changes loadingApp, which aborts this load and drops its result.
+  // How much of the archive has arrived, for the app whose download reported it
+  const [progress, setProgress] = useState<{ appId: string; progress: LoadProgress } | null>(null);
+  const loadProgress = loadingApp && progress?.appId === loadingApp.id ? progress.progress : null;
+
+  // Load the requested app's files and DOSBox config. A newer request, Try Again or
+  // unmounting starts another load or none, which aborts this one and drops its result.
   useEffect(() => {
-    if (!loadingApp) return;
+    if (!loading) return;
+    const { app } = loading;
 
     if (import.meta.env.DEV) {
-      console.log('[DosPlayerWithApps] Loading requested app:', loadingApp.name);
+      console.log('[DosPlayerWithApps] Loading requested app:', app.name);
     }
 
     const controller = new AbortController();
+    // The download times itself out once it has reported its start: a load that has not for
+    // as long, such as one whose request never goes out, gives up here as a stall does
+    const startTimer = setTimeout(() => {
+      controller.abort();
+      const timedOut = Object.assign(
+        new Error(`Loading timed out: nothing arrived for ${START_TIMEOUT_MS / 1000} seconds`),
+        { name: 'TimeoutError' }
+      );
+      console.error('[DosPlayerWithApps] Error loading application:', timedOut);
+      dispatch({
+        type: 'loadFailed',
+        app,
+        error: getUserFriendlyError(timedOut, { online: navigator.onLine }),
+      });
+    }, START_TIMEOUT_MS);
     Promise.all([
-      loadingApp.loader(undefined, controller.signal),
-      loadingApp.loadDosboxConf
-        ? loadingApp.loadDosboxConf()
-        : Promise.resolve(loadingApp.dosboxConf),
-    ]).then(
-      ([files, conf]) => {
-        if (controller.signal.aborted) return;
-        dispatch({
-          type: 'loaded',
-          app: loadingApp,
-          files,
-          dosboxConf: conf,
-          // A production that flashes, or has a content note, waits on the Play screen,
-          // which warns of it: a click elsewhere during the load is no press of Play. Picked
-          // in the selector, its warning was in the selector's details.
-          play: hasFreshActivation() && !loadingApp.flashing && !loadingApp.contentNote,
-        });
-        reportAppRunning(loadingApp);
-      },
-      (err: unknown) => {
-        if (controller.signal.aborted) return;
-        console.error('[DosPlayerWithApps] Error loading application:', err);
-        dispatch({
-          type: 'loadFailed',
-          app: loadingApp,
-          error: getUserFriendlyError(err, { online: navigator.onLine }),
-        });
-      }
-    );
-    return () => controller.abort();
-  }, [loadingApp]);
-
-  // Nobody watches the running app while the selector covers it: pause it there, sound and
-  // all, and let it go on once the selector closes. Through the player: js-dos undoes
-  // ci.pause() when the tab is hidden and shown again.
-  const pausedHandleRef = useRef<PlayerHandle | null>(null);
-  useEffect(() => {
-    if (!handle) return;
-    const paused = pausedHandleRef.current === handle;
-    if (showAppSelector && !paused) {
-      handle.player.setPaused(true);
-      pausedHandleRef.current = handle;
-    } else if (!showAppSelector && paused) {
-      handle.player.setPaused(false);
-      pausedHandleRef.current = null;
-    }
-  }, [handle, showAppSelector]);
+      app.loader((reported) => {
+        clearTimeout(startTimer);
+        if (!controller.signal.aborted) setProgress({ appId: app.id, progress: reported });
+      }, controller.signal),
+      app.loadDosboxConf ? app.loadDosboxConf() : Promise.resolve(app.dosboxConf),
+    ])
+      .then(
+        ([files, conf]) => {
+          if (controller.signal.aborted) return;
+          dispatch({
+            type: 'loaded',
+            app,
+            files,
+            dosboxConf: conf,
+            // Only Try Again starts the production at once, while its click can still start
+            // sound. A production that flashes, or has a content note, waits on the Play
+            // screen all the same, which warns of it.
+            play:
+              loading.retry === true && hasFreshActivation() && !app.flashing && !app.contentNote,
+          });
+        },
+        (err: unknown) => {
+          if (controller.signal.aborted) return;
+          console.error('[DosPlayerWithApps] Error loading application:', err);
+          dispatch({
+            type: 'loadFailed',
+            app,
+            error: getUserFriendlyError(err, { online: navigator.onLine }),
+          });
+        }
+      )
+      .finally(() => clearTimeout(startTimer));
+    return () => {
+      clearTimeout(startTimer);
+      controller.abort();
+    };
+  }, [loading]);
 
   // An app's autoexec prints its end marker once its program returns to DOS
   const sessionApp = session?.app ?? null;
@@ -264,43 +262,28 @@ export function DosPlayerWithApps({
     recipe.state === 'fallback' &&
     hintDismissed !== session.id;
 
-  // Run an app picked in the selector, its files already loaded. The pick wins over a
-  // requested app still loading, and starts the app again if it is the one running.
-  const runPick = (loadedApp: LoadedApp) => {
-    dispatch({
-      type: 'picked',
-      app: loadedApp.app,
-      files: loadedApp.files,
-      dosboxConf: loadedApp.dosboxConf,
-      play: hasFreshActivation(),
-    });
-    onAppChange?.(loadedApp.app);
-  };
-
-  // A pick that would end a running tracker waits for the visitor to say so: unsaved work in
-  // it would be lost, and its saved files are kept first
-  const [pendingPick, setPendingPick] = useState<{ sessionId: number; pick: LoadedApp } | null>(
+  // Going to the start page would end a running tracker: that waits for the visitor to say
+  // so, as unsaved work in it would be lost, and its saved files are kept first
+  const [pendingLeave, setPendingLeave] = useState<{ sessionId: number; kind?: KindFilter } | null>(
     null
   );
   // Back or Forward can end the tracker the question is about: it goes with that session
   const leaveAsked =
-    pendingPick !== null && session !== null && pendingPick.sessionId === session.id;
+    pendingLeave !== null && session !== null && pendingLeave.sessionId === session.id;
   const trackerRuns = sessionApp?.saveFiles === true && status === 'ready';
-  const handleSelectApp = (loadedApp: LoadedApp) => {
+  const requestBrowse = (kind?: KindFilter) => {
     if (trackerRuns && session) {
-      setPendingPick({ sessionId: session.id, pick: loadedApp });
-      dispatch({ type: 'selectorCancelled' });
+      setPendingLeave({ sessionId: session.id, kind });
     } else {
-      runPick(loadedApp);
+      onBrowse(kind);
     }
-    onSelectorVisibilityChange?.(false);
   };
   const handleLeave = async () => {
-    const pending = leaveAsked ? pendingPick : null;
-    setPendingPick(null);
+    const pending = leaveAsked ? pendingLeave : null;
+    setPendingLeave(null);
     if (!pending) return;
     await keepFilesNow();
-    runPick(pending.pick);
+    onBrowse(pending.kind);
   };
 
   // Play again: for a tracker, with the files it saved this session, packed first
@@ -386,23 +369,17 @@ export function DosPlayerWithApps({
     dispatch({ type: 'restarted', saved: null, imports: [] });
   };
 
-  const handleCancelSelector = useCallback(() => {
-    dispatch({ type: 'selectorCancelled' });
-    onSelectorVisibilityChange?.(false);
-  }, [onSelectorVisibilityChange]);
-
   // Try Again: load the app that failed once more, behind the loading overlay
   const handleRetry = useCallback((app: DosApp) => {
     dispatch({ type: 'retried', app });
   }, []);
 
-  // Choose Another Application, and Cancel while a requested app loads, which stops the
-  // load: the selector, with nothing running under it
-  const handleChooseAnother = useCallback(() => {
-    dispatch({ type: 'choseAnother' });
-    onAppChange?.(null);
-    onSelectorVisibilityChange?.(true);
-  }, [onAppChange, onSelectorVisibilityChange]);
+  // Choose another on the end card: the start page, once the question over a running tracker
+  // has been answered, which the end card gives way to
+  const handleChooseAnother = () => {
+    dispatch({ type: 'endDismissed' });
+    requestBrowse();
+  };
 
   // A tracker's files from its earlier visits come back after its archive. Where the
   // browser cannot keep files, it starts without them.
@@ -465,10 +442,9 @@ export function DosPlayerWithApps({
       }
       return bytes;
     };
-    // A save that js-dos is slow to answer, or one asked for while the selector pauses the
-    // emulator, says nothing about the browser's storage: only a failed write does
+    // A save that js-dos is slow to answer says nothing about the browser's storage: only a
+    // failed write does
     const saveQuietly = () => {
-      if (pausedHandleRef.current === handle) return;
       saveNow().catch((err: unknown) => {
         console.warn('[DosPlayerWithApps] Files could not be packed:', err);
       });
@@ -505,34 +481,15 @@ export function DosPlayerWithApps({
     };
   }, [handle, sessionApp, session]);
 
-  // The selector, opened from the end card
-  const handleOpenSelector = useCallback(() => {
-    dispatch({ type: 'selectorOpened' });
-    onSelectorVisibilityChange?.(true);
-  }, [onSelectorVisibilityChange]);
-
   return (
     <div ref={containerRef} className={`dos-player-with-apps ${className || ''}`}>
-      {/* Application Selector Modal */}
-      {showAppSelector && (
-        <>
-          <div className="selector-overlay" onClick={handleCancelSelector} />
-          {/* A new request remounts the selector, which aborts a download it still runs */}
-          <DemoSelector
-            key={state.requestedId ?? 'none'}
-            onSelect={handleSelectApp}
-            onCancel={handleCancelSelector}
-            notice={selectorNotice}
-          />
-        </>
-      )}
-
-      {/* Loading State: screen readers announce its message, not the button with it */}
+      {/* Loading State: screen readers announce its message, not the button with it. Cancel
+          goes to the start page, which stops the download as it replaces the player. */}
       {loadingApp && (
         <div className="loading-overlay">
           <div className="dos-app-loading-spinner" aria-hidden="true" />
-          <p role="status">Loading application...</p>
-          <button onClick={handleChooseAnother}>Cancel</button>
+          <p role="status">{describeProgress(loadProgress).text}</p>
+          <button onClick={() => onBrowse()}>Cancel</button>
         </div>
       )}
 
@@ -553,7 +510,7 @@ export function DosPlayerWithApps({
               <button ref={tryAgainRef} onClick={() => handleRetry(error.app)}>
                 Try Again
               </button>
-              <button className="error-secondary-action" onClick={handleChooseAnother}>
+              <button className="error-secondary-action" onClick={() => onBrowse()}>
                 Choose Another Application
               </button>
             </div>
@@ -662,7 +619,7 @@ export function DosPlayerWithApps({
             <button autoFocus onClick={() => void handleLeave()}>
               Leave
             </button>
-            <button onClick={() => setPendingPick(null)}>Stay</button>
+            <button onClick={() => setPendingLeave(null)}>Stay</button>
           </div>
         </div>
       )}
@@ -675,7 +632,7 @@ export function DosPlayerWithApps({
             <button autoFocus onClick={() => void handlePlayAgain()}>
               Play again
             </button>
-            <button onClick={handleOpenSelector}>Choose another</button>
+            <button onClick={handleChooseAnother}>Choose another</button>
             <button onClick={() => dispatch({ type: 'endDismissed' })}>Back to DOS</button>
           </div>
         </div>

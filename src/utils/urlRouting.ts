@@ -101,6 +101,20 @@ export function getUrlFriendlyId(appId: string): string {
   return INTERNAL_TO_URL_MAPPING[appId] || getUrlFriendlyIdFromConfig(appId);
 }
 
+/** The path segment of the plain DOS prompt, /dos, which no app's page may take */
+export const PROMPT_SEGMENT = 'dos';
+
+/**
+ * Whether the current URL asks for the plain DOS prompt: a first path segment of dos, in any
+ * letter case, as in /dos or /DOS/. An ?app= parameter decides whenever it is present, so
+ * /dos?app=unreal is Unreal's.
+ */
+export function isPromptUrl(): boolean {
+  if (new URLSearchParams(window.location.search).has('app')) return false;
+  const firstSegment = window.location.pathname.split('/').find((segment) => segment.length > 0);
+  return firstSegment?.toLowerCase() === PROMPT_SEGMENT;
+}
+
 /** The site's address, which canonical links name */
 const SITE = 'https://doskit.net';
 
@@ -113,8 +127,21 @@ const SITE = 'https://doskit.net';
  * @param replace - If true, replaces the current history entry instead of adding a new one
  */
 export function updateUrlWithApp(appId: string | null, replace: boolean = false): void {
+  showPath(appId ? `/${getUrlFriendlyId(appId)}` : '/', replace);
+}
+
+/**
+ * Update the browser URL to the plain DOS prompt's, /dos, as updateUrlWithApp does for an app
+ * @param replace - If true, replaces the current history entry instead of adding a new one
+ */
+export function updateUrlForPrompt(replace: boolean = false): void {
+  showPath(`/${PROMPT_SEGMENT}`, replace);
+}
+
+/** Show a path in the URL, keeping the rest of the query and the hash */
+function showPath(pathname: string, replace: boolean): void {
   const url = new URL(window.location.href);
-  url.pathname = appId ? `/${getUrlFriendlyId(appId)}` : '/';
+  url.pathname = pathname;
   // No ?app= stays, which would decide over the path on a reload
   url.searchParams.delete('app');
 
@@ -125,8 +152,8 @@ export function updateUrlWithApp(appId: string | null, replace: boolean = false)
     canonical.href = `${SITE}${url.pathname}`;
   }
 
-  // Apps report themselves after loading asynchronously (deep links, back/forward),
-  // when the URL already matches. Pushing again would duplicate the entry and
+  // The route a deep link or Back and Forward lands on finds its URL already in place, as
+  // can a visit to the page already shown. Pushing again would duplicate the entry and
   // discard forward history.
   if (url.href === window.location.href) {
     return;

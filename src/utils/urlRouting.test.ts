@@ -9,9 +9,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   getAppRequestFromUrl,
+  isPromptUrl,
   normalizeAppId,
   getUrlFriendlyId,
   updateDocumentTitle,
+  updateUrlForPrompt,
   updateUrlWithApp,
 } from './urlRouting';
 
@@ -184,6 +186,66 @@ describe('urlRouting', () => {
       } finally {
         link.remove();
       }
+    });
+  });
+
+  describe('isPromptUrl', () => {
+    it.each(['/dos', '/DOS', '/dos/'])('takes %s for the DOS prompt', (url) => {
+      window.history.replaceState({}, '', url);
+
+      expect(isPromptUrl()).toBe(true);
+    });
+
+    // An ?app= parameter decides whenever it is present, as for a production's path
+    it.each(['/dos?app=unreal', '/dos?app=', '/unreal', '/', '/dosbox'])(
+      'takes %s for no DOS prompt',
+      (url) => {
+        window.history.replaceState({}, '', url);
+
+        expect(isPromptUrl()).toBe(false);
+      }
+    );
+  });
+
+  describe('updateUrlForPrompt', () => {
+    beforeEach(() => {
+      window.history.replaceState({}, '', '/');
+    });
+
+    it('pushes /dos, and points the canonical link at it', () => {
+      const link = document.createElement('link');
+      link.rel = 'canonical';
+      link.href = 'https://doskit.net/';
+      document.head.append(link);
+      const lengthBefore = window.history.length;
+      try {
+        updateUrlForPrompt();
+
+        expect(window.location.pathname + window.location.search).toBe('/dos');
+        expect(window.history.length).toBe(lengthBefore + 1);
+        expect(link.href).toBe('https://doskit.net/dos');
+      } finally {
+        link.remove();
+      }
+    });
+
+    it('rewrites another spelling in place, keeping other parameters', () => {
+      window.history.replaceState({}, '', '/DOS/?ref=blog');
+      const lengthBefore = window.history.length;
+
+      updateUrlForPrompt(true);
+
+      expect(window.location.pathname + window.location.search).toBe('/dos?ref=blog');
+      expect(window.history.length).toBe(lengthBefore);
+    });
+
+    it('adds no history entry when the URL already shows the prompt', () => {
+      window.history.replaceState({}, '', '/dos');
+      const lengthBefore = window.history.length;
+
+      updateUrlForPrompt();
+
+      expect(window.history.length).toBe(lengthBefore);
     });
   });
 
