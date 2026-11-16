@@ -1,0 +1,64 @@
+/*
+ * DosKit - Cross-Platform DOS Emulator
+ * Copyright (c) 2025 Cameron Rye
+ * Licensed under the MIT License
+ */
+
+/* One row, below the offline banner and clear of the notch. Colours: see .dos-menu */
+.run-bar {
+  box-sizing: border-box;
+  flex-wrap: nowrap;
+  align-items: center;
+  padding-top: max(env(safe-area-inset-top, 0px), var(--offline-banner-height, 0px));
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.run-bar > * {
+  flex: 0 0 auto;
+}
+
+.run-bar-title,
+.run-bar-status {
+  padding: 0 0.75em;
+  line-height: 1.5;
+}
+
+/* The name takes the room, and gives way to the buttons on a narrow screen */
+.run-bar-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Author and year: the first to go when the window is short */
+.run-bar-meta {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-right: 0.75em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Black on light grey, 9.0:1 */
+.run-bar-status {
+  white-space: nowrap;
+}
+
+/* Push the status and the buttons to the right when there is no meta to fill the row */
+.run-bar-title + .run-bar-status {
+  margin-left: auto;
+}
+
+@media (max-height: 500px) {
+  .run-bar-meta {
+    display: none;
+  }
+
+  .run-bar-title {
+    flex: 1 1 0;
+  }
+}
