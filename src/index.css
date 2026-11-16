@@ -308,16 +308,23 @@ button:focus-visible {
     outline-color: Highlight;
   }
 
+  /* The browser puts a Canvas backplate behind text it adjusts, and on Highlight that left
+     HighlightText white on white; with no adjustment the pair is Highlight and HighlightText */
   .dos-menu .dos-menu-item:hover,
   .dos-menu .dos-menu-item[aria-pressed='true'] {
+    forced-color-adjust: none;
     background-color: Highlight;
     color: HighlightText;
   }
 
-  .dos-menu .dos-menu-item:focus-visible,
+  .dos-menu .dos-menu-item:focus-visible {
+    outline-color: CanvasText;
+  }
+
+  /* On Highlight, the ring is HighlightText, as the text is */
   .dos-menu .dos-menu-item:hover:focus-visible,
   .dos-menu .dos-menu-item[aria-pressed='true']:focus-visible {
-    outline-color: CanvasText;
+    outline-color: HighlightText;
   }
 }
 

@@ -206,14 +206,40 @@
   }
 }
 
-/* On wide screens the menu is one row, the search at its right end */
-@media (min-width: 769px) {
+/* An item is never broken over two lines: a menu that is too narrow wraps whole items */
+.start-menu .dos-menu-item {
+  white-space: nowrap;
+}
+
+/* The menu and the search are one row only where the items and a search field of 16rem fit,
+   about 1040px; between 769px and that, the search takes a row below the items */
+@media (min-width: 1040px) {
   .start-menu {
     flex-wrap: nowrap;
   }
 
   .start-search {
     flex: 0 1 16rem;
+    margin-left: auto;
+  }
+}
+
+/* A short window keeps the menu to one row at any width above a phone's. The items are set
+   closer, so that the search keeps room for its placeholder at 844px, and it takes what they
+   leave. */
+@media (min-width: 769px) and (max-width: 1039px) and (max-height: 500px) {
+  .start-menu {
+    flex-wrap: nowrap;
+  }
+
+  .start-menu .dos-menu-item {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+
+  .start-search {
+    flex: 0 1 16rem;
+    min-width: 0;
     margin-left: auto;
   }
 }

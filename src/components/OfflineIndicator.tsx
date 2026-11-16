@@ -38,13 +38,18 @@ const STORAGE_KEYS = {
  * custom property on the root element, and StartPage.css, ProductionPage.css and RunBar.css
  * keep clear of it.
  */
-function keepHeightIn(property: string) {
+function keepHeightIn(property: string, fromBottom = false) {
   return (notice: HTMLElement | null) => {
     if (!notice) return;
     const rootStyle = document.documentElement.style;
     // Reports once the notice is laid out, and again whenever its text wraps differently
     const observer = new ResizeObserver(() => {
-      rootStyle.setProperty(property, `${notice.offsetHeight}px`);
+      // A notice at the bottom floats above it, and what a page keeps clear is the space
+      // from its top to the window's edge, the gap under it included
+      const space = fromBottom
+        ? window.innerHeight - notice.getBoundingClientRect().top
+        : notice.offsetHeight;
+      rootStyle.setProperty(property, `${space}px`);
     });
     observer.observe(notice);
     return () => {
@@ -55,7 +60,7 @@ function keepHeightIn(property: string) {
 }
 
 const offlineBannerRef = keepHeightIn('--offline-banner-height');
-const installPromptRef = keepHeightIn('--install-prompt-height');
+const installPromptRef = keepHeightIn('--install-prompt-height', true);
 
 /** Whether the page runs as the installed app */
 function checkInstalled(): boolean {

@@ -19,7 +19,7 @@
 }
 
 .run-bar-title,
-.run-bar-status {
+.run-bar-status:not(.visually-hidden) {
   padding: 0 0.75em;
   line-height: 1.5;
 }
@@ -43,19 +43,48 @@
   white-space: nowrap;
 }
 
-/* Black on light grey, 9.0:1 */
+/* The colour is the bar's: black on light grey, 9.0:1. The quiet status keeps the padding and
+   margin of .visually-hidden (index.css), so that it stays a 1px box. A status that is
+   shown gives way before the buttons do, so that Files is never pushed off the bar. */
 .run-bar-status {
   white-space: nowrap;
 }
 
+.run-bar-status:not(.visually-hidden) {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* On a phone, "Ready · Offline" with About and Files is wider than the bar, so the bar's
+   padding is tighter than the menus', the author goes, and the name takes what is left */
+@media (max-width: 400px) {
+  .run-bar-meta {
+    display: none;
+  }
+
+  .run-bar-title {
+    flex: 1 1 0;
+  }
+
+  .run-bar .dos-menu-item,
+  .run-bar-title,
+  .run-bar-status:not(.visually-hidden) {
+    padding-left: 0.4em;
+    padding-right: 0.4em;
+  }
+}
+
 /* Push the status and the buttons to the right when there is no meta to fill the row. A
    hidden status leaves the row, so the button after it goes right instead. */
-.run-bar-title + .run-bar-status,
+.run-bar-title + .run-bar-status:not(.visually-hidden),
 .run-bar-title + .run-bar-status.visually-hidden + * {
   margin-left: auto;
 }
 
-/* The prompt's Licenses link, as the buttons beside it: white on blue when hovered, 13.3:1 */
+/* The prompt's Licenses link looks as the buttons beside it, with no underline when hovered
+   (the colours are .dos-menu-item's) */
 .run-bar a.dos-menu-item:hover {
   text-decoration: none;
 }

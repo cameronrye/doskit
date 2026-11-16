@@ -483,6 +483,8 @@ describe('OfflineIndicator', () => {
   describe('the space the notices take', () => {
     /** The rendered heights jsdom lacks, by the notice's first class */
     const heights: Record<string, number> = {};
+    /** How far the install prompt floats above the bottom of the window */
+    let gap = 0;
     const rootProperty = (name: string) => document.documentElement.style.getPropertyValue(name);
 
     beforeEach(() => {
@@ -490,6 +492,13 @@ describe('OfflineIndicator', () => {
       vi.stubGlobal('ResizeObserver', FakeResizeObserver);
       heights['offline-indicator'] = 84;
       heights['install-prompt'] = 234;
+      gap = 0;
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+        this: HTMLElement
+      ) {
+        const top = this.classList[0] === 'install-prompt' ? window.innerHeight - gap - 234 : 0;
+        return { top } as DOMRect;
+      });
       vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (
         this: HTMLElement
       ) {
@@ -525,6 +534,20 @@ describe('OfflineIndicator', () => {
       act(() => FakeResizeObserver.resizeAll());
 
       expect(rootProperty('--offline-banner-height')).toBe('165px');
+    });
+
+    it('counts the gap under the install prompt in the space it takes, so that nothing it floats over is covered', () => {
+      vi.useFakeTimers();
+      try {
+        gap = 16; // the prompt floats 16px above the bottom of the window
+        render(<OfflineIndicator />);
+
+        offerInstall();
+
+        expect(rootProperty('--install-prompt-height')).toBe('250px');
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("keeps the install prompt's height on the root element until it is dismissed", () => {
