@@ -501,7 +501,10 @@ describe('UpdateNotification', () => {
     it('has no animations: the look moves only on hover and focus', async () => {
       const sheets = await readStylesheets();
 
-      expect(keyframesIn(sheets.get(OWN)!)).toEqual([]);
+      const css = sheets.get(OWN)!.replace(/\/\*[\s\S]*?\*\//g, '');
+
+      expect(keyframesIn(css)).toEqual([]);
+      expect(css).not.toMatch(/animation\s*:/);
     });
 
     it("styles no class that js-dos's stylesheet styles too", async () => {

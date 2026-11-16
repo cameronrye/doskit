@@ -636,24 +636,27 @@ describe('OfflineIndicator', () => {
   describe('its stylesheet', () => {
     const OWN = 'src/components/OfflineIndicator.css';
 
-    it('names its animations so that no other stylesheet replaces them', async () => {
-      // Keyframes are global: of two with one name, the page uses the one it loads last
-      const sheets = await readStylesheets();
-      const own = keyframesIn(sheets.get(OWN)!);
-      const others = [...sheets]
-        .filter(([file]) => file !== OWN)
-        .flatMap(([, css]) => keyframesIn(css));
-
-      expect(own).not.toEqual([]);
-      expect(own.filter((name, i) => others.includes(name) || own.indexOf(name) !== i)).toEqual([]);
-    });
-
     it("styles no class that js-dos's stylesheet styles too", async () => {
       const sheets = await readStylesheets();
 
       expect(
         classesIn(sheets.get(OWN)!).filter((name) => styles(sheets.get('js-dos.css')!, name))
       ).toEqual([]);
+    });
+
+    it('has no animations: the look moves only on hover and focus', async () => {
+      const css = (await readStylesheets()).get(OWN)!.replace(/\/\*[\s\S]*?\*\//g, '');
+
+      expect(keyframesIn(css)).toEqual([]);
+      expect(css).not.toMatch(/animation\s*:/);
+    });
+
+    it('rings the Close button in black, 3:1 on the grey bar, hovered or not', async () => {
+      const css = (await readStylesheets()).get(OWN)!.replace(/\/\*[\s\S]*?\*\//g, '');
+
+      // The ring sits outside the button, on the bar: white there is 2.3:1 on the grey
+      expect(css).not.toMatch(/\.offline-close:hover:focus[^{]*\{[^}]*outline/);
+      expect(css).toMatch(/\.offline-close:focus[^{]*\{[^}]*outline:[^;}]*var\(--menu-text\)/);
     });
 
     it("keeps the Install button's label readable, at 4.5:1 against the button", async () => {

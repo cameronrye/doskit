@@ -91,25 +91,25 @@
   outline-offset: 3px;
 }
 
-/* Try Again, the way to carry on: the cyan key */
-button.error-boundary-button.secondary {
+/* Try Again, the way to carry on: the cyan key (.key) */
+button.error-boundary-button.key {
   background: var(--key);
   color: var(--key-text);
 }
 
-button.error-boundary-button.secondary:hover {
+button.error-boundary-button.key:hover {
   background: var(--accent);
   color: var(--key-text);
 }
 
 /* Refresh Page and the link back to the list: grey, as the menu bar's items are */
-.error-boundary-button.primary,
+.error-boundary-button.plain,
 .error-boundary-button.link {
   background: var(--menu);
   color: var(--menu-text);
 }
 
-.error-boundary-button.primary:hover,
+.error-boundary-button.plain:hover,
 .error-boundary-button.link:hover {
   background: var(--vga-white);
   color: var(--menu-text);

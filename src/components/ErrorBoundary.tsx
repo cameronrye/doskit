@@ -105,12 +105,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
               <div className="error-boundary-actions">
                 <button
-                  className="error-boundary-button primary"
+                  className="error-boundary-button plain"
                   onClick={() => window.location.reload()}
                 >
                   Refresh Page
                 </button>
-                <button className="error-boundary-button secondary" onClick={this.handleReset}>
+                <button className="error-boundary-button key" onClick={this.handleReset}>
                   Try Again
                 </button>
                 {/* The header's way back is gone, so this is the visitor's only one out of a crash

@@ -88,17 +88,12 @@
   color: var(--menu-selected-text);
 }
 
-/* The yellow ring is only 2.2:1 on grey, so black, 9.0:1, as on the menu bar. On the blue of
-   a hovered button black fails, so the ring turns white, 13.3:1. */
+/* The yellow ring is only 2.2:1 on grey, so black, 9.0:1, as on the menu bar. The ring sits
+   outside the button, on the grey, hovered or not. */
 .offline-close:focus,
 .offline-close:focus-visible {
   outline: 2px solid var(--menu-text);
   outline-offset: 2px;
-}
-
-.offline-close:hover:focus,
-.offline-close:hover:focus-visible {
-  outline-color: var(--menu-selected-text);
 }
 
 /*
@@ -125,7 +120,6 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  animation: online-indicator-fade-out 0.3s ease-out 2.7s forwards;
 }
 
 .online-icon {
@@ -219,17 +213,6 @@
 .install-button.secondary:hover {
   background: var(--vga-white);
   color: var(--menu-text);
-}
-
-/* Animations */
-@keyframes online-indicator-fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-    visibility: hidden;
-  }
 }
 
 /* Mobile Responsive */
@@ -336,12 +319,5 @@
   .online-indicator {
     border-color: CanvasText;
     box-shadow: none;
-  }
-}
-
-/* Reduce motion for accessibility */
-@media (prefers-reduced-motion: reduce) {
-  .online-indicator {
-    animation: none;
   }
 }

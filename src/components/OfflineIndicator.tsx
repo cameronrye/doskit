@@ -128,8 +128,8 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ onNetworkSta
     return true;
   }, [isPermanentlyDismissed]);
 
-  // Remove the "Back online" toast once its CSS fade-out has finished. It must
-  // leave the DOM explicitly: prefers-reduced-motion disables the fade.
+  // Remove the "Back online" toast after its time: it has no animation, so it leaves the
+  // DOM explicitly.
   useEffect(() => {
     if (!showOnlineMessage) return;
     const timer = setTimeout(() => setShowOnlineMessage(false), UI_CONFIG.TOAST_DURATION);
