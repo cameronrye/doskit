@@ -279,6 +279,30 @@ describe('ProductionPage', () => {
     expect(screen.queryByRole('list', { name: /More by/ })).not.toBeInTheDocument();
   });
 
+  it("moves the strip's tab stop with the focus, so that Shift+Tab from it goes to Share", async () => {
+    const crew = ['a', 'b', 'c', 'd'].map((id) => make(id, { author: 'Future Crew' }));
+    await renderPage({ app: crew[0], apps: crew });
+    const strip = within(screen.getByRole('list', { name: 'More by Future Crew' })).getAllByRole(
+      'link'
+    );
+    act(() => strip[0]!.focus());
+    await userEvent.keyboard('{ArrowRight}{ArrowRight}');
+    expect(strip[2]).toHaveFocus();
+    expect(strip.map((link) => link.tabIndex)).toEqual([-1, -1, 0]);
+    await userEvent.tab({ shift: true });
+    expect(screen.getByRole('button', { name: 'Share' })).toHaveFocus();
+  });
+
+  it('labels the strip by its heading, which screen readers can reach', async () => {
+    const a = make('a', { author: 'Future Crew' });
+    const b = make('b', { author: 'Future Crew' });
+    await renderPage({ app: a, apps: [a, b] });
+    const heading = screen.getByRole('heading', { level: 2, name: 'More by Future Crew' });
+    const list = screen.getByRole('list', { name: 'More by Future Crew' });
+    expect(list).toHaveAttribute('aria-labelledby', heading.id);
+    expect(list).not.toHaveAttribute('aria-label');
+  });
+
   it('shows the flashing warning, the content note and the start note', async () => {
     const app = make('f', {
       flashing: true,

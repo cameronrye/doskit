@@ -67,6 +67,8 @@ export function ProductionPage({
   // The alt text and the share's outcome belong to the production they came for
   const [loadedAlt, setLoadedAlt] = useState<{ id: string; alt: string } | null>(null);
   const [outcome, setOutcome] = useState<{ id: string; result: ShareResult } | null>(null);
+  // The "More by" strip's tab stop, which moves with the focus as the start page's grid's does
+  const [moreActiveId, setMoreActiveId] = useState<string | null>(null);
   const imageAlt = loadedAlt?.id === app.id ? loadedAlt.alt : '';
   const shared = outcome?.id === app.id ? outcome.result : null;
   const more = moreByAuthor(app, apps);
@@ -280,15 +282,15 @@ export function ProductionPage({
 
       {more.length > 0 && app.author && (
         <div className="production-more">
-          <h2 className="production-more-title" aria-hidden="true">
+          <h2 id="production-more-title" className="production-more-title">
             More by {app.author}
           </h2>
           <ProductionGrid
             apps={more}
-            label={`More by ${app.author}`}
+            labelledBy="production-more-title"
             onOpen={onOpenApp}
-            activeId={null}
-            onActiveChange={() => {}}
+            activeId={moreActiveId}
+            onActiveChange={(next) => setMoreActiveId(next.id)}
             variant="strip"
           />
         </div>

@@ -16,8 +16,9 @@ import './ProductionGrid.css';
 
 interface ProductionGridProps {
   apps: readonly DosApp[];
-  /** The list's accessible name */
-  label: string;
+  /** The list's accessible name, unless `labelledBy` gives the id of a heading that names it */
+  label?: string;
+  labelledBy?: string;
   onOpen: (app: DosApp) => void;
   /** The roving tab stop; the first app when null or not in `apps` */
   activeId: string | null;
@@ -37,6 +38,7 @@ interface ProductionGridProps {
 export function ProductionGrid({
   apps,
   label,
+  labelledBy,
   onOpen,
   activeId,
   onActiveChange,
@@ -110,7 +112,8 @@ export function ProductionGrid({
     <ul
       ref={listRef}
       className={`production-grid production-grid--${variant}`}
-      aria-label={label}
+      aria-label={labelledBy ? undefined : label}
+      aria-labelledby={labelledBy}
       onKeyDown={handleKeyDown}
     >
       {apps.map((app, index) => {
